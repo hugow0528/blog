@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your First Python Script | Hugo's Dev Notes</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+            <p class="subtitle">Cloudflare · Python · Vibe Coding</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+        
+        <article class="post-content">
+            <span class="tag python">Python</span>
+            <h1>Your First Python Script: Complete Beginner Guide</h1>
+            <time>June 17, 2026 · 8 min read</time>
+
+            <p>Never written a line of code? No problem. Python is the most beginner-friendly programming language. In 15 minutes, you'll go from zero to running your own program.</p>
+
+            <h2>Why Python?</h2>
+            <ul>
+                <li><strong>Reads like English</strong> — <code>if x > 5:</code> instead of <code>if(x&gt;5){}</code></li>
+                <li><strong>Runs everywhere</strong> — Windows, Mac, Linux, Raspberry Pi</li>
+                <li><strong>Huge ecosystem</strong> — 400,000+ libraries for anything</li>
+                <li><strong>AI/ML language</strong> — TensorFlow, PyTorch, OpenAI all use Python</li>
+            </ul>
+
+            <h2>Step 1: Install Python</h2>
+
+            <h3>macOS</h3>
+            <pre><code>brew install python3</code></pre>
+
+            <h3>Ubuntu / Linux</h3>
+            <pre><code>sudo apt update
+sudo apt install python3 python3-pip</code></pre>
+
+            <h3>Windows</h3>
+            <p>Download from <a href="https://python.org">python.org</a>. Check "Add Python to PATH" during install.</p>
+
+            <h3>Check it works</h3>
+            <pre><code>python3 --version
+# Python 3.x.x</code></pre>
+
+            <h2>Step 2: Write Your First Script</h2>
+
+            <p>Create a file called <code>hello.py</code>:</p>
+            <pre><code>print("Hello, world!")</code></pre>
+
+            <p>Run it:</p>
+            <pre><code>python3 hello.py
+# Hello, world!</code></pre>
+
+            <p>That's it. You just ran a Python program.</p>
+
+            <h2>Step 3: Variables</h2>
+
+            <p>Variables store data. No type declarations needed:</p>
+            <pre><code>name = "Hugo"
+age = 28
+height = 1.75
+is_cool = True
+
+print(f"Hi, I'm {name}, age {age}")</code></pre>
+
+            <p>Output: <strong>Hi, I'm Hugo, age 28</strong></p>
+
+            <h2>Step 4: User Input</h2>
+
+            <pre><code>name = input("What's your name? ")
+print(f"Hello, {name}!")</code></pre>
+
+            <p>Run it and type your name. Python waits for you to press Enter.</p>
+
+            <h2>Step 5: Conditions</h2>
+
+            <pre><code>temperature = float(input("Enter temperature: "))
+
+if temperature > 30:
+    print("Hot day! ☀️")
+elif temperature > 20:
+    print("Nice weather 🌤️")
+else:
+    print("Cold day 🥶")</code></pre>
+
+            <h2>Step 6: Loops</h2>
+
+            <h3>For loop — count to 10</h3>
+            <pre><code>for i in range(10):
+    print(f"Count: {i}")</code></pre>
+
+            <h3>While loop — keep asking</h3>
+            <pre><code>password = ""
+while password != "secret":
+    password = input("Enter password: ")
+print("Access granted!")</code></pre>
+
+            <h2>Step 7: Functions</h2>
+
+            <p>Functions let you reuse code:</p>
+            <pre><code>def greet(name, greeting="Hello"):
+    return f"{greeting}, {name}!"
+
+print(greet("Hugo"))
+print(greet("Hugo", "Morning"))</code></pre>
+
+            <p>Output:</p>
+            <pre>
+Hello, Hugo!
+Morning, Hugo!
+            </pre>
+
+            <h2>Your First Real Project</h2>
+
+            <p>Let's build a <strong>weather reminder</strong>:</p>
+            <pre><code>import random
+
+def check_weather():
+    temp = random.randint(15, 35)
+    rain = random.choice([True, False])
+    
+    print(f"Today: {temp}°C")
+    
+    if rain:
+        print("🌧️ It's raining — bring an umbrella!")
+    elif temp > 30:
+        print("☀️ Hot day — stay hydrated!")
+    else:
+        print("😊 Nice weather!")
+
+check_weather()</code></pre>
+
+            <h2>Next Steps</h2>
+
+            <h3>Learn More</h3>
+            <ul>
+                <li><a href="#">Python variables & data types</a> — lists, dictionaries, sets</li>
+                <li>Work with files — read/write data</li>
+                <li>APIs — connect to weather, news, social media</li>
+            </ul>
+
+            <h3>Build With Python</h3>
+            <ul>
+                <li>Use <a href="#">Cloudflare Tunnel</a> to expose your Python app</li>
+                <li>Try <a href="#">vibe coding</a> to let AI write Python for you</li>
+                <li>Build a Flask web app — the easiest way to start</li>
+            </ul>
+
+            <blockquote>
+                <strong>Remember:</strong> The best way to learn Python is to build something. Don't just read tutorials — write code, break things, fix them.
+            </blockquote>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Hugo's Dev Notes. Built with vibe coding.</p>
+        </div>
+    </footer>
+</body>
+</html>

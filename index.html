@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hugo's Dev Notes | Cloudflare, Python & Vibe Coding Tutorials</title>
+    <title>Hugo's Dev Notes | Cloudflare, Python & AI Coding Tutorials</title>
     
     <!-- SEO Meta Tags -->
     <meta name="description" content="Learn Cloudflare setup, Python programming, and Vibe Coding with AI tools. Step-by-step tutorials for beginners. Real projects, real code.">
@@ -44,6 +44,12 @@
     <link rel="sitemap" type="application/xml" href="/sitemap.xml">
 </head>
 <body>
+    <!-- Reading Progress Bar -->
+    <div class="progress-bar" id="progressBar"></div>
+
+    <!-- Dark Mode Toggle -->
+    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+
     <header>
         <div class="container">
             <div class="logo">
@@ -67,7 +73,11 @@
 
         <!-- Featured Section -->
         <section class="featured">
-            <h2>🔥 Latest Tutorials</h2>
+            <div class="section-header">
+                <h2>🔥 Latest Tutorials</h2>
+                <p class="section-subtitle">New posts every week</p>
+            </div>
+            
             <div class="posts" id="postsContainer">
 
                 <article class="post" data-tags="cloudflare tunnel hosting">
@@ -81,6 +91,7 @@
                     <div class="post-meta">
                         <time>2026-06-17</time>
                         <span class="read-time">5 min read</span>
+                        <span class="post-status">Featured</span>
                     </div>
                 </article>
 
@@ -179,6 +190,9 @@
         </div>
     </footer>
 
+    <!-- Back to Top Button -->
+    <button class="back-to-top" id="backToTop" title="Back to top">↑</button>
+
     <script>
     function filterPosts() {
         const input = document.getElementById('searchInput');
@@ -197,6 +211,37 @@
             }
         }
     }
+
+    // Dark Mode Toggle
+    const themeToggle = document.getElementById('themeToggle');
+    themeToggle.addEventListener('click', () => {
+        document.body.classList.toggle('dark-mode');
+        themeToggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+        localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+    });
+
+    // Load saved theme
+    if (localStorage.getItem('theme') === 'dark') {
+        document.body.classList.add('dark-mode');
+        themeToggle.textContent = '☀️';
+    }
+
+    // Back to Top Button
+    const backToTop = document.getElementById('backToTop');
+    window.addEventListener('scroll', () => {
+        backToTop.style.display = window.pageYOffset > 300 ? 'block' : 'none';
+    });
+    backToTop.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // Reading Progress Bar
+    window.addEventListener('scroll', () => {
+        const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+        const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        const scrolled = (winScroll / height) * 100;
+        document.getElementById('progressBar').style.width = scrolled + '%';
+    });
     </script>
 </body>
 </html>

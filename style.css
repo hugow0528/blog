@@ -15,6 +15,17 @@
     --radius: 12px;
 }
 
+/* Dark Mode */
+body.dark-mode {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --text: #f1f5f9;
+    --text-light: #94a3b8;
+    --border: #334155;
+    --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.3);
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -26,12 +37,50 @@ body {
     line-height: 1.7;
     color: var(--text);
     background: var(--bg);
+    transition: background-color 0.3s, color 0.3s;
 }
 
 .container {
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 20px;
+}
+
+/* Reading Progress Bar */
+.progress-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 0%;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary), var(--accent));
+    z-index: 1000;
+    transition: width 0.1s;
+}
+
+/* Dark Mode Toggle */
+.theme-toggle {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    font-size: 1.5rem;
+    cursor: pointer;
+    z-index: 100;
+    box-shadow: var(--shadow);
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.theme-toggle:hover {
+    transform: scale(1.1);
+    box-shadow: var(--shadow-lg);
 }
 
 /* Header */
@@ -42,7 +91,7 @@ header {
     box-shadow: var(--shadow-lg);
     position: sticky;
     top: 0;
-    z-index: 100;
+    z-index: 99;
 }
 
 header .container {
@@ -57,6 +106,11 @@ header .container {
     color: white;
     text-decoration: none;
     font-size: 1.8rem;
+    transition: transform 0.3s;
+}
+
+.logo h1 a:hover {
+    transform: scale(1.05);
 }
 
 .subtitle {
@@ -100,12 +154,29 @@ nav {
     border-radius: var(--radius);
     font-size: 1rem;
     transition: all 0.3s;
+    background: var(--surface);
+    color: var(--text);
 }
 
 .search-box input:focus {
     outline: none;
     border-color: var(--primary);
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Section Header */
+.section-header {
+    margin-bottom: 2rem;
+}
+
+.section-header h2 {
+    font-size: 2rem;
+    color: var(--text);
+}
+
+.section-subtitle {
+    color: var(--text-light);
+    font-size: 1.1rem;
 }
 
 /* Posts */
@@ -121,6 +192,20 @@ nav {
     box-shadow: var(--shadow);
     transition: all 0.3s;
     border-left: 4px solid var(--primary);
+    position: relative;
+    overflow: hidden;
+}
+
+.post::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.05), rgba(124, 58, 237, 0.05));
+    opacity: 0;
+    transition: opacity 0.3s;
 }
 
 .post:hover {
@@ -128,9 +213,15 @@ nav {
     box-shadow: var(--shadow-lg);
 }
 
+.post:hover::before {
+    opacity: 1;
+}
+
 .post-header h2 {
     font-size: 1.5rem;
     margin: 0.5rem 0;
+    position: relative;
+    z-index: 1;
 }
 
 .post-header h2 a {
@@ -146,6 +237,8 @@ nav {
 .post-excerpt {
     color: var(--text-light);
     margin: 1rem 0;
+    position: relative;
+    z-index: 1;
 }
 
 .post-meta {
@@ -153,6 +246,16 @@ nav {
     gap: 1rem;
     color: var(--text-light);
     font-size: 0.9rem;
+    position: relative;
+    z-index: 1;
+}
+
+.post-status {
+    background: var(--primary);
+    color: white;
+    padding: 0.1rem 0.5rem;
+    border-radius: 10px;
+    font-size: 0.8rem;
 }
 
 /* Tags */
@@ -168,6 +271,10 @@ nav {
 .tag.cloudflare { background: #fef3c7; color: #d97706; }
 .tag.python { background: #dbeafe; color: #1d4ed8; }
 .tag.vibe { background: #ede9fe; color: #7c3aed; }
+
+body.dark-mode .tag.cloudflare { background: #d9770620; color: #fbbf24; }
+body.dark-mode .tag.python { background: #1d4ed820; color: #60a5fa; }
+body.dark-mode .tag.vibe { background: #7c3aed20; color: #a78bfa; }
 
 /* Newsletter */
 .newsletter {
@@ -275,6 +382,30 @@ code {
     font-family: 'Courier New', Courier, monospace;
 }
 
+/* Back to Top Button */
+.back-to-top {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background: var(--primary);
+    color: white;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    box-shadow: var(--shadow);
+    transition: all 0.3s;
+    display: none;
+    z-index: 100;
+}
+
+.back-to-top:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lg);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     header .container {
@@ -288,5 +419,13 @@ code {
     
     .logo h1 {
         font-size: 1.5rem;
+    }
+    
+    .theme-toggle {
+        top: 10px;
+        right: 10px;
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
     }
 }

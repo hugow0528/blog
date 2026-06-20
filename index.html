@@ -3,117 +3,200 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blog | Hugo's Dev Notes</title>
+    <title>Hugo's Dev Notes | Cloudflare, Python & Vibe Coding Tutorials</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Learn Cloudflare setup, Python programming, and Vibe Coding with AI tools. Step-by-step tutorials for beginners. Real projects, real code.">
+    <meta name="keywords" content="cloudflare tutorial, python beginner, vibe coding, AI programming, devops, web hosting, cybersecurity">
+    <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+    <link rel="canonical" href="https://blog.hugow.dev/">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Hugo's Dev Notes | Cloudflare, Python & Vibe Coding">
+    <meta property="og:description" content="Learn Cloudflare setup, Python programming, and Vibe Coding with AI. Step-by-step tutorials for beginners.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://blog.hugow.dev/">
+    <meta property="og:image" content="https://blog.hugow.dev/og-image.png">
+    <meta property="og:site_name" content="Hugo's Dev Notes">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Hugo's Dev Notes | Cloudflare, Python & Vibe Coding">
+    <meta name="twitter:description" content="Learn Cloudflare setup, Python programming, and Vibe Coding with AI.">
+    
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Blog",
+      "name": "Hugo's Dev Notes",
+      "url": "https://blog.hugow.dev/",
+      "author": {
+        "@type": "Person",
+        "name": "Hugo Wong"
+      },
+      "description": "Tutorials on Cloudflare, Python programming, and Vibe Coding with AI tools"
+    }
+    </script>
+    
     <link rel="stylesheet" href="style.css">
+    <link rel="sitemap" type="application/xml" href="/sitemap.xml">
 </head>
 <body>
     <header>
         <div class="container">
-            <h1><a href="index.html">Hugo's Dev Notes</a></h1>
-            <p class="subtitle">Cloudflare · Python · Vibe Coding</p>
+            <div class="logo">
+                <h1><a href="index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
             <nav>
-                <a href="index.html" class="active">Home</a>
-                <a href="#">Cloudflare</a>
-                <a href="#">Python</a>
-                <a href="#">Vibe Coding</a>
+                <a href="index.html" class="nav-btn active">🏠 Home</a>
+                <a href="cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="python.html" class="nav-btn">🐍 Python</a>
+                <a href="vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
             </nav>
         </div>
     </header>
 
     <main class="container">
-        <div class="posts">
-
-            <article class="post">
-                <div class="post-header">
-                    <span class="tag cloudflare">Cloudflare</span>
-                    <h2><a href="posts/cloudflare-tunnel.html">How to Set Up Cloudflare Tunnel (Step by Step)</a></h2>
-                </div>
-                <div class="post-excerpt">
-                    <p>Learn how to expose your local server to the internet using Cloudflare Tunnel — no port forwarding, no public IP needed. Complete guide from install to deployment.</p>
-                </div>
-                <div class="post-meta">
-                    <time>2026-06-17</time>
-                    <span class="read-time">5 min read</span>
-                </div>
-            </article>
-
-            <article class="post">
-                <div class="post-header">
-                    <span class="tag python">Python</span>
-                    <h2><a href="posts/python-first-script.html">Your First Python Script: Complete Beginner Guide</a></h2>
-                </div>
-                <div class="post-excerpt">
-                    <p>Never written Python before? This guide takes you from zero to running your first script in 15 minutes. No prior coding experience needed.</p>
-                </div>
-                <div class="post-meta">
-                    <time>2026-06-17</time>
-                    <span class="read-time">8 min read</span>
-                </div>
-            </article>
-
-            <article class="post">
-                <div class="post-header">
-                    <span class="tag vibe">Vibe Coding</span>
-                    <h2><a href="posts/what-is-vibe-coding.html">What is Vibe Coding? (And How to Start Today)</a></h2>
-                </div>
-                <div class="post-excerpt">
-                    <p>Vibe coding is the new way to build software — describe what you want in plain language, let AI write the code. Here's my experience and practical tips.</p>
-                </div>
-                <div class="post-meta">
-                    <time>2026-06-17</time>
-                    <span class="read-time">6 min read</span>
-                </div>
-            </article>
-
-            <article class="post">
-                <div class="post-header">
-                    <span class="tag cloudflare">Cloudflare</span>
-                    <h2><a href="posts/cloudflare-dns.html">Cloudflare DNS Explained: Proxied vs DNS Only</a></h2>
-                </div>
-                <div class="post-excerpt">
-                    <p>Orange cloud vs grey cloud — what's the difference and when to use each? This guide explains Cloudflare's DNS proxying in simple terms.</p>
-                </div>
-                <div class="post-meta">
-                    <time>2026-06-17</time>
-                    <span class="read-time">4 min read</span>
-                </div>
-            </article>
-
-            <article class="post">
-                <div class="post-header">
-                    <span class="tag python">Python</span>
-                    <h2><a href="posts/python-variables.html">Python Variables & Data Types for Beginners</a></h2>
-                </div>
-                <div class="post-excerpt">
-                    <p>Understanding variables, strings, numbers, lists, and dictionaries in Python. The foundation you need before writing real programs.</p>
-                </div>
-                <div class="post-meta">
-                    <time>2026-06-17</time>
-                    <span class="read-time">7 min read</span>
-                </div>
-            </article>
-
-            <article class="post">
-                <div class="post-header">
-                    <span class="tag vibe">Vibe Coding</span>
-                    <h2><a href="posts/vibe-coding-tools.html">Best Vibe Coding Tools (2026 Edition)</a></h2>
-                </div>
-                <div class="post-excerpt">
-                    <p>A comprehensive list of AI coding assistants I've tested — from Claude Code to Cursor to Hermes Agent. Which one should you pick?</p>
-                </div>
-                <div class="post-meta">
-                    <time>2026-06-17</time>
-                    <span class="read-time">10 min read</span>
-                </div>
-            </article>
-
+        <!-- Search Box -->
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="🔍 Search tutorials... (Cloudflare, Python, AI coding)" onkeyup="filterPosts()">
         </div>
+
+        <!-- Featured Section -->
+        <section class="featured">
+            <h2>🔥 Latest Tutorials</h2>
+            <div class="posts" id="postsContainer">
+
+                <article class="post" data-tags="cloudflare tunnel hosting">
+                    <div class="post-header">
+                        <span class="tag cloudflare">Cloudflare</span>
+                        <h2><a href="posts/cloudflare-tunnel.html">How to Set Up Cloudflare Tunnel (Step by Step)</a></h2>
+                    </div>
+                    <div class="post-excerpt">
+                        <p>Learn how to expose your local server to the internet using Cloudflare Tunnel — no port forwarding, no public IP needed. Complete guide from install to deployment.</p>
+                    </div>
+                    <div class="post-meta">
+                        <time>2026-06-17</time>
+                        <span class="read-time">5 min read</span>
+                    </div>
+                </article>
+
+                <article class="post" data-tags="cloudflare dns domain setup">
+                    <div class="post-header">
+                        <span class="tag cloudflare">Cloudflare</span>
+                        <h2><a href="posts/cloudflare-dns.html">Cloudflare DNS Setup: Complete Guide</a></h2>
+                    </div>
+                    <div class="post-excerpt">
+                        <p>Complete guide to managing DNS with Cloudflare — A records, CNAME, proxies, and troubleshooting common errors like Error 1014.</p>
+                    </div>
+                    <div class="post-meta">
+                        <time>2026-06-17</time>
+                        <span class="read-time">6 min read</span>
+                    </div>
+                </article>
+
+                <article class="post" data-tags="python beginner programming">
+                    <div class="post-header">
+                        <span class="tag python">Python</span>
+                        <h2><a href="posts/python-first-script.html">Your First Python Script: Complete Beginner Guide</a></h2>
+                    </div>
+                    <div class="post-excerpt">
+                        <p>Never written Python before? This guide takes you from zero to running your first script in 15 minutes. No prior coding experience needed.</p>
+                    </div>
+                    <div class="post-meta">
+                        <time>2026-06-17</time>
+                        <span class="read-time">8 min read</span>
+                    </div>
+                </article>
+
+                <article class="post" data-tags="python variables data types">
+                    <div class="post-header">
+                        <span class="tag python">Python</span>
+                        <h2><a href="posts/python-variables.html">Python Variables & Data Types Explained</a></h2>
+                    </div>
+                    <div class="post-excerpt">
+                        <p>Understanding variables, strings, integers, lists, and dictionaries in Python. The foundation you need before building real projects.</p>
+                    </div>
+                    <div class="post-meta">
+                        <time>2026-06-17</time>
+                        <span class="read-time">7 min read</span>
+                    </div>
+                </article>
+
+                <article class="post" data-tags="vibe coding ai chatgpt copilot">
+                    <div class="post-header">
+                        <span class="tag vibe">AI Coding</span>
+                        <h2><a href="posts/what-is-vibe-coding.html">What is Vibe Coding? AI-Powered Development</a></h2>
+                    </div>
+                    <div class="post-excerpt">
+                        <p>Discover Vibe Coding — the new way to build software using AI assistants. Write less code, get more done with ChatGPT, Copilot, and Claude.</p>
+                    </div>
+                    <div class="post-meta">
+                        <time>2026-06-17</time>
+                        <span class="read-time">6 min read</span>
+                    </div>
+                </article>
+
+                <article class="post" data-tags="vibe coding tools cursor copilot">
+                    <div class="post-header">
+                        <span class="tag vibe">AI Coding</span>
+                        <h2><a href="posts/vibe-coding-tools.html">Top AI Coding Tools: Copilot, Cursor & Claude</a></h2>
+                    </div>
+                    <div class="post-excerpt">
+                        <p>Compare the best AI coding tools in 2026. When to use GitHub Copilot vs Cursor vs Claude Code. Real workflow examples and pricing.</p>
+                    </div>
+                    <div class="post-meta">
+                        <time>2026-06-17</time>
+                        <span class="read-time">8 min read</span>
+                    </div>
+                </article>
+
+            </div>
+        </section>
+
+        <!-- Newsletter Section -->
+        <section class="newsletter">
+            <h2>📬 Stay Updated</h2>
+            <p>New tutorials every week. Cloudflare, Python, AI coding tips.</p>
+            <div class="newsletter-cta">
+                <a href="https://github.com/hugow0528/blog" target="_blank" class="btn-primary">⭐ Star on GitHub</a>
+                <a href="https://blog.hugow.dev/rss.xml" class="btn-secondary">📡 RSS Feed</a>
+            </div>
+        </section>
     </main>
 
     <footer>
         <div class="container">
-            <p>&copy; 2026 Hugo's Dev Notes. Built with vibe coding.</p>
+            <p>© 2026 Hugo's Dev Notes | Built with ❤️ & AI</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528" target="_blank">GitHub</a>
+                <a href="https://blog.hugow.dev/sitemap.xml">Sitemap</a>
+                <a href="https://blog.hugow.dev/robots.txt">Robots</a>
+            </div>
         </div>
     </footer>
+
+    <script>
+    function filterPosts() {
+        const input = document.getElementById('searchInput');
+        const filter = input.value.toLowerCase();
+        const posts = document.getElementsByClassName('post');
+        
+        for (let i = 0; i < posts.length; i++) {
+            const tags = posts[i].getAttribute('data-tags');
+            const title = posts[i].querySelector('h2').textContent.toLowerCase();
+            const excerpt = posts[i].querySelector('.post-excerpt').textContent.toLowerCase();
+            
+            if (title.includes(filter) || excerpt.includes(filter) || tags.includes(filter)) {
+                posts[i].style.display = "";
+            } else {
+                posts[i].style.display = "none";
+            }
+        }
+    }
+    </script>
 </body>
 </html>

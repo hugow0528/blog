@@ -1,0 +1,13 @@
+# https://blog.hugow.dev/robots.txt
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://blog.hugow.dev/sitemap.xml
+
+# Crawl delays
+Crawl-delay: 1
+
+# Disallow admin/private paths
+Disallow: /admin/
+Disallow: /private/

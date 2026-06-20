@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloudflare DNS Explained | Hugo's Dev Notes</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+            <p class="subtitle">Cloudflare · Python · Vibe Coding</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+        
+        <article class="post-content">
+            <span class="tag cloudflare">Cloudflare</span>
+            <h1>Cloudflare DNS Explained: Proxied vs DNS Only</h1>
+            <time>June 17, 2026 · 4 min read</time>
+
+            <p>When you add a DNS record in Cloudflare, you see an orange cloud toggle. What does it do? Should you turn it on or off? This guide explains in simple terms.</p>
+
+            <h2>The Two Modes</h2>
+
+            <h3>🟠 Orange Cloud — Proxied</h3>
+            <p>Traffic goes through Cloudflare first:</p>
+            <pre><code>User → Cloudflare → Your Server</code></pre>
+
+            <p><strong>Benefits:</strong></p>
+            <ul>
+                <li>DDoS protection — Cloudflare absorbs attacks</li>
+                <li>Free SSL/TLS — automatic HTTPS</li>
+                <li>Caching — faster load times</li>
+                <li>Bot protection — blocks malicious bots</li>
+                <li>Your server IP stays hidden</li>
+            </ul>
+
+            <h3>⚪ Grey Cloud — DNS Only</h3>
+            <p>Cloudflare just points the domain. Traffic goes direct:</p>
+            <pre><code>User → Your Server</code></pre>
+
+            <p><strong>When to use:</strong></p>
+            <ul>
+                <li>Services that need direct IP access (SSH, FTP, game servers)</li>
+                <li>When Cloudflare proxying breaks something</li>
+                <li>Internal services</li>
+            </ul>
+
+            <h2>Real World Example</h2>
+
+            <p>Here's my DNS setup:</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Subdomain</th>
+                        <th>Type</th>
+                        <th>Proxy</th>
+                        <th>Why</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>weather.hugow.dev</td>
+                        <td>CNAME</td>
+                        <td>🟠 Proxied</td>
+                        <td>Web app — needs SSL + protection</td>
+                    </tr>
+                    <tr>
+                        <td>deploy.hugow.dev</td>
+                        <td>CNAME</td>
+                        <td>🟠 Proxied</td>
+                        <td>Web app — needs SSL + protection</td>
+                    </tr>
+                    <tr>
+                        <td>remote.hugow.dev</td>
+                        <td>CNAME</td>
+                        <td>🟠 Proxied</td>
+                        <td>Remote desktop — proxied works fine</td>
+                    </tr>
+                    <tr>
+                        <td>sftp.hugow.dev</td>
+                        <td>CNAME</td>
+                        <td>🟠 Proxied</td>
+                        <td>SSH via Cloudflare Tunnel</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2>Common DNS Record Types</h2>
+
+            <h3>A Record</h3>
+            <p>Points to an IPv4 address (e.g., <code>192.168.1.1</code>)</p>
+
+            <h3>CNAME</h3>
+            <p>Points to another domain name (e.g., <code>cfargotunnel.com</code>)</p>
+
+            <h3>MX Record</h3>
+            <p>Mail server — <strong>must be grey cloud</strong> (DNS only)</p>
+
+            <h3>SRV Record</h3>
+            <p>Service discovery — used by VoIP, gaming</p>
+
+            <h2>Proxying Issues & Fixes</h2>
+
+            <h3>Problem: WebSocket connections fail</h3>
+            <p>Fix: Enable "Connection Optimization" in Cloudflare dashboard or turn proxy off temporarily to test.</p>
+
+            <h3>Problem: Real IP not showing</h3>
+            <p>Fix: Use <code>X-Forwarded-For</code> header instead of <code>remote_addr</code> in your code.</p>
+
+            <h3>Problem: Upload size limited</h3>
+            <p>Fix: Free plan has 100MB limit. Go to Bandwidth → File Size Limit.</p>
+
+            <h2>Cloudflare API for DNS</h2>
+
+            <p>You can manage DNS via API too:</p>
+            <pre><code># List DNS records
+curl -X GET "https://api.cloudflare.com/client/v4/accounts/$ACCOUNT/dns_records" \
+  -H "Authorization: Bearer $API_TOKEN"
+
+# Create a CNAME record
+curl -X POST "https://api.cloudflare.com/client/v4/accounts/$ACCOUNT/dns_records" \
+  -H "Authorization: Bearer $API_TOKEN" \
+  -H "Content-Type: application/json" \
+  --data '{
+    "type": "CNAME",
+    "name": "blog.hugow.dev",
+    "content": "cfargotunnel.com",
+    "proxied": true
+  }'</code></pre>
+
+            <h2>Key Takeaways</h2>
+            <ul>
+                <li>🟠 <strong>Proxied</strong> = protection, SSL, caching, speed</li>
+                <li>⚪ <strong>DNS Only</strong> = direct connection, no Cloudflare benefits</li>
+                <li>Web apps → Always proxied</li>
+                <li>Email → Always DNS only</li>
+                <li>When in doubt → Start proxied, test, adjust</li>
+            </ul>
+
+            <h2>Next Steps</h2>
+            <ul>
+                <li>Set up <a href="#">Cloudflare Tunnel</a> to expose services securely</li>
+                <li>Learn <a href="#">basic Python</a> to automate DNS management</li>
+                <li>Try <a href="#">vibe coding</a> to build the apps you're proxying</li>
+            </ul>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Hugo's Dev Notes. Built with vibe coding.</p>
+        </div>
+    </footer>
+</body>
+</html>

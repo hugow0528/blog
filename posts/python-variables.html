@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Variables & Data Types | Hugo's Dev Notes</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+            <p class="subtitle">Cloudflare · Python · Vibe Coding</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+        
+        <article class="post-content">
+            <span class="tag python">Python</span>
+            <h1>Python Variables & Data Types for Beginners</h1>
+            <time>June 17, 2026 · 7 min read</time>
+
+            <p>Every program works with data. Python makes it easy — no type declarations, no complex syntax. Just create and use.</p>
+
+            <h2>Strings — Text</h2>
+            <pre><code>name = "Hugo"
+city = 'Hong Kong'
+message = """This is a
+multi-line string"""
+
+# Combine strings
+full = name + " lives in " + city
+print(full)  # Hugo lives in Hong Kong
+
+# Better: f-strings
+print(f"{name} lives in {city}")</code></pre>
+
+            <h2>Numbers — Integers & Floats</h2>
+            <pre><code>age = 28              # integer
+height = 1.75          # float
+temperature = -5       # negative number
+population = 7_400_000 # underscores for readability
+
+# Math
+print(age + 1)         # 29
+print(height * 100)    # 175.0
+print(10 / 3)          # 3.333...
+print(10 // 3)         # 3 (integer division)
+print(10 % 3)          # 1 (remainder)
+print(2 ** 8)          # 256 (power)</code></pre>
+
+            <h2>Booleans — True/False</h2>
+            <pre><code>is_raining = True
+has_umbrella = False
+
+# Comparisons
+print(5 > 3)       # True
+print(5 == 3)      # False
+print("hi" != "bye") # True</code></pre>
+
+            <h2>Lists — Ordered Collections</h2>
+            <pre><code># Create a list
+fruits = ["apple", "banana", "orange"]
+
+# Access items (0-indexed)
+print(fruits[0])   # apple
+print(fruits[-1])  # orange (last item)
+
+# Modify
+fruits.append("mango")
+fruits[1] = "grape"
+
+# Iterate
+for fruit in fruits:
+    print(fruit)
+
+# List length
+print(len(fruits))  # 4</code></pre>
+
+            <h2>Dictionaries — Key-Value Pairs</h2>
+            <pre><code># Create a dictionary
+person = {
+    "name": "Hugo",
+    "age": 28,
+    "city": "Yuen Long"
+}
+
+# Access values
+print(person["name"])  # Hugo
+
+# Add/modify
+person["job"] = "Developer"
+person["age"] = 29
+
+# Iterate
+for key, value in person.items():
+    print(f"{key}: {value}")</code></pre>
+
+            <h2>Practical Example: Weather App</h2>
+            <pre><code># Store weather data
+weather = {
+    "location": "Yuen Long",
+    "temperature": 28,
+    "humidity": 75,
+    "conditions": "partly cloudy",
+    "rain_alert": False
+}
+
+# Display info
+print(f"📍 {weather['location']}")
+print(f"🌡️ {weather['temperature']}°C")
+print(f"💧 {weather['humidity']}% humidity")
+
+# Conditional message
+if weather['rain_alert']:
+    print("🌧️ Rain alert! Bring umbrella.")
+elif weather['temperature'] > 30:
+    print("☀️ Hot day! Stay hydrated.")
+else:
+    print("😊 Nice weather!")</code></pre>
+
+            <h2>Type Conversion</h2>
+            <pre><code># String to number
+age_str = "28"
+age_num = int(age_str)
+print(age_num + 1)  # 29
+
+# Number to string
+temp = 28
+print("Temperature: " + str(temp) + "°C")
+
+# Input always returns string
+temp = float(input("Enter temperature: "))
+# Now temp is a number, not text</code></pre>
+
+            <h2>Common Mistakes</h2>
+
+            <h3>Forgetting quotes for strings</h3>
+            <pre><code># Wrong
+name = Hugo  # NameError
+
+# Right
+name = "Hugo"</code></pre>
+
+            <h3>Using = instead of ==</h3>
+            <pre><code># Wrong (assignment)
+if name = "Hugo":
+
+# Right (comparison)
+if name == "Hugo":</code></pre>
+
+            <h3>List index out of range</h3>
+            <pre><code>fruits = ["apple", "banana"]
+print(fruits[2])  # IndexError! Only 0 and 1 exist</code></pre>
+
+            <h2>Next Steps</h2>
+            <ul>
+                <li>Learn <a href="#">your first Python script</a> — put variables to work</li>
+                <li>Work with files — read/write data</li>
+                <li>APIs — fetch real weather data</li>
+            </ul>
+
+            <blockquote>
+                <strong>Practice tip:</strong> Create a dictionary for your favorite things. Add keys like "food", "movie", "color". Then write a program that prints them all.
+            </blockquote>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Hugo's Dev Notes. Built with vibe coding.</p>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Set Up Cloudflare Tunnel | Hugo's Dev Notes</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+            <p class="subtitle">Cloudflare · Python · Vibe Coding</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+        
+        <article class="post-content">
+            <span class="tag cloudflare">Cloudflare</span>
+            <h1>How to Set Up Cloudflare Tunnel (Step by Step)</h1>
+            <time>June 17, 2026 · 5 min read</time>
+
+            <p>Cloudflare Tunnel (<code>cloudflared</code>) lets you expose a local server to the internet <strong>without opening any ports</strong> on your firewall. No public IP needed. No router config. Just install, connect, and go live.</p>
+
+            <h2>Why Use Cloudflare Tunnel?</h2>
+            <ul>
+                <li><strong>No port forwarding</strong> — your server stays behind the firewall</li>
+                <li><strong>Free SSL/TLS</strong> — automatic HTTPS on every domain</li>
+                <li><strong>DDoS protection</strong> — Cloudflare absorbs the traffic</li>
+                <li><strong>No public IP required</strong> — works on home networks with CGNAT</li>
+            </ul>
+
+            <h2>Step 1: Install cloudflared</h2>
+
+            <h3>Ubuntu / Debian</h3>
+            <pre><code>curl -fsSL https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o /usr/local/bin/cloudflared
+chmod +x /usr/local/bin/cloudflared</code></pre>
+
+            <h3>macOS</h3>
+            <pre><code>brew install cloudflared</code></pre>
+
+            <h2>Step 2: Authenticate with Cloudflare</h2>
+
+            <p>Run this command and follow the browser login:</p>
+            <pre><code>cloudflared tunnel login</code></pre>
+
+            <p>This creates a certificate at <code>~/.cloudflared/cert.pem</code>. This cert proves you own the tunnel — it does <strong>not</strong> give Cloudflare access to your server.</p>
+
+            <h2>Step 3: Create a Tunnel</h2>
+
+            <pre><code>cloudflared tunnel create my-tunnel</code></pre>
+
+            <p>This gives you a tunnel ID (like <code>0e4fb61b-8dd0-421a-979f-43053f1a33b6</code>) and saves credentials to <code>~/.cloudflared/credentials.json</code>.</p>
+
+            <h2>Step 4: Configure Routing</h2>
+
+            <p>Create <code>~/.cloudflared/config.yaml</code>:</p>
+            <pre><code>tunnel: YOUR_TUNNEL_ID
+credentials-file: ~/.cloudflared/credentials.json
+
+ingress:
+  - hostname: app.example.com
+    service: http://localhost:8080
+  - service: http_status:404</code></pre>
+
+            <p>Key points:</p>
+            <ul>
+                <li><code>hostname</code> — the domain you want to expose</li>
+                <li><code>service</code> — your local server (localhost port)</li>
+                <li><code>http_status:404</code> — catch-all for unmatched traffic</li>
+            </ul>
+
+            <h2>Step 5: Add DNS Records</h2>
+
+            <pre><code>cloudflared tunnel route dns my-tunnel app.example.com</code></pre>
+
+            <p>This creates a CNAME record pointing to your tunnel. Make sure the orange cloud is <strong>ON</strong> (proxied) in Cloudflare dashboard.</p>
+
+            <h2>Step 6: Start the Tunnel</h2>
+
+            <pre><code>cloudflared tunnel --config ~/.cloudflared/config.yaml run my-tunnel</code></pre>
+
+            <p>For production, run it as a systemd service:</p>
+            <pre><code>sudo cloudflared service install
+sudo systemctl enable cloudflared
+sudo systemctl start cloudflared</code></pre>
+
+            <h2>Common Issues</h2>
+
+            <h3>403 Managed Challenge</h3>
+            <p>On the <strong>Free plan</strong>, Cloudflare shows a JS challenge to automated tools (curl, wget). Real browsers pass automatically. Not a bug — it's bot protection.</p>
+
+            <h3>Multiple cloudflared Processes</h3>
+            <p>If you see tunnel errors, check for duplicate processes:</p>
+            <pre><code>ps aux | grep cloudflared
+kill &lt;duplicate-pid&gt;</code></pre>
+
+            <h3>Tunnel Goes Down</h3>
+            <p>Use <code>systemctl status cloudflared</code> to check. The tunnel auto-reconnects on restart.</p>
+
+            <h2>Real World Example</h2>
+
+            <p>Here's my setup with multiple services:</p>
+            <pre><code>ingress:
+  - hostname: weather.hugow.dev
+    service: http://localhost:8080
+  - hostname: deploy.hugow.dev
+    service: http://localhost:8087
+  - hostname: remote.hugow.dev
+    service: http://localhost:6080
+  - service: http_status:404</code></pre>
+
+            <p>One tunnel, multiple subdomains. Each points to a different local port.</p>
+
+            <blockquote>
+                <strong>Tip:</strong> You can also tunnel SSH (<code>ssh://localhost:22</code>) so you can access your server from anywhere without a VPN.
+            </blockquote>
+
+            <h2>Next Steps</h2>
+            <ul>
+                <li>Set up <a href="#">Cloudflare DNS</a> for more subdomains</li>
+                <li>Learn <a href="#">basic Python</a> to build what you're tunneling</li>
+                <li>Try <a href="#">vibe coding</a> to build apps faster</li>
+            </ul>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Hugo's Dev Notes. Built with vibe coding.</p>
+        </div>
+    </footer>
+</body>
+</html>

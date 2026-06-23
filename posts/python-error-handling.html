@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Error Handling: try/except, Custom Exceptions & Best Practices | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn Python error handling from scratch — try/except, finally, raise, custom exceptions, and defensive programming patterns. Beginner-friendly tutorial with real code examples.">
+    <meta name="keywords" content="python error handling, try except, finally, raise, custom exceptions, python exceptions, debugging, best practices">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-error-handling.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+        
+        <article class="post-content">
+            <span class="tag python">Python</span>
+            <h1>Python Error Handling: try/except, Custom Exceptions & Best Practices</h1>
+            <time>June 22, 2026 · 10 min read</time>
+
+            <p>Every Python program encounters errors. A file that doesn't exist, a network request that times out, a JSON string that's malformed — if you don't handle these gracefully, your program crashes with a confusing traceback. Error handling is what separates toy scripts from production-quality code.</p>
+
+            <p>In this guide, we'll cover everything from the basics of <code>try/except</code> to custom exception classes and real-world patterns you'll use every day.</p>
+
+            <h2>Why Error Handling Matters</h2>
+
+            <p>Without error handling, your program stops dead at the first unexpected problem:</p>
+
+            <pre><code># This will CRASH if the file doesn't exist
+data = open("config.txt").read()
+print(data)</code></pre>
+
+            <p>With error handling, your program recovers or tells the user what went wrong:</p>
+
+            <pre><code>try:
+    data = open("config.txt").read()
+    print(data)
+except FileNotFoundError:
+    print("⚠️ config.txt not found. Using defaults...")
+    data = "default_config"</code></pre>
+
+            <blockquote>
+                <strong>Golden rule:</strong> Don't ignore errors — handle them. A bare <code>except: pass</code> hides bugs and makes debugging a nightmare. Always catch what you expect and handle it meaningfully.
+            </blockquote>
+
+            <h2>The try/except Statement</h2>
+
+            <p>The basic structure of error handling in Python:</p>
+
+            <pre><code>try:
+    # Code that might fail
+    result = 10 / 0
+except ZeroDivisionError as e:
+    # What to do when it fails
+    print(f"Error: {e}")
+    result = 0  # fallback value</code></pre>
+
+            <p>Here's what happens step by step:</p>
+
+            <ol>
+                <li>Python executes the <code>try</code> block</li>
+                <li>If <code>10 / 0</code> raises a <code>ZeroDivisionError</code>, Python jumps to the matching <code>except</code> block</li>
+                <li>The <code>as e</code> captures the exception object so you can read the error message</li>
+                <li>After the <code>except</code> block runs, execution continues normally</li>
+            </ol>
+
+            <h3>Catching Multiple Exception Types</h3>
+
+            <p>You can catch different errors with different responses:</p>
+
+            <pre><code>import json
+
+user_input = input("Enter JSON data: ")
+
+try:
+    data = json.loads(user_input)
+    name = data["name"]
+    print(f"Hello, {name}!")
+except json.JSONDecodeError:
+    print("❌ That's not valid JSON. Try: {\"name\": \"Hugo\"}")
+except KeyError:
+    print("❌ Missing 'name' field in the JSON.")
+except Exception as e:
+    # Catch-all for anything else
+    print(f"❌ Unexpected error: {e}")</code></pre>
+
+            <p>Order matters — Python checks <code>except</code> blocks top to bottom. Put specific exceptions first, general ones last.</p>
+
+            <h2>Common Python Exceptions You'll See</h2>
+
+            <p>Here are the exceptions you'll encounter most often:</p>
+
+            <table style="width:100%; border-collapse: collapse; margin: 1rem 0;">
+                <tr style="background: var(--primary); color: white;">
+                    <th style="padding: 0.75rem; text-align: left;">Exception</th>
+                    <th style="padding: 0.75rem; text-align: left;">When It Happens</th>
+                    <th style="padding: 0.75rem; text-align: left;">Example</th>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 0.75rem;"><code>FileNotFoundError</code></td>
+                    <td style="padding: 0.75rem;">File doesn't exist</td>
+                    <td style="padding: 0.75rem;"><code>open("missing.txt")</code></td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 0.75rem;"><code>ValueError</code></td>
+                    <td style="padding: 0.75rem;">Right type, wrong value</td>
+                    <td style="padding: 0.75rem;"><code>int("hello")</code></td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 0.75rem;"><code>TypeError</code></td>
+                    <td style="padding: 0.75rem;">Wrong type for operation</td>
+                    <td style="padding: 0.75rem;"><code>"hello" + 5</code></td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 0.75rem;"><code>KeyError</code></td>
+                    <td style="padding: 0.75rem;">Missing dict key</td>
+                    <td style="padding: 0.75rem;"><code>{"a": 1}["b"]</code></td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 0.75rem;"><code>IndexError</code></td>
+                    <td style="padding: 0.75rem;">List index out of range</td>
+                    <td style="padding: 0.75rem;"><code>[1, 2][5]</code></td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 0.75rem;"><code>ConnectionError</code></td>
+                    <td style="padding: 0.75rem;">Network connection failed</td>
+                    <td style="padding: 0.75rem;"><code>requests.get("bad://url")</code></td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 0.75rem;"><code>AttributeError</code></td>
+                    <td style="padding: 0.75rem;">Missing object attribute</td>
+                    <td style="padding: 0.75rem;"><code>{}.nonexistent()</code></td>
+                </tr>
+            </table>
+
+            <h2>else and finally Clauses</h2>
+
+            <p>The full <code>try</code> statement has four optional blocks:</p>
+
+            <pre><code>try:
+    # Code that might raise an exception
+    connection = open_database()
+    result = connection.query("SELECT * FROM users")
+except ConnectionError:
+    # Runs ONLY if an exception occurs
+    print("❌ Can't connect to the database!")
+    result = []
+else:
+    # Runs ONLY if NO exception occurred
+    print(f"✅ Found {len(result)} users")
+finally:
+    # Runs ALWAYS, whether or not an exception occurred
+    connection.close()
+    print("🔒 Database connection closed")</code></pre>
+
+            <h3>When to use <code>else</code></h3>
+            <p>Use <code>else</code> for code that should only run if the <code>try</code> block succeeded. This keeps your <code>try</code> block focused and makes it clear what can fail.</p>
+
+            <h3>When to use <code>finally</code></h3>
+            <p>Use <code>finally</code> for cleanup code that <strong>must</strong> run — closing files, releasing locks, closing database connections. It runs even if you <code>return</code> or <code>raise</code> from inside the <code>try</code> or <code>except</code> blocks.</p>
+
+            <h2>The with Statement (Context Manager)</h2>
+
+            <p>For file handling, the <code>with</code> statement is cleaner than <code>try/finally</code>:</p>
+
+            <pre><code># ❌ Manual cleanup (error-prone)
+f = open("data.txt")
+try:
+    content = f.read()
+finally:
+    f.close()
+
+# ✅ Context manager (automatic cleanup)
+with open("data.txt") as f:
+    content = f.read()
+# File is automatically closed here, even if an error occurred!</code></pre>
+
+            <p>The <code>with</code> statement calls <code>__enter__</code> when entering the block and <code>__exit__</code> when leaving — guaranteeing cleanup.</p>
+
+            <h2>Raising Exceptions</h2>
+
+            <p>Sometimes you need to signal that something went wrong. Use <code>raise</code>:</p>
+
+            <pre><code>def set_age(age):
+    if not isinstance(age, int):
+        raise TypeError(f"Age must be an integer, got {type(age).__name__}")
+    if age < 0 or age > 150:
+        raise ValueError(f"Age must be 0-150, got {age}")
+    return age
+
+# Using it:
+try:
+    set_age("thirty")
+except (TypeError, ValueError) as e:
+    print(f"Invalid input: {e}")
+    # Output: Invalid input: Age must be an integer, got str</code></pre>
+
+            <h3>Re-raising with Additional Context</h3>
+
+            <p>Caught an error but want to add more information before passing it up?</p>
+
+            <pre><code>def load_config(path):
+    try:
+        with open(path) as f:
+            return json.load(f)
+    except FileNotFoundError:
+        # Re-raise with more context
+        raise RuntimeError(
+            f"Configuration file not found at '{path}'. "
+            "Have you run 'setup.sh' yet?"
+        ) from None  # from None hides the original traceback</code></pre>
+
+            <h2>Custom Exception Classes</h2>
+
+            <p>When your application has domain-specific errors, create custom exceptions:</p>
+
+            <pre><code># exceptions.py — Define your exception hierarchy
+class AppError(Exception):
+    """Base exception for our application"""
+    pass
+
+class ValidationError(AppError):
+    """Raised when input validation fails"""
+    def __init__(self, field, value, reason):
+        self.field = field
+        self.value = value
+        self.reason = reason
+        super().__init__(f"Invalid {field}: {value} — {reason}")
+
+class DatabaseError(AppError):
+    """Raised when a database operation fails"""
+    def __init__(self, query, original_error):
+        self.query = query
+        self.original_error = original_error
+        super().__init__(f"Query failed: {query} | Cause: {original_error}")
+
+class NotFoundError(AppError):
+    """Raised when a requested resource doesn't exist"""
+    def __init__(self, resource, resource_id):
+        self.resource = resource
+        self.resource_id = resource_id
+        super().__init__(f"{resource} with id {resource_id} not found")</code></pre>
+
+            <p>Now use them throughout your code:</p>
+
+            <pre><code># Using custom exceptions
+def validate_user(name, email):
+    errors = []
+    
+    if not name or len(name) < 2:
+        errors.append(ValidationError("name", name, "must be at least 2 characters"))
+    
+    if "@" not in email:
+        errors.append(ValidationError("email", email, "must contain '@'"))
+    
+    if errors:
+        # Raise the first validation error
+        raise errors[0]
+    
+    return {"name": name, "email": email}
+
+# Calling code catches them cleanly
+try:
+    user = validate_user("", "invalid-email")
+except ValidationError as e:
+    print(f"Form error on '{e.field}': {e.reason}")
+    # Output: Form error on 'name': must be at least 2 characters</code></pre>
+
+            <h2>Real-World Project: Robust API Client</h2>
+
+            <p>Let's build a practical example — a weather API client that handles every error gracefully:</p>
+
+            <pre><code>import requests
+import time
+
+class WeatherError(Exception):
+    """Base exception for weather API operations"""
+    pass
+
+class WeatherConnectionError(WeatherError):
+    pass
+
+class WeatherNotFoundError(WeatherError):
+    pass
+
+class WeatherRateLimitError(WeatherError):
+    pass
+
+class WeatherClient:
+    def __init__(self, api_key, retries=3, timeout=10):
+        self.api_key = api_key
+        self.base_url = "https://api.openweathermap.org/data/2.5"
+        self.retries = retries
+        self.timeout = timeout
+    
+    def get_weather(self, city):
+        """Fetch weather for a city with robust error handling"""
+        for attempt in range(1, self.retries + 1):
+            try:
+                response = requests.get(
+                    f"{self.base_url}/weather",
+                    params={"q": city, "appid": self.api_key, "units": "metric"},
+                    timeout=self.timeout
+                )
+                response.raise_for_status()
+                data = response.json()
+                
+                return {
+                    "city": data["name"],
+                    "temp_c": data["main"]["temp"],
+                    "humidity": data["main"]["humidity"],
+                    "description": data["weather"][0]["description"],
+                    "wind_kmh": data["wind"]["speed"] * 3.6
+                }
+                
+            except requests.exceptions.ConnectionError:
+                if attempt < self.retries:
+                    wait = 2 ** attempt  # Exponential backoff: 2s, 4s, 8s
+                    print(f"⚠️ Connection failed (attempt {attempt}/{self.retries}). "
+                          f"Retrying in {wait}s...")
+                    time.sleep(wait)
+                else:
+                    raise WeatherConnectionError(
+                        f"Cannot reach weather API after {self.retries} attempts"
+                    )
+            
+            except requests.exceptions.Timeout:
+                if attempt < self.retries:
+                    print(f"⏱️ Request timed out (attempt {attempt}/{self.retries}). Retrying...")
+                    time.sleep(1)
+                else:
+                    raise WeatherConnectionError("Weather API requests keep timing out")
+            
+            except requests.exceptions.HTTPError as e:
+                if response.status_code == 404:
+                    raise WeatherNotFoundError(f"City not found: '{city}'. Check the spelling.")
+                elif response.status_code == 429:
+                    raise WeatherRateLimitError("API rate limit reached. Try again in a minute.")
+                elif response.status_code == 401:
+                    raise WeatherError("Invalid API key. Check your configuration.")
+                else:
+                    raise WeatherError(f"HTTP {response.status_code}: {e}")
+            
+            except KeyError as e:
+                raise WeatherError(f"Unexpected API response format. Missing key: {e}")
+        
+        # Should never reach here, but just in case
+        raise WeatherConnectionError("Failed to fetch weather data")
+
+
+# Usage example
+client = WeatherClient(api_key="your_api_key_here")
+
+try:
+    weather = client.get_weather("Tokyo")
+    print(f"\n🌤️  {weather['city']}")
+    print(f"   Temp: {weather['temp_c']}°C")
+    print(f"   Humidity: {weather['humidity']}%")
+    print(f"   Conditions: {weather['description']}")
+    print(f"   Wind: {weather['wind_kmh']} km/h")
+    
+except WeatherNotFoundError as e:
+    print(f"🔍 {e}")
+except WeatherRateLimitError as e:
+    print(f"🐌 {e}")
+except WeatherConnectionError as e:
+    print(f"🌐 {e}")
+except WeatherError as e:
+    print(f"❌ {e}")</code></pre>
+
+            <h2>Common Mistakes to Avoid</h2>
+
+            <h3>❌ Bare except</h3>
+            <pre><code># BAD: Catches EVERYTHING including KeyboardInterrupt and SystemExit
+try:
+    do_something()
+except:
+    pass  # Silently hides all bugs!</code></pre>
+
+            <pre><code># GOOD: Catch only what you expect
+try:
+    do_something()
+except (FileNotFoundError, PermissionError):
+    handle_file_error()
+except Exception as e:
+    # Log unexpected errors, don't ignore them
+    print(f"Unexpected error: {e}")</code></pre>
+
+            <h3>❌ Too broad a try block</h3>
+            <pre><code># BAD: Can't tell which line failed
+try:
+    user = get_user()
+    db = connect_database()
+    db.save(user)
+except Exception:
+    print("Something went wrong")  # Which line?!</code></pre>
+
+            <pre><code># GOOD: Narrow try blocks
+try:
+    user = get_user()
+except UserError:
+    print("Invalid user data")
+
+try:
+    db = connect_database()
+except ConnectionError:
+    print("Database unavailable")
+
+try:
+    db.save(user)
+except SaveError:
+    print("Failed to save user")</code></pre>
+
+            <h3>❌ Catching and ignoring</h3>
+            <pre><code># BAD: What if there's a critical error?
+try:
+    process_payment()
+except Exception:
+    pass  # Payment failed and you don't even know!</code></pre>
+
+            <pre><code># GOOD: At least log it, or re-raise
+try:
+    process_payment()
+except PaymentError as e:
+    log_error(f"Payment processing failed: {e}")
+    notify_admin(e)
+    raise  # Don't hide the error</code></pre>
+
+            <h2>Summary: Error Handling Checklist</h2>
+
+            <ul>
+                <li>✅ Catch specific exceptions, not bare <code>except</code></li>
+                <li>✅ Keep <code>try</code> blocks narrow — only wrap what can fail</li>
+                <li>✅ Use <code>else</code> for code that depends on success</li>
+                <li>✅ Use <code>finally</code> (or <code>with</code>) for cleanup</li>
+                <li>✅ Create custom exceptions for domain-specific errors</li>
+                <li>✅ Never silently ignore exceptions — log or re-raise</li>
+                <li>✅ Implement retries with exponential backoff for network calls</li>
+                <li>✅ Provide meaningful error messages to users</li>
+            </ul>
+
+            <blockquote>
+                <strong>Final tip:</strong> Treat error handling like feature development. Write your <code>except</code> blocks with the same care as your main logic. A program that handles errors gracefully is a program users can trust.
+            </blockquote>
+
+            <h2>Next Steps</h2>
+            <ul>
+                <li><a href="python-apis.html">Python APIs</a> — use error handling with real API calls</li>
+                <li><a href="python-file-operations.html">Python File Operations</a> — safe file handling with context managers</li>
+                <li><a href="python-functions.html">Python Functions</a> — build reusable code that raises errors properly</li>
+            </ul>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes | Built with ❤️ & AI</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528" target="_blank">GitHub</a>
+                <a href="https://blog.hugow.dev/sitemap.xml">Sitemap</a>
+                <a href="https://blog.hugow.dev/robots.txt">Robots</a>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terraform Basics: Infrastructure as Code for Beginners | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn Terraform from scratch — write infrastructure as code, manage cloud resources with declarative configurations, and automate deployments. Beginner-friendly IaC tutorial with real examples.">
+    <meta name="keywords" content="Terraform, infrastructure as code, IaC, declarative, AWS, cloud, provisioning, state file, Terraform modules, DevOps">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/terraform-basics.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+        
+        <article class="post-content">
+            <span class="tag devops">DevOps</span>
+            <h1>Terraform Basics: Infrastructure as Code for Beginners</h1>
+            <time>June 23, 2026 · 10 min read</time>
+
+            <p>Manual cloud management — clicking through dashboards to create servers, databases, and networks — doesn't scale. <strong>Terraform</strong> solves this by letting you define your entire infrastructure in code files that you can version, share, test, and replay at any time. This is <strong>Infrastructure as Code (IaC)</strong>, and it's one of the most valuable DevOps skills you can learn.</p>
+
+            <p>In this guide, we'll go from installing Terraform to provisioning real cloud resources — all through declarative configuration files. No clicking, no guessing, no "it works on my laptop" problems.</p>
+
+            <h2>What Is Terraform?</h2>
+
+            <p>Terraform is an open-source IaC tool by HashiCorp. You write configuration files in <strong>HCL</strong> (HashiCorp Configuration Language), describe the infrastructure you want, and Terraform handles the creation, updates, and destruction of resources across any cloud provider — AWS, Google Cloud, Azure, Cloudflare, and dozens more.</p>
+
+            <pre><code>How Terraform works:
+
+  1. You write config files (.tf) describing desired state
+  2. terraform plan — shows what will change
+  3. terraform apply — makes the changes
+  4. State file (.tfstate) tracks what's been created
+  5. Run again → Terraform only changes what's different</code></pre>
+
+            <p>Key concepts:</p>
+
+            <ul>
+                <li><strong>Declarative</strong> — you describe <em>what</em> you want, not <em>how</em> to build it step by step</li>
+                <li><strong>Idempotent</strong> — running the same config twice doesn't create duplicate resources</li>
+                <li><strong>State-driven</strong> — Terraform keeps a state file to track real-world resources</li>
+                <li><strong>Provider-agnostic</strong> — write once, deploy to any supported cloud</li>
+            </ul>
+
+            <h2>Installation</h2>
+
+            <p>Terraform is a single binary — no dependencies, no runtime needed.</p>
+
+            <pre><code># macOS (Homebrew)
+brew install terraform
+
+# Ubuntu/Debian
+sudo apt update && sudo apt install terraform
+
+# Verify installation
+terraform version
+# Terraform v1.10.x</code></pre>
+
+            <h2>Your First Terraform Configuration</h2>
+
+            <p>Let's create a simple project that provisions an S3 bucket and a Cloudflare DNS record. We'll use both AWS and Cloudflare providers.</p>
+
+            <p>First, create a project directory:</p>
+
+            <pre><code>mkdir terraform-basics
+cd terraform-basics</code></pre>
+
+            <h3>Step 1: Define the Providers</h3>
+
+            <p>Providers are the plugins that let Terraform talk to cloud APIs. Create <code>main.tf</code>:</p>
+
+            <pre><code>terraform {
+  required_version = ">= 1.5.0"
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~&gt; 5.0"
+    }
+    cloudflare = {
+      source  = "cloudflare/cloudflare"
+      version = "~&gt; 4.0"
+    }
+  }
+}
+
+# AWS Provider
+provider "aws" {
+  region = "us-east-1"
+}
+
+# Cloudflare Provider
+# Set CLOUDFLARE_API_TOKEN environment variable
+provider "cloudflare" {}</code></pre>
+
+            <p>The <code>terraform</code> block declares version requirements. The <code>provider</code> blocks configure the cloud connections. Note that sensitive credentials (like API tokens) should go in environment variables, not in code.</p>
+
+            <h3>Step 2: Define Variables</h3>
+
+            <p>Variables make your configs reusable. Create <code>variables.tf</code>:</p>
+
+            <pre><code>variable "environment" {
+  description = "Environment name (e.g., dev, staging, prod)"
+  type        = string
+  default     = "dev"
+}
+
+variable "project_name" {
+  description = "Name of the project"
+  type        = string
+  default     = "my-app"
+}
+
+variable "cloudflare_zone_id" {
+  description = "Cloudflare zone ID for your domain"
+  type        = string
+  sensitive   = true
+}
+
+variable "allowed_cidr_blocks" {
+  description = "CIDR blocks allowed to access the bucket"
+  type        = list(string)
+  default     = ["0.0.0.0/0"]
+}</code></pre>
+
+            <p>Variables can have types, defaults, descriptions, and a <code>sensitive</code> flag that hides values in terminal output.</p>
+
+            <h3>Step 3: Define Resources</h3>
+
+            <p>Resources are the actual cloud objects you create. Back in <code>main.tf</code>:</p>
+
+            <pre><code># Create an S3 bucket
+resource "aws_s3_bucket" "app_bucket" {
+  bucket = "${var.project_name}-${var.environment}-assets"
+
+  tags = {
+    Environment = var.environment
+    Project     = var.project_name
+    ManagedBy   = "terraform"
+  }
+}
+
+# Block public access to the bucket
+resource "aws_s3_bucket_public_access_block" "app_bucket" {
+  bucket = aws_s3_bucket.app_bucket.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+# Create an S3 bucket policy (optional — only allow Cloudflare to read)
+resource "aws_s3_bucket_policy" "cloudflare_read" {
+  bucket = aws_s3_bucket.app_bucket.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          AWS = "arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity"
+        }
+        Action   = "s3:GetObject"
+        Resource = "${aws_s3_bucket.app_bucket.arn}/*"
+      }
+    ]
+  })
+}
+
+# Create a Cloudflare DNS record pointing to the bucket
+resource "cloudflare_record" "cdn" {
+  zone_id = var.cloudflare_zone_id
+  name    = "cdn.${var.project_name}.example.com"
+  value   = aws_s3_bucket.app_bucket.bucket_regional_domain_name
+  type    = "CNAME"
+  proxied = true  # enable Cloudflare proxy (yellow cloud)
+
+  comment = "Managed by Terraform"
+}</code></pre>
+
+            <p>Each <code>resource</code> block has:</p>
+
+            <ul>
+                <li><strong>Type</strong> — the resource kind (e.g., <code>aws_s3_bucket</code>)</li>
+                <li><strong>Name</strong> — a local identifier (e.g., <code>app_bucket</code>)</li>
+                <li><strong>Arguments</strong> — the configuration (bucket name, tags, etc.)</li>
+                <li><strong>Interpolation</strong> — reference other resources with <code>aws_s3_bucket.app_bucket.id</code></li>
+            </ul>
+
+            <h3>Step 4: Define Outputs</h3>
+
+            <p>Outputs expose important values after deployment. Create <code>outputs.tf</code>:</p>
+
+            <pre><code>output "bucket_name" {
+  description = "The name of the S3 bucket"
+  value       = aws_s3_bucket.app_bucket.bucket
+}
+
+output "bucket_arn" {
+  description = "The ARN of the S3 bucket"
+  value       = aws_s3_bucket.app_bucket.arn
+}
+
+output "cdn_url" {
+  description = "The CDN URL for accessing assets"
+  value       = "https://cdn.${var.project_name}.example.com"
+}</code></pre>
+
+            <h2>Running Terraform</h2>
+
+            <p>Now comes the actual workflow. Every Terraform project follows the same four steps:</p>
+
+            <pre><code># 1. Initialize — downloads providers, sets up backend
+terraform init
+
+# 2. Validate — checks syntax without making changes
+terraform validate
+
+# 3. Plan — preview what Terraform will create/modify/delete
+terraform plan
+
+# Output example:
+# Terraform will perform the following actions:
+#
+#   + aws_s3_bucket.app_bucket will be created
+#   + aws_s3_bucket_public_access_block.app_bucket will be created
+#   + cloudflare_record.cdn will be created
+#
+# Plan: 3 to add, 0 to change, 0 to destroy.
+
+# 4. Apply — execute the plan (requires confirmation)
+terraform apply
+
+# Or auto-approve (use carefully!):
+# terraform apply -auto-approve
+
+# Output:
+# Apply complete! Resources: 3 added, 0 changed, 0 destroyed.
+#
+# Outputs:
+#
+# bucket_name = "my-app-dev-assets"
+# bucket_arn  = "arn:aws:s3:::my-app-dev-assets"
+# cdn_url     = "https://cdn.my-app.example.com"</code></pre>
+
+            <h2>Managing State</h2>
+
+            <p>Terraform stores the real-world state of your resources in <code>terraform.tfstate</code>. This file is the single source of truth — never edit it manually.</p>
+
+            <pre><code># View the state file
+terraform state list
+# aws_s3_bucket.app_bucket
+# aws_s3_bucket_public_access_block.app_bucket
+# cloudflare_record.cdn
+
+# Inspect a specific resource
+terraform state show aws_s3_bucket.app_bucket
+
+# For team projects, use remote state (S3 + DynamoDB):
+terraform {
+  backend "s3" {
+    bucket         = "my-terraform-state"
+    key            = "dev/terraform.tfstate"
+    region         = "us-east-1"
+    dynamodb_table = "terraform-locks"
+    encrypt        = true
+  }
+}</code></pre>
+
+            <p>The <code>dynamodb_table</code> provides state locking, preventing two people from applying changes simultaneously and corrupting the state.</p>
+
+            <h2>Destroying Infrastructure</h2>
+
+            <p>When you're done (or need to rebuild), Terraform can tear everything down:</p>
+
+            <pre><code># Preview what will be destroyed
+terraform plan -destroy
+
+# Destroy all managed resources
+terraform destroy
+
+# WARNING: This permanently deletes all resources!
+# Always review the plan before confirming.</code></pre>
+
+            <h2>Terraform Modules: Reusable Infrastructure</h2>
+
+            <p>Modules let you package and reuse configurations. Instead of rewriting the S3 bucket config for every project, wrap it in a module.</p>
+
+            <pre><code># modules/s3-bucket/main.tf
+variable "bucket_name" {
+  type = string
+}
+
+variable "environment" {
+  type = string
+}
+
+resource "aws_s3_bucket" "this" {
+  bucket = var.bucket_name
+
+  tags = {
+    Environment = var.environment
+    ManagedBy   = "terraform"
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "this" {
+  bucket = aws_s3_bucket.this.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+output "bucket_name" {
+  value = aws_s3_bucket.this.bucket
+}
+
+output "bucket_arn" {
+  value = aws_s3_bucket.this.arn
+}
+
+# --- Use the module in your main config ---
+module "assets" {
+  source      = "./modules/s3-bucket"
+  bucket_name = "${var.project_name}-${var.environment}-assets"
+  environment = var.environment
+}
+
+output "cdn_bucket" {
+  value = module.assets.bucket_name
+}</code></pre>
+
+            <h2>Best Practices</h2>
+
+            <ol>
+                <li><strong>Never commit <code>.tfstate</code> to Git</strong> — it may contain secrets. Add it to <code>.gitignore</code> or use remote state.</li>
+                <li><strong>Use variables</strong> for anything that changes between environments (dev, staging, prod).</li>
+                <li><strong>Tag every resource</strong> with environment, project, and team info for cost tracking.</li>
+                <li><strong>Use modules</strong> for repeated patterns — don't copy-paste resource blocks.</li>
+                <li><strong>Always run <code>terraform plan</code> before <code>apply</code></strong> — review changes first.</li>
+                <li><strong>Use <code>sensitive = true</code></strong> for variables containing passwords or tokens.</li>
+                <li><strong>Use remote state with locking</strong> when working in a team.</li>
+                <li><strong>Start small</strong> — manage one resource, verify it works, then expand.</li>
+            </ol>
+
+            <h2>Terraform Workflow Checklist</h2>
+
+            <pre><code>Day 1 (Learning):
+  ✅ Install Terraform
+  ✅ Write your first .tf file
+  ✅ Run init → plan → apply → destroy cycle
+  ✅ Practice with the AWS Free Tier
+
+Week 1 (First Project):
+  ✅ Provision a VPC with subnets
+  ✅ Create an EC2 instance with a security group
+  ✅ Add outputs and variables
+  ✅ Use remote state (S3 + DynamoDB)
+
+Week 2 (Going Further):
+  ✅ Create a reusable module
+  ✅ Set up a staging vs. prod environment with workspaces
+  ✅ Add pre-commit hooks (terraform fmt, terraform validate)
+  ✅ Integrate with GitHub Actions for CI/CD</code></pre>
+
+            <h2>What's Next?</h2>
+
+            <p>Terraform is your gateway to infrastructure automation. After mastering the basics, explore:</p>
+
+            <ul>
+                <li><strong>Terraform Workspaces</strong> — manage multiple environments from one config</li>
+                <li><strong>Terragrunt</strong> — reduce repetition with DRY HCL</li>
+                <li><strong>Terraform Cloud</strong> — remote execution, team collaboration, policy-as-code</li>
+                <li><strong>Pulumi</strong> — the alternative IaC tool that uses real programming languages (Python, TypeScript)</li>
+            </ul>
+
+            <p>The key takeaway: if you build it once by clicking, you're doing it wrong. Write it in code, version it, and let Terraform handle the rest. Your future self will thank you.</p>
+
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes | Built with ❤️ & AI</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528" target="_blank">GitHub</a>
+                <a href="https://blog.hugow.dev/sitemap.xml">Sitemap</a>
+                <a href="https://blog.hugow.dev/robots.txt">Robots</a>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

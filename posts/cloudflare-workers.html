@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloudflare Workers: Serverless Code at the Edge | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn Cloudflare Workers from scratch — deploy serverless functions to the edge, build APIs, create proxies, and serve static content. Beginner-friendly guide with working code examples.">
+    <meta name="keywords" content="Cloudflare Workers, serverless, edge computing, Workers KV, edge functions, API, proxy, wrangler, Cloudflare">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/cloudflare-workers.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+        
+        <article class="post-content">
+            <span class="tag cloudflare">Cloudflare</span>
+            <h1>Cloudflare Workers: Serverless Code at the Edge</h1>
+            <time>June 22, 2026 · 10 min read</time>
+
+            <p>Cloudflare Workers let you run JavaScript, TypeScript, or Python code on Cloudflare's global network — without managing servers. Your code runs in 300+ data centers worldwide, executing closer to your users for blazing-fast response times. No EC2 instances, no Kubernetes clusters, no DevOps overhead.</p>
+
+            <p>In this guide, we'll go from your first "Hello World" Worker to building real APIs, proxies, and edge applications — all deployable with a single command.</p>
+
+            <h2>What Is Cloudflare Workers?</h2>
+
+            <p>Cloudflare Workers is a serverless computing platform that runs code on Cloudflare's edge network. When a request hits your domain, Cloudflare can execute your code before forwarding it to your origin server — or return a response entirely from the edge.</p>
+
+            <pre><code>Traditional serverless:
+  User → Cloudflare → AWS Lambda (US-East) → Response
+  (Latency: 200ms+ for EU/Asia users)
+
+Cloudflare Workers:
+  User → Cloudflare Worker (nearest data center) → Response
+  (Latency: 10-30ms, anywhere in the world)</code></pre>
+
+            <p>Key benefits:</p>
+
+            <ul>
+                <li>🌍 <strong>Global execution</strong> — code runs in the data center closest to each user</li>
+                <li>⚡ <strong>Fast startup</strong> — no cold starts; Workers execute in under 1ms</li>
+                <li>💰 <strong>Generous free tier</strong> — 100,000 requests/day on the free plan</li>
+                <li>🔧 <strong>Easy deployment</strong> — one command via the Wrangler CLI</li>
+                <li>🔒 <strong>Built-in security</strong> — DDoS protection, WAF, and bot management included</li>
+            </ul>
+
+            <h2>What Can Workers Do?</h2>
+
+            <p>Workers are incredibly versatile. Here are common use cases:</p>
+
+            <ul>
+                <li>🔀 <strong>API Gateway</strong> — route, validate, and transform requests</li>
+                <li>🔄 <strong>Reverse Proxy</strong> — add authentication, caching, or headers before reaching your origin</li>
+                <li>📄 <strong>Static Sites</strong> — serve HTML/CSS/JS directly from the edge</li>
+                <li>🔐 <strong>Auth & Rate Limiting</strong> — check API keys, enforce rate limits</li>
+                <li>📝 <strong>A/B Testing</strong> — route users to different versions of your app</li>
+                <li>🛡️ <strong>Bots & Scrapers</strong> — detect and block malicious traffic</li>
+                <li>💾 <strong>Edge Storage</strong> — store data in Workers KV for fast key-value access</li>
+            </ul>
+
+            <h2>Setup: Install Wrangler</h2>
+
+            <p>Wrangler is Cloudflare's CLI tool for managing Workers. Install it with npm:</p>
+
+            <pre><code># Install Wrangler
+npm install -g wrangler
+
+# Log in to your Cloudflare account
+wrangler login
+
+# This opens a browser — authorize Wrangler to access your account</code></pre>
+
+            <h2>Your First Worker</h2>
+
+            <p>Let's create a Worker that responds with a JSON message:</p>
+
+            <pre><code># Create a new Worker project
+wrangler init my-first-worker
+cd my-first-worker
+
+# Edit src/index.js
+# (or create it manually if using the minimal template)</code></pre>
+
+            <p>Here's your first Worker:</p>
+
+            <pre><code>// src/index.js
+export default {
+    async fetch(request, env, ctx) {
+        // Get the URL and path
+        const url = new URL(request.url);
+        const path = url.pathname;
+
+        // Route based on the path
+        if (path === "/" || path === "/api/hello") {
+            return Response.json({
+                message: "Hello from Cloudflare Workers! 🚀",
+                timestamp: new Date().toISOString(),
+                path: path
+            });
+        }
+
+        // 404 for unknown routes
+        return new Response("Not Found", { status: 404 });
+    }
+};</code></pre>
+
+            <p>Deploy it with a single command:</p>
+
+            <pre><code># Deploy to production
+wrangler deploy
+
+# Output:
+# ⛓️  Using worker my-first-worker
+# 🌀 Uploading...
+# 🖼️  Uploaded my-first-worker (1.24 KB)
+# ✅ Deployed my-first-worker (1.23 sec)
+#    my-first-worker.YOUR_SUBDOMAIN.workers.dev</code></pre>
+
+            <p>Test your Worker:</p>
+
+            <pre><code># Test the hello endpoint
+curl https://my-first-worker.YOUR_SUBDOMAIN.workers.dev/api/hello
+
+# Output:
+# {"message":"Hello from Cloudflare Workers! 🚀","timestamp":"2026-06-22T10:30:00.000Z","path":"/api/hello"}</code></pre>
+
+            <h2>Routing with Multiple Endpoints</h2>
+
+            <p>Build a proper API with multiple routes:</p>
+
+            <pre><code>// src/index.js
+export default {
+    async fetch(request, env, ctx) {
+        const url = new URL(request.url);
+        const path = url.pathname;
+        const method = request.method;
+
+        // Health check endpoint
+        if (path === "/health" && method === "GET") {
+            return Response.json({ status: "ok", uptime: Date.now() });
+        }
+
+        // Get a user by ID
+        if (path.startsWith("/api/users/") && method === "GET") {
+            const userId = path.split("/").pop();
+            const user = await getUserById(env.USERS_KV, userId);
+            
+            if (!user) {
+                return Response.json(
+                    { error: "User not found" },
+                    { status: 404 }
+                );
+            }
+            
+            return Response.json(user);
+        }
+
+        // Create a new user
+        if (path === "/api/users" && method === "POST") {
+            const body = await request.json();
+            
+            // Validate input
+            if (!body.name || !body.email) {
+                return Response.json(
+                    { error: "name and email are required" },
+                    { status: 400 }
+                );
+            }
+            
+            const user = {
+                id: crypto.randomUUID(),
+                name: body.name,
+                email: body.email,
+                created: new Date().toISOString()
+            };
+            
+            // Store in Workers KV
+            await env.USERS_KV.put(user.id, JSON.stringify(user));
+            
+            return Response.json(user, { status: 201 });
+        }
+
+        // List all users
+        if (path === "/api/users" && method === "GET") {
+            const { keys } = await env.USERS_KV.list();
+            const users = await Promise.all(
+                keys.map(key => 
+                    env.USERS_KV.get(key.name, "json")
+                )
+            );
+            return Response.json({ users: users.filter(Boolean) });
+        }
+
+        // Method not allowed
+        if (path.startsWith("/api/users") && !["GET", "POST"].includes(method)) {
+            return Response.json(
+                { error: "Method not allowed" },
+                { status: 405 }
+            );
+        }
+
+        return Response.json(
+            { error: "Not found" },
+            { status: 404 }
+        );
+    }
+};
+
+// Helper function
+async function getUserById(kv, id) {
+    return await kv.get(id, "json");
+}</code></pre>
+
+            <h2>Using Workers KV for Data Storage</h2>
+
+            <p>Workers KV is a globally distributed key-value store. Perfect for configuration, caching, and simple data storage.</p>
+
+            <h3>Configure KV in wrangler.toml</h3>
+
+            <pre><code># wrangler.toml
+name = "my-api-worker"
+main = "src/index.js"
+compatibility_date = "2026-06-22"
+
+# Define a KV namespace
+[[kv_namespaces]]
+binding = "USERS_KV"
+id = "your-namespace-id-here"
+preview_id = "your-preview-namespace-id-here"</code></pre>
+
+            <p>Create the namespace:</p>
+
+            <pre><code># Create a new KV namespace
+wrangler kv:namespace create "USERS_KV"
+
+# Output:
+# {"id": "a1b2c3d4e5f6...", "preview_id": "f6e5d4c3b2a1..."}
+
+# Update wrangler.toml with these IDs</code></pre>
+
+            <h3>KV Operations Cheat Sheet</h3>
+
+            <pre><code>// Store a value
+await env.MY_KV.put("key", "value");
+
+// Store JSON
+await env.MY_KV.put("user:123", JSON.stringify({ name: "Hugo" }));
+
+// Get a value as text (default)
+const value = await env.MY_KV.get("key");
+
+// Get a value as JSON
+const user = await env.MY_KV.get("user:123", "json");
+
+// Get with a default if key doesn't exist
+const config = await env.MY_KV.get("app_config", "json") 
+    || { debug: false, version: "1.0" };
+
+// List keys with prefix
+const { keys } = await env.MY_KV.list({ prefix: "user:" });
+
+// Delete a key
+await env.MY_KV.delete("key");
+
+// Batch writes (write multiple keys at once)
+const batch = [
+    { type: "put", key: "config:debug", value: "true" },
+    { type: "put", key: "config:version", value: "2.0" },
+    { type: "delete", key: "old:key" }
+];
+await env.MY_KV.batch(batch);</code></pre>
+
+            <h2>Building a Reverse Proxy</h2>
+
+            <p>One of the most common uses of Workers is adding functionality in front of an existing server:</p>
+
+            <pre><code>// src/index.js — Reverse proxy with auth & caching
+export default {
+    async fetch(request, env, ctx) {
+        const url = new URL(request.url);
+        
+        // Strip the /api prefix before forwarding
+        if (url.pathname.startsWith("/api/")) {
+            // Check API key
+            const apiKey = request.headers.get("X-API-Key");
+            if (apiKey !== env.API_KEY) {
+                return Response.json(
+                    { error: "Unauthorized" },
+                    { status: 401 }
+                );
+            }
+
+            // Build the origin URL
+            const origin = new URL(url.pathname + url.search, "https://your-origin-server.com");
+            
+            // Clone and modify the request for the origin
+            const newRequest = new Request(origin, {
+                method: request.method,
+                headers: request.headers,
+                body: request.method !== "GET" ? await request.text() : undefined
+            });
+
+            // Forward to origin and return the response
+            const response = await fetch(newRequest);
+            
+            // Add custom headers to the response
+            const modifiedResponse = new Response(response.body, response);
+            modifiedResponse.headers.set("X-Powered-By", "Cloudflare Workers");
+            modifiedResponse.headers.set("X-Response-Time", `${Date.now()}ms`);
+            
+            return modifiedResponse;
+        }
+
+        // Let all other requests pass through to origin
+        return fetch(request);
+    }
+};</code></pre>
+
+            <h2>Caching Responses at the Edge</h2>
+
+            <p>Workers can cache responses to avoid hitting your origin for repeated requests:</p>
+
+            <pre><code>// src/index.js — Worker with built-in caching
+export default {
+    async fetch(request, env, ctx) {
+        const url = new URL(request.url);
+        
+        // Only cache GET requests
+        if (request.method !== "GET") {
+            return fetch(request);
+        }
+
+        // Check the cache first
+        const cached = await caches.default.match(request);
+        if (cached) {
+            // Add a header to indicate it was cached
+            const response = new Response(cached.body, cached);
+            response.headers.set("X-Cache", "HIT");
+            return response;
+        }
+
+        // Fetch from origin
+        const response = await fetch(request);
+        
+        // Only cache successful responses
+        if (response.status === 200) {
+            // Clone the response (can only read body once)
+            const responseToCache = response.clone();
+            
+            // Store in cache (waitUntil doesn't block the response)
+            ctx.waitUntil(
+                caches.default.put(request, responseToCache)
+            );
+            
+            // Add cache header for debugging
+            response.headers.set("X-Cache", "MISS");
+        }
+
+        return response;
+    }
+};</code></pre>
+
+            <h2>Rate Limiting</h2>
+
+            <p>Protect your API from abuse with simple rate limiting using Workers KV:</p>
+
+            <pre><code>// src/index.js — Rate limiter middleware
+export default {
+    async fetch(request, env, ctx) {
+        const url = new URL(request.url);
+        
+        // Get client identifier (IP or API key)
+        const clientIp = request.headers.get("CF-Connecting-IP");
+        const rateKey = `rate:${clientIp}:${new Date().toISOString().slice(0, 60)}`;
+        
+        // Get current request count
+        const count = parseInt(await env.RATE_LIMIT_KV.get(rateKey) || "0");
+        
+        // Block if over limit (10 requests per minute)
+        if (count >= 10) {
+            return Response.json(
+                { error: "Rate limit exceeded. Try again in 60 seconds." },
+                { status: 429, headers: { "Retry-After": "60" } }
+            );
+        }
+        
+        // Increment counter
+        await env.RATE_LIMIT_KV.put(rateKey, String(count + 1), {
+            expirationTtl: 60  // Key expires after 60 seconds
+        });
+        
+        // Add rate limit headers
+        const response = await handleRequest(request, env, ctx);
+        response.headers.set("X-RateLimit-Limit", "10");
+        response.headers.set("X-RateLimit-Remaining", String(10 - count - 1));
+        
+        return response;
+    }
+};
+
+async function handleRequest(request, env, ctx) {
+    // Your actual request handling logic here
+    return Response.json({ message: "OK" });
+}</code></pre>
+
+            <h2>Deploying to Your Own Domain</h2>
+
+            <p>Instead of using the <code>.workers.dev</code> subdomain, route through your own domain:</p>
+
+            <pre><code># Add a route in wrangler.toml
+# wrangler.toml
+name = "my-api-worker"
+main = "src/index.js"
+compatibility_date = "2026-06-22"
+
+# Route all /api/* requests to this worker
+routes = [
+    "api.example.com/*",
+    "example.com/api/*"
+]
+
+# Deploy
+wrangler deploy</code></pre>
+
+            <p>You'll need a DNS record pointing to Cloudflare (orange cloud/proxied) for your domain.</p>
+
+            <h2>Combining Workers with Cloudflare Tunnel</h2>
+
+            <p>Pair Workers with Cloudflare Tunnel for end-to-end edge computing:</p>
+
+            <pre><code># Architecture:
+# User → Cloudflare Worker (auth, rate limit, transform) 
+#       → Cloudflare Tunnel (encrypted) 
+#       → Your Server (localhost:8080)
+
+# 1. Deploy your Worker (handles edge logic)
+wrangler deploy
+
+# 2. Set up Cloudflare Tunnel (secure origin connection)
+cloudflared tunnel create my-app
+cloudflared tunnel route dns my-app api.example.com
+
+# 3. Run the tunnel
+cloudflared tunnel run my-app --url http://localhost:8080
+
+# Now requests flow:
+# Worker → Tunnel → Your Server
+# (Everything encrypted, no public IPs exposed)</code></pre>
+
+            <h2>Free Tier Limits</h2>
+
+            <table style="width:100%; border-collapse: collapse; margin: 1rem 0;">
+                <tr style="background: var(--primary); color: white;">
+                    <th style="padding: 0.75rem; text-align: left;">Resource</th>
+                    <th style="padding: 0.75rem; text-align: center;">Free</th>
+                    <th style="padding: 0.75rem; text-align: center;">Workers Paid</th>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 0.75rem;">Requests</td>
+                    <td style="text-align: center;">100K/day</td>
+                    <td style="text-align: center;">Unlimited</td>
+                </tr>
+                <tr style="border-boundary: 1px solid var(--border);">
+                    <td style="padding: 0.75rem;">CPU time</td>
+                    <td style="text-align: center;">10ms/request</td>
+                    <td style="text-align: center;">30-300ms/request</td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 0.75rem;">KV reads</td>
+                    <td style="text-align: center;">10M/day</td>
+                    <td style="text-align: center;">Unlimited</td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 0.75rem;">KV writes</td>
+                    <td style="text-align: center;">1K/day</td>
+                    <td style="text-align: center;">Unlimited</td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 0.75rem;">Durable Objects</td>
+                    <td style="text-align: center;">100K ops/day</td>
+                    <td style="text-align: center;">Unlimited</td>
+                </tr>
+                <tr>
+                    <td style="padding: 0.75rem;">Workers count</td>
+                    <td style="text-align: center;">Unlimited</td>
+                    <td style="text-align: center;">Unlimited</td>
+                </tr>
+            </table>
+
+            <h2>Common Debugging Tips</h2>
+
+            <h3>Local Development</h3>
+            <pre><code># Run Worker locally for testing
+wrangler dev
+
+# This starts a local server at http://localhost:8787
+# Changes to your code are hot-reloaded automatically</code></pre>
+
+            <h3>View Logs</h3>
+            <pre><code># View live logs in the terminal
+wrangler tail
+
+# View logs in the dashboard
+# Go to Workers & Pages → Your Worker → Logs</code></pre>
+
+            <h3>Common Errors</h3>
+
+            <h3>"TypeError: Failed to fetch"</h3>
+            <p>When calling fetch() from a Worker, the target URL must use HTTPS or be on an allowed plain IP list. You cannot fetch plain HTTP URLs unless they're on the allowlist.</p>
+
+            <h3>"Script exceeded timeout of X ms"</h3>
+            <p>Free tier Workers have a 10ms CPU time limit. Optimize your code, use caching, or upgrade to a paid plan for more CPU time.</p>
+
+            <h3>"KV namespace not found"</h3>
+            <p>Make sure your namespace IDs in <code>wrangler.toml</code> match the IDs from <code>wrangler kv:namespace create</code>. Preview and production IDs are different.</p>
+
+            <h2>Summary</h2>
+
+            <p>Cloudflare Workers give you serverless computing at the edge:</p>
+            <ul>
+                <li>⚡ <strong>Sub-millisecond cold starts</strong> — faster than traditional serverless</li>
+                <li>🌍 <strong>300+ locations</strong> — your code runs near every user</li>
+                <li>💰 <strong>Free tier</strong> — 100K requests/day is enough for most side projects</li>
+                <li>🔧 <strong>One-command deploy</strong> — <code>wrangler deploy</code> and you're live</li>
+                <li>🔗 <strong>Integrates with Cloudflare</strong> — DNS, Tunnel, KV, D1, R2, Queues</li>
+            </ul>
+
+            <blockquote>
+                <strong>Pro tip:</strong> Start small — build a simple API or proxy first. Then gradually add KV for storage, D1 for SQL databases, and R2 for object storage. Workers grows with your needs.
+            </blockquote>
+
+            <h2>Next Steps</h2>
+            <ul>
+                <li><a href="cloudflare-tunnel.html">Cloudflare Tunnel</a> — pair Workers with Tunnel for secure origins</li>
+                <li><a href="cloudflare-dns.html">Cloudflare DNS</a> — set up domains for your Workers routes</li>
+                <li><a href="javascript-promises-async-await.html">JavaScript Promises & Async/Await</a> — master the async patterns Workers uses</li>
+            </ul>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes | Built with ❤️ & AI</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528" target="_blank">GitHub</a>
+                <a href="https://blog.hugow.dev/sitemap.xml">Sitemap</a>
+                <a href="https://blog.hugow.dev/robots.txt">Robots</a>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

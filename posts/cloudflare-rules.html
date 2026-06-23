@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloudflare Rules: Page Rules, Transform Rules, & WAF for Beginners | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn Cloudflare Rules from scratch — Page Rules, Transform Rules, WAF, and Custom Rules. Control caching, redirects, SSL, and security with simple rules. Beginner-friendly guide with real examples.">
+    <meta name="keywords" content="cloudflare rules, page rules, transform rules, WAF, web application firewall, cache rules, redirect rules, cloudflare tutorial">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/cloudflare-rules.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+
+        <article class="post-content">
+            <span class="tag cloudflare">Cloudflare</span>
+            <h1>Cloudflare Rules: Page Rules, Transform Rules & WAF for Beginners</h1>
+            <time>June 24, 2026 · 10 min read</time>
+
+            <p>Cloudflare sits between your visitors and your server. But what if you want more control? What if you want to cache specific pages, redirect old URLs, block malicious traffic, or transform responses before they reach the browser? That's where <strong>Cloudflare Rules</strong> come in.</p>
+
+            <p>Rules let you define <em>conditions</em> and <em>actions</em> — like an "if this, then that" system for your website traffic. In this guide, you'll learn the different types of rules Cloudflare offers and how to use them, even if you've never touched Cloudflare before.</p>
+
+            <h2>How Cloudflare Rules Work</h2>
+
+            <p>Every rule has three parts:</p>
+
+            <ul>
+                <li><strong>Match Condition</strong> — When should this rule apply? (e.g., specific URL, country, user agent)</li>
+                <li><strong>Action</strong> — What should happen? (e.g., cache, redirect, block, transform)</li>
+                <li><strong>Priority</strong> — If multiple rules match, which one wins?</li>
+            </ul>
+
+            <p>Think of it like traffic signs on a highway. A "Speed Limit 60" sign applies to all cars. But a "Trucks Turn Right" sign only applies to trucks — that's a condition-based rule.</p>
+
+            <h2>1. Page Rules (Classic, Still Useful)</h2>
+
+            <p><strong>Page Rules</strong> are Cloudflare's original rule system. They're simple but limited to 3 rules on the free plan. Despite newer alternatives, they're still widely used for basic tasks.</p>
+
+            <h3>Creating a Page Rule</h3>
+
+            <p>Go to your Cloudflare dashboard → <em>Rules</em> → <em>Page Rules</em>. Enter a URL pattern and select actions:</p>
+
+            <pre><code># Example 1: Force HTTPS on all pages
+URL: example.com/*
+Actions: Always Use HTTPS
+
+# Example 2: Cache a static asset for 30 days
+URL: example.com/images/*
+Actions: Cache Level: Cache Everything, Edge Cache TTL: 30 days
+
+# Example 3: Redirect old blog to new blog
+URL: example.com/old-blog/*
+Actions: Forwarding URL (301) → https://example.com/new-blog/$1</code></pre>
+
+            <p><strong>Common Page Rule use cases:</strong></p>
+
+            <ul>
+                <li>Force HTTPS across your entire site</li>
+                <li>Set longer cache times for static assets (images, CSS, JS)</li>
+                <li>Redirect old URLs to new ones (301 permanent redirects)</li>
+                <li>Disable performance features for specific subdomains</li>
+                <li>Set custom cache statuses per path</li>
+            </ul>
+
+            <blockquote>
+                <strong>Pro tip:</strong> If you only need HTTPS enforcement, use <strong>SSL/TLS → Edge Certificates → Always Use HTTPS</strong> instead. Page Rules are better for more specific needs.
+            </blockquote>
+
+            <h2>2. Cloudflare Rules (The New System)</h2>
+
+            <p>Cloudflare is transitioning away from Page Rules to <strong>Cloudflare Rules</strong> — a more powerful, unified system. Each type of rule has its own dashboard:</p>
+
+            <h3>A. Cache Rules</h3>
+
+            <p>Control what Cloudflare caches and for how long. The free plan includes cache rules, so you can fine-tune performance without upgrading.</p>
+
+            <pre><code># Rule: Cache API responses for 1 hour
+Match: Hostname is example.com AND URI path matches /api/weather/*
+Then: Set cache TTL = 3600 seconds
+
+# Rule: Never cache user-specific pages
+Match: URI path matches /account/* OR /dashboard/*
+Then: Bypass cache (TTL = 0)</code></pre>
+
+            <p><strong>When to use Cache Rules:</strong></p>
+
+            <ul>
+                <li>Your homepage doesn't change often — cache it for 1–4 hours</li>
+                <li>Blog posts are static — cache for days or weeks</li>
+                <li>User dashboards change frequently — bypass the cache</li>
+                <li>API responses have a known freshness window — set specific TTLs</li>
+            </ul>
+
+            <h3>B. Transform Rules</h3>
+
+            <p>Modify responses before they reach the browser — no server code changes needed.</p>
+
+            <pre><code># Rule: Rewrite hostname in responses
+Match: Hostname is oldsite.com
+Then: Rewrite hostname to → newsite.com
+
+# Rule: Add a security header to all responses
+Match: Hostname is example.com
+Then: Add response header: Strict-Transport-Security → max-age=31536000
+
+# Rule: Change content type for a specific endpoint
+Match: URI path is /feed
+Then: Set response content-type → application/rss+xml</code></pre>
+
+            <p><strong>When to use Transform Rules:</strong></p>
+
+            <ul>
+                <li>Adding security headers (HSTS, X-Frame-Options) without touching server config</li>
+                <li>Fixing broken links that reference an old domain</li>
+                <li>Injecting a small JavaScript snippet for analytics</li>
+                <li>Changing response content types for compatibility</li>
+            </ul>
+
+            <h3>C. Redirect Rules</h3>
+
+            <p>More powerful than Page Rule redirects — supports regex and complex conditions.</p>
+
+            <pre><code># Rule: Redirect mobile users to mobile site
+Match: User agent contains "Mobile"
+Then: Redirect (302) → https://m.example.com$dst
+
+# Rule: Redirect all .htm pages to .html
+Match: URI path ends with ".htm"
+Then: Redirect (301) → {uri_path:r/\.htm$/, .html}
+
+# Rule: Send /blog/* to a different subdomain
+Match: URI path matches /blog/*
+Then: Redirect (301) → https://blog.example.com/$1</code></pre>
+
+            <h2>3. WAF Rules (Web Application Firewall)</h2>
+
+            <p>A <strong>WAF (Web Application Firewall)</strong> blocks malicious traffic before it reaches your server. Cloudflare provides managed rules and lets you create custom rules.</p>
+
+            <h3>Managed Rules (Built-In)</h3>
+
+            <p>Cloudflare maintains rule sets that block common attacks:</p>
+
+            <ul>
+                <li><strong>OWASP Core Ruleset</strong> — Blocks SQL injection, XSS, and other OWASP Top 10 attacks</li>
+                <li><strong>Bot Fight Mode</strong> — Challenges known malicious bots</li>
+                <li><strong>Security Level</strong> — Low, Medium, High, I'm Under Attack</li>
+            </ul>
+
+            <p>On the free plan, you get <strong>Security Level</strong> and <strong>Bot Fight Mode</strong>. Managed Rulesets require Cloudflare Pro ($20/month).</p>
+
+            <h3>Custom WAF Rules</h3>
+
+            <p>You can create your own rules even on the free plan:</p>
+
+            <pre><code># Rule: Block requests with a suspicious user agent
+Expression: http.user_agent contains "sqlmap"
+Action: Block
+
+# Rule: Block traffic from a specific country
+Expression: cf.ip_geo.country eq "XX"
+Action: Block
+
+# Rule: Challenge requests to a specific path
+Expression: cf.zone.name eq "example.com" AND http.request.uri.path contains "/wp-admin"
+Action: Challenge
+
+# Rule: Log suspicious requests (don't block, just track)
+Expression: http.request.uri.path contains ".env" OR http.request.uri.path contains "/wp-login.php"
+Action: Log</code></pre>
+
+            <p><strong>Action types:</strong></p>
+
+            <ul>
+                <li><strong>Block</strong> — Return 403 Forbidden</li>
+                <li><strong>Challenge</strong> — Show a Cloudflare verification page (JS Challenge or CAPTCHA)</li>
+                <li><strong>Log</strong> — Record the request for analysis, allow it through</li>
+                <li><strong>Bypass</strong> — Skip security checks (use sparingly!)</li>
+            </ul>
+
+            <h2>Building a Real Ruleset for a Blog</h2>
+
+            <p>Let's put it all together. Here's a practical ruleset for a blog site:</p>
+
+            <h3>Cache Rules</h3>
+
+            <pre><code>Rule 1: Cache blog posts for 4 hours
+  Match: URI path matches /posts/*
+  Action: Set cache TTL = 14400 seconds
+
+Rule 2: Never cache homepage (updates frequently)
+  Match: URI path equals "/"
+  Action: Bypass cache (TTL = 0)
+
+Rule 3: Cache static assets for 1 week
+  Match: URI path matches /css/* OR /js/* OR /images/*
+  Action: Set cache TTL = 604800 seconds</code></pre>
+
+            <h3>Redirect Rules</h3>
+
+            <pre><code>Rule 1: Redirect www to non-www
+  Match: Hostname is www.example.com
+  Action: Redirect (301) → https://example.com$uri_path$uri_query</code></pre>
+
+            <h3>WAF Rules</h3>
+
+            <pre><code>Rule 1: Block common hacking tools
+  Match: http.user_agent contains "sqlmap" OR http.user_agent contains "nikto"
+  Action: Block
+
+Rule 2: Protect .env and config files
+  Match: http.request.uri.path contains ".env" OR http.request.uri.path contains ".git"
+  Action: Block</code></pre>
+
+            <h3>Transform Rules</h3>
+
+            <pre><code>Rule 1: Add security headers
+  Match: Always true
+  Action: Add header: X-Frame-Options → DENY
+  Action: Add header: X-Content-Type-Options → nosniff</code></pre>
+
+            <h2>Rule Priority and Testing</h2>
+
+            <p>When multiple rules could match a single request, Cloudflare evaluates them in <strong>priority order</strong>. Higher priority rules (lower number) are evaluated first. By default, rules created earlier get higher priority.</p>
+
+            <p><strong>Always test your rules!</strong> Cloudflare provides a rule builder that shows estimated matches. For production:</p>
+
+            <ol>
+                <li>Create rules with <strong>Log</strong> action first</li>
+                <li>Check the Analytics dashboard for logged matches</li>
+                <li>Verify no legitimate traffic was affected</li>
+                <li>Switch the action to Block/Challenge when confident</li>
+            </ol>
+
+            <h2>Common Mistakes to Avoid</h2>
+
+            <ul>
+                <li><strong>Overlapping rules:</strong> Two rules matching the same URL with different actions. Set clear priorities.</li>
+                <li><strong>Blocking yourself:</strong> Before blocking by IP or country, verify you're not in the blocked range.</li>
+                <li><strong>Caching user data:</strong> Never cache pages with personalized content. Always bypass cache for /account/*, /profile/*, etc.</li>
+                <li><strong>Forgetting about mobile:</strong> Mobile sites may need different cache rules or redirects.</li>
+                <li><strong>Too broad WAF rules:</strong> A rule blocking all requests to /* with a certain header might block legitimate browsers. Test in Log mode first.</li>
+            </ul>
+
+            <h2>Summary</h2>
+
+            <p>Cloudflare Rules give you powerful, serverless control over your website traffic:</p>
+
+            <ul>
+                <li><strong>Cache Rules</strong> — Control what and how long to cache</li>
+                <li><strong>Transform Rules</strong> — Modify responses without server changes</li>
+                <li><strong>Redirect Rules</strong> — Powerful URL redirection with regex</li>
+                <li><strong>WAF Rules</strong> — Block malicious traffic with custom conditions</li>
+                <li><strong>Page Rules</strong> — Legacy but still useful for simple cases</li>
+            </ul>
+
+            <p>Start with simple rules, test in Log mode, and gradually build up your ruleset. The key is matching the right condition to the right action — just like good programming logic, but with a GUI instead of code.</p>
+
+            <p><strong>Next up:</strong> Check out our <a href="cloudflare-workers.html">Cloudflare Workers</a> guide to run custom code at the edge, or <a href="cloudflare-zero-trust.html">Cloudflare Zero Trust</a> to secure your apps with authentication.</p>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes | Built with ❤️ & AI</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528" target="_blank">GitHub</a>
+                <a href="https://blog.hugow.dev/sitemap.xml">Sitemap</a>
+                <a href="https://blog.hugow.dev/robots.txt">Robots</a>
+            </div>
+        </div>
+    </footer>
+
+    <button class="back-to-top" id="backToTop" title="Back to top">↑</button>
+
+    <script>
+    // Back to Top
+    const backToTop = document.getElementById('backToTop');
+    window.addEventListener('scroll', () => {
+        backToTop.style.display = window.scrollY > 300 ? 'block' : 'none';
+    });
+    backToTop.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // Reading Progress Bar
+    window.addEventListener('scroll', () => {
+        const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+        const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        const scrolled = (winScroll / height) * 100;
+        document.getElementById('progressBar').style.width = scrolled + '%';
+    });
+
+    // Dark Mode Toggle
+    const themeToggle = document.getElementById('themeToggle');
+    if (themeToggle) {
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            themeToggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+            localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+        });
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark-mode');
+            themeToggle.textContent = '☀️';
+        }
+    }
+    </script>
+</body>
+</html>

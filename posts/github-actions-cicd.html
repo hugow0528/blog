@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Actions CI/CD: Automate Your Workflow | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn GitHub Actions from scratch — workflows, CI/CD pipelines, automated testing, and deployment. Beginner-friendly DevOps tutorial with real YAML examples.">
+    <meta name="keywords" content="github actions, ci/cd, continuous integration, continuous deployment, github workflow, automation, devops">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+            <p class="subtitle">Cloudflare · Python · AI Coding · DevOps</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+        
+        <article class="post-content">
+            <span class="tag devops">DevOps</span>
+            <h1>GitHub Actions CI/CD: Automate Your Workflow</h1>
+            <time>June 22, 2026 · 10 min read</time>
+
+            <p>GitHub Actions lets you automate your development workflow directly in your repository. Run tests on every commit, build Docker images, deploy to servers — all triggered automatically. This guide takes you from zero to a full CI/CD pipeline with working YAML examples.</p>
+
+            <h2>What Is CI/CD?</h2>
+
+            <p><strong>CI (Continuous Integration)</strong> means automatically building and testing your code every time you push changes. <strong>CD (Continuous Deployment)</strong> means automatically deploying passing code to production.</p>
+
+            <p>Without CI/CD, your workflow might look like this: push code → remember to run tests manually → remember to build → email the team → someone deploys. With CI/CD, GitHub handles all of that automatically.</p>
+
+            <blockquote>
+                <strong>Golden rule of CI/CD:</strong> Any change that breaks the build should be caught within minutes, not days. Automation is your safety net.
+            </blockquote>
+
+            <h2>GitHub Actions Anatomy</h2>
+
+            <p>GitHub Actions uses YAML files stored in <code>.github/workflows/</code> in your repository. Every file defines a <strong>workflow</strong>, which contains one or more <strong>jobs</strong>, which contain <strong>steps</strong>.</p>
+
+            <ul>
+                <li><strong>Workflow</strong> — The automation process (a YAML file)</li>
+                <li><strong>Trigger (event)</strong> — When the workflow runs (push, pull request, schedule, etc.)</li>
+                <li><strong>Job</strong> — A set of steps that run on the same machine (runner)</li>
+                <li><strong>Step</strong> — An individual task (run a command or use a pre-built action)</li>
+                <li><strong>Runner</strong> — The virtual machine that executes the job</li>
+                <li><strong>Action</strong> — A reusable package (like a npm package for workflows)</li>
+            </ul>
+
+            <h2>Your First Workflow: Hello World</h2>
+
+            <p>Create <code>.github/workflows/hello.yml</code> in your repository:</p>
+
+            <pre><code># .github/workflows/hello.yml
+name: Hello World
+
+on: push  # Trigger on every push
+
+jobs:
+  greet:
+    runs-on: ubuntu-latest  # Run on the latest Ubuntu VM
+
+    steps:
+      - name: Say Hello
+        run: echo "Hello from GitHub Actions! 🚀"
+
+      - name: Check the Date
+        run: date
+
+      - name: Show Repository Info
+        run: |
+          echo "Repo: ${{ github.repository }}"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Actor: ${{ github.actor }}"</code></pre>
+
+            <p>Push this file to your repository and check the <strong>Actions</strong> tab. You'll see your workflow run automatically. Each step's output is visible in the logs.</p>
+
+            <p>The <code>${{ }}</code> syntax accesses <strong>GitHub context variables</strong>. Common ones:</p>
+            <ul>
+                <li><code>github.repository</code> — Owner/repo name</li>
+                <li><code>github.ref_name</code> — Branch or tag name</li>
+                <li><code>github.actor</code> — User who triggered the workflow</li>
+                <li><code>github.event_name</code> — The trigger event (push, pull_request, etc.)</li>
+            </ul>
+
+            <h2>Trigger Events You'll Use</h2>
+
+            <pre><code># Run on push to main branch only
+on:
+  push:
+    branches: [main]
+
+# Run on pull requests to main
+on:
+  pull_request:
+    branches: [main]
+
+# Run on push or pull requests
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+# Run on a schedule (every Monday at 9 AM UTC)
+on:
+  schedule:
+    - cron: '0 9 * * 1'
+
+# Run manually from the Actions tab
+on:
+  workflow_dispatch:
+
+# Combine multiple triggers
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *'</code></pre>
+
+            <h2>Workflow #1: Python Test Pipeline</h2>
+
+            <p>Let's build a real CI pipeline that installs dependencies, runs tests, and reports results for a Python project:</p>
+
+            <pre><code># .github/workflows/test.yml
+name: Python Test Suite
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    # Test against multiple Python versions
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+      # 1. Check out the repository code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Set up Python
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      # 3. Cache pip dependencies (speeds up subsequent runs)
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      # 4. Install dependencies
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+
+      # 5. Run tests with coverage report
+      - name: Run tests
+        run: |
+          pytest tests/ \
+            --cov=src \
+            --cov-report=xml \
+            --cov-report=term-missing \
+            -v
+
+      # 6. Upload coverage report as artifact
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.python-version }}
+          path: coverage.xml</code></pre>
+
+            <p>This workflow does several important things:</p>
+            <ul>
+                <li><strong>Matrix strategy</strong> — Tests against Python 3.10, 3.11, and 3.12 simultaneously. If it fails on one version, you'll know immediately.</li>
+                <li><strong>Caching</strong> — The pip cache key includes the hash of requirements.txt, so dependencies are re-downloaded only when they change.</li>
+                <li><strong>Coverage</strong> — pytest-cov generates a coverage report showing which lines of code are tested.</li>
+                <li><strong>Artifacts</strong> — Coverage XML files are uploaded so you can download them after the run.</li>
+            </ul>
+
+            <h2>Workflow #2: Docker Build & Push</h2>
+
+            <p>After running tests, let's build and publish a Docker image:</p>
+
+            <pre><code># .github/workflows/docker.yml
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]  # Also trigger on version tags like v1.0.0
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Extract metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: yourusername/myapp
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=sha
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max</code></pre>
+
+            <p>This workflow uses <strong>Docker secrets</strong> for credentials. To set them up:</p>
+            <ol>
+                <li>Go to your repository → Settings → Secrets and variables → Actions</li>
+                <li>Click "New repository secret"</li>
+                <li>Add <code>DOCKER_USERNAME</code> and <code>DOCKER_PASSWORD</code> (use a Docker personal access token, not your real password)</li>
+            </ol>
+
+            <p>The <code>docker/metadata-action</code> automatically generates tags: <code>main</code> for the main branch, <code>v1.0.0</code> for version tags, and the git SHA for traceability.</p>
+
+            <h2>Workflow #3: Deploy with Cloudflare Tunnel</h2>
+
+            <p>Chain the test and Docker workflows together to auto-deploy:</p>
+
+            <pre><code># .github/workflows/deploy.yml
+name: Deploy to Server
+
+on:
+  # Trigger only after the Docker workflow succeeds
+  workflow_run:
+    workflows: ["Build and Push Docker Image"]
+    types:
+      - completed
+    branches: [main]
+
+jobs:
+  deploy:
+    # Only deploy if the previous workflow succeeded
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Deploy via SSH
+        env:
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          DOCKER_IMAGE: ${{ secrets.DOCKER_USERNAME }}/myapp
+        run: |
+          ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_HOST} \
+          "docker pull ${DOCKER_IMAGE}:main && \
+           docker compose -f /opt/myapp/docker-compose.yml up -d && \
+           docker image prune -f"</code></pre>
+
+            <p>This workflow:</p>
+            <ul>
+                <li>Only runs after the Docker build succeeds</li>
+                <li>Uses SSH to connect to your server</li>
+                <li>Pulls the latest image, restarts containers, and cleans up old images</li>
+            </ul>
+
+            <h2>Useful Built-in Actions</h2>
+
+            <p>GitHub provides many built-in actions. Here are the most useful ones:</p>
+
+            <pre><code># Checkout repository code
+- uses: actions/checkout@v4
+
+# Set up Python
+- uses: actions/setup-python@v5
+  with:
+    python-version: '3.12'
+
+# Set up Node.js
+- uses: actions/setup-node@v4
+  with:
+    node-version: '20'
+
+# Cache dependencies
+- uses: actions/cache@v4
+  with:
+    path: ~/.cache/pip
+    key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+
+# Upload artifacts (test results, builds, etc.)
+- uses: actions/upload-artifact@v4
+  with:
+    name: test-results
+    path: test-reports/
+
+# Download artifacts from another job
+- uses: actions/download-artifact@v4
+
+# Create a GitHub Release
+- uses: softprops/action-gh-release@v2
+  with:
+    files: dist/*
+    tag_name: v1.0.0
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}</code></pre>
+
+            <h2>Conditional Logic and Branch-Specific Steps</h2>
+
+            <p>Run steps only on certain conditions:</p>
+
+            <pre><code># Only on main branch
+- name: Deploy to production
+  if: github.ref == 'refs/heads/main'
+  run: echo "Deploying to production..."
+
+# Only on pull requests
+- name: Comment on PR
+  if: github.event_name == 'pull_request'
+  run: echo "This is a PR build"
+
+# Only when specific files change
+on:
+  push:
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'requirements.txt'
+      - '.github/workflows/**'</code></pre>
+
+            <h2>Passing Data Between Jobs with Environment Files</h2>
+
+            <pre><code>jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build version
+        run: |
+          VERSION="1.0.${{ github.run_number }}"
+          echo "version=$VERSION" >> $GITHUB_ENV
+          echo "Built version: $VERSION"
+
+  test:
+    needs: build  # Wait for build job to finish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use version from build
+        run: echo "Testing version $VERSION"</code></pre>
+
+            <h2>Quick Reference</h2>
+            <ul>
+                <li><code>uses: actions/checkout@v4</code> — Clone the repo</li>
+                <li><code>uses: actions/setup-python@v5</code> — Install Python</li>
+                <li><code>uses: actions/cache@v4</code> — Cache dependencies</li>
+                <li><code>needs: [build]</code> — Job dependency (wait for another job)</li>
+                <li><code>if: github.ref == 'refs/heads/main'</code> — Conditional execution</li>
+                <li><code>strategy.matrix</code> — Run the same job with different configurations</li>
+                <li><code>${{ secrets.NAME }}</code> — Access encrypted secrets</li>
+                <li><code>on.schedule</code> — Run on a cron schedule</li>
+                <li><code>on.workflow_run</code> — Trigger after another workflow completes</li>
+            </ul>
+
+            <h2>Next Steps</h2>
+            <ul>
+                <li><a href="posts/docker-basics.html">Docker basics</a> — Containerize your apps</li>
+                <li>Set up code quality checks with <strong>ruff</strong> or <strong>flake8</strong> in your workflow</li>
+                <li>Add <strong>SonarQube</strong> integration for code quality dashboards</li>
+                <li>Deploy to Kubernetes with GitHub Actions</li>
+                <li>Use GitHub Environments for staging/production approval gates</li>
+            </ul>
+
+            <blockquote>
+                <strong>Practice tip:</strong> Add a simple <code>test.yml</code> workflow to any Python project you have. Even just running <code>pytest</code> on every push will save you from pushing broken code. Start simple, then add complexity.
+            </blockquote>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes. Built with vibe coding.</p>
+        </div>
+    </footer>
+</body>
+</html>

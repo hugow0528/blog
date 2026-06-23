@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JavaScript DOM Manipulation: Build Interactive Web Pages | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn JavaScript DOM manipulation from scratch — selecting elements, changing content, events, creating elements, and building interactive pages. Beginner-friendly tutorial with working examples.">
+    <meta name="keywords" content="javascript, DOM, dom manipulation, event listeners, web development, interactive, javascript beginner">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/javascript-dom-manipulation.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+
+        <article class="post-content">
+            <span class="tag devops">Web Dev</span>
+            <h1>JavaScript DOM Manipulation: Build Interactive Web Pages</h1>
+            <time>June 24, 2026 · 11 min read</time>
+
+            <p>You've learned HTML for structure and CSS for styling. Your page looks great — but it's static. Nothing responds to clicks, inputs, or user interaction. That's where the <strong>DOM</strong> (Document Object Model) comes in.</p>
+
+            <p>The DOM is a tree-like representation of your HTML page that JavaScript can read and modify. When you click a button, type in a form, or scroll a page, JavaScript uses the DOM to make things happen. It's the bridge between your code and the browser.</p>
+
+            <p>In this tutorial, you'll learn how to select elements, change content, handle events, create new elements, and build a fully interactive web page — all with vanilla JavaScript (no frameworks needed).</p>
+
+            <h2>What Is the DOM?</h2>
+
+            <p>The browser parses your HTML and builds a tree of objects called the <strong>Document Object Model</strong>. Every HTML element becomes a <em>node</em> in this tree:</p>
+
+            <pre><code>Document (root)
+├── &lt;html&gt;
+│   ├── &lt;head&gt;
+│   │   └── &lt;title&gt;My Page&lt;/title&gt;
+│   └── &lt;body&gt;
+│       ├── &lt;h1&gt;Hello&lt;/h1&gt;
+│       ├── &lt;div id="app"&gt;
+│       │   └── &lt;p class="text"&gt;Click me&lt;/p&gt;
+│       └── &lt;button id="btn"&gt;Submit&lt;/button&gt;
+
+JavaScript accesses this tree through the <code>document</code> object — a global variable available in every web page.</code></pre>
+
+            <h2>Selecting Elements</h2>
+
+            <p>Before you can modify an element, you need to select it. JavaScript provides several methods:</p>
+
+            <pre><code>// By ID (returns a single element)
+const title = document.getElementById('title');
+
+// By class name (returns a collection)
+const items = document.getElementsByClassName('item');
+
+// By tag name (returns a collection)
+const paragraphs = document.getElementsByTagName('p');
+
+// By CSS selector (returns a single element)
+const button = document.querySelector('#app .btn');
+const heading = document.querySelector('h1');
+
+// By CSS selector (returns ALL matches as a NodeList)
+const cards = document.querySelectorAll('.card');
+const links = document.querySelectorAll('nav a');</code></pre>
+
+            <blockquote>
+                <strong>Recommendation:</strong> Use <code>querySelector</code> and <code>querySelectorAll</code> for everything. They accept any CSS selector and are the most flexible and modern approach.
+            </blockquote>
+
+            <h2>Changing Content and Styles</h2>
+
+            <p>Once you have a reference to an element, you can change almost anything about it:</p>
+
+            <pre><code>const heading = document.querySelector('h1');
+
+// Change text content (safe against XSS)
+heading.textContent = 'New Title';
+
+// Change HTML content (⚠️ can execute scripts — use carefully)
+heading.innerHTML = '&lt;span style="color:red"&gt;New Title&lt;/span&gt;';
+
+// Change styles directly
+heading.style.color = 'blue';
+heading.style.fontSize = '2rem';
+heading.style.backgroundColor = '#f0f0f0';
+
+// Better: toggle CSS classes instead
+heading.classList.add('highlight');
+heading.classList.remove('highlight');
+heading.classList.toggle('highlight');
+// Check if a class exists
+if (heading.classList.contains('highlight')) {
+    console.log('Heading is highlighted!');
+}</code></pre>
+
+            <h3>Working with Attributes</h3>
+
+            <pre><code>const link = document.querySelector('a');
+
+// Get an attribute
+link.getAttribute('href');       // "https://example.com"
+link.getAttribute('target');     // "_blank"
+
+// Set an attribute
+link.setAttribute('href', 'https://new-url.com');
+link.setAttribute('data-id', '123');
+
+// Remove an attribute
+link.removeAttribute('target');
+
+// Get or set the src of images
+const img = document.querySelector('img');
+img.src = 'new-image.jpg';
+img.alt = 'Updated description';</code></pre>
+
+            <h2>Event Listeners: Making Pages Interactive</h2>
+
+            <p>Events are how JavaScript responds to user actions. Use <code>addEventListener</code> to listen for them:</p>
+
+            <pre><code>const button = document.querySelector('#click-me');
+
+// Basic click handler
+button.addEventListener('click', function() {
+    alert('Button was clicked!');
+});
+
+// Using arrow functions (modern syntax)
+button.addEventListener('click', () => {
+    console.log('Clicked!');
+});
+
+// Common events:
+element.addEventListener('click', handler);     // Mouse click
+element.addEventListener('dblclick', handler);  // Double click
+element.addEventListener('mouseover', handler); // Mouse enters element
+element.addEventListener('mouseout', handler);  // Mouse leaves element
+element.addEventListener('mouseenter', handler); // Mouse enters (no bubbling)
+element.addEventListener('keydown', handler);    // Key pressed
+element.addEventListener('keyup', handler);      // Key released
+element.addEventListener('submit', handler);     // Form submitted
+element.addEventListener('change', handler);     // Input value changed
+element.addEventListener('input', handler);      // Input typing (real-time)</code></pre>
+
+            <h3>The Event Object</h3>
+
+            <p>Every event handler receives an <code>event</code> object with useful information:</p>
+
+            <pre><code>document.querySelector('#my-form').addEventListener('submit', (event) => {
+    // Prevent the form from actually submitting (page reload)
+    event.preventDefault();
+
+    // Get the target element
+    console.log(event.target);  // The form element
+
+    // For keyboard events:
+    // event.key  → the key pressed ("Enter", "a", etc.)
+    // event.code → physical key code ("Enter", "KeyA")
+
+    // For mouse events:
+    // event.clientX, event.clientY → cursor position
+});
+
+// Keyboard example
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+        console.log('User pressed Escape!');
+    }
+    if (event.key === 'Enter') {
+        console.log('User pressed Enter!');
+    }
+});</code></pre>
+
+            <h2>Creating and Removing Elements</h2>
+
+            <p>You can dynamically build HTML from JavaScript:</p>
+
+            <pre><code>// Create a new element
+const card = document.createElement('div');
+card.className = 'card';
+card.id = 'dynamic-card';
+
+// Add content
+const title = document.createElement('h3');
+title.textContent = 'New Card';
+card.appendChild(title);
+
+const desc = document.createElement('p');
+desc.textContent = 'This card was created with JavaScript!';
+card.appendChild(desc);
+
+// Insert it into the page
+const container = document.querySelector('#app');
+container.appendChild(card);       // Add as last child
+container.insertBefore(card, container.firstChild); // Add as first child
+
+// Remove an element
+const oldCard = document.querySelector('#old-card');
+oldCard.remove();
+
+// Clear all children of a container
+container.innerHTML = '';</code></pre>
+
+            <h2>Real Project: Interactive Task Manager</h2>
+
+            <p>Let's build a complete interactive app — a task manager with add, complete, and delete functionality:</p>
+
+            <pre><code>&lt;!-- index.html --&gt;
+&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+    &lt;title&gt;Task Manager&lt;/title&gt;
+    &lt;style&gt;
+        body { font-family: sans-serif; max-width: 500px; margin: 2rem auto; padding: 0 1rem; }
+        input { padding: 0.5rem; width: 70%; border: 1px solid #ccc; border-radius: 4px; }
+        button { padding: 0.5rem 1rem; border: none; border-radius: 4px; cursor: pointer; }
+        #add-btn { background: #2563eb; color: white; }
+        .task { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; margin: 0.3rem 0; background: #f8fafc; border-radius: 4px; }
+        .task.done { text-decoration: line-through; opacity: 0.6; }
+        .delete-btn { background: #ef4444; color: white; margin-left: auto; }
+        .count { color: #64748b; font-size: 0.9rem; }
+    &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;h1&gt;✅ Task Manager&lt;/h1&gt;
+    &lt;div&gt;
+        &lt;input type="text" id="task-input" placeholder="Add a new task..."&gt;
+        &lt;button id="add-btn"&gt;Add&lt;/button&gt;
+    &lt;/div&gt;
+    &lt;p class="count"&gt;0 tasks&lt;/p&gt;
+    &lt;div id="task-list"&gt;&lt;/div&gt;
+
+    &lt;script src="app.js"&gt;&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+
+            <pre><code>// app.js
+const input = document.querySelector('#task-input');
+const addBtn = document.querySelector('#add-btn');
+const taskList = document.querySelector('#task-list');
+const countDisplay = document.querySelector('.count');
+
+let tasks = [];
+
+// Add a task
+function addTask() {
+    const text = input.value.trim();
+    if (!text) return;
+
+    const task = {
+        id: Date.now(),
+        text: text,
+        done: false
+    };
+
+    tasks.push(task);
+    input.value = '';
+    renderTasks();
+}
+
+// Toggle task completion
+function toggleTask(id) {
+    const task = tasks.find(t => t.id === id);
+    if (task) {
+        task.done = !task.done;
+        renderTasks();
+    }
+}
+
+// Delete a task
+function deleteTask(id) {
+    tasks = tasks.filter(t => t.id !== id);
+    renderTasks();
+}
+
+// Render all tasks to the DOM
+function renderTasks() {
+    taskList.innerHTML = '';
+
+    tasks.forEach(task => {
+        const div = document.createElement('div');
+        div.className = `task ${task.done ? 'done' : ''}`;
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = task.done;
+        checkbox.addEventListener('change', () => toggleTask(task.id));
+
+        const span = document.createElement('span');
+        span.textContent = task.text;
+        span.addEventListener('click', () => toggleTask(task.id));
+
+        const delBtn = document.createElement('button');
+        delBtn.textContent = '✕';
+        delBtn.className = 'delete-btn';
+        delBtn.addEventListener('click', () => deleteTask(task.id));
+
+        div.appendChild(checkbox);
+        div.appendChild(span);
+        div.appendChild(delBtn);
+        taskList.appendChild(div);
+    });
+
+    countDisplay.textContent = `${tasks.length} task${tasks.length !== 1 ? 's' : ''}`;
+}
+
+// Event listeners
+addBtn.addEventListener('click', addTask);
+
+input.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+        addTask();
+    }
+});
+
+// Load demo tasks
+tasks.push({ id: 1, text: 'Learn JavaScript DOM', done: false });
+tasks.push({ id: 2, text: 'Build this task manager', done: true });
+renderTasks();</code></pre>
+
+            <p>This app demonstrates everything: selecting elements, creating/removing nodes, event listeners, and updating content dynamically. Try opening it in a browser and adding tasks!</p>
+
+            <h2>DOM Traversal: Navigating the Tree</h2>
+
+            <p>Once you have a reference to one element, you can navigate to related elements:</p>
+
+            <pre><code>const card = document.querySelector('.card');
+
+// Parent
+card.parentElement;          // The containing element
+card.parentElement.parentElement; // Go up two levels
+
+// Children
+card.children;               // All child elements (HTMLCollection)
+card.firstElementChild;      // First child element
+card.lastElementChild;       // Last child element
+
+// Siblings
+card.nextElementSibling;     // Next sibling element
+card.previousElementSibling; // Previous sibling element
+
+// Find within an element (scoped query)
+const card = document.querySelector('.card');
+const btn = card.querySelector('.delete-btn');  // Only inside this card!</code></pre>
+
+            <blockquote>
+                <strong>Pro tip:</strong> Use <code>element.querySelector()</code> to search within a specific container. This avoids accidentally selecting the wrong element when multiple elements share the same class.
+            </blockquote>
+
+            <h2>Summary</h2>
+
+            <p>DOM manipulation is how JavaScript brings web pages to life. Here's the essential toolkit:</p>
+
+            <ul>
+                <li><code>document.querySelector()</code> — Select one element</li>
+                <li><code>document.querySelectorAll()</code> — Select multiple elements</li>
+                <li><code>element.textContent</code> — Read/set text (safe)</li>
+                <li><code>element.innerHTML</code> — Read/set HTML</li>
+                <li><code>element.classList</code> — Add/remove/toggle CSS classes</li>
+                <li><code>element.addEventListener()</code> — Respond to user actions</li>
+                <li><code>document.createElement()</code> — Build elements dynamically</li>
+                <li><code>element.appendChild()</code> — Insert elements into the page</li>
+                <li><code>element.remove()</code> — Delete elements from the page</li>
+            </ul>
+
+            <p>Every interactive website you use — from social media to email to e-commerce — relies on these same DOM operations. Master these fundamentals and you can build anything.</p>
+
+            <p><strong>Next up:</strong> Check out our <a href="javascript-promises-async-await.html">JavaScript Promises and Async/Await</a> tutorial to learn asynchronous programming, or <a href="responsive-web-design.html">Responsive Web Design</a> for CSS layout techniques.</p>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes | Built with ❤️ & AI</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528" target="_blank">GitHub</a>
+                <a href="https://blog.hugow.dev/sitemap.xml">Sitemap</a>
+                <a href="https://blog.hugow.dev/robots.txt">Robots</a>
+            </div>
+        </div>
+    </footer>
+
+    <button class="back-to-top" id="backToTop" title="Back to top">↑</button>
+
+    <script>
+    // Back to Top
+    const backToTop = document.getElementById('backToTop');
+    window.addEventListener('scroll', () => {
+        backToTop.style.display = window.scrollY > 300 ? 'block' : 'none';
+    });
+    backToTop.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // Reading Progress Bar
+    window.addEventListener('scroll', () => {
+        const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+        const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        const scrolled = (winScroll / height) * 100;
+        document.getElementById('progressBar').style.width = scrolled + '%';
+    });
+
+    // Dark Mode Toggle
+    const themeToggle = document.getElementById('themeToggle');
+    if (themeToggle) {
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            themeToggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+            localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+        });
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark-mode');
+            themeToggle.textContent = '☀️';
+        }
+    }
+    </script>
+</body>
+</html>

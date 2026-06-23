@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Functions: Define, Call, and Master Reusable Code | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn Python functions from scratch — def, parameters, return values, scope, lambda, and decorators. Turn repetitive code into clean, reusable functions. Beginner tutorial with working examples.">
+    <meta name="keywords" content="python functions, def python, parameters, return values, lambda python, scope, decorators, python beginner tutorial">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+            <p class="subtitle">Cloudflare · Python · AI Coding · DevOps</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+        
+        <article class="post-content">
+            <span class="tag python">Python</span>
+            <h1>Python Functions: Define, Call, and Master Reusable Code</h1>
+            <time>June 22, 2026 · 9 min read</time>
+
+            <p>Functions are the building blocks of every Python program. They let you package a block of logic, give it a name, and reuse it anywhere. Without functions, you'd copy-paste the same code over and over — a recipe for bugs and headaches. This guide takes you from your first <code>def</code> statement to advanced patterns like default arguments, <code>*args</code>, <code>**kwargs</code>, and lambda functions.</p>
+
+            <h2>What Is a Function?</h2>
+
+            <p>A function is a named block of code that performs a specific task. Think of it like a recipe: you write it once, then follow it whenever you need to cook that dish. In programming, you define a function once, then <strong>call</strong> (or <strong>invoke</strong>) it whenever you need its behavior.</p>
+
+            <p>Python comes with many <strong>built-in functions</strong> you've probably already used:</p>
+
+            <pre><code>print("Hello")        # Built-in: prints to console
+len([1, 2, 3])       # Built-in: returns 3
+max(10, 20, 30)      # Built-in: returns 30
+sorted([3, 1, 2])    # Built-in: returns [1, 2, 3]
+str(42)              # Built-in: returns "42"
+int("99")            # Built-in: returns 99</code></pre>
+
+            <p>Now let's create our <strong>own</strong> functions.</p>
+
+            <h2>Defining Your First Function</h2>
+
+            <pre><code># Define a function with "def"
+def greet():
+    """Print a greeting message."""
+    print("Hello, friend!")
+    print("Welcome to Python!")
+
+# Call the function
+greet()
+greet()  # You can call it as many times as you want</code></pre>
+
+            <p>Output:</p>
+            <pre>Hello, friend!
+Welcome to Python!
+Hello, friend!
+Welcome to Python!</pre>
+
+            <p>Key parts:</p>
+            <ul>
+                <li><code>def</code> — Keyword that starts a function definition</li>
+                <li><code>greet</code> — The function name (use lowercase with underscores: <code>snake_case</code>)</li>
+                <li><code>()</code> — Parentheses for parameters (empty here = no parameters)</li>
+                <li><code>:</code> — Colon marks the end of the definition line</li>
+                <li>Indented block — The function body (4 spaces per level)</li>
+                <li><code>"""..."""</code> — A docstring describing what the function does</li>
+            </ul>
+
+            <blockquote>
+                <strong>Docstrings matter:</strong> Always write a brief docstring. It appears when you type <code>help(greet)</code> in the interpreter and helps other developers (and future you) understand the code.
+            </blockquote>
+
+            <h2>Functions with Parameters</h2>
+
+            <p>Functions become powerful when they accept <strong>input</strong>. Parameters are like fill-in-the-blanks:</p>
+
+            <pre><code>def greet_person(name):
+    """Greet a specific person by name."""
+    print(f"Hello, {name}!")
+    print(f"Welcome to Python, {name}!")
+
+# Call with different arguments
+greet_person("Alice")
+greet_person("Bob")
+greet_person("Carlos")</code></pre>
+
+            <p>Output:</p>
+            <pre>Hello, Alice!
+Welcome to Python, Alice!
+Hello, Bob!
+Welcome to Python, Bob!
+Hello, Carlos!
+Welcome to Python, Carlos!</pre>
+
+            <h2>Return Values</h2>
+
+            <p>Instead of printing, functions can <strong>return</strong> a value that you can use elsewhere:</p>
+
+            <pre><code>def add(a, b):
+    """Return the sum of two numbers."""
+    return a + b
+
+# Store the returned value in a variable
+result = add(3, 5)
+print(result)        # 8
+
+# Use the function in expressions
+print(add(10, 20) * 2)  # 60
+
+# Chain functions
+def subtract(a, b):
+    return a - b
+
+def multiply(a, b):
+    return a * b
+
+print(multiply(add(2, 3), subtract(10, 2)))  # 40  ((2+3) * (10-2))</code></pre>
+
+            <p><strong>The critical difference:</strong></p>
+
+            <pre><code># PRINT vs RETURN
+def bad_sum(a, b):
+    print(a + b)      # Prints, but returns None
+
+def good_sum(a, b):
+    return a + b      # Returns the value for use
+
+x = bad_sum(3, 5)    # Prints "8", x = None
+y = good_sum(3, 5)   # x = 8 (no print, but value captured)
+
+print(x * 2)  # TypeError: can't multiply None by int
+print(y * 2)  # 16 — works!</code></pre>
+
+            <h2>Default Parameter Values</h2>
+
+            <p>Parameters can have <strong>default values</strong>, making them optional:</p>
+
+            <pre><code>def greet_person(name, greeting="Hello", emoji="👋"):
+    """Greet someone with a customizable message."""
+    print(f"{emoji} {greeting}, {name}!")
+
+# Use all defaults except name
+greet_person("Alice")
+# 👋 Hello, Alice!
+
+# Override greeting
+greet_person("Bob", "Welcome")
+# 👋 Welcome, Bob!
+
+# Override both
+greet_person("Carlos", "Hey", "🎉")
+# 🎉 Hey, Carlos!</code></pre>
+
+            <h2>Returning Multiple Values</h2>
+
+            <p>Python lets you return multiple values as a <strong>tuple</strong>:</p>
+
+            <pre><code>def min_max(numbers):
+    """Return the minimum and maximum of a list."""
+    return min(numbers), max(numbers)
+
+# Unpack the tuple
+lowest, highest = min_max([12, 5, 89, 23, 7, 45])
+print(f"Lowest: {lowest}, Highest: {highest}")
+# Lowest: 5, Highest: 89
+
+# You can also get them as a single tuple
+result = min_max([3, 1, 9, 4])
+print(result)  # (1, 9)</code></pre>
+
+            <h2>Variable Number of Arguments (*args and **kwargs)</h2>
+
+            <p>When you don't know how many arguments will be passed:</p>
+
+            <pre><code># *args: Any number of positional arguments
+def total(*numbers):
+    """Add any number of values."""
+    return sum(numbers)
+
+print(total(1, 2, 3))           # 6
+print(total(10, 20, 30, 40))    # 100
+print(total(5))                  # 5
+
+# **kwargs: Any number of keyword arguments
+def build_profile(**info):
+    """Build a profile dictionary from keyword arguments."""
+    for key, value in info.items():
+        print(f"{key}: {value}")
+
+build_profile(name="Alice", age=30, city="Paris", job="Engineer")
+# name: Alice
+# age: 30
+# city: Paris
+# job: Engineer
+
+# Combine both
+def describe_pet(name, *toys, **details):
+    """Describe a pet with toys and details."""
+    print(f"{name}'s toys: {', '.join(toys)}")
+    for key, value in details.items():
+        print(f"  {key}: {value}")
+
+describe_pet("Whiskers", "ball", "laser", "catnip mouse",
+             species="cat", age=3, color="orange")
+# Whiskers' toys: ball, laser, catnip mouse
+#   species: cat
+#   age: 3
+#   color: orange</code></pre>
+
+            <h2>Variable Scope: Local vs Global</h2>
+
+            <p>Variables defined <strong>inside</strong> a function are <strong>local</strong> — they disappear when the function ends:</p>
+
+            <pre><code>def calculate():
+    message = "Inside function"  # Local variable
+    result = 42                  # Local variable
+    return result
+
+print(calculate())   # 42
+print(message)       # ❌ NameError: 'message' not defined
+
+# Global variables (outside functions)
+counter = 0  # Global
+
+def increment():
+    global counter  # Must declare "global" to modify it
+    counter += 1
+
+increment()
+increment()
+print(counter)  # 2
+
+# Better pattern: avoid globals, use return values
+def increment_counter(current):
+    return current + 1
+
+counter = 0
+counter = increment_counter(counter)  # 1
+counter = increment_counter(counter)  # 2</code></pre>
+
+            <h2>Lambda Functions: One-Liner Functions</h2>
+
+            <p>For simple operations, Python has <strong>lambda</strong> — anonymous functions written in one line:</p>
+
+            <pre><code># Regular function
+def square(x):
+    return x ** 2
+
+# Equivalent lambda
+square = lambda x: x ** 2
+
+print(square(5))  # 25
+
+# Lambdas shine with list operations
+numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+# Filter: keep only even numbers
+evens = list(filter(lambda x: x % 2 == 0, numbers))
+print(evens)  # [2, 4, 6, 8, 10]
+
+# Map: double each number
+doubled = list(map(lambda x: x * 2, numbers))
+print(doubled)  # [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+
+# Sort by a custom key
+words = ["banana", "pie", "Washington", "the"]
+print(sorted(words, key=lambda w: len(w)))
+# ['pie', 'the', 'banana', 'Washington']
+
+# Sort dict by value
+sales = {"apple": 50, "banana": 120, "cherry": 30}
+sorted_sales = sorted(sales.items(), key=lambda item: item[1], reverse=True)
+print(sorted_sales)  # [('banana', 120), ('apple', 50), ('cherry', 30)]</code></pre>
+
+            <h2>Real-World Project: A Grade Calculator</h2>
+
+            <p>Let's apply everything together:</p>
+
+            <pre><code>def calculate_letter_grade(score):
+    """Convert a numeric score to a letter grade."""
+    if score >= 90:
+        return "A"
+    elif score >= 80:
+        return "B"
+    elif score >= 70:
+        return "C"
+    elif score >= 60:
+        return "D"
+    else:
+        return "F"
+
+def calculate_gpa(grades):
+    """Calculate GPA from a list of (course, score) tuples."""
+    gpa_points = {
+        "A": 4.0, "B": 3.0, "C": 2.0, "D": 1.0, "F": 0.0
+    }
+    
+    if not grades:
+        return 0.0
+    
+    total = sum(gpa_points[calculate_letter_grade(score)] 
+                for _, score in grades)
+    return round(total / len(grades), 2)
+
+def display_report(grades):
+    """Print a formatted grade report."""
+    print("=" * 40)
+    print("           GRADE REPORT")
+    print("=" * 40)
+    print(f"{'Course':<20} {'Score':>6} {'Grade':>6}")
+    print("-" * 40)
+    
+    for course, score in grades:
+        letter = calculate_letter_grade(score)
+        print(f"{course:<20} {score:>6} {letter:>6}")
+    
+    print("-" * 40)
+    gpa = calculate_gpa(grades)
+    print(f"{'GPA':<20} {gpa:>6}")
+    print("=" * 40)
+
+# Usage
+my_grades = [
+    ("Mathematics", 92),
+    ("Physics", 85),
+    ("Computer Science", 97),
+    ("History", 78),
+    ("English", 88)
+]
+
+display_report(my_grades)</code></pre>
+
+            <p>Output:</p>
+            <pre>========================================
+           GRADE REPORT
+========================================
+Course                   Score  Grade
+----------------------------------------
+Mathematics                92      A
+Physics                    85      B
+Computer Science           97      A
+History                    78      C
+English                    88      B
+----------------------------------------
+GPA                       3.40
+========================================</pre>
+
+            <h2>Function Quick Reference</h2>
+
+            <ul>
+                <li><code>def name():</code> — Define a function with no parameters</li>
+                <li><code>def name(a, b):</code> — Define with required parameters</li>
+                <li><code>def name(a, b=10):</code> — Default parameter value</li>
+                <li><code>def name(*args):</code> — Accept any number of positional arguments</li>
+                <li><code>def name(**kwargs):</code> — Accept any number of keyword arguments</li>
+                <li><code>return value</code> — Send a value back to the caller</li>
+                <li><code>lambda x: x * 2</code> — Anonymous one-line function</li>
+                <li><code>help(function_name)</code> — Show a function's docstring</li>
+                <li><code>global var</code> — Access/modify a global variable (use sparingly)</li>
+            </ul>
+
+            <h2>Best Practices</h2>
+
+            <ul>
+                <li><strong>One job per function</strong> — A function should do one thing well. If it's doing three things, split it into three functions.</li>
+                <li><strong>Name functions clearly</strong> — <code>calculate_total()</code> is better than <code>calc()</code>.</li>
+                <li><strong>Use type hints</strong> — <code>def add(a: int, b: int) -> int:</code> documents your intentions and helps catch errors.</li>
+                <li><strong>Keep functions short</strong> — If a function is longer than 30 lines, consider splitting it.</li>
+                <li><strong>Avoid global variables</strong> — Pass data in as parameters, return results. This makes functions predictable and testable.</li>
+                <li><strong>Write docstrings</strong> — Especially for public functions that others might use.</li>
+            </ul>
+
+            <h2>Next Steps</h2>
+            <ul>
+                <li>Learn <strong>type hints</strong> — Add <code>-> int</code> and <code>: str</code> annotations</li>
+                <li>Explore <strong>decorators</strong> — Functions that modify other functions</li>
+                <li>Study <strong>recursion</strong> — Functions that call themselves</li>
+                <li>Practice with <a href="posts/python-loops.html">loops</a> inside functions</li>
+                <li>Build a <a href="posts/python-apis.html">Python API</a> client using functions</li>
+            </ul>
+
+            <blockquote>
+                <strong>Practice tip:</strong> Take a script where you copy-pasted code and refactor it into functions. Start with the most repeated block. If you find yourself writing "but it's only 3 lines," remember: functions aren't just about saving typing — they're about clarity, testing, and maintenance.
+            </blockquote>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes. Built with vibe coding.</p>
+        </div>
+    </footer>
+</body>
+</html>

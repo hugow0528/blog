@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docker for Beginners: Containers, Images & Docker Compose | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn Docker from scratch — containers, images, Dockerfiles, and Docker Compose. Beginner-friendly DevOps tutorial with real examples.">
+    <meta name="keywords" content="docker tutorial, containers, docker image, dockerfile, docker compose, devops beginner">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+            <p class="subtitle">Cloudflare · Python · AI Coding · DevOps</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+        
+        <article class="post-content">
+            <span class="tag devops">DevOps</span>
+            <h1>Docker for Beginners: Containers, Images & Docker Compose</h1>
+            <time>June 21, 2026 · 9 min read</time>
+
+            <p>Docker lets you package an application and everything it needs into a lightweight container that runs the same way on your laptop, your server, or in the cloud. No more "it works on my machine" excuses. This guide takes you from zero to running multi-container apps.</p>
+
+            <h2>What Problem Does Docker Solve?</h2>
+
+            <p>Imagine you built a Python web app. It uses Python 3.11, specific libraries (Flask, PostgreSQL driver), and a particular configuration. You hand it to a friend, and it crashes because they have Python 3.9 installed.</p>
+
+            <p>Docker solves this by bundling your code, its dependencies, and the operating system environment into a <strong>container image</strong>. That image runs identically everywhere — macOS, Windows, Linux, or any cloud provider.</p>
+
+            <blockquote>
+                <strong>Key idea:</strong> A container is like a pre-configured server that takes up megabytes instead of gigabytes. Think of it as a portable, lightweight virtual machine.
+            </blockquote>
+
+            <h2>Docker vs Virtual Machines</h2>
+
+            <ul>
+                <li><strong>Virtual Machines (VMs)</strong> run a full operating system inside another OS. Heavy, slow to start, resource-hungry.</li>
+                <li><strong>Docker Containers</strong> share the host OS kernel. Lightweight, starts in seconds, uses minimal resources.</li>
+            </ul>
+
+            <h2>Install Docker</h2>
+
+            <h3>macOS / Windows</h3>
+            <p>Download <a href="https://www.docker.com/products/docker-desktop" target="_blank">Docker Desktop</a> and follow the installer. It includes Docker Engine, CLI, and a GUI.</p>
+
+            <h3>Linux (Ubuntu/Debian)</h3>
+            <pre><code># Install Docker's official repository
+sudo apt update
+sudo apt install docker.io docker-compose
+
+# Start the service
+sudo systemctl start docker
+sudo systemctl enable docker
+
+# Verify installation
+docker --version
+docker compose version</code></pre>
+
+            <h2>Core Concepts: Images, Containers, and Registries</h2>
+
+            <p>Three terms you'll hear constantly:</p>
+
+            <ul>
+                <li><strong>Image</strong> — A read-only template. Think of it as a software installation package.</li>
+                <li><strong>Container</strong> — A running instance of an image. Like a program running from that package.</li>
+                <li><strong>Registry</strong> — A storage place for images. Docker Hub (hub.docker.com) is the default, public registry.</li>
+            </ul>
+
+            <p>Analogy: An <strong>image</strong> is like a class in Python. A <strong>container</strong> is like an object instantiated from that class. A <strong>registry</strong> is like PyPI — where you find and share images.</p>
+
+            <h2>Your First Container</h2>
+
+            <p>Let's run a simple web server. No installation needed — Docker pulls it automatically:</p>
+
+            <pre><code># Run an Nginx web server in a container
+docker run -d --name my-web -p 8080:80 nginx:latest</code></pre>
+
+            <p>What each flag does:</p>
+            <ul>
+                <li><code>-d</code> — Run in detached (background) mode</li>
+                <li><code>--name my-web</code> — Give the container a friendly name</li>
+                <li><code>-p 8080:80</code> — Map host port 8080 to container port 80</li>
+                <li><code>nginx:latest</code> — Use the latest Nginx image from Docker Hub</li>
+            </ul>
+
+            <p>Open <code>http://localhost:8080</code> in your browser. You'll see the Nginx welcome page.</p>
+
+            <h3>Useful Container Commands</h3>
+            <pre><code># List running containers
+docker ps
+
+# List ALL containers (including stopped ones)
+docker ps -a
+
+# Stop a container
+docker stop my-web
+
+# Remove a container
+docker rm my-web
+
+# View container logs
+docker logs my-web
+
+# Execute a command inside a running container
+docker exec -it my-web bash
+
+# Remove all stopped containers
+docker container prune</code></pre>
+
+            <h2>Build Your Own Image with a Dockerfile</h2>
+
+            <p>A <code>Dockerfile</code> is a text file that tells Docker how to build an image. Let's create one for a simple Python web app.</p>
+
+            <h3>Step 1: Create the App</h3>
+            <p>Make a project folder with these files:</p>
+
+            <pre><code># app.py
+from flask import Flask
+
+app = Flask(__name__)
+
+@app.route("/")
+def hello():
+    return "Hello from Docker! 🐳"
+
+@app.route("/health")
+def health():
+    return "OK"
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)</code></pre>
+
+            <pre><code># requirements.txt
+flask==3.1.0</code></pre>
+
+            <h3>Step 2: Write the Dockerfile</h3>
+            <pre><code># Dockerfile
+# Use an official Python runtime as the base image
+FROM python:3.12-slim
+
+# Set the working directory inside the container
+WORKDIR /app
+
+# Copy dependency file first (better for caching)
+COPY requirements.txt .
+
+# Install dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the rest of the application
+COPY . .
+
+# Expose port 5000 to the outside world
+EXPOSE 5000
+
+# Run the application
+CMD ["python", "app.py"]</code></pre>
+
+            <p>Each instruction builds a <strong>layer</strong> in the final image. Docker caches layers — so if you only change <code>app.py</code>, Docker reuses the cached layer for installing dependencies, making rebuilds fast.</p>
+
+            <h3>Step 3: Build and Run</h3>
+            <pre><code># Build the image (the . means "current directory")
+docker build -t my-python-app .
+
+# Run it with port mapping
+docker run -d --name my-app -p 5000:5000 my-python-app
+
+# Check it's working
+curl http://localhost:5000
+# Output: Hello from Docker! 🐳
+
+# Check the health endpoint
+curl http://localhost:5000/health
+# Output: OK</code></pre>
+
+            <h3>Step 4: Push to Docker Hub (Optional)</h3>
+            <pre><code># Tag your image with your Docker Hub username
+docker tag my-python-app yourusername/my-python-app:1.0
+
+# Log in to Docker Hub
+docker login
+
+# Push the image
+docker push yourusername/my-python-app:1.0</code></pre>
+
+            <p>Now anyone can run your app with <code>docker run yourusername/my-python-app:1.0</code>.</p>
+
+            <h2>Multi-Container Apps with Docker Compose</h2>
+
+            <p>Real apps need databases, caches, message queues. <strong>Docker Compose</strong> lets you define and run multiple containers together.</p>
+
+            <p>Let's build a full-stack app: a Flask API + PostgreSQL database.</p>
+
+            <h3>docker-compose.yml</h3>
+            <pre><code># docker-compose.yml
+version: "3.9"
+
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - DATABASE_URL=postgresql://appuser:secretpass@db:5432/appdb
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  db:
+    image: postgres:16
+    environment:
+      - POSTGRES_USER=appuser
+      - POSTGRES_PASSWORD=secretpass
+      - POSTGRES_DB=appdb
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  pgdata:</code></pre>
+
+            <p>Updated <code>app.py</code> to connect to the database:</p>
+            <pre><code># app.py
+import os
+from flask import Flask, jsonify
+
+app = Flask(__name__)
+
+DATABASE_URL = os.environ.get("DATABASE_URL")
+
+@app.route("/")
+def hello():
+    return "Hello from Docker! 🐳"
+
+@app.route("/config")
+def config():
+    return jsonify({
+        "database": "connected" if DATABASE_URL else "not configured",
+        "host": os.environ.get("HOST", "localhost")
+    })
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)</code></pre>
+
+            <h3>Run the Stack</h3>
+            <pre><code># Start all services
+docker compose up -d
+
+# Check running containers
+docker compose ps
+# Name          Command          State          Ports
+# -----------------------------------------------------------------
+# app-db-1      docker-entrypoint.sh ...  Up      5432/tcp
+# app-web-1     python app.py             Up      0.0.0.0:5000-&gt;5000/tcp
+
+# View logs from all services
+docker compose logs -f
+
+# Stop and remove everything
+docker compose down
+
+# Stop and also remove data volumes (WARNING: deletes database!)
+docker compose down -v</code></pre>
+
+            <h2>Docker Networking Explained</h2>
+
+            <p>Containers in the same Docker Compose file can talk to each other using <strong>service names</strong> as hostnames. That's why our app uses <code>db</code> as the hostname in <code>DATABASE_URL</code> — Docker's internal DNS resolves <code>db</code> to the PostgreSQL container's IP.</p>
+
+            <p>Key networking concepts:</p>
+            <ul>
+                <li><strong>Bridge network (default)</strong> — Containers can communicate but the host cannot see them unless you publish ports with <code>-p</code></li>
+                <li><strong>Port publishing (-p)</strong> — Maps a host port to a container port. <code>-p 5000:5000</code> means "host:5000 → container:5000"</li>
+                <li><strong>Docker Compose DNS</strong> — Each service name is a hostname other services can use</li>
+            </ul>
+
+            <h2>Common Dockerfile Best Practices</h2>
+
+            <ul>
+                <li><strong>Use specific tags</strong> — Avoid <code>latest</code> in production. Use <code>python:3.12-slim</code> instead of <code>python:latest</code></li>
+                <li><strong>Use .dockerignore</strong> — Skip <code>node_modules</code>, <code>__pycache__</code>, <code>.git</code> to keep images small</li>
+                <li><strong>Multi-stage builds</strong> — Build dependencies in one stage, copy only what you need in the next</li>
+                <li><strong>Copy requirements before code</strong> — Leverage Docker's layer cache for faster rebuilds</li>
+                <li><strong>Use non-root users</strong> — Add <code>USER nonroot</code> for better security</li>
+                <li><strong>Keep images small</strong> — Use <code>slim</code> or <code>alpine</code> variants of base images</li>
+            </ul>
+
+            <h3>Example .dockerignore</h3>
+            <pre><code># .dockerignore
+__pycache__
+*.pyc
+.git
+.env
+*.md
+tests/</code></pre>
+
+            <h2>Quick Reference Cheat Sheet</h2>
+            <pre><code># Run a one-off command
+docker run --rm python:3.12 python -c "print('Hello')""
+
+# Interactive shell
+docker run -it --rm python:3.12 bash
+
+# Inspect image layers
+docker history my-python-app
+
+# Check disk usage
+docker system df
+
+# Clean up unused images, containers, and volumes
+docker system prune -a
+
+# Run in background, auto-restart, name it
+docker run -d --name my-app --restart unless-stopped -p 5000:5000 my-python-app
+
+# Build and push in one command
+docker compose build && docker compose push</code></pre>
+
+            <h2>Next Steps</h2>
+            <ul>
+                <li>Deploy your Docker containers to a cloud server with <a href="#">Cloudflare Tunnel</a></li>
+                <li>Set up automated builds with GitHub Actions — check out our <a href="#">CI/CD tutorial</a></li>
+                <li>Learn Kubernetes for managing containers at scale</li>
+                <li>Explore Docker volumes for persistent data storage</li>
+            </ul>
+
+            <blockquote>
+                <strong>Practice tip:</strong> Dockerize an app you already have — even a simple Python script. The learning curve drops dramatically after your first Dockerfile.
+            </blockquote>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes. Built with vibe coding.</p>
+        </div>
+    </footer>
+</body>
+</html>

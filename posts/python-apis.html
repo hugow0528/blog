@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python APIs: Fetch Data from the Web | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn to call REST APIs in Python using the requests library. Handle JSON, authentication, error handling, and build a real weather app. Beginner tutorial.">
+    <meta name="keywords" content="python api, rest api python, requests library, json python, api authentication, python beginner">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+            <p class="subtitle">Cloudflare · Python · AI Coding · DevOps</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+        
+        <article class="post-content">
+            <span class="tag python">Python</span>
+            <h1>Python APIs: Fetch Data from the Web</h1>
+            <time>June 21, 2026 · 8 min read</time>
+
+            <p>APIs (Application Programming Interfaces) let your Python programs talk to the internet. Fetch weather data, post to Twitter, query GitHub, interact with AI models — it all starts with API calls. This guide teaches you everything from a basic GET request to building a fully working weather app.</p>
+
+            <h2>What Is an API?</h2>
+
+            <p>An API is a set of rules that lets software programs communicate. A <strong>REST API</strong> uses standard HTTP methods (GET, POST, PUT, DELETE) and usually returns data in JSON format.</p>
+
+            <p>Think of it like ordering food at a restaurant. You (the client) send a request to the waiter (the API), who delivers it to the kitchen (the server). The kitchen prepares the food and sends it back through the waiter to you.</p>
+
+            <blockquote>
+                <strong>HTTP Methods in plain English:</strong> GET = read data, POST = create new data, PUT = update existing data, DELETE = remove data.
+            </blockquote>
+
+            <h2>Install the requests Library</h2>
+
+            <p>Python's built-in <code>urllib</code> can do API calls, but the <code>requests</code> library is far easier to use and is the de facto standard.</p>
+
+            <pre><code># Install via pip
+pip install requests
+
+# Verify it works
+python -c "import requests; print(requests.__version__)"</code></pre>
+
+            <h2>Make Your First API Call: GET Request</h2>
+
+            <p>Let's fetch data from a free, no-authentication-required API. We'll use <a href="https://jsonplaceholder.typicode.com" target="_blank">JSONPlaceholder</a>, a fake online API for testing:</p>
+
+            <pre><code>import requests
+
+# Make a GET request
+response = requests.get("https://jsonplaceholder.typicode.com/posts/1")
+
+# Check if the request was successful
+if response.status_code == 200:
+    # Parse the JSON response
+    data = response.json()
+    print(f"Title: {data['title']}")
+    print(f"Body: {data['body']}")
+    print(f"Author ID: {data['userId']}")
+else:
+    print(f"Error: {response.status_code}")</code></pre>
+
+            <p>Output:</p>
+            <pre>Title: sunt aut facere repellat provident occaecati excepturi optio reprehenderit
+Body: quia et suscipit...
+Author ID: 1</pre>
+
+            <p>Key concepts:</p>
+            <ul>
+                <li><code>response.status_code</code> — 200 means success, 404 means not found, 500 means server error</li>
+                <li><code>response.json()</code> — Converts the JSON string into a Python dictionary</li>
+                <li><code>response.text</code> — Raw response text (useful for debugging)</li>
+                <li><code>response.headers</code> — Response headers like Content-Type</li>
+            </ul>
+
+            <h2>Error Handling That Doesn't Crash</h2>
+
+            <p>Real-world APIs fail. Networks drop. Servers go down. Always handle errors:</p>
+
+            <pre><code>import requests
+
+url = "https://jsonplaceholder.typicode.com/posts/1"
+
+try:
+    # Set a timeout so we don't hang forever
+    response = requests.get(url, timeout=10)
+    
+    # Raise an exception for HTTP errors (4xx, 5xx)
+    response.raise_for_status()
+    
+    data = response.json()
+    print("Success! Got:", data["title"][:50])
+
+except requests.exceptions.Timeout:
+    print("Request timed out. Check your connection.")
+
+except requests.exceptions.ConnectionError:
+    print("Could not connect. Is your internet working?")
+
+except requests.exceptions.HTTPError as e:
+    print(f"HTTP error: {e}")
+
+except requests.exceptions.RequestException as e:
+    print(f"Something went wrong: {e}")</code></pre>
+
+            <h2>APIs with Query Parameters</h2>
+
+            <p>Many APIs let you filter results using query parameters. Instead of manually building URLs, pass a dictionary to the <code>params</code> argument:</p>
+
+            <pre><code>import requests
+
+# Search GitHub repositories
+url = "https://api.github.com/search/repositories"
+params = {
+    "q": "python tutorial",
+    "sort": "stars",
+    "order": "desc",
+    "per_page": 5
+}
+
+response = requests.get(url, params=params)
+
+if response.status_code == 200:
+    results = response.json()["items"]
+    
+    print("Top Python Tutorial Repositories:\n")
+    for repo in results:
+        print(f"📦 {repo['full_name']}")
+        print(f"   ⭐ {repo['stargazers_count']} stars")
+        print(f"   📝 {repo['description'][:60]}")
+        print(f"   🔗 {repo['html_url']}")
+        print()</code></pre>
+
+            <p>Output:</p>
+            <pre>Top Python Tutorial Repositories:
+
+📦 jwasham/coding-interview-university
+   ⭐ 341000 stars
+   📝 A complete computer science study plan to become a software
+   🔗 https://github.com/jwasham/coding-interview-university
+
+📦 TheAlgorithms/Python
+   ⭐ 212000 stars
+   📝 All Algorithms implemented in Python
+   🔗 https://github.com/TheAlgorithms/Python</pre>
+
+            <h2>POST Requests: Sending Data</h2>
+
+            <p>POST requests send data to a server. Use <code>json=</code> to send JSON data or <code>data=</code> for form data:</p>
+
+            <pre><code>import requests
+
+# Create a new post (simulated)
+url = "https://jsonplaceholder.typicode.com/posts"
+
+new_post = {
+    "title": "My First API Post",
+    "body": "Hello from Python!",
+    "userId": 1
+}
+
+response = requests.post(url, json=new_post)
+
+if response.status_code == 201:
+    created = response.json()
+    print(f"Created! ID: {created['id']}")
+    print(f"Title: {created['title']}")
+else:
+    print(f"Failed: {response.status_code}")</code></pre>
+
+            <p>Output:</p>
+            <pre>Created! ID: 101
+Title: My First API Post</pre>
+
+            <p>Notice the server returned the data with a new <code>id</code> field. This is typical — APIs often echo back your data with added server-side fields.</p>
+
+            <h2>APIs with Authentication (API Keys)</h2>
+
+            <p>Many APIs require authentication. The most common method is passing an API key in headers:</p>
+
+            <pre><code>import requests
+
+# OpenWeatherMap example (get a free key at openweathermap.org)
+api_key = "your_api_key_here"  # Replace with your key
+city = "Tokyo"
+
+url = "https://api.openweathermap.org/data/2.5/weather"
+params = {
+    "q": city,
+    "appid": api_key,
+    "units": "metric"  # Get temperature in Celsius
+}
+
+response = requests.get(url, params=params)
+
+if response.status_code == 200:
+    data = response.json()
+    
+    temp = data["main"]["temp"]
+    feels_like = data["main"]["feels_like"]
+    description = data["weather"][0]["description"]
+    humidity = data["main"]["humidity"]
+    wind_speed = data["wind"]["speed"]
+    
+    print(f"🌤️  Weather in {city}")
+    print(f"   Temperature: {temp}°C (feels like {feels_like}°C)")
+    print(f"   Condition: {description}")
+    print(f"   Humidity: {humidity}%")
+    print(f"   Wind: {wind_speed} m/s")
+elif response.status_code == 401:
+    print("Invalid API key. Check your key and try again.")
+elif response.status_code == 404:
+    print(f"City '{city}' not found.")
+else:
+    print(f"Error: {response.status_code}")</code></pre>
+
+            <p>Other authentication methods:</p>
+            <ul>
+                <li><strong>Bearer tokens</strong> — <code>headers = {"Authorization": "Bearer YOUR_TOKEN"}</code></li>
+                <li><strong>Basic auth</strong> — <code>requests.get(url, auth=("user", "password"))</code></li>
+                <li><strong>OAuth 2.0</strong> — Used by Google, Twitter, GitHub. More complex, uses the <code>requests-oauthlib</code> library</li>
+            </ul>
+
+            <h2>Building a Real Weather App</h2>
+
+            <p>Let's put everything together into a reusable weather module:</p>
+
+            <pre><code># weather_app.py
+import requests
+from datetime import datetime
+
+class WeatherClient:
+    """A simple weather API client."""
+    
+    BASE_URL = "https://api.openweathermap.org/data/2.5"
+    
+    def __init__(self, api_key):
+        self.api_key = api_key
+        self.session = requests.Session()
+        # Attach API key to every request automatically
+        self.session.params = {"appid": self.api_key, "units": "metric"}
+    
+    def get_current(self, city):
+        """Get current weather for a city."""
+        response = self.session.get(
+            f"{self.BASE_URL}/weather",
+            params={"q": city}
+        )
+        response.raise_for_status()
+        return self._parse_weather(response.json())
+    
+    def get_forecast(self, city, days=5):
+        """Get a 5-day forecast."""
+        response = self.session.get(
+            f"{self.BASE_URL}/forecast",
+            params={"q": city, "cnt": days * 8}  # 3-hour intervals
+        )
+        response.raise_for_status()
+        return response.json()["list"]
+    
+    @staticmethod
+    def _parse_weather(data):
+        """Convert raw API response into a clean dictionary."""
+        return {
+            "city": data["name"],
+            "country": data["sys"]["country"],
+            "temp": data["main"]["temp"],
+            "feels_like": data["main"]["feels_like"],
+            "description": data["weather"][0]["description"],
+            "humidity": data["main"]["humidity"],
+            "wind_speed": data["wind"]["speed"],
+            "icon": data["weather"][0]["icon"],
+        }
+
+# Usage example
+if __name__ == "__main__":
+    client = WeatherClient("your_api_key_here")
+    
+    cities = ["London", "Tokyo", "New York", "Sydney"]
+    
+    print("=" * 50)
+    print(f"  🌍 World Weather Report — {datetime.now().strftime('%H:%M')}")
+    print("=" * 50)
+    
+    for city in cities:
+        try:
+            weather = client.get_current(city)
+            print(f"\n📍 {weather['city']}, {weather['country']}")
+            print(f"   🌡️ {weather['temp']}°C ({weather['description']})")
+            print(f"   💧 {weather['humidity']}% humidity | 💨 {weather['wind_speed']} m/s")
+        except requests.exceptions.HTTPError:
+            print(f"\n❌ Could not get weather for {city}")</code></pre>
+
+            <h2>Pagination for Large API Responses</h2>
+
+            <p>APIs often limit results per page. Here's how to loop through all pages:</p>
+
+            <pre><code>import requests
+
+def fetch_all_repos(query, per_page=30):
+    """Fetch ALL repositories matching a query, handling pagination."""
+    all_repos = []
+    page = 1
+    
+    while True:
+        url = "https://api.github.com/search/repositories"
+        params = {"q": query, "per_page": per_page, "page": page}
+        
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        
+        data = response.json()
+        repos = data["items"]
+        
+        if not repos:
+            break  # No more results
+            
+        all_repos.extend(repos)
+        print(f"Page {page}: fetched {len(repos)} repos (total: {len(all_repos)})")
+        
+        # Check if there are more pages
+        if len(repos) < per_page:
+            break
+            
+        page += 1
+    
+    return all_repos
+
+# Fetch all Python repos sorted by stars
+repos = fetch_all_repos("python", per_page=5)
+print(f"\nTotal: {len(repos)} repositories found!")</code></pre>
+
+            <h2>Rate Limiting and Politeness</h2>
+
+            <p>APIs often limit how many requests you can make. Don't hammer them:</p>
+
+            <pre><code>import requests
+import time
+
+def polite_fetch(url, delay=1.0):
+    """Fetch URLs with a delay between requests."""
+    sessions = []
+    
+    for i in range(5):
+        url_with_page = f"{url}/{i}"
+        response = requests.get(url_with_page, timeout=10)
+        response.raise_for_status()
+        sessions.append(response.json())
+        
+        # Be nice to the API
+        if i < 4:  # Don't sleep after the last request
+            time.sleep(delay)
+    
+    return sessions</code></pre>
+
+            <p>Pro tip: Many APIs include rate-limit headers:</p>
+            <pre><code>response = requests.get(url)
+print(response.headers.get("X-RateLimit-Remaining"))  # Requests left
+print(response.headers.get("X-RateLimit-Reset"))        # When the limit resets</code></pre>
+
+            <h2>Quick Reference</h2>
+            <ul>
+                <li><code>requests.get(url)</code> — Fetch data</li>
+                <li><code>requests.post(url, json=data)</code> — Send data</li>
+                <li><code>requests.put(url, json=data)</code> — Update data</li>
+                <li><code>requests.delete(url)</code> — Delete data</li>
+                <li><code>response.json()</code> — Parse JSON response</li>
+                <li><code>response.raise_for_status()</code> — Raise error on 4xx/5xx</li>
+                <li><code>requests.get(url, params=d)</code> — URL query parameters</li>
+                <li><code>requests.get(url, headers=d)</code> — Custom headers (auth, etc.)</li>
+                <li><code>requests.get(url, timeout=10)</code> — Timeout after 10 seconds</li>
+            </ul>
+
+            <h2>Next Steps</h2>
+            <ul>
+                <li><a href="posts/python-loops.html">Python loops</a> — iterate through API results</li>
+                <li>Web scraping with BeautifulSoup — extract data from HTML pages</li>
+                <li>Build a REST API yourself with Flask or FastAPI</li>
+                <li>Async API calls with <code>httpx</code> or <code>aiohttp</code> for better performance</li>
+            </ul>
+
+            <blockquote>
+                <strong>Practice tip:</strong> Pick any free API (GitHub, OpenWeather, REST Countries, or the Pokémon API) and build a small script that fetches and displays data. You'll learn more in 30 minutes of doing than 3 hours of reading.
+            </blockquote>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes. Built with vibe coding.</p>
+        </div>
+    </footer>
+</body>
+</html>

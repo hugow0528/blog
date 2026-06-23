@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Penetration Testing Basics: A Beginner's Guide to Ethical Hacking | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn penetration testing from scratch — what it is, the methodology, tools like Nmap and Nikto, and how to practice legally. Beginner-friendly cybersecurity guide with real examples.">
+    <meta name="keywords" content="penetration testing, ethical hacking, network security, Nmap, Nikto, OWASP, cybersecurity, vulnerability scanning, bug bounty">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/penetration-testing-basics.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+        
+        <article class="post-content">
+            <span class="tag security">Security</span>
+            <h1>Penetration Testing Basics: A Beginner's Guide to Ethical Hacking</h1>
+            <time>June 22, 2026 · 12 min read</time>
+
+            <p>Ever wondered how security professionals find weaknesses in systems before hackers exploit them? Penetration testing (or "pentesting") is the practice of simulating real-world attacks on computers, networks, and web applications to discover and fix vulnerabilities. It's one of the most valuable skills in cybersecurity — and it's entirely legal when done with permission.</p>
+
+            <p>In this guide, we'll walk through what penetration testing is, the standard methodology, the tools you need, and how to start practicing legally with hands-on examples.</p>
+
+            <h2>What Is Penetration Testing?</h2>
+
+            <p>Penetration testing is an authorized, simulated cyber attack against a system to evaluate its security. Unlike vulnerability scanning (which automatically detects known issues), pentesting involves creative, manual techniques that mimic how real attackers think and operate.</p>
+
+            <p>Think of it like hiring a master locksmith to test your home security. They try every possible entry point, report what works, and help you lock those doors before a burglar finds them.</p>
+
+            <blockquote>
+                <strong>Golden rule:</strong> Never test a system you don't own or have written permission to test. Unauthorized access is a crime in most countries.
+            </blockquote>
+
+            <h2>The Penetration Testing Methodology</h2>
+
+            <p>Professional pentesters follow a structured methodology. The most widely used framework has five phases:</p>
+
+            <pre><code>Phase 1: Reconnaissance   — Gather information about the target
+Phase 2: Scanning         — Discover open ports, services, and vulnerabilities
+Phase 3: Exploitation     — Attempt to breach security controls
+Phase 4: Post-Exploitation — See what you can access once inside
+Phase 5: Reporting       — Document everything for the client</code></pre>
+
+            <h3>Phase 1: Reconnaissance</h3>
+
+            <p>This is the intelligence-gathering stage. You want to know everything about the target — domain names, IP addresses, technologies used, employees, social media, DNS records, and more. There are two types:</p>
+
+            <ul>
+                <li><strong>Passive recon</strong> — gathering info without touching the target (Google searches, WHOIS lookups, Shodan)</li>
+                <li><strong>Active recon</strong> — directly interacting with the target (ping sweeps, port scans)</li>
+            </ul>
+
+            <p>A simple passive recon using command-line tools:</p>
+
+            <pre><code># WHOIS lookup — who owns the domain?
+whois example.com
+
+# DNS lookup — what records exist?
+nslookup example.com
+dig example.com ANY
+
+# Find subdomains
+host -l example.com ns1.example.com</code></pre>
+
+            <h3>Phase 2: Scanning</h3>
+
+            <p>Now that you know what you're dealing with, it's time to scan. The #1 tool here is <strong>Nmap</strong> (Network Mapper), which discovers hosts and services on a network.</p>
+
+            <pre><code># Basic scan — find open ports
+nmap 192.168.1.1
+
+# Scan with service version detection
+nmap -sV 192.168.1.1
+
+# Scan with OS detection
+nmap -O 192.168.1.1
+
+# Full scan of all 65535 ports
+nmap -p- 192.168.1.1
+
+# Aggressive scan (combines several techniques)
+nmap -A 192.168.1.1
+
+# Scan an entire subnet
+nmap 192.168.1.0/24</code></pre>
+
+            <p>For web applications specifically, <strong>Nikto</strong> is a popular web server scanner:</p>
+
+            <pre><code># Scan a web server for vulnerabilities
+nikto -h http://example.com
+
+# Scan with SSL check
+nikto -h https://example.com -ssl
+
+# Save results to file
+nikto -h http://example.com -o report.txt -Format txt</code></pre>
+
+            <h3>Phase 3: Exploitation</h3>
+
+            <p>This is where pentesters attempt to exploit the vulnerabilities they found. For web application testing, <strong>Burp Suite</strong> is the go-to tool — it acts as a proxy between your browser and the target, letting you inspect and modify every HTTP request and response. Professional pentesters also use frameworks like <strong>Metasploit</strong> for exploit development and <strong>sqlmap</strong> for automated SQL injection testing.</p>
+
+            <h3>Phase 4: Post-Exploitation</h3>
+
+            <p>Once inside, you assess the damage: What data is accessible? Can you escalate privileges? Can you move laterally to other systems? This phase helps understand the real impact of a breach.</p>
+
+            <pre><code># After gaining a shell, common checks:
+
+# Who am I?
+whoami
+
+# What privileges?
+id
+
+# What's running?
+ps aux
+
+# What users exist?
+cat /etc/passwd
+
+# Any configuration or key files in common locations?
+ls -la /var/www/ && ls -la /home/</code></pre>
+
+            <h3>Phase 5: Reporting</h3>
+
+            <p>A pentest without a report is useless. Your report should include:</p>
+
+            <ul>
+                <li><strong>Executive summary</strong> — high-level findings for management</li>
+                <li><strong>Technical details</strong> — step-by-step reproduction for engineers</li>
+                <li><strong>Risk ratings</strong> — Critical, High, Medium, Low, Informational</li>
+                <li><strong>Remediation steps</strong> — how to fix each issue</li>
+                <li><strong>Score</strong> — overall security posture assessment</li>
+            </ul>
+
+            <h2>Common Vulnerability Categories</h2>
+
+            <p>Understanding what to look for is as important as the tools. Here are the most common categories:</p>
+
+            <h3>OWASP Top 10 (Web Applications)</h3>
+
+            <ul>
+                <li><strong>A01 — Broken Access Control</strong> — users accessing resources they shouldn't</li>
+                <li><strong>A02 — Cryptographic Failures</strong> — sensitive data exposed due to weak encryption</li>
+                <li><strong>A03 — Injection</strong> — SQL injection, command injection, XSS</li>
+                <li><strong>A04 — Insecure Design</strong> — missing security by design principles</li>
+                <li><strong>A05 — Security Misconfiguration</strong> — default passwords, open ports, verbose errors</li>
+            </ul>
+
+            <h2>Legal Ways to Practice</h2>
+
+            <p>You need legal targets to practice. Here are great options:</p>
+
+            <ol>
+                <li><strong>TryHackMe</strong> (tryhackme.com) — guided learning rooms with legal vulnerable machines</li>
+                <li><strong>HackTheBox</strong> (hackthebox.com) — realistic vulnerable machines to pwn</li>
+                <li><strong>OWASP Juice Shop</strong> — intentionally vulnerable web app you can run locally</li>
+                <li><strong>PortSwigger Web Security Academy</strong> — free labs for every OWASP category</li>
+                <li><strong>CTF competitions</strong> — Capture The Flag events with legal challenges</li>
+                <li><strong>Bug Bounty programs</strong> — HackerOne, Bugcrowd let you test companies legally for rewards</li>
+            </ol>
+
+            <h2>Building Your First Lab</h2>
+
+            <p>Set up a safe, legal environment on your own computer:</p>
+
+            <pre><code># Install common security tools on Ubuntu/Debian
+sudo apt update
+sudo apt install -y nmap nikto burpsuite
+
+# Or run Kali Linux in a VM (VirtualBox/VMware)
+
+# Download an intentionally vulnerable web app
+git clone https://github.com/juice-shop/juice-shop
+cd juice-shop && npm install && npm start
+
+# Now scan your local lab
+nmap -sV -p- localhost:3000
+nikto -h http://localhost:3000</code></pre>
+
+            <h2>Essential Tools Summary</h2>
+
+            <pre><code>Recon:     theHarvester, Maltego, Shodan, WHOIS
+Scanning:  Nmap, Nikto, OpenVAS, Nessus
+Exploit:   Metasploit, sqlmap, Burp Suite, Curl
+Web:       OWASP ZAP, Burp Suite, ffuf, Gobuster
+Wireless:  Aircrack-ng, Wireshark
+Social Eng: SET, GoPhish
+Reporting: Dradis, Pentera</code></pre>
+
+            <h2>Next Steps for Beginners</h2>
+
+            <p>Here's a realistic learning path:</p>
+
+            <ol>
+                <li>Start with <strong>TryHackMe</strong> — complete the "Pre Security" and "Jr Penetration Tester" paths</li>
+                <li>Learn <strong>Linux command line</strong> — it's the backbone of security tools</li>
+                <li>Study <strong>networking fundamentals</strong> — TCP/IP, DNS, HTTP, ports, protocols</li>
+                <li>Practice with <strong>PortSwigger Academy</strong> for web app security</li>
+                <li>Consider certifications: <strong>CompTIA Security+</strong>, then <strong>eJPT</strong> or <strong>OSCP</strong></li>
+            </ol>
+
+            <blockquote>
+                Penetration testing is a journey, not a destination. New vulnerabilities are discovered every day. Stay curious, stay ethical, and keep practicing.
+            </blockquote>
+
+            <p>Ready to explore more security topics? Check out our guide on <a href="https-tls-basics.html">How HTTPS and TLS Work</a> to understand the encryption that protects your connections.</p>
+
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes | Built with ❤️ & AI</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528" target="_blank">GitHub</a>
+                <a href="https://blog.hugow.dev/sitemap.xml">Sitemap</a>
+                <a href="https://blog.hugow.dev/robots.txt">Robots</a>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

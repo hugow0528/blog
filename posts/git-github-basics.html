@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Git and GitHub for Beginners: Version Control Step by Step | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn Git and GitHub from scratch — commits, branches, pull requests, remotes, and .gitignore. The essential version control guide every beginner developer needs. Working examples included.">
+    <meta name="keywords" content="git, github, version control, git tutorial, beginner, git branch, git commit, pull request, .gitignore">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/git-github-basics.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+
+        <article class="post-content">
+            <span class="tag devops">DevOps</span>
+            <h1>Git and GitHub for Beginners: Version Control Step by Step</h1>
+            <time>June 24, 2026 · 12 min read</time>
+
+            <p>You're writing code. You made a change, and now something is broken. You wish you could go back to yesterday's version. Or maybe you're working on a new feature and don't want to break what already works. Or perhaps you want to collaborate with someone else on the same project.</p>
+
+            <p><strong>Git</strong> solves all of these problems. It's a <em>version control system</em> — a time machine for your code. Every change you make is recorded, and you can revert to any previous state. <strong>GitHub</strong> is a platform that hosts your Git repositories online, enabling collaboration, code reviews, and project management.</p>
+
+            <p>In this tutorial, you'll learn everything from installing Git to collaborating with others — with practical examples you can follow along.</p>
+
+            <h2>What Is Version Control?</h2>
+
+            <p>Version control tracks changes to files over time. Without it, developers resort to naming files like:</p>
+
+            <pre><code>script.py
+script_v2.py
+script_v2_FINAL.py
+script_v2_FINAL_REAL.py
+script_v2_FINAL_REAL_forreal.py</code></pre>
+
+            <p>Sound familiar? 😅 Git eliminates this chaos by storing every change in a <strong>repository</strong> (short: <em>repo</em>). You can see the full history of every file, compare versions, and revert anything.</p>
+
+            <h2>Installing Git</h2>
+
+            <p>Git is free and available on all platforms:</p>
+
+            <pre><code># macOS (using Homebrew)
+brew install git
+
+# Ubuntu / Debian
+sudo apt update
+sudo apt install git
+
+# Windows
+# Download from https://git-scm.com/download/win
+# The installer handles everything automatically
+
+# Verify installation
+git --version
+# Output: git version 2.43.0 (or newer)</code></pre>
+
+            <h2>Configure Git for the First Time</h2>
+
+            <p>Before using Git, tell it who you are. These details are attached to every commit:</p>
+
+            <pre><code># Set your name and email globally
+git config --global user.name "Your Name"
+git config --global user.email "you@example.com"
+
+# Set a default text editor (optional)
+git config --global core.editor "nano"
+
+# Check your settings
+git config --list
+
+# Use a colored output (recommended)
+git config --global color.ui auto</code></pre>
+
+            <h2>Your First Git Repository</h2>
+
+            <p>A <strong>repository</strong> is a folder that Git tracks. Let's create one from scratch:</p>
+
+            <pre><code># 1. Create a project directory
+mkdir my-first-project
+cd my-first-project
+
+# 2. Initialize a Git repository
+git init
+# Output: Initialized empty Git repository in /path/to/my-first-project/.git/
+
+# 3. Create a file
+echo 'print("Hello, Git!")' > hello.py
+
+# 4. Check the status
+git status
+# Output:
+# On branch main
+# Untracked files:
+#   hello.py
+# nothing added to commit but untracked files present
+
+# 5. Add the file to the staging area
+git add hello.py
+
+# 6. Commit the changes
+git commit -m "Add hello.py script"
+# Output:
+# [main (root-commit) abc1234] Add hello.py script
+#  1 file changed, 1 insertion(+)
+#  create mode 100644 hello.py</code></pre>
+
+            <h3>Understanding the Three States</h3>
+
+            <p>Git organizes files into three states:</p>
+
+            <ul>
+                <li><strong>Untracked:</strong> New files Git doesn't know about yet</li>
+                <li><strong>Unstaged:</strong> Tracked files with uncommitted changes</li>
+                <li><strong>Staged:</strong> Changes selected to be included in the next commit</li>
+            </ul>
+
+            <p>The workflow is: <code>modify → git add → git commit</code>. Think of <code>git add</code> as marking which changes you want to save, and <code>git commit</code> as actually saving them to history.</p>
+
+            <h2>Working with Commits</h2>
+
+            <p>A <strong>commit</strong> is a snapshot of your project at a point in time. Here's how to work with them:</p>
+
+            <pre><code># Make a change to an existing file
+# Edit hello.py to add a new line
+echo 'print("Hello, World!")' >> hello.py
+
+# Check what changed
+git status
+git diff
+# Shows the exact differences (diffs) between the
+# last commit and the current state
+
+# Stage and commit
+git add hello.py
+git commit -m "Add second print statement to hello.py"
+
+# View commit history
+git log
+# Shows all commits, newest first:
+# commit abc1234 (HEAD -> main)
+# Author: Your Name <you@example.com>
+# Date:   Mon Jun 24 10:30:00 2026 +0000
+#
+#     Add second print statement to hello.py
+#
+# commit def5678
+# Author: Your Name <you@example.com>
+# Date:   Mon Jun 24 10:15:00 2026 +0000
+#
+#     Add hello.py script
+
+# One-line log (compact view)
+git log --oneline
+# abc1234 (HEAD -> main) Add second print statement to hello.py
+# def5678 Add hello.py script</code></pre>
+
+            <h3>Writing Good Commit Messages</h3>
+
+            <blockquote>
+                <strong>Best practice:</strong> Write commit messages in the imperative tense — like you're giving a command. <code>"Add login feature"</code> not <code>"Added login feature"</code>. Keep the first line under 50 characters.
+            </blockquote>
+
+            <pre><code># ✅ Good commit messages
+git commit -m "Add user authentication"
+git commit -m "Fix typo in README"
+git commit -m "Update Python version to 3.12"
+
+# ❌ Bad commit messages
+git commit -m "fix"
+git commit -m "asdf"
+git commit -m "changed stuff"</code></pre>
+
+            <h2>Branching: Work on Features Safely</h2>
+
+            <p>Branches let you work on new features without touching the main code. Think of a branch as a parallel timeline:</p>
+
+            <pre><code># View current branches
+git branch
+# * main   (the * means you're on this branch)
+
+# Create a new branch
+git branch feature-login
+
+# Switch to the new branch
+git checkout feature-login
+# or (Git 2.23+):
+git switch feature-login
+
+# Create AND switch in one command
+git checkout -b feature-signup
+# or:
+git switch -c feature-signup
+
+# Do your work on the branch...
+echo '# Login page' > login.html
+git add login.html
+git commit -m "Add login page"
+
+# Switch back to main
+git switch main
+# login.html is gone! (it's only on the feature branch)
+
+# List all branches
+git branch
+# * main
+#   feature-login
+#   feature-signup
+
+# Delete a branch (after merging, if needed)
+git branch -d feature-login</code></pre>
+
+            <h2>Merging: Combining Branches</h2>
+
+            <p>When your feature is ready, merge it back into main:</p>
+
+            <pre><code># Make sure you're on main
+git switch main
+
+# Merge the feature branch into main
+git merge feature-login
+
+# View the combined history
+git log --oneline --graph
+# *   abc1234 (HEAD -> main) Merge branch 'feature-login'
+# |\
+# | * def5678 Add login page
+# |/
+# * 1234567 Initial commit</code></pre>
+
+            <p><strong>Merge conflicts</strong> happen when both branches modify the same lines in a file. Git marks the conflicting areas and lets you resolve them manually:</p>
+
+            <pre><code># When a conflict occurs, Git tells you:
+# CONFLICT (content): Merge conflict in file.py
+# Automatic merge failed; fix conflicts and then commit
+
+# Open the file and look for markers:
+# <<<<<<< HEAD
+# your code on main
+# =======
+# their code on the branch
+# >>>>>>> feature-login
+
+# Resolve by keeping what you want, remove the markers, then:
+git add file.py
+git commit -m "Resolve merge conflict in file.py"</code></pre>
+
+            <h2>Remote Repositories and GitHub</h2>
+
+            <p>A <strong>remote</strong> is a copy of your repository on another server — usually GitHub. Here's the full workflow:</p>
+
+            <pre><code># 1. Create a repository on GitHub (via the website)
+#    https://github.com/new
+#    → Name: my-first-project
+#    → Public, Initialize with NO README
+
+# 2. Connect your local repo to the remote
+git remote add origin https://github.com/username/my-first-project.git
+
+# 3. Verify the connection
+git remote -v
+# origin  https://github.com/username/my-first-project.git (fetch)
+# origin  https://github.com/username/my-first-project.git (push)
+
+# 4. Push your code to GitHub
+git push -u origin main
+# -u sets "origin main" as the default for future pushes
+
+# 5. Future pushes are simpler
+git push
+
+# 6. Pull updates from GitHub (fetch + merge)
+git pull
+
+# Clone an existing repo from GitHub
+git clone https://github.com/username/my-first-project.git
+cd my-first-project</code></pre>
+
+            <h2>The Complete Daily Workflow</h2>
+
+            <p>Here's the typical workflow you'll use every day:</p>
+
+            <pre><code># Morning: pull latest changes
+git switch main
+git pull
+
+# Create a feature branch
+git switch -c fix-bug-123
+
+# Work: edit files, test, repeat
+# (make changes in your editor)
+
+# Check what changed
+git status
+git diff
+
+# Stage and commit
+git add file1.py file2.py
+git commit -m "Fix bug #123: handle null input"
+
+# Push and create pull request
+git push origin fix-bug-123
+
+# Go to GitHub → "Compare & Pull Request"
+# → Review → Merge → Delete branch</code></pre>
+
+            <h2>.gitignore: Files to Exclude</h2>
+
+            <p>Some files should never be tracked — passwords, build artifacts, virtual environments. A <code>.gitignore</code> file tells Git to ignore them:</p>
+
+            <pre><code># File: .gitignore
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.env
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env
+.env.local</code></pre>
+
+            <p>Once a file is tracked, adding it to <code>.gitignore</code> won't stop Git from tracking it. You must remove it from tracking first:</p>
+
+            <pre><code># Remove a tracked file from Git (keep local copy)
+git rm --cached filename
+
+# Then add the .gitignore entry and commit
+git add .gitignore
+git commit -m "Add .gitignore for Python projects"</code></pre>
+
+            <h2>Undoing Mistakes</h2>
+
+            <p>Git has safety nets for almost every mistake:</p>
+
+            <pre><code"># Undo changes to a file (before committing)
+git checkout -- filename.py
+# or (Git 2.23+):
+git restore filename.py
+
+# Unstage a file (after git add, before git commit)
+git restore --staged filename.py
+
+# Amend the last commit (change message or add files)
+git commit --amend -m "New commit message"
+
+# Revert a commit (create a new commit that undoes it)
+git revert abc1234
+
+# WARNING: Only use on your own commits, never on shared history
+git reset --hard abc1234  # Go back to a previous commit</code></pre>
+
+            <h2>Real Project: A Python CLI Tool</h2>
+
+            <p>Let's put it all together with a real project:</p>
+
+            <pre><code># 1. Set up the project
+mkdir todo-cli
+cd todo-cli
+git init
+
+# 2. Create .gitignore
+echo -e "venv/\n__pycache__/\n*.pyc\n.env" > .gitignore
+git add .gitignore
+git commit -m "Initialize project with .gitignore"
+
+# 3. Create the main script
+cat > todo.py << 'EOF'
+#!/usr/bin/env python3
+"""Simple command-line TODO list."""
+import json
+import sys
+
+FILENAME = "todos.json"
+
+def load_todos():
+    try:
+        with open(FILENAME, "r") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return []
+
+def save_todos(todos):
+    with open(FILENAME, "w") as f:
+        json.dump(todos, f, indent=2)
+
+def add_todo(text):
+    todos = load_todos()
+    todos.append({"text": text, "done": False})
+    save_todos(todos)
+    print(f"✅ Added: {text}")
+
+def list_todos():
+    todos = load_todos()
+    if not todos:
+        print("No todos yet. Use: python todo.py add 'task'")
+        return
+    for i, todo in enumerate(todos, 1):
+        status = "✅" if todo["done"] else "⬜"
+        print(f"  {status} {i}. {todo['text']}")
+
+def main():
+    if len(sys.argv) < 2:
+        print("Usage: python todo.py [add|list]")
+        return
+
+    command = sys.argv[1]
+
+    if command == "add" and len(sys.argv) >= 3:
+        add_todo(" ".join(sys.argv[2:]))
+    elif command == "list":
+        list_todos()
+    else:
+        print("Usage: python todo.py [add 'task'|list]")
+
+if __name__ == "__main__":
+    main()
+EOF
+
+git add todo.py
+git commit -m "Add TODO CLI with add and list commands"
+
+# 4. Test it
+python todo.py add "Learn Git"
+python todo.py add "Push to GitHub"
+python todo.py list
+# Output:
+# ✅ Added: Learn Git
+# ✅ Added: Push to GitHub
+# ⬜ 1. Learn Git
+# ⬜ 2. Push to GitHub
+
+# 5. Create a feature branch for a new command
+git switch -c feature-mark-done
+
+# Add the mark-done command to todo.py
+# (edit the file to add a complete() function...)
+
+git add todo.py
+git commit -m "Add mark-done command to complete todos"
+
+# Switch back to main and merge
+git switch main
+git merge feature-mark-done
+
+# 6. Push to GitHub
+git remote add origin https://github.com/username/todo-cli.git
+git push -u origin main
+
+echo "🎉 Your first Git project is on GitHub!"</code></pre>
+
+            <h2>Git Commands Quick Reference</h2>
+
+            <table style="width:100%;border-collapse:collapse;margin:1.5rem 0;">
+                <tr style="background:var(--primary);color:white;">
+                    <th style="padding:0.5rem;text-align:left;">Command</th>
+                    <th style="padding:0.5rem;text-align:left;">Purpose</th>
+                </tr>
+                <tr style="border-bottom:1px solid var(--border);">
+                    <td style="padding:0.5rem;"><code>git init</code></td>
+                    <td style="padding:0.5rem;">Start a new repository</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--border);background:rgba(37,99,235,0.03);">
+                    <td style="padding:0.5rem;"><code>git clone URL</code></td>
+                    <td style="padding:0.5rem;">Copy a remote repository</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--border);">
+                    <td style="padding:0.5rem;"><code>git status</code></td>
+                    <td style="padding:0.5rem;">Check file states</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--border);background:rgba(37,99,235,0.03);">
+                    <td style="padding:0.5rem;"><code>git add FILE</code></td>
+                    <td style="padding:0.5rem;">Stage changes for commit</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--border);">
+                    <td style="padding:0.5rem;"><code>git commit -m "msg"</code></td>
+                    <td style="padding:0.5rem;">Save staged changes</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--border);background:rgba(37,99,235,0.03);">
+                    <td style="padding:0.5rem;"><code>git log</code></td>
+                    <td style="padding:0.5rem;">View commit history</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--border);">
+                    <td style="padding:0.5rem;"><code>git branch</code></td>
+                    <td style="padding:0.5rem;">List branches</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--border);background:rgba(37,99,235,0.03);">
+                    <td style="padding:0.5rem;"><code>git switch -c name</code></td>
+                    <td style="padding:0.5rem;">Create and switch branch</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--border);">
+                    <td style="padding:0.5rem;"><code>git merge name</code></td>
+                    <td style="padding:0.5rem;">Merge branch into current</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--border);background:rgba(37,99,235,0.03);">
+                    <td style="padding:0.5rem;"><code>git push</code></td>
+                    <td style="padding:0.5rem;">Upload to remote</td>
+                </tr>
+                <tr>
+                    <td style="padding:0.5rem;"><code>git pull</code></td>
+                    <td style="padding:0.5rem;">Download and merge from remote</td>
+                </tr>
+            </table>
+
+            <h2>Summary</h2>
+
+            <p>Git and GitHub are essential tools for every developer. Here's the essential flow:</p>
+
+            <ol>
+                <li><code>git init</code> — Start tracking your project</li>
+                <li><code>git add</code> + <code>git commit</code> — Save your progress</li>
+                <li><code>git branch</code> + <code>git switch</code> — Work on features in isolation</li>
+                <li><code>git merge</code> — Combine changes back together</li>
+                <li><code>git remote add</code> + <code>git push</code> — Share on GitHub</li>
+                <li><code>git pull</code> — Stay in sync with the team</li>
+            </ol>
+
+            <p>Start using Git for every project from day one. The habit pays dividends immediately.</p>
+
+            <p><strong>Next up:</strong> Check out our <a href="github-actions-cicd.html">GitHub Actions CI/CD</a> tutorial to automate your workflows, or <a href="docker-basics.html">Docker Basics</a> to containerize your apps.</p>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes | Built with ❤️ & AI</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528" target="_blank">GitHub</a>
+                <a href="https://blog.hugow.dev/sitemap.xml">Sitemap</a>
+                <a href="https://blog.hugow.dev/robots.txt">Robots</a>
+            </div>
+        </div>
+    </footer>
+
+    <button class="back-to-top" id="backToTop" title="Back to top">↑</button>
+
+    <script>
+    // Back to Top
+    const backToTop = document.getElementById('backToTop');
+    window.addEventListener('scroll', () => {
+        backToTop.style.display = window.scrollY > 300 ? 'block' : 'none';
+    });
+    backToTop.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // Reading Progress Bar
+    window.addEventListener('scroll', () => {
+        const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+        const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        const scrolled = (winScroll / height) * 100;
+        document.getElementById('progressBar').style.width = scrolled + '%';
+    });
+
+    // Dark Mode Toggle
+    const themeToggle = document.getElementById('themeToggle');
+    if (themeToggle) {
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            themeToggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+            localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+        });
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark-mode');
+            themeToggle.textContent = '☀️';
+        }
+    }
+    </script>
+</body>
+</html>

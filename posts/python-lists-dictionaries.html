@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Lists and Dictionaries: Master the Core Data Structures | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn Python lists and dictionaries from scratch — indexing, slicing, methods, dictionary operations, and nested structures. Beginner-friendly tutorial with working code examples and a real project.">
+    <meta name="keywords" content="Python lists, dictionaries, data structures, indexing, slicing, append, pop, keys, values, items, nested dictionaries, Python beginner">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-lists-dictionaries.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+        
+        <article class="post-content">
+            <span class="tag python">Python</span>
+            <h1>Python Lists and Dictionaries: Master the Core Data Structures</h1>
+            <time>June 23, 2026 · 10 min read</time>
+
+            <p>You've learned Python variables, loops, functions, and file operations. Now it's time to master the two most important data structures in Python: <strong>lists</strong> and <strong>dictionaries</strong>. These structures appear in virtually every Python program — from simple scripts to complex web applications — so understanding them deeply will make you a much more effective programmer.</p>
+
+            <p>In this tutorial, we'll cover everything you need to know about lists and dictionaries, with practical examples you can run immediately. By the end, you'll build a real-world project: a simple task manager that uses both data structures.</p>
+
+            <h2>What Are Lists and Dictionaries?</h2>
+
+            <p>Python provides several built-in data structures, but two dominate everyday programming:</p>
+
+            <ul>
+                <li><strong>Lists</strong> — ordered, mutable collections that keep items in the order you add them. Access items by position (index).</li>
+                <li><strong>Dictionaries</strong> — unordered collections of key-value pairs. Access items by name (key), not position.</li>
+            </ul>
+
+            <blockquote>
+                <p><strong>Analogy:</strong> A list is like a numbered shopping list — you find items by their position. A dictionary is like a phone book — you find entries by name (key), not by row number.</p>
+            </blockquote>
+
+            <h2>Python Lists: The Ordered Collection</h2>
+
+            <h3>Creating Lists</h3>
+
+            <p>Lists are created with square brackets <code>[]</code>. They can hold any type of data, and even mix types together:</p>
+
+            <pre><code># Creating lists
+fruits = ["apple", "banana", "cherry", "date"]
+numbers = [10, 20, 30, 40, 50]
+mixed = [1, "hello", 3.14, True, None]
+empty = []
+
+print(fruits)       # ['apple', 'banana', 'cherry', 'date']
+print(len(fruits))  # 4 — use len() to count items</code></pre>
+
+            <h3>Accessing List Items</h3>
+
+            <p>Python uses <strong>zero-based indexing</strong> — the first item is at index 0, not 1. You can also use negative indices to count from the end:</p>
+
+            <pre><code>fruits = ["apple", "banana", "cherry", "date", "elderberry"]
+
+# Positive indexing (from the start)
+print(fruits[0])   # 'apple' — first item
+print(fruits[1])   # 'banana' — second item
+print(fruits[4])   # 'elderberry' — last item
+
+# Negative indexing (from the end)
+print(fruits[-1])  # 'elderberry' — last item
+print(fruits[-2])  # 'date' — second to last
+
+# Slicing: get a range of items
+print(fruits[1:3])   # ['banana', 'cherry'] — items at index 1 and 2
+print(fruits[:2])    # ['apple', 'banana'] — first two items
+print(fruits[2:])    # ['cherry', 'date', 'elderberry'] — from index 2 onwards
+print(fruits[::2])   # ['apple', 'cherry', 'elderberry'] — every other item</code></pre>
+
+            <h3>Modifying Lists</h3>
+
+            <p>Lists are <strong>mutable</strong>, meaning you can change them after creation:</p>
+
+            <pre><code>fruits = ["apple", "banana", "cherry"]
+
+# Change an existing item
+fruits[1] = "blueberry"
+print(fruits)  # ['apple', 'blueberry', 'cherry']
+
+# Add items
+fruits.append("date")        # add to end
+print(fruits)  # ['apple', 'blueberry', 'cherry', 'date']
+
+fruits.insert(1, "apricot")  # insert at specific position
+print(fruits)  # ['apple', 'apricot', 'blueberry', 'cherry', 'date']
+
+# Remove items
+fruits.remove("blueberry")   # remove by value
+print(fruits)  # ['apple', 'apricot', 'cherry', 'date']
+
+popped = fruits.pop()        # remove and return last item
+print(popped)  # 'date'
+print(fruits)  # ['apple', 'apricot', 'cherry']
+
+popped_first = fruits.pop(0) # remove and return first item
+print(popped_first)  # 'apple'
+
+# Combine lists
+more_fruits = ["fig", "grape"]
+all_fruits = fruits + more_fruits
+print(all_fruits)  # ['apricot', 'cherry', 'fig', 'grape']</code></pre>
+
+            <h3>Useful List Methods</h3>
+
+            <pre><code>numbers = [3, 1, 4, 1, 5, 9, 2, 6]
+
+# Sorting
+numbers.sort()           # sort in-place (ascending)
+print(numbers)  # [1, 1, 2, 3, 4, 5, 6, 9]
+
+numbers.sort(reverse=True)  # descending
+print(numbers)  # [9, 6, 5, 4, 3, 2, 1, 1]
+
+# Searching and counting
+print(numbers.count(1))  # 2 — how many times 1 appears
+print(numbers.index(5))  # 4 — position of the number 5
+
+# Reversing
+numbers.reverse()
+print(numbers)  # [1, 1, 2, 3, 4, 5, 6, 9]
+
+# Copying
+original = [1, 2, 3]
+copy1 = original.copy()   # proper copy
+copy2 = original[:]       # another way to copy
+
+# ⚠️ Warning: `copy3 = original` does NOT copy — it creates a second reference!</code></pre>
+
+            <h3>List Comprehensions: Python's Secret Weapon</h3>
+
+            <p>List comprehensions let you create new lists in a single, readable line:</p>
+
+            <pre><code># Traditional approach with a for loop
+squares = []
+for n in range(1, 6):
+    squares.append(n ** 2)
+print(squares)  # [1, 4, 9, 16, 25]
+
+# Same thing with a list comprehension
+squares = [n ** 2 for n in range(1, 6)]
+print(squares)  # [1, 4, 9, 16, 25]
+
+# With a condition (filter)
+evens = [n for n in range(20) if n % 2 == 0]
+print(evens)  # [0, 2, 4, 6, 8, 10, 12, 14, 16, 18]
+
+# Transform strings
+names = ["alice", "bob", "charlie"]
+upper_names = [name.upper() for name in names]
+print(upper_names)  # ['ALICE', 'BOB', 'CHARLIE']
+
+# First letter of each word
+words = ["hello", "world", "python", "coding"]
+first_letters = [word[0] for word in words]
+print(first_letters)  # ['h', 'w', 'p', 'c']</code></pre>
+
+            <h2>Python Dictionaries: Key-Value Pairs</h2>
+
+            <h3>Creating Dictionaries</h3>
+
+            <p>Dictionaries store data as key-value pairs, enclosed in curly braces <code>{}</code>:</p>
+
+            <pre><code># Creating a dictionary
+person = {
+    "name": "Hugo",
+    "age": 28,
+    "city": "Toronto",
+    "hobbies": ["coding", "gaming", "reading"]
+}
+
+print(person["name"])      # 'Hugo'
+print(person["age"])       # 28
+
+# Empty dictionary
+empty = {}
+# Or using the dict() constructor
+also_empty = dict()</code></pre>
+
+            <h3>Accessing and Modifying Dictionary Values</h3>
+
+            <pre><code>person = {
+    "name": "Hugo",
+    "age": 28,
+    "city": "Toronto"
+}
+
+# Access a value
+print(person["name"])  # 'Hugo'
+
+# Safe access with .get() — returns None (or default) if key doesn't exist
+print(person.get("email"))           # None
+print(person.get("email", "N/A"))    # 'N/A'
+
+# Add or update a value
+person["email"] = "hugo@example.com"  # new key
+person["age"] = 29                     # update existing key
+print(person)
+# {'name': 'Hugo', 'age': 29, 'city': 'Toronto', 'email': 'hugo@example.com'}
+
+# Delete a key-value pair
+del person["email"]
+
+# Remove and return a value
+city = person.pop("city")  # removes "city" and returns "Toronto"
+print(city)    # 'Toronto'
+print(person)  # {'name': 'Hugo', 'age': 29}</code></pre>
+
+            <h3>Iterating Over Dictionaries</h3>
+
+            <pre><code>person = {
+    "name": "Hugo",
+    "age": 28,
+    "city": "Toronto",
+    "email": "hugo@example.com"
+}
+
+# Iterate over keys (default)
+for key in person:
+    print(key)  # name, age, city, email
+
+# Iterate over keys and values
+for key, value in person.items():
+    print(f"{key}: {value}")
+# name: Hugo
+# age: 28
+# city: Toronto
+# email: hugo@example.com
+
+# Iterate over values only
+for value in person.values():
+    print(value)
+
+# Iterate over keys only (explicit)
+for key in person.keys():
+    print(key)</code></pre>
+
+            <h3>Dictionary Comprehensions</h3>
+
+            <pre><code># Create a dictionary from a range
+squares = {n: n ** 2 for n in range(1, 6)}
+print(squares)  # {1: 1, 2: 4, 3: 9, 4: 16, 5: 25}
+
+# Filter: only even numbers
+evens = {n: n ** 2 for n in range(10) if n % 2 == 0}
+print(evens)  # {0: 0, 2: 4, 4: 16, 6: 36, 8: 64}
+
+# Swap keys and values
+original = {"a": 1, "b": 2, "c": 3}
+swapped = {value: key for key, value in original.items()}
+print(swapped)  # {1: 'a', 2: 'b', 3: 'c'}</code></pre>
+
+            <h2>Real-World Project: Task Manager</h2>
+
+            <p>Now let's combine lists and dictionaries to build a simple command-line task manager. This project demonstrates how these data structures work together in practice.</p>
+
+            <pre><code># task_manager.py
+# A simple task manager using lists and dictionaries
+
+tasks = []  # list of task dictionaries
+
+def add_task(description, priority="medium"):
+    """Add a new task to the list."""
+    task = {
+        "id": len(tasks) + 1,
+        "description": description,
+        "priority": priority,
+        "done": False
+    }
+    tasks.append(task)
+    print(f"✅ Task #{task['id']} added: {description}")
+
+def view_tasks():
+    """Display all tasks."""
+    if not tasks:
+        print("No tasks yet. Add one with add_task()!")
+        return
+    
+    print(f"\n{'='*45}")
+    print(f"{'ID':&lt;4} {'Status':&lt;8} {'Priority':&lt;10} Description")
+    print(f"{'='*45}")
+    for t in tasks:
+        status = "✅" if t['done'] else "⬜"
+        print(f"{t['id']}&lt;4} {status}&lt;8} {t['priority']}&lt;10} {t['description']}")
+    print(f"{'='*45}")
+
+def complete_task(task_id):
+    """Mark a task as done."""
+    for task in tasks:
+        if task["id"] == task_id:
+            task["done"] = True
+            print(f"✅ Task #{task_id} completed!")
+            return
+    print(f"❌ Task #{task_id} not found.")
+
+def get_tasks_by_priority(priority):
+    """Return tasks filtered by priority (list comprehension!)."""
+    return [t for t in tasks if t["priority"] == priority]
+
+# --- Run the app ---
+add_task("Learn Python lists", "high")
+add_task("Build a web scraper", "medium")
+add_task("Set up Cloudflare DNS", "high")
+add_task("Write a blog post", "low")
+add_task("Practice list comprehensions", "medium")
+
+view_tasks()
+
+complete_task(1)
+complete_task(3)
+
+view_tasks()
+
+print("\n🔥 High priority tasks:")
+for t in get_tasks_by_priority("high"):
+    print(f"  - {t['description']} ({'done' if t['done'] else 'pending'})")</code></pre>
+
+            <h3>Expected Output</h3>
+
+            <pre><code>✅ Task #1 added: Learn Python lists
+✅ Task #2 added: Build a web scraper
+✅ Task #3 added: Set up Cloudflare DNS
+✅ Task #4 added: Write a blog post
+✅ Task #5 added: Practice list comprehensions
+
+=============================================
+ID   Status   Priority   Description
+=============================================
+1    ⬜       high       Learn Python lists
+2    ⬜       medium     Build a web scraper
+3    ⬜       high       Set up Cloudflare DNS
+4    ⬜       low        Write a blog post
+5    ⬜       medium     Practice list comprehensions
+=============================================
+
+✅ Task #1 completed!
+✅ Task #3 completed!
+
+=============================================
+ID   Status   Priority   Description
+=============================================
+1    ✅       high       Learn Python lists
+2    ⬜       medium     Build a web scraper
+3    ✅       high       Set up Cloudflare DNS
+4    ⬜       low        Write a blog post
+5    ⬜       medium     Practice list comprehensions
+=============================================
+
+🔥 High priority tasks:
+  - Learn Python lists (done)
+  - Set up Cloudflare DNS (done)</code></pre>
+
+            <h2>Common Pitfalls to Avoid</h2>
+
+            <h3>1. Modifying a list while iterating over it</h3>
+
+            <pre><code># ❌ BAD — don't do this!
+numbers = [1, 2, 3, 4, 5, 6]
+for n in numbers:
+    if n % 2 == 0:
+        numbers.remove(n)
+# This skips elements because the list shrinks during iteration!
+
+# ✅ GOOD — use a list comprehension instead
+numbers = [n for n in numbers if n % 2 != 0]
+print(numbers)  # [1, 3, 5]</code></pre>
+
+            <h3>2. Accidentally sharing mutable defaults</h3>
+
+            <pre><code># ❌ BAD — all calls share the same list!
+def bad_append(item, lst=[]):
+    lst.append(item)
+    return lst
+
+print(bad_append(1))  # [1]
+print(bad_append(2))  # [1, 2] ← oops!
+
+# ✅ GOOD — use None as the default
+def good_append(item, lst=None):
+    if lst is None:
+        lst = []
+    lst.append(item)
+    return lst
+
+print(good_append(1))  # [1]
+print(good_append(2))  # [2] ← correct!</code></pre>
+
+            <h3>3. Using dict keys that don't exist</h3>
+
+            <pre><code>data = {"name": "Hugo"}
+
+# ❌ BAD — raises KeyError
+# print(data["email"])
+
+# ✅ GOOD — use .get() for safe access
+print(data.get("email", "not provided"))  # 'not provided'
+
+# ✅ GOOD — use dict.setdefault()
+data.setdefault("email", "unknown@example.com")
+print(data["email"])  # 'unknown@example.com'</code></pre>
+
+            <h2>Summary</h2>
+
+            <p>Lists and dictionaries are the backbone of Python programming. Here's a quick cheat sheet:</p>
+
+            <ul>
+                <li><strong>Lists</strong> use <code>[]</code>, are ordered, support indexing and slicing</li>
+                <li><strong>Dictionaries</strong> use <code>{}</code>, store key-value pairs, access by key</li>
+                <li>Use <code>.append()</code>, <code>.insert()</code>, <code>.pop()</code>, <code>.remove()</code> to modify lists</li>
+                <li>Use <code>.get()</code>, <code>.keys()</code>, <code>.values()</code>, <code>.items()</code> to work with dictionaries</li>
+                <li>List and dict comprehensions make code shorter and more Pythonic</li>
+                <li>Nested structures (lists of dicts, dicts of lists) handle real-world data</li>
+            </ul>
+
+            <p>Master these two data structures, and you'll be able to handle 90% of everyday Python programming tasks. In the next tutorial, we'll explore how to combine these structures with file operations and APIs to build even more powerful applications.</p>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes | Built with ❤️ & AI</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528" target="_blank">GitHub</a>
+                <a href="https://blog.hugow.dev/sitemap.xml">Sitemap</a>
+                <a href="https://blog.hugow.dev/robots.txt">Robots</a>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

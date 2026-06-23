@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Web Scraping with BeautifulSoup: Beginner Guide | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn web scraping in Python using requests and BeautifulSoup. Extract data from websites, handle dynamic content, and build a real scraping project. Beginner tutorial with working code.">
+    <meta name="keywords" content="python web scraping, beautifulsoup, scrape websites python, html parsing, requests library, python beginner, data extraction">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+            <p class="subtitle">Cloudflare · Python · AI Coding · DevOps</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+        
+        <article class="post-content">
+            <span class="tag python">Python</span>
+            <h1>Python Web Scraping with BeautifulSoup: Beginner Guide</h1>
+            <time>June 22, 2026 · 9 min read</time>
+
+            <p>Web scraping lets your Python programs extract data from websites automatically. Collect product prices, monitor news articles, aggregate job listings, or gather research data — all with a few lines of code. This guide teaches you everything from fetching a page to building a reusable scraping tool.</p>
+
+            <h2>What Is Web Scraping?</h2>
+
+            <p>Web scraping is the process of programmatically downloading web pages and extracting specific information. A human visits a website, reads the content, and writes down what they need. Web scraping does the same thing, but automatically.</p>
+
+            <p>The two tools we'll use:</p>
+            <ul>
+                <li><strong>requests</strong> — Downloads the HTML of a web page</li>
+                <li><strong>BeautifulSoup</strong> — Parses the HTML and lets you find specific elements</li>
+            </ul>
+
+            <blockquote>
+                <strong>Legal note:</strong> Always check a website's <code>robots.txt</code> file (e.g., <code>example.com/robots.txt</code>) and Terms of Service before scraping. Be polite — add delays between requests and don't overwhelm servers.
+            </blockquote>
+
+            <h2>Install the Libraries</h2>
+
+            <pre><code># Install both libraries
+pip install requests beautifulsoup4
+
+# Verify installation
+python -c "import requests; from bs4 import BeautifulSoup; print('Ready!')"</code></pre>
+
+            <h2>Scrape Your First Page</h2>
+
+            <p>Let's extract headlines from <a href="https://news.ycombinator.com" target="_blank">Hacker News</a>, which has a clean, well-structured layout perfect for learning:</p>
+
+            <pre><code>import requests
+from bs4 import BeautifulSoup
+
+# 1. Download the page
+url = "https://news.ycombinator.com"
+response = requests.get(url)
+response.raise_for_status()  # Raise an error for bad status codes
+
+# 2. Parse the HTML
+soup = BeautifulSoup(response.text, "html.parser")
+
+# 3. Find all story links (Hacker News uses class "titleline")
+stories = soup.find_all("span", class_="titleline")
+
+print(f"Found {len(stories)} stories:\n")
+
+for i, story in enumerate(stories[:5], 1):  # Show first 5
+    link = story.find("a")
+    title = link.text
+    href = link["href"]
+    print(f"{i}. {title}")
+    print(f"   {href}")
+    print()</code></pre>
+
+            <p>Output:</p>
+            <pre>Found 30 stories:
+
+1. A new programming language for the browser
+   https://example.com/newlang
+
+2. How we scaled our app to 1M users
+   https://example.com/scaling
+
+3. The best VS Code extensions in 2026
+   https://example.com/vscode-ext</pre>
+
+            <p>Key concepts:</p>
+            <ul>
+                <li><code>BeautifulSoup(response.text, "html.parser")</code> — Parses the raw HTML into a navigable tree</li>
+                <li><code>soup.find_all(tag, class_=name)</code> — Finds all elements matching the criteria</li>
+                <li><code>element.find(tag)</code> — Finds the first matching child element</li>
+                <li><code>element.text</code> — Gets the text content inside an element</li>
+                <li><code>element["href"]</code> — Gets the value of an attribute</li>
+            </ul>
+
+            <h2>Understanding the HTML Tree</h2>
+
+            <p>BeautifulSoup lets you navigate HTML like a family tree:</p>
+
+            <pre><code># Navigate the tree
+soup.find("div")              # Find first &lt;div&gt;
+soup.find("div", id="main")   # Find &lt;div id="main"&gt;
+soup.find("div", class_="content")  # Find &lt;div class="content"&gt;
+
+# Find all matching elements
+soup.find_all("a")            # All &lt;a&gt; tags
+soup.find_all("p", class_="text")  # All &lt;p class="text"&gt;
+
+# Navigate from an element
+element.parent               # Go up to parent
+element.children             # Go down to children
+element.next_sibling         # Next element at same level
+element.find_next("p")       # Find next &lt;p&gt; tag (anywhere below)
+
+# CSS selectors (like JavaScript's querySelector)
+soup.select("div.content p.text")    # &lt;p class="text"&gt; inside &lt;div class="content"&gt;
+soup.select("ul.list &gt; li")         # Direct children &lt;li&gt; of &lt;ul class="list"&gt;
+soup.select_one("h1")              # First &lt;h1&gt; (returns single element)</code></pre>
+
+            <h2>Extracting Structured Data: A Price Tracker</h2>
+
+            <p>Let's build a more realistic scraper that extracts structured data. We'll scrape book data from <a href="https://books.toscrape.com" target="_blank">Books to Scrape</a> — a practice website designed specifically for learning web scraping:</p>
+
+            <pre><code>import requests
+from bs4 import BeautifulSoup
+import csv
+
+# Fetch the main page
+url = "https://books.toscrape.com/"
+response = requests.get(url)
+response.raise_for_status()
+
+soup = BeautifulSoup(response.text, "html.parser")
+
+# Find all book entries
+books = soup.find_all("article", class_="product_pod")
+
+# Extract structured data
+book_data = []
+for book in books:
+    title = book.h3.find("a")["title"]
+    
+    # Extract price (e.g., "£51.77")
+    price = book.find("p", class_="price_color").text
+    
+    # Extract star rating
+    star = book.find("p", class_="star-rating")
+    rating = star["class"][1] if star else "No rating"  # e.g., "Three"
+    
+    # Extract availability
+    availability = book.find("p", class_="instock availability").text.strip()
+    
+    book_data.append({
+        "title": title,
+        "price": price,
+        "rating": rating,
+        "in_stock": "Yes" in availability
+    })
+
+# Print first 5 books
+for book in book_data[:5]:
+    print(f"📖 {book['title'][:40]}")
+    print(f"   💰 {book['price']} | ⭐ {book['rating']} | {'✅' if book['in_stock'] else '❌'}")
+    print()
+
+# Save to CSV
+with open("books.csv", "w", newline="", encoding="utf-8") as f:
+    writer = csv.DictWriter(f, fieldnames=["title", "price", "rating", "in_stock"])
+    writer.writeheader()
+    writer.writerows(book_data)
+
+print(f"Saved {len(book_data)} books to books.csv")</code></pre>
+
+            <p>Output:</p>
+            <pre>📖 A Light in the Attic
+   💰 £51.77 | ⭐ Three | ✅
+
+📖 Tipping the Velvet
+   💰 £53.74 | ⭐ One | ✅
+
+📖 Soumission
+   💰 £50.10 | ⭐ One | ✅
+
+Saved 20 books to books.csv</code></pre>
+
+            <h2>Handling Multiple Pages</h2>
+
+            <p>Real scraping projects need to handle pagination. Here's how to scrape all pages:</p>
+
+            <pre><code>import requests
+from bs4 import BeautifulSoup
+import time
+
+def scrape_all_books():
+    base_url = "https://books.toscrape.com/"
+    all_books = []
+    current_url = base_url
+    page = 1
+    
+    while current_url:
+        print(f"Scraping page {page}...")
+        
+        response = requests.get(current_url)
+        response.raise_for_status()
+        
+        soup = BeautifulSoup(response.text, "html.parser")
+        
+        # Extract books from current page
+        for book in soup.find_all("article", class_="product_pod"):
+            title = book.h3.find("a")["title"]
+            price = book.find("p", class_="price_color").text
+            all_books.append({"title": title, "price": price})
+        
+        # Find the "next page" link
+        next_btn = soup.find("li", class_="next")
+        if next_btn and next_btn.find("a"):
+            next_link = next_btn.find("a")["href"]
+            # Convert relative URL to absolute
+            current_url = base_url + next_link
+            page += 1
+            time.sleep(1)  # Be polite: wait 1 second between pages
+        else:
+            current_url = None  # No more pages
+    
+    print(f"\nTotal: {len(all_books)} books scraped")
+    return all_books
+
+books = scrape_all_books()</code></pre>
+
+            <p>Output:</p>
+            <pre>Scraping page 1...
+Scraping page 2...
+Scraping page 3...
+...
+Scraping page 50...
+
+Total: 1000 books scraped</code></pre>
+
+            <h2>Building a Reusable Scraper Class</h2>
+
+            <p>Let's wrap everything into a reusable class with error handling:</p>
+
+            <pre><code># scraper.py
+import requests
+from bs4 import BeautifulSoup
+import time
+from dataclasses import dataclass, asdict
+from typing import Optional
+
+@dataclass
+class Book:
+    title: str
+    price: float
+    rating: str
+    in_stock: bool
+    url: str
+
+class BookScraper:
+    """A reusable web scraper for the books.toscrape.com site."""
+    
+    def __init__(self, delay=1.0, user_agent=None):
+        self.base_url = "https://books.toscrape.com/"
+        self.delay = delay
+        self.session = requests.Session()
+        
+        if user_agent:
+            self.session.headers.update({"User-Agent": user_agent})
+        else:
+            # Default to a browser-like user agent
+            self.session.headers.update({
+                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"
+                "PythonScraper/1.0"
+            })
+    
+    def fetch_page(self, url: str) -> BeautifulSoup:
+        """Fetch and parse a single page."""
+        try:
+            response = self.session.get(url, timeout=10)
+            response.raise_for_status()
+            return BeautifulSoup(response.text, "html.parser")
+        except requests.exceptions.Timeout:
+            print(f"⏱️  Timeout fetching {url}")
+        except requests.exceptions.RequestException as e:
+            print(f"❌ Error fetching {url}: {e}")
+        return None
+    
+    def parse_books(self, soup: BeautifulSoup) -> list[Book]:
+        """Extract book data from a parsed page."""
+        books = []
+        page_url = self.session.url  # Track which page we're on
+        
+        for article in soup.find_all("article", class_="product_pod"):
+            try:
+                link_tag = article.h3.find("a")
+                title = link_tag["title"]
+                book_url = self.base_url + link_tag["href"]
+                
+                price_text = article.find("p", class_="price_color").text
+                price = float(price_text.replace("£", ""))
+                
+                star = article.find("p", class_="star-rating")
+                rating = star["class"][1] if star else "No rating"
+                
+                stock_text = article.find("p", class_="instock availability").text
+                in_stock = "In stock" in stock_text
+                
+                books.append(Book(
+                    title=title,
+                    price=price,
+                    rating=rating,
+                    in_stock=in_stock,
+                    url=book_url
+                ))
+            except (KeyError, AttributeError, ValueError) as e:
+                print(f"⚠️  Skipping malformed book entry: {e}")
+                continue
+        
+        return books
+    
+    def scrape_all(self, max_pages: Optional[int] = None) -> list[Book]:
+        """Scrape all books, optionally limiting the number of pages."""
+        all_books = []
+        current_url = self.base_url
+        page = 0
+        
+        while current_url and (max_pages is None or page < max_pages):
+            page += 1
+            print(f"📄 Page {page}: {current_url}")
+            
+            soup = self.fetch_page(current_url)
+            if not soup:
+                break
+            
+            books = self.parse_books(soup)
+            all_books.extend(books)
+            print(f"   → Found {len(books)} books (total: {len(all_books)})")
+            
+            # Navigate to next page
+            next_li = soup.find("li", class_="next")
+            if next_li and next_li.find("a"):
+                current_url = self.base_url + next_li.find("a")["href"]
+                time.sleep(self.delay)
+            else:
+                current_url = None
+        
+        print(f"\n✅ Done! Scraped {len(all_books)} books in {page} pages.")
+        return all_books
+
+# Usage
+if __name__ == "__main__":
+    scraper = BookScraper(delay=1.0)
+    books = scraper.scrape_all(max_pages=3)  # Just first 3 pages for demo
+    
+    # Show most expensive books
+    sorted_books = sorted(books, key=lambda b: b.price, reverse=True)
+    print("\n🏆 Top 5 Most Expensive Books:")
+    for book in sorted_books[:5]:
+        print(f"  {book.price:>7} | {book.title[:45]}")</code></pre>
+
+            <h2>Respectful Scraping: Best Practices</h2>
+
+            <ul>
+                <li><strong>Add delays</strong> — <code>time.sleep(1)</code> between requests to avoid overwhelming the server</li>
+                <li><strong>Check robots.txt</strong> — Every website should have one. Respect its rules.</li>
+                <li><strong>Use a proper User-Agent</code> — Don't hide who you are. Include your project name.</li>
+                <li><strong>Handle errors gracefully</strong> — Networks fail, pages change, servers go down. Always use try/except.</li>
+                <li><strong>Set timeouts</strong> — Never let a request hang forever. Use <code>timeout=10</code>.</li>
+                <li><strong>Cache results</strong> — Don't re-scrape data you already have. Save to CSV, JSON, or a database.</li>
+                <li><strong>Use APIs when available</strong> — If a site offers an API, prefer it over scraping. It's more reliable and usually faster.</li>
+            </ul>
+
+            <h2>Going Beyond: Selenium for JavaScript Pages</h2>
+
+            <p>BeautifulSoup can only parse static HTML. For sites that load content with JavaScript (React, Vue, etc.), you need a real browser. Enter <strong>Selenium</strong>:</p>
+
+            <pre><code># pip install selenium webdriver-manager
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.service import Service
+
+# Set up headless Chrome
+options = webdriver.ChromeOptions()
+options.add_argument("--headless")  # No GUI — runs in background
+options.add_argument("--no-sandbox")
+options.add_argument("--disable-dev-shm-usage")
+
+driver = webdriver.Chrome(
+    service=Service(ChromeDriverManager().install()),
+    options=options
+)
+
+try:
+    driver.get("https://example.com/dynamic-page")
+    
+    # Wait for content to load (up to 10 seconds)
+    from selenium.webdriver.support.ui import WebDriverWait
+    from selenium.webdriver.support import expected_conditions as EC
+    
+    element = WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.CLASS_NAME, "loaded-content"))
+    )
+    
+    # Now you can get the rendered HTML
+    html = driver.page_source
+    
+    # Use BeautifulSoup on the rendered HTML
+    soup = BeautifulSoup(html, "html.parser")
+    # ... extract data as normal ...
+    
+finally:
+    driver.quit()</code></pre>
+
+            <h2>Quick Reference</h2>
+            <ul>
+                <li><code>requests.get(url)</code> — Download a web page</li>
+                <li><code>BeautifulSoup(html, "html.parser")</code> — Parse HTML</li>
+                <li><code>soup.find_all(tag, class_=name)</code> — Find all matching elements</li>
+                <li><code>soup.select("css selector")</code> — Find elements with CSS selectors</li>
+                <li><code>element.text</code> — Get text content</li>
+                <li><code>element["attribute"]</code> — Get an attribute value</li>
+                <li><code>element.parent</code> — Navigate up the HTML tree</li>
+                <li><code>time.sleep(n)</code> — Pause between requests (be polite!)</li>
+                <li><code>response.raise_for_status()</code> — Raise error on HTTP failures</li>
+            </ul>
+
+            <h2>Next Steps</h2>
+            <ul>
+                <li><a href="posts/python-apis.html">Python APIs</a> — Use APIs instead of scraping when available</li>
+                <li><a href="posts/python-loops.html">Python loops</a> — Iterate through scraped results</li>
+                <li>Build a price monitoring bot that emails you when prices drop</li>
+                <li>Use <strong>Scrapy</strong> for large-scale scraping projects</li>
+                <li>Store scraped data in a SQLite or PostgreSQL database</li>
+            </ul>
+
+            <blockquote>
+                <strong>Practice tip:</strong> Pick a website you visit regularly (news site, job board, product listing) and write a script that extracts the data you care about. Even a 20-line script that saves results to CSV is a huge win over manual copying and pasting.
+            </blockquote>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes. Built with vibe coding.</p>
+        </div>
+    </footer>
+</body>
+</html>

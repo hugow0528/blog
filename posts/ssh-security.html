@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSH Security: Secure Your Remote Server Access | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn SSH security from scratch — key-based authentication, disabling password login, fail2ban, port changes, and SSH hardening. Beginner-friendly cybersecurity tutorial with working commands.">
+    <meta name="keywords" content="SSH security, SSH keys, fail2ban, remote server security, passwordless SSH, SSH hardening, cybersecurity, server security, SSH configuration">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/ssh-security.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+        
+        <article class="post-content">
+            <span class="tag security">Security</span>
+            <h1>SSH Security: Secure Your Remote Server Access</h1>
+            <time>June 23, 2026 · 10 min read</time>
+
+            <p>SSH (Secure Shell) is the most common way to access remote servers. It's powerful, ubiquitous, and — by default — surprisingly insecure. Attackers run automated SSH brute-force attacks 24/7, targeting port 22 across the internet. If you've ever left a server with default SSH settings connected to the internet, it's likely already been probed thousands of times.</p>
+
+            <p>This guide walks you through <strong>hardening your SSH configuration</strong> step by step — from setting up key-based authentication to deploying fail2ban. By the end, your server will be significantly harder for attackers to compromise, and you'll understand why each step matters.</p>
+
+            <h2>Why SSH Security Matters</h2>
+
+            <p>SSH gives you full shell access to a server. If an attacker gains access, they can read files, install malware, steal data, pivot to other servers, or use your machine for attacks. The consequences range from downtime to complete data loss.</p>
+
+            <blockquote>
+                <strong>Stat:</strong> On a typical cloud server, automated bots attempt SSH logins within seconds of the server coming online. A weak password means you're compromised almost instantly.
+            </blockquote>
+
+            <p>Let's build defense layers from the ground up.</p>
+
+            <h2>Step 1: Set Up SSH Key-Based Authentication</h2>
+
+            <p>Passwords are vulnerable to brute-force attacks. SSH keys use <strong>asymmetric cryptography</strong> — you generate a private key (never share it) and a public key (put it on servers). When you connect, the server proves it has your public key, and you prove you have the matching private key. No password guessing possible.</p>
+
+            <p><strong>Generate an SSH key pair on your local machine:</strong></p>
+
+<pre><code># Generate a modern Ed25519 key (preferred over RSA)
+ssh-keygen -t ed25519 -C "your-email@example.com"
+
+# You'll see:
+# Generating public/private ed25519 key pair.
+# Enter file in which to save the key (/home/user/.ssh/id_ed25519): [press Enter]
+# Enter passphrase (empty for no passphrase): [enter a strong passphrase]
+# Enter same passphrase again: [confirm]
+
+# Check your keys exist
+ls -la ~/.ssh/id_ed25519 ~/.ssh/id_ed25519.pub</code></pre>
+
+            <p><strong>Copy the public key to your server:</strong></p>
+
+<pre><code># Method 1: Use ssh-copy-id (easiest)
+ssh-copy-id -i ~/.ssh/id_ed25519.pub user@your-server-ip
+
+# Method 2: Manual copy
+cat ~/.ssh/id_ed25519.pub
+# Copy the output, then on the server run:
+mkdir -p ~/.ssh
+chmod 700 ~/.ssh
+echo "ssh-ed25519 AAAA...your-public-key... user@host" >> ~/.ssh/authorized_keys
+chmod 600 ~/.ssh/authorized_keys</code></pre>
+
+            <p><strong>Test the connection before disabling passwords:</strong></p>
+
+<pre><code># Connect using your key
+ssh user@your-server-ip
+
+# If it works without asking for a password, keys are configured correctly
+# (you may still be asked for the passphrase you set during key generation)</code></pre>
+
+            <h2>Step 2: Disable Password Authentication</h2>
+
+            <p>Now that your keys work, prevent anyone from using passwords — this blocks brute-force attacks entirely.</p>
+
+            <p><strong>Edit the SSH configuration on the server:</strong></p>
+
+<pre><code># Open the SSH config file
+sudo nano /etc/ssh/sshd_config
+
+# Find and change these lines:
+PasswordAuthentication no
+ChallengeResponseAuthentication no
+PubkeyAuthentication yes
+
+# Also ensure these are set:
+PermitRootLogin no
+X11Forwarding no
+
+# Save and restart SSH
+sudo systemctl restart sshd</code></pre>
+
+            <blockquote>
+                <strong>⚠️ WARNING:</strong> Before restarting SSH, test your key authentication in a <em>second</em> terminal window. If you lock yourself out, you'll need console access (via your cloud provider's web console) to fix it.
+            </blockquote>
+
+            <h2>Step 3: Change the Default SSH Port</h2>
+
+            <p>Most automated scanners target port 22 exclusively. Changing the port won't stop a determined attacker, but it eliminates ~90% of noise from your logs.</p>
+
+<pre><code># Edit SSH config again
+sudo nano /etc/ssh/sshd_config
+
+# Change this line:
+Port 2222
+
+# Save and restart
+sudo systemctl restart sshd
+
+# Now connect using the new port
+ssh -p 2222 user@your-server-ip</code></pre>
+
+            <p>Or add it to your local <code>~/.ssh/config</code> so you don't have to type <code>-p 2222</code> every time:</p>
+
+<pre><code># ~/.ssh/config
+Host myserver
+    HostName your-server-ip
+    User your-username
+    Port 2222
+    IdentityFile ~/.ssh/id_ed25519
+
+# Now just type:
+ssh myserver</code></pre>
+
+            <h2>Step 4: Install and Configure fail2ban</h2>
+
+            <p>Even with keys and a custom port, you should monitor for suspicious activity. <strong>fail2ban</strong> scans log files for repeated failed login attempts and automatically bans the offending IP address.</p>
+
+<pre><code># Install fail2ban
+sudo apt update && sudo apt install -y fail2ban
+
+# Create a custom jail config (don't edit the defaults directly)
+sudo nano /etc/fail2ban/jail.local
+
+# Add this content:
+[sshd]
+enabled = true
+port = 2222          # your custom port
+filter = sshd
+logpath = /var/log/auth.log
+maxretry = 3         # ban after 3 failed attempts
+bantime = 3600       # ban for 1 hour (3600 seconds)
+findtime = 600       # look at the last 10 minutes
+
+[sshd-ddos]
+enabled = true
+port = 2222
+filter = sshd-ddos
+logpath = /var/log/auth.log
+maxretry = 5
+bantime = 3600
+
+# Start and enable fail2ban
+sudo systemctl start fail2ban
+sudo systemctl enable fail2ban
+
+# Check status
+sudo fail2ban-client status sshd</code></pre>
+
+            <p><strong>Example output:</strong></p>
+
+<pre><code>Status for the jail: sshd
+|- Filter
+|  |- Currently failed: 0
+|  |- Total failed: 42
+|  `- Journal matches: _SYSTEMD_UNIT=sshd.service + _COMM=sshd
+`- Actions
+   |- Currently banned: 3
+   `- Total banned: 7</code></pre>
+
+            <p>To unban an IP you accidentally locked yourself out with:</p>
+
+<pre><code># Manually unban an IP
+sudo fail2ban-client set sshd unbanip 192.168.1.100
+
+# List all banned IPs
+sudo fail2ban-client get sshd banip</code></pre>
+
+            <h2>Step 5: Restrict SSH Access with AllowUsers</h2>
+
+            <p>Limit which users can SSH into the server. Even if someone obtains a key for a restricted account, they still can't log in via SSH.</p>
+
+<pre><code># Edit SSH config
+sudo nano /etc/ssh/sshd_config
+
+# Add this line (list allowed users, space-separated):
+AllowUsers your-username deploy-user
+
+# Optionally restrict by IP/CIDR:
+# AllowUsers your-username@192.168.1.0/24
+
+sudo systemctl restart sshd</code></pre>
+
+            <h2>Step 6: Set Up Automatic Key Rotation Reminder</h2>
+
+            <p>SSH keys can be compromised if your local machine is infected. Rotate keys periodically and check their fingerprint:</p>
+
+<pre><code># Check your key fingerprint (compare when connecting to a new server)
+ssh-keygen -lf ~/.ssh/id_ed25519.pub
+
+# Check known hosts file for stale entries
+cat ~/.ssh/known_hosts
+
+# Remove a stale host entry
+ssh-keygen -R old-server-ip</code></pre>
+
+            <h2>Bonus: Use UFW Firewall to Restrict SSH Access</h2>
+
+            <p>The <strong>Uncomplicated Firewall (UFW)</strong> is the easiest way to set up a firewall on Ubuntu/Debian servers. You can restrict SSH to specific IP addresses:</p>
+
+<pre><code># Install UFW
+sudo apt install -y ufw
+
+# Set default policies
+sudo ufw default deny incoming
+sudo ufw default allow outgoing
+
+# Allow SSH only from your home IP
+sudo ufw allow from YOUR_HOME_IP to any port 2222
+
+# Or allow SSH from a range
+sudo ufw allow from 203.0.113.0/24 to any port 2222
+
+# Enable UFW
+sudo ufw enable
+
+# Check status
+sudo ufw status verbose</code></pre>
+
+            <p><strong>Example output:</strong></p>
+
+<pre><code>Status: active
+To                         Action      From
+--                         ------      ----
+2222/tcp                   ALLOW IN    203.0.113.5
+22/tcp                     ALLOW IN    Anywhere
+22/tcp (v6)                ALLOW IN    Anywhere (v6)</code></pre>
+
+            <h2>Putting It All Together: The Hardened Checklist</h2>
+
+            <ol>
+                <li>✅ SSH key pair generated (Ed25519 preferred)</li>
+                <li>✅ Public key deployed to server</li>
+                <li>✅ Password authentication disabled</li>
+                <li>✅ Root login disabled</li>
+                <li>✅ Custom SSH port configured</li>
+                <li>✅ fail2ban installed and monitoring SSH</li>
+                <li>✅ AllowUsers restricting who can log in</li>
+                <li>✅ UFW firewall blocking SSH from unauthorized IPs</li>
+            </ol>
+
+            <h2>Common Mistakes to Avoid</h2>
+
+            <ul>
+                <li><strong>Never share your private key.</strong> If it's compromised, generate a new pair and update all servers.</li>
+                <li><strong>Always test in a second terminal.</strong> Before disabling password auth or restarting SSH, keep a backup session open.</li>
+                <li><strong>Use a passphrase on your key.</strong> An unencrypted private key on disk is useless security if someone steals it.</li>
+                <li><strong>Don't rely on port changing alone.</strong> It hides from scripts, not from attackers who scan all ports. Always use keys.</li>
+                <li><strong>Update OpenSSH regularly.</strong> Run <code>sudo apt update && sudo apt upgrade openssh-server</code> to patch vulnerabilities.</li>
+            </ul>
+
+            <h2>Summary</h2>
+
+            <p>SSH security is layered defense. Each step — keys, port changes, fail2ban, firewall rules, user restrictions — independently makes your server harder to compromise. Together, they create a formidable barrier against automated attacks.</p>
+
+            <p>Start with key-based authentication and disabling password login. Those two steps alone will stop the vast majority of attacks. Then layer on fail2ban and firewall rules for defense in depth.</p>
+
+            <p>The goal isn't to be unbreachable — no system is. The goal is to make yourself a boring target that attackers move on from because the effort outweighs the reward. Properly hardened SSH gets you remarkably close to that goal.</p>
+
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes | Built with ❤️ & AI</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528" target="_blank">GitHub</a>
+                <a href="https://blog.hugow.dev/sitemap.xml">Sitemap</a>
+                <a href="https://blog.hugow.dev/robots.txt">Robots</a>
+            </div>
+        </div>
+    </footer>
+
+    <button class="back-to-top" id="backToTop" title="Back to top">↑</button>
+
+    <script>
+    // Back to Top Button
+    const backToTop = document.getElementById('backToTop');
+    window.addEventListener('scroll', () => {
+        backToTop.style.display = window.pageYOffset > 300 ? 'block' : 'none';
+    });
+    backToTop.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // Reading Progress Bar
+    window.addEventListener('scroll', () => {
+        const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+        const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        const scrolled = (winScroll / height) * 100;
+        document.getElementById('progressBar').style.width = scrolled + '%';
+    });
+
+    // Dark Mode Toggle
+    const themeToggle = document.getElementById('themeToggle');
+    if (themeToggle) {
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            themeToggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+            localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+        });
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark-mode');
+            themeToggle.textContent = '☀️';
+        }
+    }
+    </script>
+</body>
+</html>

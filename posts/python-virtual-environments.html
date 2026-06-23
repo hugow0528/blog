@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Virtual Environments and pip: Isolate Your Projects | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn Python virtual environments and pip package management from scratch. Create isolated project environments, manage dependencies, and share your projects with requirements.txt. Beginner-friendly tutorial with working code.">
+    <meta name="keywords" content="python virtual environment, venv, pip, requirements.txt, python packages, dependency management, python beginner tutorial">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-virtual-environments.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+
+        <article class="post-content">
+            <span class="tag python">Python</span>
+            <h1>Python Virtual Environments and pip: Isolate Your Projects</h1>
+            <time>June 24, 2026 · 10 min read</time>
+
+            <p>You've been writing Python scripts. Now you need a library — maybe <code>requests</code> for APIs, or <code>beautifulsoup4</code> for web scraping. You install it with <code>pip install</code>, everything works... until your next project needs a different version of the same library. Or your script breaks on a friend's computer because they're missing a dependency.</p>
+
+            <p>This is the <strong>dependency hell</strong> that every Python developer encounters. The solution? <strong>Virtual environments</strong> and <strong>requirements files</strong>. In this tutorial, you'll learn how to create isolated project environments, manage packages with <code>pip</code>, and share your projects reproducibly.</p>
+
+            <h2>Why Do We Need Virtual Environments?</h2>
+
+            <p>Imagine two projects:</p>
+
+            <ul>
+                <li><strong>Project A:</strong> A web scraper using <code>requests==2.28.0</code></li>
+                <li><strong>Project B:</strong> A modern API client using <code>requests==2.31.0</code></li>
+            </ul>
+
+            <p>If both projects share the same Python installation, installing version 2.31.0 for Project B breaks Project A. And if you install packages globally, your system Python becomes cluttered with dozens of libraries that conflict with each other.</p>
+
+            <p>A <strong>virtual environment</strong> creates an isolated folder with its own Python interpreter and packages. Each project gets its own clean sandbox:</p>
+
+            <pre><code>my-web-scraper/
+├── venv/              ← Isolated Python + packages
+│   ├── bin/python
+│   ├── bin/pip
+│   └── lib/python3.12/site-packages/
+│       └── requests-2.28.0/
+├── scraper.py
+└── requirements.txt
+
+my-api-client/
+├── venv/              ← Different isolated environment
+│   ├── bin/python
+│   ├── bin/pip
+│   └── lib/python3.12/site-packages/
+│       └── requests-2.31.0/
+├── api_client.py
+└── requirements.txt</code></pre>
+
+            <p>Each project is independent. No conflicts. No surprises.</p>
+
+            <h2>Creating a Virtual Environment</h2>
+
+            <p>Python includes a built-in module called <code>venv</code> (available since Python 3.3). No extra installation needed:</p>
+
+            <pre><code># 1. Create a project directory
+mkdir my-project
+cd my-project
+
+# 2. Create a virtual environment named "venv"
+python3 -m venv venv
+
+# 3. Activate the virtual environment
+# On macOS/Linux:
+source venv/bin/activate
+
+# On Windows (Command Prompt):
+# venv\Scripts\activate
+
+# On Windows (PowerShell):
+# venv\Scripts\Activate.ps1
+
+# 4. Verify it's activated
+# Your terminal prompt should now show (venv)
+which python
+# Output: /path/to/my-project/venv/bin/python
+
+pip list
+# Shows only the default packages in this environment</code></pre>
+
+            <p><strong>How activation works:</strong> The <code>source venv/bin/activate</code> command modifies your shell's <code>PATH</code> so that <code>python</code> and <code>pip</code> point to the virtual environment's copies instead of your system copies. It's temporary — closing the terminal deactivates it automatically.</p>
+
+            <blockquote>
+                <strong>Convention:</strong> Most Python projects name their virtual environment folder <code>venv</code> or <code>.venv</code>. Pick one and be consistent.
+            </blockquote>
+
+            <h2>Installing Packages with pip</h2>
+
+            <p><strong>pip</strong> is Python's package manager. Once your virtual environment is activated, <code>pip</code> installs packages into that isolated environment:</p>
+
+            <pre><code># Install a single package
+pip install requests
+
+# Install a specific version
+pip install requests==2.28.0
+
+# Install a minimum version
+pip install requests>=2.25.0
+
+# Install from a range
+pip install requests>=2.25.0,<3.0.0
+
+# Install multiple packages at once
+pip install requests beautifulsoup4 lxml
+
+# Upgrade a package to latest version
+pip install --upgrade requests
+
+# Uninstall a package
+pip uninstall requests</code></pre>
+
+            <h3>Understanding pip Version Specifiers</h3>
+
+            <pre><code># Exact version (reproducible, recommended for requirements.txt)
+requests==2.28.0
+
+# Minimum version (allows upgrades)
+requests>=2.28.0
+
+# Version range
+requests>=2.25.0,<3.0.0
+
+# Compatible release (same major version)
+requests~=2.28.0   # Equivalent to >=2.28.0,<2.29.0
+
+# Pre-release versions
+requests==2.31.0a1  # Alpha
+requests==2.31.0b1  # Beta
+requests==2.31.0rc1 # Release candidate</code></pre>
+
+            <h2>Managing Dependencies with requirements.txt</h2>
+
+            <p>A <code>requirements.txt</code> file is the standard way to record your project's dependencies. Anyone can install all required packages with one command:</p>
+
+            <h3>Exporting Requirements</h3>
+
+            <pre><code># Export all installed packages with exact versions
+pip freeze > requirements.txt
+
+# The file looks like this:
+# requirements.txt
+beautifulsoup4==4.12.3
+certifi==2024.2.2
+charset-normalizer==3.3.2
+idna==3.6
+lxml==5.1.0
+requests==2.31.0
+soupsieve==2.5
+urllib3==2.2.1</code></pre>
+
+            <h3>Installing from Requirements</h3>
+
+            <pre><code># Install everything from requirements.txt
+pip install -r requirements.txt
+
+# This installs every package with the exact version listed
+# Ensures everyone works with the same versions</code></pre>
+
+            <p><strong>When to share your requirements.txt:</strong></p>
+
+            <ul>
+                <li>Push it to Git alongside your code</li>
+                <li>Include it in project documentation</li>
+                <li>Ship it with deployment scripts</li>
+                <li>Reference it in Dockerfiles</li>
+            </ul>
+
+            <h2>Real Project: Setting Up a Web Scraper</h2>
+
+            <p>Let's walk through a complete setup from scratch:</p>
+
+            <pre><code># Step 1: Create and enter project directory
+mkdir weather-scraper
+cd weather-scraper
+
+# Step 2: Create and activate virtual environment
+python3 -m venv venv
+source venv/bin/activate
+
+# Step 3: Install needed packages
+pip install requests beautifulsoup4
+
+# Step 4: Create your scraper script
+# File: scraper.py</code></pre>
+
+            <pre><code># scraper.py
+import requests
+from bs4 import BeautifulSoup
+
+def fetch_weather(city):
+    """Fetch current weather from wttr.in"""
+    url = f"https://wttr.in/{city}?format=j1"
+    
+    response = requests.get(url)
+    response.raise_for_status()  # Raise error for bad status codes
+    
+    data = response.json()
+    current = data['current_condition'][0]
+    
+    return {
+        'city': city,
+        'temp_c': current['temp_C'],
+        'temp_f': current['temp_F'],
+        'desc': current['weatherDesc'][0]['value'],
+        'humidity': current['humidity'],
+        'wind_kph': current['windspeedKmph']
+    }
+
+def main():
+    cities = ["London", "Tokyo", "New York", "Sydney"]
+    
+    print("🌤️  Weather Report\n" + "=" * 40)
+    
+    for city in cities:
+        try:
+            weather = fetch_weather(city)
+            print(f"\n📍 {weather['city']}")
+            print(f"   🌡️  {weather['temp_c']}°C / {weather['temp_f']}°F")
+            print(f"   ☁️  {weather['desc']}")
+            print(f"   💧 Humidity: {weather['humidity']}%")
+            print(f"   💨 Wind: {weather['wind_kph']} km/h")
+        except Exception as e:
+            print(f"\n⚠️  Could not fetch weather for {city}: {e}")
+
+if __name__ == "__main__":
+    main()</code></pre>
+
+            <pre><code># Step 5: Run the scraper
+python scraper.py
+
+# Output:
+# 🌤️  Weather Report
+# ========================================
+# 
+# 📍 London
+#    🌡️  15°C / 59°F
+#    ☁️  Partly Cloudy
+#    💧 Humidity: 78%
+#    💨 Wind: 19 km/h
+# 
+# 📍 Tokyo
+#    🌡️  22°C / 72°F
+#    ☁️  Sunny
+#    💧 Humidity: 55%
+#    💨 Wind: 12 km/h
+# ...
+
+# Step 6: Export your requirements
+pip freeze > requirements.txt
+
+# Step 7: Create a .gitignore
+# File: .gitignore
+venv/
+__pycache__/
+*.pyc
+.env</code></pre>
+
+            <h2>Deactivating and Reusing Environments</h2>
+
+            <pre><code># Deactivate when you're done
+deactivate
+# Your prompt returns to normal, system Python is back
+
+# Later, come back to the project
+cd my-project
+source venv/bin/activate
+# All your packages are exactly as you left them
+
+# On a new computer, recreate from requirements
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+# You now have the exact same environment</code></pre>
+
+            <h2>Best Practices</h2>
+
+            <ul>
+                <li><strong>Always use a virtual environment</strong> for any project that installs packages (not just hello-world scripts)</li>
+                <li><strong>Never commit the venv folder</strong> to Git — add <code>venv/</code> to your <code>.gitignore</code></li>
+                <li><strong>Always commit requirements.txt</strong> — it's how others recreate your environment</li>
+                <li><strong>Use exact versions</strong> (<code>==</code>) in requirements.txt for reproducibility</li>
+                <li><strong>Update requirements.txt</strong> after installing or removing packages</li>
+                <li><strong>Use one virtual environment per project</strong> — don't mix projects in one environment</li>
+                <li><strong>Test with a fresh environment</strong> periodically — delete venv/, recreate from requirements.txt to ensure it still works</li>
+            </ul>
+
+            <h2>pip vs pip3</h2>
+
+            <p>On many systems, both <code>pip</code> and <code>pip3</code> exist. Inside an activated virtual environment, they both point to the same thing. Outside, <code>pip3</code> is more explicit:</p>
+
+            <pre><code># These are equivalent inside an activated venv:
+pip install requests
+pip3 install requests
+
+# Outside a venv, prefer pip3 for clarity:
+pip3 install --user requests  # Installs to user directory</code></pre>
+
+            <blockquote>
+                <strong>Tip:</strong> The <code>--user</code> flag installs packages to your user directory instead of system-wide. Useful for your personal dotfiles, but <strong>not recommended for projects</strong> — use virtual environments instead.
+            </blockquote>
+
+            <h2>Summary</h2>
+
+            <p>Virtual environments and pip are fundamental tools for every Python developer:</p>
+
+            <ul>
+                <li><code>python3 -m venv venv</code> — Create an isolated environment</li>
+                <li><code>source venv/bin/activate</code> — Activate it (macOS/Linux)</li>
+                <li><code>pip install &lt;package&gt;</code> — Install packages into the environment</li>
+                <li><code>pip freeze &gt; requirements.txt</code> — Export your dependencies</li>
+                <li><code>pip install -r requirements.txt</code> — Recreate the environment anywhere</li>
+                <li><code>deactivate</code> — Exit the virtual environment</li>
+            </ul>
+
+            <p>Start using virtual environments today. Your future self — and anyone who works with your code — will thank you.</p>
+
+            <p><strong>Next up:</strong> Check out our <a href="python-apis.html">Python APIs</a> tutorial to use <code>requests</code> for fetching data, or <a href="python-web-scraping.html">Python Web Scraping</a> to extract data from websites.</p>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes | Built with ❤️ & AI</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528" target="_blank">GitHub</a>
+                <a href="https://blog.hugow.dev/sitemap.xml">Sitemap</a>
+                <a href="https://blog.hugow.dev/robots.txt">Robots</a>
+            </div>
+        </div>
+    </footer>
+
+    <button class="back-to-top" id="backToTop" title="Back to top">↑</button>
+
+    <script>
+    // Back to Top
+    const backToTop = document.getElementById('backToTop');
+    window.addEventListener('scroll', () => {
+        backToTop.style.display = window.scrollY > 300 ? 'block' : 'none';
+    });
+    backToTop.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // Reading Progress Bar
+    window.addEventListener('scroll', () => {
+        const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+        const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        const scrolled = (winScroll / height) * 100;
+        document.getElementById('progressBar').style.width = scrolled + '%';
+    });
+
+    // Dark Mode Toggle
+    const themeToggle = document.getElementById('themeToggle');
+    if (themeToggle) {
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            themeToggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+            localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+        });
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark-mode');
+            themeToggle.textContent = '☀️';
+        }
+    }
+    </script>
+</body>
+</html>

@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How HTTPS and TLS Work: Cybersecurity Basics | Hugo's Dev Notes</title>
+    <meta name="description" content="Understand HTTPS, TLS certificates, encryption, and how the padlock icon protects your data online. Beginner-friendly cybersecurity tutorial with diagrams and examples.">
+    <meta name="keywords" content="HTTPS, TLS, SSL certificates, encryption, cybersecurity, padlock, SSL handshake, certificate authority">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+            <p class="subtitle">Cloudflare · Python · Vibe Coding</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+        
+        <article class="post-content">
+            <span class="tag security">Security</span>
+            <h1>How HTTPS and TLS Work: Cybersecurity Basics</h1>
+            <time>June 20, 2026 · 8 min read</time>
+
+            <p>That green padlock in your browser isn't just a design decoration — it's the result of a complex security handshake happening in milliseconds. Understanding how HTTPS and TLS work is essential for anyone who builds or uses websites. In this guide, we'll break down exactly what happens when you visit an HTTPS site.</p>
+
+            <h2>The Problem: HTTP Is Insecure</h2>
+
+            <p>HTTP (HyperText Transfer Protocol) sends data as plain text. Anyone on the same network can read it:</p>
+            <pre><code># What an attacker sees on HTTP:
+GET /login HTTP/1.1
+Host: example.com
+
+username=john&password=mypassword123</code></pre>
+
+            <p>That password just traveled across the internet in readable text. On a public WiFi network, someone sitting next to you could intercept it. HTTPS solves this by encrypting everything.</p>
+
+            <h2>The Solution: HTTPS = HTTP + Encryption</h2>
+
+            <p>HTTPS adds a secure layer called TLS (Transport Layer Security) between HTTP and the network. The data gets encrypted before leaving your browser and decrypted after reaching the server.</p>
+
+            <p>The flow looks like this:</p>
+            <pre><code>Your Browser → [Encrypt] → Internet → [Decrypt] → Web Server
+Web Server   → [Encrypt] → Internet → [Decrypt] → Your Browser</code></pre>
+
+            <p>Think of it like putting a message in a locked briefcase before mailing it. Even if someone opens the mail, they can't read the contents without the key.</p>
+
+            <h2>The TLS Handshake Step by Step</h2>
+
+            <p>When you visit <code>https://example.com</code>, several things happen behind the scenes:</p>
+
+            <h3>Step 1: Client Hello</h3>
+            <pre><code>Browser: "Hi! I support these encryption methods:
+  - TLS 1.3 (preferred)
+  - TLS 1.2
+  These cipher suites: AES-256-GCM, ChaCha20-Poly1305, ..."
+  Session ID: (random number)</code></pre>
+
+            <h3>Step 2: Server Hello + Certificate</h3>
+            <pre><code>Server: "I accept! Let's use TLS 1.3 with AES-256-GCM.
+  Here's my certificate:" [certificate data]
+  Server key share: [ephemeral key]
+
+  Certificate chain:
+  ├── example.com certificate
+  ├── DigiCert intermediate CA
+  └── Root CA (already in browser)</code></pre>
+
+            <h3>Step 3: Browser Verifies Certificate</h3>
+            <p>The browser checks:</p>
+            <ul>
+                <li>✅ Is the certificate signed by a trusted Certificate Authority (CA)?</li>
+                <li>✅ Is it valid for this domain (example.com)?</li>
+                <li>✅ Has it expired?</li>
+                <li>✅ Has it been revoked?</li>
+            </ul>
+
+            <h3>Step 4: Key Exchange</h3>
+            <pre><code>Browser generates a random session key, encrypts it
+with the server's public key, and sends it.
+
+Only the server can decrypt it with its private key.
+
+Now both sides share the same secret key for encryption.</code></pre>
+
+            <h3>Step 5: Encrypted Communication</h3>
+            <p>From now on, all data is encrypted with the shared session key:</p>
+            <pre><code>Browser: [encrypted: GET /login HTTP/1.1]
+Server:  [encrypted: 200 OK + HTML response]</code></pre>
+
+            <h2>Types of TLS Certificates</h2>
+
+            <h3>Domain Validated (DV)</h3>
+            <p>Basic certificate. The CA just checks you own the domain. Fast and cheap. Cloudflare offers these for free.</p>
+            <pre><code># Cloudflare automatic HTTPS
+# Enable in: SSL/TLS → Overview → Full (strict)</code></pre>
+
+            <h3>Organization Validated (OV)</h3>
+            <p>The CA verifies your business exists. Shows company name in certificate details. Used by businesses.</p>
+
+            <h3>Extended Validation (EV)</h3>
+            <p>Rigorous verification. Shows the green company name in the address bar (in some browsers). Banks use these.</p>
+
+            <h2>Free HTTPS with Cloudflare</h2>
+
+            <p>You don't need to buy a certificate. Cloudflare provides free TLS/SSL for your domain:</p>
+
+            <h3>Quick Setup</h3>
+            <ol>
+                <li>Go to Cloudflare Dashboard → <strong>SSL/TLS</strong> → <strong>Overview</strong></li>
+                <li>Choose <strong>Full</strong> or <strong>Full (strict)</strong> mode</li>
+                <li>Enable <strong>Always Use HTTPS</strong> in the Edge Certificates tab</li>
+                <li>Done — Cloudflare handles certificate renewal automatically</li>
+            </ol>
+
+            <pre><code># SSL/TLS modes explained:
+
+# Off — No encryption (don't use)
+# Flexible — Visitor to Cloudflare is HTTPS, Cloudflare to origin is HTTP
+#   ⚠️ Not recommended — origin traffic is unencrypted
+# Full — Both connections encrypted (works with self-signed certs)
+# Full (strict) — Both encrypted, validates origin certificate (recommended)</code></pre>
+
+            <h2>How to Check Certificate Details</h2>
+
+            <h3>Using the Browser</h3>
+            <ol>
+                <li>Click the padlock icon in the address bar</li>
+                <li>Click "Connection is secure" or "Certificate is valid"</li>
+                <li>View details: issuer, validity dates, domain coverage</li>
+            </ol>
+
+            <h3>Using OpenSSL Command Line</h3>
+            <pre><code># Check a site's certificate
+openssl s_client -connect example.com:443 -servername example.com
+
+# Check certificate expiry
+echo | openssl s_client -connect example.com:443 2>/dev/null \
+    | openssl x509 -noout -dates
+
+# Output:
+# notBefore=Jan  1 00:00:00 2026 GMT
+# notAfter=Mar 31 23:59:59 2027 GMT</code></pre>
+
+            <h3>Using Python</h3>
+            <pre><code>import ssl
+import socket
+
+def check_https(domain, port=443):
+    """Check if a website has a valid HTTPS certificate"""
+    context = ssl.create_default_context()
+    
+    try:
+        with context.wrap_socket(
+            socket.socket(),
+            server_hostname=domain
+        ) as s:
+            s.settimeout(3)
+            s.connect((domain, port))
+            
+            cert = s.getpeercert()
+            
+            print(f"✅ Valid certificate for {domain}")
+            print(f"   Issuer: {cert['issuer'][1][1]}")
+            print(f"   Valid until: {cert['notAfter']}")
+            print(f"   TLS version: {s.version()}")
+            
+    except ssl.SSLCertVerificationError as e:
+        print(f"❌ Certificate verification failed: {e}")
+    except Exception as e:
+        print(f"❌ Error: {e}")
+
+# Test it
+check_https("cloudflare.com")
+check_https("google.com")
+check_https("self-signed.example")  # This will fail</code></pre>
+
+            <h2>Common HTTPS Errors (And How to Fix Them)</h2>
+
+            <h3>Netscape_Invalid_Cert (Error 1015)</h3>
+            <p><strong>Cause:</strong> Your origin server doesn't have a valid certificate, but Cloudflare is set to "Full (strict)" mode.</p>
+            <p><strong>Fix:</strong> Install a certificate on your server, or temporarily switch to "Full" mode while you set one up.</p>
+
+            <h3>SSL Handshake Failed</h3>
+            <p><strong>Cause:</strong> Your server uses a protocol or cipher that Cloudflare doesn't support.</p>
+            <p><strong>Fix:</strong> Enable TLS 1.2 or higher on your server. Disable SSLv3 and TLS 1.0/1.1.</p>
+
+            <h3>Certificate Expired</h3>
+            <p><strong>Cause:</strong> The TLS certificate has passed its expiry date.</p>
+            <p><strong>Fix:</strong> If using Cloudflare's free certificates, this shouldn't happen (they auto-renew). If using your own, renew it:</p>
+            <pre><code># With Let's Encrypt (Certbot)
+sudo certbot renew --force-renewal
+
+# Check when it expires
+sudo certbot certificates</code></pre>
+
+            <h2>Security Best Practices</h2>
+
+            <h3>1. Always Use HTTPS</h3>
+            <p>Redirect all HTTP traffic to HTTPS. In Cloudflare: SSL/TLS → Edge Certificates → Enable "Always Use HTTPS".</p>
+
+            <h3>2. Use TLS 1.3</h3>
+            <p>TLS 1.3 is faster and more secure than TLS 1.2. Enable it in Cloudflare → SSL/TLS → Edge Certificates → Minimum TLS Version → TLS 1.3.</p>
+
+            <h3>3. Enable HSTS</h3>
+            <p>HTTP Strict Transport Security tells browsers to <em>always</em> use HTTPS for your domain:</p>
+            <pre><code># HSTS header (add to your server)
+Strict-Transport-Security: max-age=31536000; includeSubDomains
+
+# Or enable in Cloudflare:
+# SSL/TLS → Edge Certificates → HSTS → Enable</code></pre>
+
+            <h3>4. Use HSTS Preloading</h3>
+            <p>Submit your domain to the HSTS preload list. Browsers will <em>never</em> load your site over HTTP:</p>
+            <pre><code># Requirements:
+# - Valid HTTPS certificate
+# - All subdomains must redirect to HTTPS
+# - max-age >= 31536000 (1 year)
+# - includeSubDomains directive
+
+# Test at: https://hstspreload.org</code></pre>
+
+            <h3>5. Regular Certificate Monitoring</h3>
+            <pre><code># Simple Python script to check cert expiry
+import ssl
+import socket
+from datetime import datetime
+
+def days_until_expiry(domain):
+    context = ssl.create_default_context()
+    with context.wrap_socket(
+        socket.socket(), server_hostname=domain
+    ) as s:
+        cert = s.getpeercert()
+        expiry = datetime.strptime(
+            cert['notAfter'], '%b %d %H:%M:%S %Y %Z'
+        )
+        return (expiry - datetime.utcnow()).days
+
+# Check multiple domains
+for domain in ['blog.hugow.dev', 'api.hugow.dev']:
+    days = days_until_expiry(domain)
+    if days < 30:
+        print(f"⚠️ {domain}: {days} days until expiry!")
+    else:
+        print(f"✅ {domain}: {days} days remaining")</code></pre>
+
+            <h2>Summary</h2>
+
+            <p>HTTPS/TLS is the foundation of web security. Here's what you need to remember:</p>
+            <ul>
+                <li><strong>HTTP = plain text</strong> (anyone can read it), <strong>HTTPS = encrypted</strong> (only you and the server can read it)</li>
+                <li><strong>TLS certificates</strong> prove a website's identity and enable encryption</li>
+                <li><strong>Cloudflare provides free HTTPS</strong> — just enable it in the dashboard</li>
+                <li><strong>Use Full (strict) mode</strong> for the best security</li>
+                <li><strong>Enable HSTS</strong> to prevent downgrade attacks</li>
+                <li><strong>Monitor certificate expiry</strong> before it's too late</li>
+            </ul>
+
+            <h2>Next Steps</h2>
+            <ul>
+                <li><a href="#">Cloudflare DNS Setup</a> — configure your domain for HTTPS</li>
+                <li><a href="#">Cloudflare Zero Trust</a> — add authentication to your sites</li>
+                <li><a href="#">Python security scripts</a> — automate HTTPS monitoring</li>
+                <li><a href="#">Penetration testing basics</a> — learn to test your own security</li>
+            </ul>
+
+            <blockquote>
+                <strong>Remember:</strong> HTTPS is the bare minimum for any website in 2026. If your site doesn't have a padlock, you're sending every visitor's data in plain text. Enable it today.
+            </blockquote>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes. Built with vibe coding.</p>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude Code: Complete Beginner's Guide to AI-Powered Terminal Coding | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn Claude Code — Anthropic's AI terminal coding assistant. Setup, commands, workflows, prompts, and best practices for getting real work done in your terminal. Beginner-friendly guide with practical examples.">
+    <meta name="keywords" content="Claude Code, AI coding, terminal AI, Anthropic, vibe coding, AI assistant, coding workflow, Claude command line, software development">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/claude-code-guide.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+        
+        <article class="post-content">
+            <span class="tag vibe">AI Coding</span>
+            <h1>Claude Code: Complete Beginner's Guide to AI-Powered Terminal Coding</h1>
+            <time>June 23, 2026 · 12 min read</time>
+
+            <p>AI-assisted coding has exploded in 2026, and <strong>Claude Code</strong> by Anthropic is one of the most powerful tools in the ecosystem. Unlike chat-based AI that lives in a web browser, Claude Code runs directly in your <strong>terminal</strong> — giving it access to your files, project structure, and command line. This makes it uniquely capable of understanding your codebase and making real changes.</p>
+
+            <p>In this guide, we'll walk through everything: installation, first prompts, real workflows, and the best practices that separate productive users from those who get stuck. Whether you're a beginner or experienced developer, you'll learn how to get actual work done with Claude Code.</p>
+
+            <h2>What Is Claude Code?</h2>
+
+            <p>Claude Code (also known as <code>claude</code> CLI or Claude Code terminal) is an AI coding assistant that:</p>
+
+            <ul>
+                <li>Runs in your terminal as a command-line tool</li>
+                <li>Can read, write, and edit files in your project</li>
+                <li>Understands your entire project structure and context</li>
+                <li>Can run commands, debug errors, and write tests</li>
+                <li>Uses Anthropic's Claude model for code generation and reasoning</li>
+            </ul>
+
+            <blockquote>
+                <p><strong>Key difference:</strong> Chat-based AI (like ChatGPT in a browser) can only see what you paste. Claude Code sees your entire project, reads files on demand, and makes changes directly. It's like having a senior developer sitting next to you.</p>
+            </blockquote>
+
+            <h2>Installation and Setup</h2>
+
+            <h3>Step 1: Install Claude Code</h3>
+
+            <p>Claude Code is installed as an npm package. You need Node.js installed first:</p>
+
+            <pre><code># Install via npm (requires Node.js 18+)
+npm install -g @anthropic-ai/claude-code
+
+# Verify installation
+claude --version</code></pre>
+
+            <h3>Step 2: Authenticate</h3>
+
+            <pre><code># Run Claude Code — it will prompt you to authenticate
+claude
+
+# Follow the browser authentication flow to link your Anthropic account
+# You'll need an API key from https://console.anthropic.com/</code></pre>
+
+            <h3>Step 3: Configure (Optional)</h3>
+
+            <p>You can set your API key as an environment variable:</p>
+
+            <pre><code># Add to your ~/.bashrc or ~/.zshrc
+export ANTHROPIC_API_KEY="your-api-key-here"
+
+# For Claude Pro subscribers, authentication happens through OAuth
+# For API users, set the key above</code></pre>
+
+            <h2>Your First Claude Code Session</h2>
+
+            <h3>Basic Interaction</h3>
+
+            <p>Navigate to your project folder and start Claude Code:</p>
+
+            <pre><code># Navigate to your project
+cd ~/my-project
+
+# Start Claude Code
+claude
+
+# Type your request (examples below)
+"Create a Python script that reads a CSV file and prints the first 10 rows"</code></pre>
+
+            <p>Claude Code will understand your request, create the file, and even run it to verify it works.</p>
+
+            <h3>Common First Commands</h3>
+
+            <pre><code># Ask Claude Code to explain your codebase
+"Explain what this project does, file by file"
+
+# Create a new file with specific content
+"Create a requirements.txt with requests, beautifulsoup4, and pandas"
+
+# Write a script from scratch
+"Write a Python script that fetches today's weather from an API and displays it"
+
+# Debug an error
+"Why am I getting 'TypeError: 'NoneType' object is not subscriptable' in app.py line 42?"</code></pre>
+
+            <h2>Real-World Workflows</h2>
+
+            <h2>Workflow 1: Building a Small Project from Scratch</h2>
+
+            <p>Let's say you want to build a URL shortener. Here's how you'd work through it with Claude Code:</p>
+
+            <pre><code># Step 1: Start with a high-level request
+> Build a URL shortener in Python using Flask. It should have:
+> - An API endpoint that takes a long URL and returns a short code
+> - A GET endpoint that redirects the short code to the long URL
+> - Store mappings in a JSON file (no database needed)
+> - Include a requirements.txt and README.md
+
+# Step 2: Claude Code creates the files and structure
+# You'll see output like:
+# ✅ Created app.py
+# ✅ Created requirements.txt  
+# ✅ Created README.md
+# ✅ Created urls.json
+
+# Step 3: Review the code
+> Show me app.py
+
+# Step 4: Make improvements
+> Add rate limiting so each IP can only create 100 links per day
+> Add a /stats endpoint that shows total URLs created
+> Write unit tests for the shortening logic
+
+# Step 5: Test the result
+> Run the app and test it with curl
+> Write a Dockerfile for this project</code></pre>
+
+            <h2>Workflow 2: Refactoring Existing Code</h2>
+
+            <p>Claude Code excels at understanding and improving existing code:</p>
+
+            <pre><code># Analyze and refactor
+> Look at all Python files and suggest refactoring opportunities
+
+# Apply specific improvements
+> Convert all print statements to use the logging module
+> Add type hints to all functions in utils.py
+> Extract the database connection code into a separate module
+
+# Add documentation
+> Add docstrings to every function in models.py following Google style
+> Update the README with current API endpoints</code></pre>
+
+            <h2>Workflow 3: Debugging</h2>
+
+            <p>One of Claude Code's superpowers is debugging because it can read all your files:</p>
+
+            <pre><code># Describe the error
+> My script crashes with "KeyError: 'temperature'" when processing weather data.
+> The API returns data in a nested format. Fix the parsing logic.
+
+# Claude Code will:
+# 1. Read your script
+# 2. Understand the data structure
+# 3. Identify the bug
+# 4. Fix it
+# 5. Add error handling
+
+# Ask for explanations
+> Explain why this bug happened and how to prevent similar issues
+> Add a test case that would have caught this bug</code></pre>
+
+            <h2>Workflow 4: Writing Tests</h2>
+
+            <p>Claude Code can read your code and generate comprehensive tests:</p>
+
+            <pre><code># Generate tests
+> Write pytest unit tests for calculator.py covering all edge cases
+
+# Run the tests
+> Run the test suite and fix any failing tests
+
+# Improve coverage
+> Which functions don't have test coverage? Add tests for them</code></pre>
+
+            <h2>Essential Claude Code Tips and Tricks</h2>
+
+            <h3>1. Give Clear, Specific Instructions</h3>
+
+            <pre><code># ❌ Too vague
+"Fix the bug"
+
+# ✅ Clear and specific
+"Fix the TypeError in users.py line 23 where we try to access user['email'] 
+but user can be None when the API returns an empty response. Add a None check
+and return a proper error message."</code></pre>
+
+            <h3>2. Use Follow-Up Prompts</h3>
+
+            <p>Claude Code maintains context within a session. Build on previous work:</p>
+
+            <pre><code>1. "Create a Flask app with login"
+2. "Now add password hashing with bcrypt"
+3. "Add email verification with a token system"
+4. "Write tests for the auth module"
+5. "Dockerize the application"</code></pre>
+
+            <h3>3. Ask for Explanations</h3>
+
+            <p>Don't just accept code — understand it:</p>
+
+            <pre><code>"Explain line by line what this function does"
+"Why did you choose this approach over alternatives?"
+"What are the performance implications of this code?"
+"Show me a simpler version for beginners"</code></pre>
+
+            <h3>4. Set Constraints</h3>
+
+            <p>Guide Claude Code's output by specifying constraints:</p>
+
+            <pre><code>"Write a script that does X, but don't use any external libraries"
+"Implement this using only Python built-in modules"
+"Keep the solution under 50 lines"
+"Use async/await instead of threads"</code></pre>
+
+            <h2>Prompt Templates for Common Tasks</h2>
+
+            <h3>Code Review</h3>
+
+            <pre><code>Review {filename} for:
+1. Bugs and logical errors
+2. Performance issues  
+3. Security vulnerabilities
+4. Code style and readability
+5. Missing error handling
+
+Provide specific fixes for each issue found.</code></pre>
+
+            <h3>API Documentation</h3>
+
+            <pre><code>Generate OpenAPI/Swagger documentation for all endpoints in app.py.
+Include request/response examples, error codes, and authentication requirements.
+Save as docs/api.md.</code></pre>
+
+            <h3>Migration/Conversion</h3>
+
+            <pre><code>Convert this Python 3.8 code to be fully compatible with Python 3.12.
+Update deprecated features, use modern syntax (like match statements where appropriate),
+and run type checking to ensure nothing breaks.</code></pre>
+
+            <h2>Best Practices</h2>
+
+            <h3>1. Start Small, Build Up</h3>
+
+            <p>Begin with focused requests rather than massive ones. Claude Code handles smaller, well-defined tasks better than trying to build an entire application in one prompt.</p>
+
+            <h3>2. Always Review Generated Code</h3>
+
+            <p>Never blindly accept AI-generated code. Read through it, understand what it does, and verify it works. AI tools can make mistakes, especially with edge cases.</p>
+
+            <h3>3. Maintain a Clean Project Structure</h3>
+
+            <p>Claude Code works best when your project is organized. Clear folder names and sensible file naming help the AI understand your codebase faster.</p>
+
+            <h3>4. Use Git for Safety</h3>
+
+            <pre><code># Before major changes with Claude Code:
+git status
+git commit -m "Checkpoint before Claude Code refactoring"
+
+# After Claude Code makes changes:
+git diff    # review all changes
+git diff --stat  # summary of changes
+git checkout -- &lt;file&gt;  # revert a specific file if needed</code></pre>
+
+            <h3>5. Create a .claude/settings.json</h3>
+
+            <p>You can create project-specific instructions:</p>
+
+            <pre><code>// .claude/settings.json
+{
+    "instructions": [
+        "This is a Python 3.12 project using FastAPI",
+        "Use type hints on all functions",
+        "Follow PEP 8 style guidelines",
+        "Tests should use pytest",
+        "Database is PostgreSQL with SQLAlchemy ORM",
+        "Environment variables are managed with python-dotenv"
+    ]
+}</code></pre>
+
+            <h2>Comparing Claude Code to Other AI Tools</h2>
+
+            <p>Here's how Claude Code compares to other popular AI coding tools:</p>
+
+            <ul>
+                <li><strong>GitHub Copilot</strong> — inline suggestions as you type. Great for autocomplete, but less capable for large-scale changes</li>
+                <li><strong>Cursor</strong> — AI-powered IDE with deep codebase understanding. Excellent for interactive development</li>
+                <li><strong>Claude Code</strong> — terminal-based, sees full project context, can run commands. Best for large refactors and project-level tasks</li>
+                <li><strong>ChatGPT</strong> — conversational, web-based. Good for concepts and learning, but can't directly access your files</li>
+            </ul>
+
+            <p>The best approach? Use them together. Copilot for autocomplete, Claude Code for big tasks, and Cursor for day-to-day editing.</p>
+
+            <h2>Getting Started Checklist</h2>
+
+            <ol>
+                <li>✅ Install Claude Code: <code>npm install -g @anthropic-ai/claude-code</code></li>
+                <li>✅ Authenticate with your Anthropic account</li>
+                <li>✅ Try it in a test project first</li>
+                <li>✅ Practice with small tasks (create a file, explain code, fix a bug)</li>
+                <li>✅ Gradually increase complexity (refactor modules, write tests)</li>
+                <li>✅ Create project-specific instructions in <code>.claude/settings.json</code></li>
+                <li>✅ Always review and test generated code</li>
+                <li>✅ Use Git to track changes made by Claude Code</li>
+            </ol>
+
+            <h2>Summary</h2>
+
+            <p>Claude Code transforms your terminal into an intelligent coding environment. It's not just a chatbot — it's a tool that understands your project, reads your files, runs commands, and makes real changes. The key to success is giving clear instructions, reviewing the output, and gradually building confidence with larger tasks.</p>
+
+            <p>Like any tool, Claude Code is only as good as the person using it. The developers who benefit most aren't those who paste in vague requests — they're the ones who think carefully about what they want, provide clear context, and critically evaluate the results.</p>
+
+            <p>Start small, stay curious, and let Claude Code be your pair programmer. The code you write together will be better than what either of you could produce alone.</p>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes | Built with ❤️ & AI</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528" target="_blank">GitHub</a>
+                <a href="https://blog.hugow.dev/sitemap.xml">Sitemap</a>
+                <a href="https://blog.hugow.dev/robots.txt">Robots</a>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsive Web Design with CSS: Build Layouts That Work Everywhere | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn responsive web design from scratch — Flexbox, CSS Grid, media queries, and mobile-first design. Build layouts that look great on any screen size. Beginner tutorial with working code.">
+    <meta name="keywords" content="responsive web design, css flexbox, css grid, media queries, mobile first, web development tutorial, css layout">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+            <p class="subtitle">Cloudflare · Python · AI Coding · DevOps</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+        
+        <article class="post-content">
+            <span class="tag devops">Web Dev</span>
+            <h1>Responsive Web Design with CSS: Build Layouts That Work Everywhere</h1>
+            <time>June 22, 2026 · 10 min read</time>
+
+            <p>In 2026, people browse the web on phones, tablets, laptops, desktops, and even smart TVs. If your website looks broken on a phone, you lose visitors — fast. <strong>Responsive web design</strong> is the practice of building pages that adapt gracefully to any screen size. This guide teaches you the three pillars: <strong>Flexbox</strong>, <strong>CSS Grid</strong>, and <strong>media queries</strong>.</p>
+
+            <h2>Why Responsive Design Matters</h2>
+
+            <p>Over 60% of global web traffic comes from mobile devices. Google's search ranking algorithm favors mobile-friendly sites. And users expect a smooth experience whether they're on a 320px phone or a 2560px monitor. Responsive design isn't optional — it's the baseline for every website in 2026.</p>
+
+            <blockquote>
+                <strong>Key principle:</strong> Build for the smallest screen first (mobile-first), then add complexity for larger screens. This approach produces simpler CSS and better performance.
+            </blockquote>
+
+            <h2>The Viewport Meta Tag</h2>
+
+            <p>Every responsive page needs this line in its <code>&lt;head&gt;</code> section:</p>
+
+            <pre><code>&lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;</code></pre>
+
+            <p>Without it, phones will try to render your page at desktop width and zoom out — making everything tiny and unreadable. This tag tells the browser: "use the actual device width as the page width."</p>
+
+            <h2>Fluid Typography and Sizing</h2>
+
+            <p>Responsive design starts with units that adapt. Instead of fixed pixels, use relative units:</p>
+
+            <pre><code>/* BAD: Fixed size that never adapts */
+.hero {
+    font-size: 32px;
+    width: 960px;
+    padding: 20px;
+}
+
+/* GOOD: Fluid sizing that adapts */
+.hero {
+    font-size: clamp(1.5rem, 4vw, 3rem);  /* Min 1.5rem, prefers 4vw, max 3rem */
+    width: 90%;
+    max-width: 960px;  /* Won't stretch past this on large screens */
+    padding: clamp(1rem, 3vw, 2rem);
+}</code></pre>
+
+            <p>The <code>clamp(min, preferred, max)</code> function is the modern way to create fluid values. It was introduced in 2020 and is now supported everywhere. The hero title above scales smoothly between 1.5rem on small phones and 3rem on desktops.</p>
+
+            <h2>Flexbox: One-Dimensional Layouts</h2>
+
+            <p>Flexbox is perfect for laying out items in a <strong>single row or column</strong>. Navigation bars, card rows, and centered content — all trivial with Flexbox.</p>
+
+            <h3>Centering Everything (The Classic Use Case)</h3>
+
+            <pre><code>/* Center an element both horizontally and vertically */
+.center-everything {
+    display: flex;
+    justify-content: center;  /* Horizontal centering */
+    align-items: center;      /* Vertical centering */
+    min-height: 100vh;        /* Full viewport height */
+}</code></pre>
+
+            <h3>Responsive Navigation Bar</h3>
+
+            <pre><code>/* nav.css */
+.nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    background: #1e293b;
+    color: white;
+}
+
+.nav-logo {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.nav-links {
+    display: flex;
+    gap: 1.5rem;
+    list-style: none;
+}
+
+.nav-links a {
+    color: white;
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.nav-links a:hover {
+    color: #3b82f6;
+}</code></pre>
+
+            <pre><code>&lt;!-- nav.html --&gt;
+&lt;nav class="nav"&gt;
+    &lt;div class="nav-logo"&gt;🚀 MySite&lt;/div&gt;
+    &lt;ul class="nav-links"&gt;
+        &lt;li&gt;&lt;a href="/"&gt;Home&lt;/a&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;a href="/about"&gt;About&lt;/a&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;a href="/contact"&gt;Contact&lt;/a&gt;&lt;/li&gt;
+    &lt;/ul&gt;
+&lt;/nav&gt;</code></pre>
+
+            <h3>Flexbox Wrap for Responsive Card Rows</h3>
+
+            <pre><code>/* Cards wrap to new rows on small screens */
+.card-grid {
+    display: flex;
+    flex-wrap: wrap;       /* Allow wrapping */
+    gap: 1.5rem;           /* Space between cards */
+    padding: 2rem;
+}
+
+.card {
+    flex: 1 1 300px;      /* Grow, shrink, base width 300px */
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* On very small screens, force single column */
+@media (max-width: 640px) {
+    .card {
+        flex: 1 1 100%;   /* Full width */
+    }
+}</code></pre>
+
+            <p>The magic is <code>flex: 1 1 300px</code>. It means: "try to be 300px wide, but grow to fill available space or shrink if needed. Wrap to the next row if there isn't room." On a wide screen, you get 3–4 cards per row. On a phone, one card per row — automatically, no media query needed.</p>
+
+            <h2>CSS Grid: Two-Dimensional Layouts</h2>
+
+            <p>When you need to control <strong>both rows and columns</strong>, CSS Grid is your tool. Full page layouts, complex dashboards, and magazine-style designs all use Grid.</p>
+
+            <h3>Basic Page Layout</h3>
+
+            <pre><code>/* page-layout.css */
+.page {
+    display: grid;
+    grid-template-columns: 250px 1fr;  /* Sidebar + main content */
+    grid-template-rows: auto 1fr auto;  /* Header, content, footer */
+    grid-template-areas:
+        "header header"
+        "sidebar main"
+        "footer footer";
+    min-height: 100vh;
+}
+
+.header  { grid-area: header;  background: #1e293b; color: white; padding: 1.5rem; }
+.sidebar { grid-area: sidebar; background: #f1f5f9; padding: 1.5rem; }
+.main    { grid-area: main;    padding: 2rem; }
+.footer  { grid-area: footer;  background: #1e293b; color: white; padding: 1rem; text-align: center; }</code></pre>
+
+            <pre><code>&lt;!-- page-layout.html --&gt;
+&lt;div class="page"&gt;
+    &lt;header class="header"&gt;
+        &lt;h1&gt;My Website&lt;/h1&gt;
+    &lt;/header&gt;
+    &lt;aside class="sidebar"&gt;
+        &lt;h2&gt;Navigation&lt;/h2&gt;
+        &lt;ul&gt;
+            &lt;li&gt;Page 1&lt;/li&gt;
+            &lt;li&gt;Page 2&lt;/li&gt;
+            &lt;li&gt;Page 3&lt;/li&gt;
+        &lt;/ul&gt;
+    &lt;/aside&gt;
+    &lt;main class="main"&gt;
+        &lt;p&gt;Main content goes here...&lt;/p&gt;
+    &lt;main&gt;
+    &lt;footer class="footer"&gt;
+        &lt;p&gt;&amp;copy; 2026 My Website&lt;/p&gt;
+    &lt;/footer&gt;
+&lt;/div&gt;</code></pre>
+
+            <p>Notice <code>grid-template-areas</code> — it lets you name sections visually, almost like ASCII art. This makes layouts self-documenting and easy to modify.</p>
+
+            <h3>Auto-Fit Grid (Responsive Without Media Queries)</h3>
+
+            <p>One of the most powerful Grid patterns:</p>
+
+            <pre><code>.auto-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    padding: 2rem;
+}
+
+.auto-grid .item {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}</code></pre>
+
+            <p><code>repeat(auto-fit, minmax(280px, 1fr))</code> means: "create as many columns as fit, each at least 280px wide, sharing remaining space equally." Result: 4 columns on a desktop, 2 on a tablet, 1 on a phone — zero media queries needed.</p>
+
+            <h2>Media Queries: Targeting Specific Screens</h2>
+
+            <p>When Flexbox and Grid aren't enough, media queries let you apply styles conditionally based on screen characteristics.</p>
+
+            <h3>Common Breakpoints</h3>
+
+            <pre><code>/* Mobile-first breakpoints */
+
+/* Base styles: mobile (320px+) — these apply everywhere */
+.container {
+    padding: 1rem;
+}
+
+/* Small tablets and up (640px) */
+@media (min-width: 640px) {
+    .container {
+        padding: 2rem;
+        max-width: 640px;
+        margin: 0 auto;
+    }
+}
+
+/* Laptops and up (1024px) */
+@media (min-width: 1024px) {
+    .container {
+        max-width: 1024px;
+    }
+}
+
+/* Large desktops (1280px) */
+@media (min-width: 1280px) {
+    .container {
+        max-width: 1200px;
+    }
+}</code></pre>
+
+            <p>Notice we use <code>min-width</code> (mobile-first), not <code>max-width</code>. Mobile-first means the base styles work on phones, and we progressively enhance for larger screens. This is the recommended approach by Google and industry experts.</p>
+
+            <h3>Responsive Images</h3>
+
+            <pre><code>/* Always constrain images */
+img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* Modern approach: serve different sizes */
+&lt;img
+    src="photo-800.jpg"
+    srcset="photo-400.jpg 400w,
+            photo-800.jpg 800w,
+            photo-1200.jpg 1200w"
+    sizes="(max-width: 640px) 100vw,
+           (max-width: 1024px) 50vw,
+           33vw"
+    alt="Description of image"
+/&gt;</code></pre>
+
+            <p>The <code>srcset</code> attribute gives the browser multiple image sizes. The <code>sizes</code> attribute tells the browser how wide the image will be at different breakpoints. The browser picks the best size automatically — no JavaScript needed.</p>
+
+            <h3>Dark Mode Detection</h3>
+
+            <pre><code>/* Respect user's system dark mode preference */
+@media (prefers-color-scheme: dark) {
+    body {
+        background: #0f172a;
+        color: #f1f5f9;
+    }
+
+    .card {
+        background: #1e293b;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+}
+
+/* Also detect reduced motion preference for accessibility */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation: none !important;
+        transition: none !important;
+    }
+}</code></pre>
+
+            <h2>Complete Project: A Responsive Blog Layout</h2>
+
+            <p>Let's put everything together into a real project:</p>
+
+            <pre><code>&lt;!-- responsive-blog.html --&gt;
+&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+    &lt;title&gt;Responsive Blog&lt;/title&gt;
+    &lt;style&gt;
+        /* ===== Reset & Base ===== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --radius: 12px;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            line-height: 1.7;
+            color: var(--text);
+            background: var(--bg);
+        }
+
+        /* ===== Navigation ===== */
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            background: var(--primary);
+            color: white;
+        }
+
+        .nav-logo {
+            font-size: 1.25rem;
+            font-weight: bold;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+        }
+
+        /* ===== Hero Section ===== */
+        .hero {
+            text-align: center;
+            padding: clamp(2rem, 8vw, 6rem) 1.5rem;
+            background: linear-gradient(135deg, #2563eb, #7c3aed);
+            color: white;
+        }
+
+        .hero h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            margin-bottom: 1rem;
+        }
+
+        .hero p {
+            font-size: clamp(1rem, 2.5vw, 1.25rem);
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* ===== Blog Posts Grid ===== */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+        }
+
+        .posts {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .post-card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .post-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.12);
+        }
+
+        .post-tag {
+            display: inline-block;
+            background: #dbeafe;
+            color: #2563eb;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+        }
+
+        .post-card h2 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .post-card p {
+            color: var(--text-light);
+            font-size: 0.95rem;
+        }
+
+        .post-meta {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+            color: var(--text-light);
+            font-size: 0.85rem;
+        }
+
+        /* ===== Footer ===== */
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            background: var(--text);
+            color: white;
+            margin-top: 3rem;
+        }
+
+        /* ===== Responsive Adjustments ===== */
+        @media (max-width: 640px) {
+            .nav-links {
+                gap: 0.5rem;
+            }
+
+            .posts {
+                grid-template-columns: 1fr;  /* Single column on mobile */
+            }
+        }
+    &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;nav class="nav"&gt;
+        &lt;div class="nav-logo"&gt;📝 My Blog&lt;/div&gt;
+        &lt;ul class="nav-links"&gt;
+            &lt;li&gt;&lt;a href="#"&gt;Home&lt;/a&gt;&lt;/li&gt;
+            &lt;li&gt;&lt;a href="#"&gt;About&lt;/a&gt;&lt;/li&gt;
+        &lt;/ul&gt;
+    &lt;/nav&gt;
+
+    &lt;section class="hero"&gt;
+        &lt;h1&gt;Welcome to My Blog&lt;/h1&gt;
+        &lt;p&gt;Thoughts on web development, design, and building things for the internet.&lt;/p&gt;
+    &lt;/section&gt;
+
+    &lt;div class="container"&gt;
+        &lt;div class="posts"&gt;
+            &lt;article class="post-card"&gt;
+                &lt;span class="post-tag"&gt;CSS&lt;/span&gt;
+                &lt;h2&gt;Responsive Design 101&lt;/h2&gt;
+                &lt;p&gt;Learn how to build layouts that adapt to any screen size using Flexbox and Grid.&lt;/p&gt;
+                &lt;div class="post-meta"&gt;
+                    &lt;time&gt;Jun 22, 2026&lt;/time&gt;
+                    &lt;span&gt;10 min read&lt;/span&gt;
+                &lt;/div&gt;
+            &lt;/article&gt;
+
+            &lt;article class="post-card"&gt;
+                &lt;span class="post-tag"&gt;JavaScript&lt;/span&gt;
+                &lt;h2&gt;Async/Await Explained&lt;/h2&gt;
+                &lt;p&gt;Master asynchronous JavaScript with practical examples and clear explanations.&lt;/p&gt;
+                &lt;div class="post-meta"&gt;
+                    &lt;time&gt;Jun 20, 2026&lt;/time&gt;
+                    &lt;span&gt;8 min read&lt;/span&gt;
+                &lt;/div&gt;
+            &lt;/article&gt;
+
+            &lt;article class="post-card"&gt;
+                &lt;span class="post-tag"&gt;HTML&lt;/span&gt;
+                &lt;h2&gt;Semantic HTML Guide&lt;/h2&gt;
+                &lt;p&gt;Write meaningful HTML that improves accessibility and SEO.&lt;/p&gt;
+                &lt;div class="post-meta"&gt;
+                    &lt;time&gt;Jun 18, 2026&lt;/time&gt;
+                    &lt;span&gt;6 min read&lt;/span&gt;
+                &lt;/div&gt;
+            &lt;/article&gt;
+        &lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;footer class="footer"&gt;
+        &lt;p&gt;&amp;copy; 2026 My Blog. Built with responsive CSS.&lt;/p&gt;
+    &lt;/footer&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+
+            <h2>Responsive Design Checklist</h2>
+
+            <ul>
+                <li><code>&lt;meta name="viewport"&gt;</code> — Always include it</li>
+                <li>Use relative units: <code>rem</code>, <code>em</code>, <code>vw</code>, <code>%</code> — not fixed <code>px</code></li>
+                <li>Images: <code>max-width: 100%; height: auto</code></li>
+                <li>Flexbox for rows (nav, cards, buttons)</li>
+                <li>CSS Grid for page layouts and complex grids</li>
+                <li><code>clamp()</code> for fluid typography and spacing</li>
+                <li><code>auto-fit</code> + <code>minmax()</code> for responsive grids without media queries</li>
+                <li>Mobile-first media queries with <code>min-width</code></li>
+                <li>Test on real devices (Chrome DevTools device emulator works for development)</li>
+                <li>Check accessibility: contrast ratios, touch target sizes (min 44×44px)</li>
+            </ul>
+
+            <h2>Next Steps</h2>
+            <ul>
+                <li>Learn <strong>CSS custom properties</strong> (CSS variables) for theming</li>
+                <li>Explore <strong>CSS container queries</strong> — responsive based on container width, not viewport</li>
+                <li>Build a portfolio website using everything from this guide</li>
+                <li>Study <strong>Tailwind CSS</strong> — a utility-first CSS framework that makes responsive design even faster</li>
+            </ul>
+
+            <blockquote>
+                <strong>Practice tip:</strong> Take any website you like and try to recreate its layout. Start with mobile, then make it work for desktop. You'll learn more from one real project than reading ten tutorials.
+            </blockquote>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes. Built with vibe coding.</p>
+        </div>
+    </footer>
+</body>
+</html>

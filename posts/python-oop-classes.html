@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Classes and OOP: Object-Oriented Programming for Beginners | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn Python classes, objects, inheritance, and encapsulation from scratch. Build real object-oriented programs step by step. Beginner-friendly OOP tutorial with working code examples.">
+    <meta name="keywords" content="Python OOP, classes, objects, inheritance, encapsulation, polymorphism, init, self, Python beginner, object-oriented programming">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-oop-classes.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+        
+        <article class="post-content">
+            <span class="tag python">Python</span>
+            <h1>Python Classes and OOP: Object-Oriented Programming for Beginners</h1>
+            <time>June 23, 2026 · 11 min read</time>
+
+            <p>You've learned Python variables, loops, functions, and file operations. Now it's time to level up with <strong>Object-Oriented Programming (OOP)</strong> — the paradigm that powers most real-world Python applications. From web frameworks like Django to data science libraries like pandas, OOP is everywhere.</p>
+
+            <p>In this tutorial, we'll build from the ground up: creating your first class, understanding objects, inheritance, and real-world patterns — all with working code you can run immediately.</p>
+
+            <h2>What Is Object-Oriented Programming?</h2>
+
+            <p>OOP is a programming style that organizes code around <strong>objects</strong> — data structures that bundle related data (attributes) and behavior (methods) together. Think of an object as a blueprint for a real-world thing.</p>
+
+            <blockquote>
+                <p><strong>Analogy:</strong> A class is like a cookie cutter (the blueprint). Each cookie you make from it is an object (an instance). All cookies share the same shape but can have different toppings, textures, and flavors.</p>
+            </blockquote>
+
+            <h2>Your First Class</h2>
+
+            <p>Let's create a simple <code>Dog</code> class. Every class in Python uses the <code>class</code> keyword and a special method called <code>__init__</code> (the constructor) to set up new objects.</p>
+
+            <pre><code>class Dog:
+    """A simple Dog class."""
+    
+    def __init__(self, name, breed):
+        """Initialize a Dog with a name and breed."""
+        self.name = name      # instance attribute
+        self.breed = breed    # instance attribute
+        self.tricks = []      # starts with empty list
+    
+    def add_trick(self, trick):
+        """Teach the dog a new trick."""
+        self.tricks.append(trick)
+        print(f"{self.name} learned '{trick}'!")
+    
+    def sit(self):
+        """Make the dog sit."""
+        print(f"{self.name} sits politely.")
+    
+    def speak(self):
+        """Make the dog speak."""
+        print(f"{self.name} says: Woof!")
+    
+    def __str__(self):
+        """String representation of the Dog."""
+        return f"{self.name} the {self.breed}"
+
+# Create objects (instances)
+buddy = Dog("Buddy", "Golden Retriever")
+max = Dog("Max", "German Shepherd")
+
+# Use methods
+buddy.sit()          # Buddy sits politely.
+buddy.speak()        # Buddy says: Woof!
+buddy.add_trick("roll over")  # Buddy learned 'roll over'!
+
+# Use __str__
+print(buddy)         # Buddy the Golden Retriever
+print(max)           # Max the German Shepherd</code></pre>
+
+            <p>Key concepts here:</p>
+
+            <ul>
+                <li><code>self</code> refers to the current object instance — it's always the first parameter in methods</li>
+                <li><code>__init__</code> runs automatically when you create a new object</li>
+                <li><code>self.name</code> stores data unique to each instance (Buddy vs Max)</li>
+                <li><code>__str__</code> defines what prints when you use <code>print(object)</code></li>
+            </ul>
+
+            <h2>Class Attributes vs Instance Attributes</h2>
+
+            <p>Attributes defined <em>inside</em> <code>__init__</code> belong to each individual instance. Attributes defined <em>outside</em> methods are shared by all instances — these are <strong>class attributes</strong>.</p>
+
+            <pre><code>class BankAccount:
+    """A class to manage a bank account."""
+    
+    # Class attribute — shared by ALL BankAccount objects
+    interest_rate = 0.05  # 5% interest
+    
+    def __init__(self, owner, balance=0):
+        # Instance attributes — unique to each object
+        self.owner = owner
+        self.balance = balance
+        self.transactions = []
+    
+    def deposit(self, amount):
+        """Add money to the account."""
+        if amount <= 0:
+            raise ValueError("Deposit amount must be positive")
+        self.balance += amount
+        self.transactions.append(f"Deposited: ${amount:.2f}")
+        print(f"Deposited ${amount:.2f}. New balance: ${self.balance:.2f}")
+    
+    def withdraw(self, amount):
+        """Remove money from the account."""
+        if amount <= 0:
+            raise ValueError("Withdrawal amount must be positive")
+        if amount > self.balance:
+            print(f"Insufficient funds! Balance: ${self.balance:.2f}")
+            return False
+        self.balance -= amount
+        self.transactions.append(f"Withdrew: ${amount:.2f}")
+        print(f"Withdrew ${amount:.2f}. New balance: ${self.balance:.2f}")
+        return True
+    
+    def apply_interest(self):
+        """Apply annual interest to the balance."""
+        interest = self.balance * self.interest_rate
+        self.balance += interest
+        self.transactions.append(f"Interest: +${interest:.2f}")
+        print(f"Applied interest: +${interest:.2f}. New balance: ${self.balance:.2f}")
+    
+    def statement(self):
+        """Print all transactions."""
+        print(f"\nStatement for {self.owner}:")
+        for i, txn in enumerate(self.transactions, 1):
+            print(f"  {i}. {txn}")
+        print(f"  Balance: ${self.balance:.2f}\n")
+
+# Change the class attribute (affects ALL accounts)
+BankAccount.interest_rate = 0.03  # Change to 3%
+
+# Create accounts
+savings = BankAccount("Alice", 1000)
+checking = BankAccount("Bob", 500)
+
+# Use the account
+savings.deposit(200)       # Deposited $200.00. New balance: $1200.00
+savings.withdraw(50)       # Withdrew $50.00. New balance: $1150.00
+savings.apply_interest()   # Applied interest: +$34.50. New balance: $1184.50
+savings.statement()
+
+# Check balance
+print(savings.balance)     # 1184.5</code></pre>
+
+            <h2>Inheritance: Building on Existing Classes</h2>
+
+            <p>Inheritance lets you create a new class that inherits all the attributes and methods of an existing class, then add or override features. This is how you avoid repeating code.</p>
+
+            <pre><code>class SavingsAccount(BankAccount):
+    """A savings account with bonus features."""
+    
+    def __init__(self, owner, balance=0, minimum_balance=100):
+        super().__init__(owner, balance)  # call parent __init__
+        self.minimum_balance = minimum_balance
+        self.withdrawal_limit = 3  # max withdrawals per month
+    
+    def withdraw(self, amount):
+        """Override parent withdraw with minimum balance check."""
+        if self.balance - amount < self.minimum_balance:
+            print(f"Cannot withdraw! Must keep ${self.minimum_balance:.2f} minimum.")
+            return False
+        if self.withdrawal_limit <= 0:
+            print("Withdrawal limit reached for this month!")
+            return False
+        self.withdrawal_limit -= 1
+        return super().withdraw(amount)  # call parent withdraw
+    
+    def apply_interest(self):
+        """Override: savings gets double interest."""
+        interest = self.balance * self.interest_rate * 2
+        self.balance += interest
+        self.transactions.append(f"Bonus interest: +${interest:.2f}")
+        print(f"Applied double interest: +${interest:.2f}")
+
+# Create a savings account
+mysavings = SavingsAccount("Alice", 2000, minimum_balance=500)
+mysavings.deposit(300)        # Deposited $300.00. New balance: $2300.00
+mysavings.withdraw(100)       # Withdrew $100.00. New balance: $2200.00
+mysavings.withdraw(1800)      # Cannot withdraw! Must keep $500.00 minimum.
+mysavings.apply_interest()    # Applied double interest: +$66.00</code></pre>
+
+            <p>What happened:</p>
+
+            <ul>
+                <li><code>SavingsAccount</code> <strong>inherits</strong> everything from <code>BankAccount</code></li>
+                <li><code>super().__init__()</code> calls the parent's constructor so we don't rewrite it</li>
+                <li>We <strong>overrode</strong> <code>withdraw()</code> and <code>apply_interest()</code> with new logic</li>
+                <li>New attributes (<code>minimum_balance</code>, <code>withdrawal_limit</code>) are specific to savings accounts</li>
+            </ul>
+
+            <h2>Encapsulation: Protecting Your Data</h2>
+
+            <p>Encapsulation means hiding internal details and controlling access. In Python, we use a <strong>single underscore</strong> prefix (<code>_</code>) to signal "private" and properties for safe access.</p>
+
+            <pre><code>class Player:
+    """A game player with protected attributes."""
+    
+    def __init__(self, name, health=100):
+        self.name = name
+        self._health = health    # "private" — don't modify directly
+        self._score = 0          # "private"
+    
+    @property
+    def health(self):
+        """Read-only access to health."""
+        return self._health
+    
+    @property
+    def score(self):
+        """Read-only access to score."""
+        return self._score
+    
+    def take_damage(self, amount):
+        """Reduce health safely."""
+        if amount < 0:
+            raise ValueError("Damage cannot be negative")
+        self._health = max(0, self._health - amount)
+        if self._health == 0:
+            print(f"{self.name} has been defeated!")
+    
+    def earn_points(self, points):
+        """Increase score safely."""
+        self._score += points
+        print(f"{self.name} earned {points} points! Total: {self._score}")
+
+# Use the Player class
+hero = Player("Hero", 100)
+print(hero.health)      # 100 (read-only, works via @property)
+
+hero.take_damage(30)    # (no output, health goes to 70)
+print(hero.health)      # 70
+
+hero.earn_points(50)    # Hero earned 50 points! Total: 50
+
+# Trying to set health directly is "discouraged" but not blocked:
+# hero._health = 999    # Don't do this! Use take_damage() instead.</code></pre>
+
+            <h2>Polymorphism: Same Interface, Different Behavior</h2>
+
+            <p>Polymorphism means objects of different classes can be treated uniformly if they share a method name. This is powerful for writing flexible code.</p>
+
+            <pre><code>class Shape:
+    """Base shape class."""
+    
+    def area(self):
+        raise NotImplementedError("Subclasses must implement area()")
+    
+    def describe(self):
+        return f"I am a {self.__class__.__name__}."
+
+class Circle(Shape):
+    def __init__(self, radius):
+        self.radius = radius
+    
+    def area(self):
+        import math
+        return math.pi * self.radius ** 2
+
+class Rectangle(Shape):
+    def __init__(self, width, height):
+        self.width = width
+        self.height = height
+    
+    def area(self):
+        return self.width * self.height
+
+class Triangle(Shape):
+    def __init__(self, base, height):
+        self.base = base
+        self.height = height
+    
+    def area(self):
+        return 0.5 * self.base * self.height
+
+# Polymorphism in action — works with ANY Shape
+shapes = [
+    Circle(5),
+    Rectangle(4, 6),
+    Triangle(3, 8)
+]
+
+for shape in shapes:
+    print(f"{shape.describe()} Area = {shape.area():.2f}")
+
+# Output:
+# I am a Circle. Area = 78.54
+# I am a Rectangle. Area = 24.00
+# I am a Triangle. Area = 12.00</code></pre>
+
+            <h2>Putting It All Together: A Contact Manager Project</h2>
+
+            <p>Let's build something practical — a simple contact manager that uses everything we've covered.</p>
+
+            <pre><code>import json
+import os
+
+class Contact:
+    """Represents a single contact."""
+    
+    def __init__(self, name, phone, email=""):
+        self.name = name
+        self.phone = phone
+        self.email = email
+        self.tags = []
+    
+    def add_tag(self, tag):
+        if tag not in self.tags:
+            self.tags.append(tag)
+    
+    def __str__(self):
+        tags_str = ", ".join(self.tags) if self.tags else "none"
+        return f"{self.name} | {self.phone}" + (f" | {self.email}" if self.email else "") + f"\n  Tags: {tags_str}"
+
+class ContactManager:
+    """Manages a collection of contacts."""
+    
+    def __init__(self, filename="contacts.json"):
+        self.filename = filename
+        self.contacts = []
+        self._load()
+    
+    def add(self, contact):
+        """Add a new contact."""
+        self.contacts.append(contact)
+        self._save()
+        print(f"Added: {contact.name}")
+    
+    def find(self, name):
+        """Find contacts by name (partial match)."""
+        return [c for c in self.contacts if name.lower() in c.name.lower()]
+    
+    def delete(self, name):
+        """Delete a contact by name."""
+        before = len(self.contacts)
+        self.contacts = [c for c in self.contacts if c.name.lower() != name.lower()]
+        if len(self.contacts) < before:
+            self._save()
+            print(f"Deleted: {name}")
+            return True
+        print(f"Not found: {name}")
+        return False
+    
+    def list_all(self):
+        """List all contacts."""
+        if not self.contacts:
+            print("No contacts yet.")
+            return
+        for i, contact in enumerate(self.contacts, 1):
+            print(f"{i}. {contact}")
+    
+    def _save(self):
+        """Save contacts to JSON file."""
+        data = [{
+            "name": c.name,
+            "phone": c.phone,
+            "email": c.email,
+            "tags": c.tags
+        } for c in self.contacts]
+        with open(self.filename, "w") as f:
+            json.dump(data, f, indent=2)
+    
+    def _load(self):
+        """Load contacts from JSON file."""
+        if not os.path.exists(self.filename):
+            return
+        try:
+            with open(self.filename, "r") as f:
+                data = json.load(f)
+            for item in data:
+                c = Contact(item["name"], item["phone"], item["email"])
+                c.tags = item.get("tags", [])
+                self.contacts.append(c)
+        except (json.JSONDecodeError, KeyError):
+            print("Warning: Could not load contacts file.")
+
+# --- Use the Contact Manager ---
+manager = ContactManager()
+
+manager.add(Contact("Alice Smith", "555-0101", "alice@email.com"))
+manager.add(Contact("Bob Jones", "555-0102"))
+
+# Tag contacts
+manager.contacts[0].add_tag("work")
+manager.contacts[0].add_tag("friend")
+manager.contacts[1].add_tag("family")
+
+manager.list_all()
+
+# Search
+results = manager.find("alice")
+print(f"\nFound {len(results)} match(es)")
+
+# Delete
+manager.delete("Bob Jones")</code></pre>
+
+            <h2>OOP Design Principles Cheat Sheet</h2>
+
+            <ul>
+                <li><strong>Encapsulation</strong> — bundle data and behavior in classes; protect internal state</li>
+                <li><strong>Inheritance</strong> — create new classes from existing ones to avoid duplication</li>
+                <li><strong>Polymorphism</strong> — use the same interface (methods) across different classes</li>
+                <li><strong>Composition over inheritance</strong> — prefer "has a" over "is a" when possible (e.g., a <code>Car</code> <em>has an</em> <code>Engine</code> rather than inheriting from it)</li>
+            </ul>
+
+            <h2>What's Next?</h2>
+
+            <p>Now that you understand classes and OOP, you're ready to tackle bigger projects. Try building:</p>
+
+            <ul>
+                <li>A <strong>to-do list app</strong> with <code>Task</code> and <code>TaskManager</code> classes</li>
+                <li>A <strong>library system</strong> with <code>Book</code>, <code>User</code>, and <code>Library</code> classes</li>
+                <li>A <strong>shop inventory</strong> with <code>Product</code>, <code>Cart</code>, and <code>Store</code> classes</li>
+            </ul>
+
+            <p>Keep practicing — OOP feels abstract at first, but once it clicks, you'll never go back to writing flat, procedural code!</p>
+
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes | Built with ❤️ & AI</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528" target="_blank">GitHub</a>
+                <a href="https://blog.hugow.dev/sitemap.xml">Sitemap</a>
+                <a href="https://blog.hugow.dev/robots.txt">Robots</a>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docker Networking & Multi-Stage Builds | Hugo's Dev Notes</title>
+    <meta name="description" content="Master Docker networking (bridge, host, none, custom) and multi-stage builds to create smaller, faster container images. Real-world examples included.">
+    <meta name="keywords" content="docker networking, multi-stage builds, docker bridge, docker image optimization, docker tutorial">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/docker-networking-builds.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../devops.html" class="nav-btn active">🐳 DevOps</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post">
+            <div class="post-header">
+                <span class="tag devops">DevOps</span>
+                <span class="tag">Docker</span>
+                <h1>Docker Networking & Multi-Stage Builds</h1>
+            </div>
+            <div class="post-meta">
+                <time>2026-06-24</time>
+                <span class="read-time">10 min read</span>
+                <span class="post-status">New</span>
+            </div>
+
+            <div class="post-content">
+                <p>You've built your first Docker container and maybe even used Docker Compose. But how do containers <em>talk</em> to each other? And why are some images 100 MB while others are 1 GB? This guide covers Docker networking fundamentals and multi-stage builds — two skills that separate hobbyists from professionals.</p>
+
+                <h2>Part 1: Docker Networking</h2>
+
+                <h3>Why Do Containers Need Networks?</h3>
+                <p>By default, each Docker container runs in its own isolated network namespace. This means a container can't reach other containers, your host machine, or external services — unless you connect them to a network. Understanding Docker's built-in network drivers is essential for building real applications.</p>
+
+                <h3>The Three Built-in Network Drivers</h3>
+
+                <p><strong>1. Bridge (default)</strong> — The most common driver. Docker creates a virtual network bridge, and containers connect to it. Each container gets its own IP address and can reach the internet, but other containers need explicit configuration to reach each other.</p>
+
+                <pre><code># Check existing networks
+docker network ls
+# OUTPUT:
+# NETWORK ID   NAME      DRIVER   SCOPE
+# abc123       bridge    bridge   local
+# def456       host      host     local
+# ghi789       none      null     local
+
+# Create a custom bridge network
+docker network create my-app-net
+
+# Run two containers on the same network
+docker run -d --name web --network my-app-net nginx:latest
+docker run -d --name db --network my-app-net postgres:15
+
+# The "web" container can now reach "db" by name:
+docker exec web ping db  # Works! Docker DNS resolves names.</code></pre>
+
+                <p><strong>2. Host</strong> — The container shares the host machine's network stack. No port mapping needed, but less isolation. Useful for performance-critical apps:</p>
+
+                <pre><code># Container uses host's network directly
+docker run -d --name monitoring --network host prom/prometheus
+
+# Access it directly at http://localhost:9090 (no -p mapping needed)
+# But: you can't use the same port as another container or the host</code></pre>
+
+                <p><strong>3. None</strong> — Completely isolated. No network access at all. Use this for containers that only process local files:</p>
+
+                <pre><code>docker run --network none python:3.11 python /app/process_data.py</code></pre>
+
+                <h3>Custom Bridge Networks — Why They Matter</h3>
+                <p>The default <code>bridge</code> network has a major limitation: containers <strong>cannot</strong> resolve each other by name. Custom bridge networks add built-in DNS resolution:</p>
+
+                <pre><code># ❌ Default bridge — name resolution doesn't work
+docker run -d --name web1 nginx        # on default bridge
+docker run -d --name web2 nginx        # on default bridge
+docker exec web2 curl http://web1      # FAILS — "web1" unknown
+
+# ✅ Custom bridge — name resolution works
+docker network create app-net
+docker run -d --name web1 --network app-net nginx
+docker run -d --name web2 --network app-net nginx
+docker exec web2 curl http://web1      # SUCCESS!</code></pre>
+
+                <h3>Port Mapping vs Internal Communication</h3>
+                <p>Understand the difference between exposing ports externally and internal container-to-container communication:</p>
+
+                <pre><code># -p 8080:80 exposes port 80 to the HOST (http://localhost:8080)
+docker run -d --name web -p 8080:80 --network app-net nginx
+
+# Containers on the same network reach each other via internal port
+# (not the mapped host port)
+docker run --rm --network app-net alpine wget -q -O- http://web
+
+# This uses port 80 (the container port), NOT 8080</code></pre>
+
+                <h3>Networking with Docker Compose</h3>
+                <p>Docker Compose automatically creates a network for your services. Services can reach each other by their service name:</p>
+
+                <pre><code># docker-compose.yml
+services:
+  web:
+    image: nginx:latest
+    ports:
+      - "8080:80"
+    networks:
+      - frontend
+      - backend
+
+  api:
+    build: ./api
+    networks:
+      - backend
+
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_PASSWORD: secret
+    networks:
+      - backend
+
+networks:
+  frontend:
+  backend:</code></pre>
+
+                <p>In this setup: <code>web</code> can reach both <code>api</code> and <code>db</code>, but <code>db</code> cannot reach <code>web</code> (different networks). This is a security best practice — only expose what's necessary.</p>
+
+                <hr>
+
+                <h2>Part 2: Multi-Stage Builds</h2>
+
+                <h3>The Problem: Bloated Docker Images</h3>
+                <p>Build tools (compilers, package managers, build dependencies) make your image huge. But you don't need them at runtime. Multi-stage builds solve this by separating build and runtime stages:</p>
+
+                <pre><code># ❌ Single-stage build — everything in one image
+FROM node:18
+WORKDIR /app
+COPY package*.json ./
+RUN npm install              # Installs ALL dependencies including dev deps
+COPY . .
+RUN npm run build            # Compiles the app
+EXPOSE 3000
+CMD ["node", "dist/main.js"]
+
+# Image size: ~900 MB (includes Node.js, npm, all dev tools)</code></pre>
+
+                <pre><code># ✅ Multi-stage build — tiny production image
+# Stage 1: Build
+FROM node:18 AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci                    # Deterministic install
+COPY . .
+RUN npm run build             # Compile to /dist
+
+# Stage 2: Production runtime
+FROM node:18-slim AS production
+WORKDIR /app
+# Copy ONLY production dependencies
+COPY --from=builder /app/package*.json ./
+RUN npm ci --only=production --ignore-scripts
+# Copy ONLY the built output (not source code, not dev tools)
+COPY --from=builder /app/dist ./dist
+EXPOSE 3000
+USER node                     # Run as non-root (security!)
+CMD ["node", "dist/main.js"]
+
+# Image size: ~200 MB (75% smaller!)</code></pre>
+
+                <h3>Multi-Stage for Compiled Languages</h3>
+                <p>The savings are even more dramatic with compiled languages like Go, Rust, or Java:</p>
+
+                <pre><code># Stage 1: Build with Go toolchain (1 GB+)
+FROM golang:1.22 AS builder
+WORKDIR /app
+COPY go.* ./
+RUN go mod download
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -o server .
+
+# Stage 2: Zero dependencies — just the binary
+FROM scratch AS production
+COPY --from=builder /app/server /server
+EXPOSE 8080
+CMD ["/server"]
+
+# Image size: ~10-20 MB (compared to 1+ GB!)</code></pre>
+
+                <p>The <code>scratch</code> image is completely empty — no OS, no shell, nothing. Just your binary. This is the gold standard for Go microservices.</p>
+
+                <h3>Python Multi-Stage Example</h3>
+
+                <pre><code># Stage 1: Install dependencies (cached layer!)
+FROM python:3.12-slim AS builder
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --user --no-cache-dir -r requirements.txt
+
+# Stage 2: Runtime image
+FROM python:3.12-slim AS production
+WORKDIR /app
+# Copy installed packages from builder
+COPY --from=builder /root/.local /root/.local
+# Make sure pip installs are in PATH
+ENV PATH=/root/.local/bin:$PATH
+# Copy application code last (changes often = better caching)
+COPY . .
+USER nobody                  # Security: don't run as root
+CMD ["python", "app.py"]</code></pre>
+
+                <h3>Layer Caching Tips</h3>
+                <p>The order of <code>COPY</code> and <code>RUN</code> commands affects build speed. Put stable layers first:</p>
+
+                <pre><code># ❌ Bad order — rebuilds every time code changes
+COPY . .
+RUN pip install -r requirements.txt   # Always re-runs because COPY invalidated the cache
+
+# ✅ Good order — only rebuilds when dependencies change
+COPY requirements.txt .
+RUN pip install -r requirements.txt   # Cached unless requirements.txt changes
+COPY . .                              # Last layer — always runs but is fast</code></pre>
+
+                <h2>Part 3: Combining Networking + Builds</h2>
+                <p>Here's a complete multi-stage Docker Compose setup with proper networking:</p>
+
+                <pre><code># docker-compose.yml
+services:
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+      target: production   # Use specific stage
+    ports:
+      - "8080:80"
+    networks:
+      - public
+      - internal
+    depends_on:
+      - api
+
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+      target: production
+    networks:
+      - internal
+    environment:
+      DATABASE_URL: postgres://user:pass@db:5432/myapp
+    depends_on:
+      - db
+
+  db:
+    image: postgres:15-alpine
+    networks:
+      - internal
+    environment:
+      POSTGRES_DB: myapp
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+networks:
+  public:   # Only web connects here (exposed to host via ports)
+  internal: # api and db live here (not accessible from outside)
+
+volumes:
+  pgdata:</code></pre>
+
+                <h2>Common Networking Troubleshooting</h2>
+                <pre><code># Check a container's network configuration
+docker inspect web --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'
+
+# View all networks
+docker network ls
+
+# Inspect a network's details (connected containers, IPs)
+docker network inspect my-app-net
+
+# Connect a running container to a network
+docker network connect my-app-net existing_container
+
+# Test connectivity between containers
+docker exec web curl -v http://api:3000/health</code></pre>
+
+                <h2>Summary & Best Practices</h2>
+                <ul>
+                    <li><strong>Always use custom bridge networks</strong> instead of the default — you get DNS resolution for free.</li>
+                    <li><strong>Use multi-stage builds</strong> to reduce image size. Aim for small runtime images (under 200 MB when possible).</li>
+                    <li><strong>Run containers as non-root</strong> with <code>USER</code> — a simple security improvement.</li>
+                    <li><strong>Order Dockerfile commands by frequency of change</strong> — stable layers first for better caching.</li>
+                    <li><strong>Segregate networks</strong> — don't give every container access to every other container.</li>
+                    <li><strong>Use <code>scratch</code> or <code>distroless</code> images</strong> for compiled languages to minimize attack surface.</li>
+                </ul>
+
+                <p><strong>Previous:</strong> Check out our <a href="docker-compose.html">Docker Compose guide</a> or <a href="docker-basics.html">Docker Basics</a> if you're just getting started.</p>
+            </div>
+
+            <div class="post-nav">
+                <a href="docker-compose.html" class="prev-post">← Previous: Docker Compose</a>
+                <a href="../index.html" class="back-to-top">↑ Back to Home</a>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes | Built with ❤️ & AI</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528" target="_blank">GitHub</a>
+                <a href="https://blog.hugow.dev/sitemap.xml">Sitemap</a>
+            </div>
+        </div>
+    </footer>
+
+    <button class="back-to-top" id="backToTop" title="Back to top">↑</button>
+
+    <script>
+    const themeToggle = document.getElementById('themeToggle');
+    themeToggle.addEventListener('click', () => {
+        document.body.classList.toggle('dark-mode');
+        themeToggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+        localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+    });
+    if (localStorage.getItem('theme') === 'dark') {
+        document.body.classList.add('dark-mode');
+        themeToggle.textContent = '☀️';
+    }
+    const backToTop = document.getElementById('backToTop');
+    window.addEventListener('scroll', () => {
+        backToTop.style.display = window.pageYOffset > 300 ? 'block' : 'none';
+    });
+    backToTop.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+    window.addEventListener('scroll', () => {
+        const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+        const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        const scrolled = (winScroll / height) * 100;
+        document.getElementById('progressBar').style.width = scrolled + '%';
+    });
+    </script>
+</body>
+</html>

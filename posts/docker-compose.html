@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docker Compose: Multi-Container Applications - Hugo's Dev Notes</title>
+    <meta name="description" content="Learn Docker Compose to define and run multi-container applications. Complete guide with database, API, and web app examples.">
+    <meta name="keywords" content="docker compose, docker, multi-container, devops, containers, deployment, docker tutorial">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/docker-compose.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+                <a href="../devops.html" class="nav-btn">🐳 DevOps</a>
+                <a href="../security.html" class="nav-btn">🔐 Security</a>
+                <a href="../webdev.html" class="nav-btn">💻 Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-content">
+            <div class="post-header">
+                <span class="tag devops">DevOps</span>
+                <h1>Docker Compose: Multi-Container Applications</h1>
+                <time>2026-06-24</time>
+                <span class="read-time">9 min read</span>
+            </div>
+
+            <p>If you've learned Docker basics (containers, images, Dockerfiles), you know that running a single container is straightforward. But real applications need multiple services working together — a web server, a database, a cache, a message queue. That's where <strong>Docker Compose</strong> comes in. Instead of typing long <code>docker run</code> commands, you define everything in a simple YAML file and launch your entire stack with one command.</p>
+
+            <h2>What is Docker Compose?</h2>
+
+            <p>Docker Compose is a tool for defining and running multi-container Docker applications. You use a <code>docker-compose.yml</code> file to configure your application's services, networks, and volumes. Then with a single command, Compose creates and starts all the containers from your configuration.</p>
+
+            <blockquote>
+                <p>"Docker Compose is the best way to manage multi-container Docker applications. What used to require 10+ <code>docker run</code> commands can be handled with a single YAML file." — Docker Docs</p>
+            </blockquote>
+
+            <h2>Installing Docker Compose</h2>
+
+            <p>On most modern Docker installations, Compose is included as a Docker CLI plugin. Check your version:</p>
+
+            <pre><code>docker compose version
+# Output: Docker Compose version v2.27.0</code></pre>
+
+            <p>Note the space: it's <code>docker compose</code> (v2), not <code>docker-compose</code> (v1, deprecated). If you don't have it, install it following the <a href="https://docs.docker.com/compose/install/" target="_blank">official installation guide</a>.</p>
+
+            <h2>Your First docker-compose.yml</h2>
+
+            <p>Let's start with a minimal example — a web app and a Redis cache:</p>
+
+            <pre><code># docker-compose.yml
+services:
+  web:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"</code></pre>
+
+            <p>That's it! To start everything:</p>
+
+            <pre><code># Start all services (foreground)
+docker compose up
+
+# Start in the background
+docker compose up -d
+
+# Stop all services
+docker compose down
+
+# View logs
+docker compose logs
+
+# Restart a specific service
+docker compose restart web</code></pre>
+
+            <h2>Understanding the YAML Structure</h2>
+
+            <h3>Services</h3>
+
+            <p>Each service defines a container. Key configuration options:</p>
+
+            <pre><code>services:
+  my-service:
+    # Build from Dockerfile
+    build:
+      context: .
+      dockerfile: Dockerfile
+    
+    # Or pull an image
+    image: node:20-alpine
+    
+    # Map ports (host:container)
+    ports:
+      - "8080:80"
+    
+    # Environment variables
+    environment:
+      NODE_ENV: production
+      DB_HOST: postgres
+    
+    # Or load from a .env file
+    env_file:
+      - .env
+    
+    # Volume mounts
+    volumes:
+      - ./src:/app/src        # Bind mount
+      - db-data:/var/lib/postgres  # Named volume
+    
+    # Container depends on another starting first
+    depends_on:
+      - postgres
+    
+    # Restart policy
+    restart: unless-stopped
+    
+    # Container name
+    container_name: my-web-app
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M</code></pre>
+
+            <h3>Volumes</h3>
+
+            <p>Volumes persist data beyond container lifecycles:</p>
+
+            <pre><code>services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: myapp
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: secret123
+    volumes:
+      - pgdata:/var/lib/postgresql/data  # Named volume
+
+# Define the named volume
+volumes:
+  pgdata:</code></pre>
+
+            <h3>Networks</h3>
+
+            <p>By default, all services in a Compose file share a network and can reach each other by service name. You can create custom networks for isolation:</p>
+
+            <pre><code>services:
+  web:
+    image: nginx:alpine
+    networks:
+      - frontend
+      - backend
+
+  api:
+    build: ./api
+    networks:
+      - backend
+
+  redis:
+    image: redis:7
+    networks:
+      - backend
+
+networks:
+  frontend:
+  backend:</code></pre>
+
+            <p>In this example, <code>web</code> can talk to both <code>api</code> and <code>redis</code>, but <code>redis</code> cannot be reached from outside the backend network.</p>
+
+            <h2>Complete Example: Full-Stack Application</h2>
+
+            <p>Here's a realistic three-tier application with a frontend, backend API, and database:</p>
+
+            <pre><code># docker-compose.yml
+services:
+  # Nginx reverse proxy
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./frontend/dist:/usr/share/nginx/html
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  # Python backend API
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://app:secret@db:5432/myapp
+      - REDIS_URL=redis://cache:6379
+      - SECRET_KEY=${SECRET_KEY}
+    volumes:
+      - ./api:/app
+    depends_on:
+      db:
+        condition: service_healthy
+      cache:
+        condition: service_started
+    restart: unless-stopped
+
+  # PostgreSQL database
+  db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_DB=myapp
+      - POSTGRES_USER=app
+      - POSTGRES_PASSWORD=secret
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Redis cache
+  cache:
+    image: redis:7-alpine
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redis-data:</code></pre>
+
+            <p>Notice the <code>healthcheck</code> on the database. This ensures the API container waits for the database to be truly ready, not just started.</p>
+
+            <h2>Using .env Files</h2>
+
+            <p>Never hardcode secrets. Use a <code>.env</code> file:</p>
+
+            <pre><code># .env (add to .gitignore!)
+SECRET_KEY=my-super-secret-key
+DATABASE_URL=postgresql://app:secret@db:5432/myapp
+REDIS_URL=redis://cache:6379</code></pre>
+
+            <p>Compose automatically loads variables from <code>.env</code>. Reference them in your YAML with <code>${VARIABLE}</code>.</p>
+
+            <h2>Useful Compose Commands</h2>
+
+            <pre><code># Start everything
+docker compose up -d
+
+# Stop everything
+docker compose down
+
+# Stop and remove volumes (clears database data!)
+docker compose down -v
+
+# View all logs
+docker compose logs -f
+
+# Logs from a specific service
+docker compose logs -f api
+
+# Run a one-off command inside a service
+docker compose exec api python manage.py migrate
+docker compose exec db psql -U app -d myapp
+
+# Build images from scratch (ignore cache)
+docker compose build --no-cache
+
+# Scale a service to multiple containers
+docker compose up -d --scale api=3
+
+# Check service status
+docker compose ps
+
+# View resource usage
+docker compose top
+
+# Generate a docker run command from Compose config
+docker compose run --rm api --help</code></pre>
+
+            <h2>Development vs Production Profiles</h2>
+
+            <p>Docker Compose supports profiles to run different sets of services:</p>
+
+            <pre><code>services:
+  api:
+    build: ./api
+    ports:
+      - "8000:8000"
+
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD: dev
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  # Only in production
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    profiles:
+      - production
+
+  # Only in development
+  pgadmin:
+    image: dpage/pgadmin4
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@dev.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    profiles:
+      - development
+
+volumes:
+  pgdata:</code></pre>
+
+            <pre><code># Start with development services
+docker compose --profile development up -d
+
+# Start with production services
+docker compose --profile production up -d
+
+# Start all services (ignore profiles)
+docker compose up -d</code></pre>
+
+            <h2>Overriding Configuration with Compose Files</h2>
+
+            <p>Use a base file and an override file for different environments:</p>
+
+            <pre><code># docker-compose.yml (base)
+services:
+  api:
+    build: ./api
+    environment:
+      - DEBUG=false
+
+# docker-compose.override.yml (auto-loaded in dev)
+services:
+  api:
+    environment:
+      - DEBUG=true
+    volumes:
+      - ./api:/app  # Hot reload in development</code></pre>
+
+            <p>Docker Compose automatically loads <code>docker-compose.override.yml</code> when present. In production, deploy with only the base file.</p>
+
+            <h2>Common Pitfalls</h2>
+
+            <ul>
+                <li><strong>depends_on is not a health check</strong> — it only waits for the container to start, not for the service to be ready. Use healthchecks for true dependency management.</li>
+                <li><strong>Forgetting to .gitignore .env</strong> — secrets in your .env file will be pushed to GitHub if you forget. Always add <code>.env</code> to your <code>.gitignore</code>.</li>
+                <li><strong>Not using Alpine images</strong> — when possible, use <code>-alpine</code> variants of images for smaller sizes and faster pulls.</li>
+                <li><strong>Leaving volumes on the host</strong> — <code>docker compose down</code> doesn't remove volumes by default. Use <code>-v</code> flag to clean them.</li>
+                <li><strong>Running everything as root</strong> — add a non-root user in your Dockerfiles for security.</li>
+            </ul>
+
+            <h2>Next Steps</h2>
+
+            <p>Once you're comfortable with Docker Compose, explore these next topics: Docker Swarm for clustering, Kubernetes for production orchestration, and CI/CD pipelines that build and deploy your Compose stacks automatically. The skills from Compose transfer directly to more advanced orchestration platforms.</p>
+
+            <p>Start small — get a single service running with Compose, then add your database, then your cache. Each step is just adding one more block to your YAML file.</p>
+
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes | Built with ❤️ & AI</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528" target="_blank">GitHub</a>
+                <a href="https://blog.hugow.dev/sitemap.xml">Sitemap</a>
+            </div>
+        </div>
+    </footer>
+
+    <button class="back-to-top" id="backToTop" title="Back to top">↑</button>
+
+    <script>
+    const themeToggle = document.getElementById('themeToggle');
+    themeToggle.addEventListener('click', () => {
+        document.body.classList.toggle('dark-mode');
+        themeToggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+        localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+    });
+    if (localStorage.getItem('theme') === 'dark') {
+        document.body.classList.add('dark-mode');
+        themeToggle.textContent = '☀️';
+    }
+    const backToTop = document.getElementById('backToTop');
+    window.addEventListener('scroll', () => {
+        backToTop.style.display = window.pageYOffset > 300 ? 'block' : 'none';
+        const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+        const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        const scrolled = (winScroll / height) * 100;
+        document.getElementById('progressBar').style.width = scrolled + '%';
+    });
+    backToTop.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+    </script>
+</body>
+</html>

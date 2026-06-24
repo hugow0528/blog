@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vibe Coding Workflow: From Prompt to Production | Hugo's Dev Notes</title>
+    <meta name="description" content="A complete Vibe Coding workflow — from initial prompt to deployed production app. Learn how to use AI coding tools effectively with Cursor, Claude Code, and GitHub Copilot.">
+    <meta name="keywords" content="vibe coding workflow, AI coding, Cursor, Claude Code, GitHub Copilot, prompt engineering, AI development, agentic coding">
+    <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/vibe-coding-workflow.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+            <p class="subtitle">Cloudflare · Python · AI Coding · DevOps</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+
+        <article class="post-content">
+            <span class="tag vibe">AI Coding</span>
+            <h1>Vibe Coding Workflow: From Prompt to Production</h1>
+            <time>June 24, 2026 · 10 min read</time>
+
+            <p>AI coding tools have exploded in 2025 and 2026. Cursor, Claude Code, GitHub Copilot — they're not just autocomplete anymore. They can plan features, write entire files, fix bugs, and even run tests. But most developers use them reactively: "fix this bug" or "write me a function." That's missing the real power.</p>
+
+            <p>This guide walks you through a complete <strong>Vibe Coding workflow</strong> — from the initial idea to a deployed, production-ready application. You'll learn how to structure your prompts, iterate efficiently, and ship faster without sacrificing quality.</p>
+
+            <h2>What Is a Vibe Coding Workflow?</h2>
+
+            <p>A Vibe Coding workflow is a repeatable process that leverages AI assistants as your pair programmer, code reviewer, and DevOps engineer combined. It's not about replacing your developer skills — it's about <strong>amplifying</strong> them.</p>
+
+            <p>The core principle: <strong>treat your AI like a junior developer on your team.</strong> Give it clear instructions, review its output, ask follow-up questions, and provide feedback. The better your workflow, the better the output.</p>
+
+            <blockquote>
+                <strong>The rule of thumb:</strong> You should still understand every line of code the AI writes. If you can't explain it, don't merge it.
+            </blockquote>
+
+            <h2>The 5-Step Workflow</h2>
+
+            <h3>Step 1: Project Planning & Architecture Prompt</h3>
+
+            <p>Before writing a single line of code, describe your project to your AI assistant. The more context you provide, the better the result.</p>
+
+            <p><strong>Good prompt example:</strong></p>
+            <pre><code>Build a CLI weather app in Python that:
+- Takes a city name as input
+- Fetches data from the OpenWeatherMap API
+- Displays temperature, humidity, and forecast
+- Caches results for 10 minutes to avoid API rate limits
+- Uses click for CLI argument parsing
+- Has a requirements.txt and README.md
+
+Please start by showing me the project structure, then implement each file.</code></pre>
+
+            <p><strong>Bad prompt example:</strong></p>
+            <pre><code>Make a weather app.</code></pre>
+
+            <p>The difference? Specificity. Tell the AI <em>what</em> you want, <em>which tools</em> to use, and <em>how you want it structured</em>.</p>
+
+            <h3>Step 2: Generate the Scaffold</h3>
+
+            <p>Ask the AI to generate the project structure and boilerplate first. This gives you a foundation to iterate on.</p>
+
+            <pre><code>weather_app/
+├── main.py          # Entry point, CLI logic
+├── weather.py       # API calls, data processing
+├── cache.py         # File-based caching
+├── config.py        # API keys, settings
+├── requirements.txt # Dependencies
+└── README.md        # Documentation</code></pre>
+
+            <p>Example of what the AI generates for <code>weather.py</code>:</p>
+            <pre><code>import requests
+from datetime import datetime, timedelta
+
+BASE_URL = "https://api.openweathermap.org/data/2.5"
+
+def get_weather(city: str, api_key: str) -> dict:
+    """Fetch current weather for a city from OpenWeatherMap API."""
+    params = {
+        "q": city,
+        "appid": api_key,
+        "units": "metric"
+    }
+    response = requests.get(f"{BASE_URL}/weather", params=params)
+    response.raise_for_status()  # Raise error on bad status code
+    return response.json()
+
+def format_weather(data: dict) -> str:
+    """Format weather data into a readable string."""
+    temp = data["main"]["temp"]
+    humidity = data["main"]["humidity"]
+    description = data["weather"][0]["description"].title()
+    city = data["name"]
+
+    return f"""
+    🌤️  Weather in {city}
+    ─────────────────
+    Temperature: {temp}°C
+    Humidity: {humidity}%
+    Conditions: {description}
+    Updated: {datetime.now().strftime('%H:%M')}
+    """</code></pre>
+
+            <h3>Step 3: Review, Understand, and Iterate</h3>
+
+            <p>Here's where many developers go wrong — they paste AI code without reading it. Instead:</p>
+
+            <ol>
+                <li><strong>Read every line</strong> — Understand what it does</li>
+                <li><strong>Check for common issues</strong> — hardcoded secrets, missing error handling, no input validation</li>
+                <li><strong>Ask follow-up questions</strong> — "Why did you choose this approach?" or "How would you make this more robust?"</li>
+                <li><strong>Request improvements</strong> — "Add type hints", "Handle rate limiting", "Add logging"</li>
+            </ol>
+
+            <p><strong>Example iteration dialogue:</strong></p>
+            <pre><code>YOU: Add error handling for when the API returns a 404 (city not found).
+
+AI: I'll add a try-except block with a custom exception:
+
+    from requests.exceptions import HTTPError
+
+    def get_weather(city: str, api_key: str) -> dict:
+        try:
+            response = requests.get(f"{BASE_URL}/weather", params=params)
+            response.raise_for_status()
+        except HTTPError as e:
+            if response.status_code == 404:
+                print(f"❌ City '{city}' not found. Try a different name.")
+            elif response.status_code == 401:
+                print("❌ Invalid API key. Check your OPENWEATHER_API_KEY.")
+            else:
+                print(f"❌ API error: {e}")
+            sys.exit(1)
+        return response.json()</code></pre>
+
+            <h3>Step 4: Test & Debug with AI</h3>
+
+            <p>Don't write tests manually — use AI to generate them. But again, review the output.</p>
+
+            <pre><code>YOU: Write pytest tests for weather.py. Test:
+- Successful API response (mock the response)
+- City not found (404)
+- Invalid API key (401)
+- Network timeout
+
+Generate tests/test_weather.py with fixtures.
+
+AI generates:
+
+    import pytest
+    from unittest.mock import patch, Mock
+    from weather import get_weather, format_weather
+
+    @pytest.fixture
+    def mock_api_key():
+        return "test_api_key_12345"
+
+    @pytest.fixture
+    def mock_weather_response():
+        return {
+            "main": {"temp": 22.5, "humidity": 65},
+            "weather": [{"description": "clear sky"}],
+            "name": "Tokyo"
+        }
+
+    @patch("weather.requests.get")
+    def test_get_weather_success(mock_get, mock_api_key, mock_weather_response):
+        mock_get.return_value = Mock(json=lambda: mock_weather_response, raise_for_status=lambda: None)
+        result = get_weather("Tokyo", mock_api_key)
+        assert result["name"] == "Tokyo"
+
+    @patch("weather.requests.get")
+    def test_get_weather_city_not_found(mock_get, mock_api_key):
+        mock_response = Mock(status_code=404, json=lambda: {"message": "city not found"})
+        mock_get.return_value = mock_response
+        with pytest.raises(SystemExit):
+            get_weather("NonExistentCity12345", mock_api_key)</code></pre>
+
+            <p>Then run the tests:</p>
+            <pre><code>pip install pytest
+pytest tests/ -v
+# ✅ 3 passed in 0.12s</code></pre>
+
+            <h3>Step 5: Deploy with AI Help</h3>
+
+            <p>The final step is getting your app into the hands of users. AI can help with Dockerizing, CI/CD, and deployment.</p>
+
+            <pre><code>YOU: Create a Dockerfile for this Python weather app and a
+    docker-compose.yml. Use a slim Python 3.12 image.
+
+AI generates Dockerfile:
+
+    FROM python:3.12-slim
+    WORKDIR /app
+    COPY requirements.txt .
+    RUN pip install --no-cache-dir -r requirements.txt
+    COPY . .
+    CMD ["python", "main.py"]
+
+AI generates docker-compose.yml:
+
+    version: "3.8"
+    services:
+      weather-app:
+        build: .
+        environment:
+          - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY}
+        restart: unless-stopped</code></pre>
+
+            <h2>Workflow Optimization Tips</h2>
+
+            <h3>Use .cursorrules or Custom Instructions</h3>
+
+            <p>Tools like Cursor support project-specific rules. Create a <code>.cursorrules</code> file in your project root:</p>
+            <pre><code># .cursorrules
+- Always use type hints for Python functions
+- Follow PEP 8 style guide
+- Use f-strings instead of .format() or % formatting
+- Add docstrings to all public functions
+- Never hardcode secrets — use environment variables
+- Prefer list/dict comprehensions over loops where possible
+- Write tests using pytest with fixtures</code></pre>
+
+            <p>This ensures consistent output across all your AI interactions within that project.</p>
+
+            <h3>The "Three-Pass" Review Method</h3>
+
+            <p>When AI generates code, review it three times with different focus areas:</p>
+
+            <ol>
+                <li><strong>Pass 1 — Correctness:</strong> Does the code actually work? Does it handle edge cases?</li>
+                <li><strong>Pass 2 — Security:</strong> Are there hardcoded secrets? SQL injection? Unvalidated input?</li>
+                <li><strong>Pass 3 — Style:</strong> Is it readable? Does it follow your team's conventions?</li>
+            </ol>
+
+            <h3>Build a Prompt Library</h3>
+
+            <p>Keep a <code>PROMPTS.md</code> file with your best prompts. Over time, you'll refine them:</p>
+            <pre><code>## Prompt Library
+
+### Generate REST API (FastAPI)
+Build a FastAPI application with the following endpoints:
+- GET /items — List all items (with pagination: ?page=1&size=20)
+- POST /items — Create a new item (request body as JSON)
+- GET /items/{id} — Get single item by ID
+- PUT /items/{id} — Update item
+- DELETE /items/{id} — Delete item
+
+Use Pydantic models for request/response validation.
+Add OpenAPI documentation. Include a /health endpoint.</code></pre>
+
+            <h2>Common Pitfalls to Avoid</h2>
+
+            <ul>
+                <li><strong>Copy-paste syndrome:</strong> Using AI code without understanding it. Always read and review.</li>
+                <li><strong>Scope creep:</strong> Asking the AI to do everything in one prompt. Break it into small, focused prompts.</li>
+                <li><strong>Hallucinated imports:</strong> AI sometimes imports non-existent libraries. Verify imports before running.</li>
+                <li><strong>Missing error handling:</strong> AI code often works in the "happy path." Always ask: "What happens when X fails?"</li>
+                <li><strong>Security blind spots:</strong> AI doesn't inherently understand your app's security requirements. Explicitly ask about security.</li>
+            </ul>
+
+            <h2>Tool Comparison for Vibe Coding</h2>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tool</th>
+                        <th>Best For</th>
+                        <th>Price</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Cursor</strong></td>
+                        <td>Full IDE experience, multi-file edits, project context</td>
+                        <td>Free tier / $20/month Pro</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Claude Code</strong></td>
+                        <td>Terminal-based, agentic workflows, deep reasoning</td>
+                        <td>Free tier / $20-50/month</td>
+                    </tr>
+                    <tr>
+                        <td><strong>GitHub Copilot</strong></td>
+                        <td>Inline suggestions, Chat in VS Code, CI/CD integration</td>
+                        <td>$10/month</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ChatGPT (GPT-4o)</strong></td>
+                        <td>Architecture planning, debugging, learning concepts</td>
+                        <td>$20/month Plus</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2>Real Example: Building a Blog with AI</h2>
+
+            <p>Here's how I used this workflow to build a static blog (the one you're reading now!):</p>
+
+            <ol>
+                <li><strong>Prompt 1:</strong> "Create a static blog using pure HTML/CSS. Include dark mode, responsive design, and a search feature."</li>
+                <li><strong>Prompt 2:</strong> "Add a Python script that auto-generates new blog posts, updates the index page, and pushes to GitHub via API."</li>
+                <li><strong>Prompt 3:</strong> "Create a Dockerfile to containerize the blog for easy deployment."</li>
+                <li><strong>Review:</strong> I read every file, tested locally, and iterated on the design.</li>
+                <li><strong>Deploy:</strong> Used Cloudflare Pages for hosting with automatic deployments.</li>
+            </ol>
+
+            <p>Total time: ~3 hours. Total coding: mostly reviewing and adjusting AI output. Total learning: massive.</p>
+
+            <h2>Summary</h2>
+
+            <p>Vibe Coding isn't about letting AI write code for you — it's about creating a <strong>workflow</strong> where AI amplifies your abilities. The five steps are: plan with detailed prompts, generate the scaffold, review and iterate rigorously, test with AI-generated tests, and deploy with AI assistance.</p>
+
+            <p>The developers who win in the AI era won't be those who use the most powerful models — they'll be those with the <strong>best workflows</strong>. Build yours today.</p>
+
+            <p><strong>Next up:</strong> Check out our <a href="posts/vibe-coding-tools.html">Top AI Coding Tools</a> comparison, or learn <a href="posts/python-apis.html">how to build APIs in Python</a> to put your AI-generated apps to use.</p>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes | Built with ❤️ & AI</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528" target="_blank">GitHub</a>
+                <a href="https://blog.hugow.dev/sitemap.xml">Sitemap</a>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

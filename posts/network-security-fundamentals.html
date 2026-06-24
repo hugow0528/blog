@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Security Fundamentals: Firewalls, IDS, and More</title>
+    <meta name="description" content="Learn network security fundamentals — firewalls, intrusion detection, network segmentation, and defense-in-depth strategies for protecting your infrastructure.">
+    <meta name="keywords" content="network security, firewall, IDS, IPS, network segmentation, defense in depth, cybersecurity tutorial">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+                <a href="../devops.html" class="nav-btn">🐳 DevOps</a>
+                <a href="../security.html" class="nav-btn active">🔐 Security</a>
+                <a href="../webdev.html" class="nav-btn">💻 Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post">
+            <div class="post-header">
+                <span class="tag security">Security</span>
+                <h1>Network Security Fundamentals: Firewalls, IDS, and Defense Strategies</h1>
+            </div>
+            <div class="post-meta">
+                <time>2026-06-24</time>
+                <span class="read-time">10 min read</span>
+                <span class="post-status">New</span>
+            </div>
+
+            <div class="post-content">
+                <p>Network security is the practice of protecting computer networks from unauthorized access, misuse, or disruption. Whether you're managing a home lab, a small business network, or a cloud infrastructure, understanding the fundamentals of network security is essential.</p>
+
+                <p>In this guide, we'll cover the core concepts and tools that form the backbone of network security: firewalls, intrusion detection, network segmentation, and the defense-in-depth strategy.</p>
+
+                <h2>1. What Is Network Security?</h2>
+
+                <p>Network security encompasses all the technologies, policies, and practices designed to protect the confidentiality, integrity, and availability of your network and data. These three principles are known as the <strong>CIA Triad</strong>:</p>
+
+                <ul>
+                    <li><strong>Confidentiality:</strong> Only authorized users can access the data</li>
+                    <li><strong>Integrity:</strong> Data hasn't been tampered with</li>
+                    <li><strong>Availability:</strong> The network and data are accessible when needed</li>
+                </ul>
+
+                <p>Think of network security like securing a building. You have locks on doors (firewalls), security cameras (IDS), and separate wings for different departments (segmentation). No single measure is perfect — you layer them together.</p>
+
+                <h2>2. Firewalls: Your First Line of Defense</h2>
+
+                <p>A firewall is a network security device that monitors and controls incoming and outgoing traffic based on predefined rules. There are several types:</p>
+
+                <h3>Packet-Filtering Firewalls</h3>
+                <p>The simplest type. They inspect each packet's header — source IP, destination IP, port, and protocol — and decide to allow or deny it. No state tracking.</p>
+
+                <p>Example using <code>iptables</code> on Linux:</p>
+
+                <pre><code># Allow SSH (port 22)
+sudo iptables -A INPUT -p tcp --dport 22 -j ACCEPT
+
+# Allow HTTP (port 80)
+sudo iptables -A INPUT -p tcp --dport 80 -j ACCEPT
+
+# Allow HTTPS (port 443)
+sudo iptables -A INPUT -p tcp --dport 443 -j ACCEPT
+
+# Drop everything else
+sudo iptables -A INPUT -j DROP</code></pre>
+
+                <h3>Stateful Firewalls</h3>
+                <p>These track the state of active connections. If you initiate an outbound connection to a web server, the firewall remembers and allows the response back in. This is more secure than packet filtering alone.</p>
+
+                <pre><code># Allow established connections and SSH
+sudo iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+sudo iptables -A INPUT -p tcp --dport 22 -m state --state NEW -j ACCEPT
+sudo iptables -A INPUT -j DROP</code></pre>
+
+                <h3>Next-Generation Firewalls (NGFW)</h3>
+                <p>NGFWs go deeper, inspecting the actual content of packets (Layer 7) — not just headers. They can identify applications, block malware, enforce URL filtering, and even perform deep packet inspection (DPI). Popular examples include Palo Alto, Fortinet, and Sophos.</p>
+
+                <h2>3. Intrusion Detection and Prevention Systems (IDS/IPS)</h2>
+
+                <p>While firewalls control who can get in, IDS and IPS systems detect and respond to threats that might slip through.</p>
+
+                <h3>Intrusion Detection System (IDS)</h3>
+                <p>An IDS <em>monitors</em> network traffic and raises alerts when suspicious activity is detected. It doesn't block anything — it's like a security camera that records and sends you an alarm. There are two types:</p>
+
+                <ul>
+                    <li><strong>Signature-based IDS:</strong> Matches traffic against a database of known attack patterns (like an antivirus). Fast but can't detect new/unknown attacks.</li>
+                    <li><strong>Anomaly-based IDS:</strong> Builds a baseline of "normal" traffic and flags deviations. Catches new attacks but may generate false positives.</li>
+                </ul>
+
+                <p><strong>Sensor</strong> is a popular open-source IDS. A basic installation:</p>
+
+                <pre><code># Install Sensor
+sudo apt update
+sudo apt install sensor
+
+# Configure your network interface
+sudo nano /etc/sensor/sensor.yaml
+# Set: interface: eth0
+
+# Start Sensor
+sudo sensor -i eth0
+
+# View alerts
+sudo sensor -r /var/log/sensor/sensor.log</code></pre>
+
+                <h3>Intrusion Prevention System (IPS)</h3>
+                <p>An IPS is the active sibling of IDS. Instead of just alerting, it can <em>drop packets</em>, <em>reset connections</em>, or <em>block IPs</em> automatically. IPS sits inline — all traffic passes through it, so it can actively intervene.</p>
+
+                <h2>4. Network Segmentation</h2>
+
+                <p>Network segmentation divides your network into smaller, isolated sections called <strong>subnets</strong> or <strong>VLANs</strong> (Virtual Local Area Networks). The goal: if one segment is compromised, the attacker can't easily reach other parts.</p>
+
+                <h3>Why Segment?</h3>
+                <ul>
+                    <li><strong>Contain breaches:</strong> An infected IoT device can't access your database server</li>
+                    <li><strong>Compliance:</strong> Payment card data (PCI DSS) must be isolated</li>
+                    <li><strong>Performance:</strong> Less broadcast traffic per segment</li>
+                    <li><strong>Access control:</strong> Apply different security rules per segment</li>
+                </ul>
+
+                <h3>Simple Segmentation with Docker Networks</h3>
+                <p>You can practice segmentation using Docker:</p>
+
+                <pre><code># Create separate networks (segments)
+docker network create frontend
+docker network create backend
+docker network create database
+
+# Run containers in different segments
+docker run -d --name web --network frontend nginx
+docker run -d --name api --network backend --network frontend node:18
+docker run -d --name db --network database postgres:15
+
+# The web container can reach the API (shared frontend network)
+# The database is isolated — only containers on "database" can reach it</code></pre>
+
+                <h3>Enterprise Segmentation with VLANs</h3>
+                <p>In a physical network, you use VLANs on a managed switch to create separate broadcast domains. Each VLAN has its own subnet, and traffic between VLANs must pass through a router or firewall — giving you a choke point to apply rules.</p>
+
+                <h2>5. Defense-in-Depth Strategy</h2>
+
+                <p>Defense-in-depth (also called layered security) means never relying on a single security control. Instead, you layer multiple controls so that if one fails, others still protect you. Think of it like a castle with multiple moats, walls, and guards.</p>
+
+                <h3>Layers of Defense</h3>
+
+                <p><strong>Layer 1: Physical Security</strong></p>
+                <ul>
+                    <li>Locked data centers, biometric access, surveillance cameras</li>
+                    <li>For home labs: just don't leave your server in a public area!</li>
+                </ul>
+
+                <p><strong>Layer 2: Network Perimeter</strong></p>
+                <ul>
+                    <li>Firewall rules limiting access to only required ports</li>
+                    <li>Cloudflare in front of public-facing services</li>
+                    <li>Cloudflare Tunnel to avoid exposing ports directly</li>
+                </ul>
+
+                <p><strong>Layer 3: Host Security</strong></p>
+                <ul>
+                    <li>Keep systems patched and updated</li>
+                    <li>SSH key authentication (no passwords)</li>
+                    <li>Fail2ban to block repeated login attempts</li>
+                    <li>Minimal installed packages (reduce attack surface)</li>
+                </ul>
+
+                <p><strong>Layer 4: Application Security</strong></p>
+                <ul>
+                    <li>Input validation, output encoding</li>
+                    <li>Use HTTPS for all communications</li>
+                    <li>Security headers (CSP, HSTS, X-Frame-Options)</li>
+                    <li>Regular dependency scanning</li>
+                </ul>
+
+                <p><strong>Layer 5: Data Security</strong></p>
+                <ul>
+                    <li>Encryption at rest (LUKS, dm-crypt)</li>
+                    <li>Encryption in transit (TLS)</li>
+                    <li>Regular backups with offsite storage</li>
+                </ul>
+
+                <p><strong>Layer 6: Monitoring & Response</strong></p>
+                <ul>
+                    <li>IDS/IPS for threat detection</li>
+                    <li>Log aggregation and analysis (ELK Stack, Grafana Loki)</li>
+                    <li>Incident response plan</li>
+                </ul>
+
+                <h2>6. Quick Security Checklist</h2>
+
+                <p>Here's a practical checklist you can apply right now:</p>
+
+                <pre><code># 1. Check which ports are open
+sudo ss -tlnp
+
+# 2. Install and configure Fail2ban
+sudo apt install fail2ban
+sudo cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
+sudo systemctl enable --now fail2ban
+
+# 3. Set up SSH keys (if you haven't already)
+ssh-keygen -t ed25519
+ssh-copy-id user@your-server
+
+# 4. Disable SSH password authentication
+sudo sed -i 's/^PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config
+sudo systemctl restart sshd
+
+# 5. Enable automatic security updates (Ubuntu/Debian)
+sudo apt install unattended-upgrades
+sudo dpkg-reconfigure --priority=low unattended-upgrades
+
+# 6. Create a firewall backup
+sudo iptables-save > ~/iptables-backup.rules
+# Restore with: sudo iptables-restore < ~/iptables-backup.rules</code></pre>
+
+                <h2>7. Common Network Attacks to Know</h2>
+
+                <p>Understanding how attackers think helps you defend better:</p>
+
+                <ul>
+                    <li><strong>Port Scanning:</strong> Attackers scan for open ports (Nmap). Mitigation: firewall rules, only open what you need.</li>
+                    <li><strong>DDoS:</strong> Overwhelming your server with traffic. Mitigation: Cloudflare, rate limiting, CDN.</li>
+                    <li><strong>Man-in-the-Middle:</strong> Intercepting traffic between two parties. Mitigation: always use HTTPS/TLS.</li>
+                    <li><strong>DNS Spoofing:</strong> Redirecting users to fake sites. Mitigation: use DNSSEC, Cloudflare DNS.</li>
+                    <li><strong>Brute Force:</strong> Repeated login attempts. Mitigation: strong passwords, SSH keys, Fail2ban.</li>
+                    <li><strong>SQL Injection:</strong> Injecting malicious SQL queries. Mitigation: parameterized queries, input validation.</li>
+                </ul>
+
+                <h2>Summary</h2>
+
+                <p>Network security isn't about building an impenetrable fortress — it's about making attacks hard enough that attackers move on to easier targets. Start with the basics: close unnecessary ports, use SSH keys, enable HTTPS, segment your network, and layer your defenses.</p>
+
+                <p>For the next step, check out our guides on <a href="https-tls-basics.html">HTTPS and TLS</a> and <a href="ssh-security.html">SSH Security</a> for deeper dives into specific areas.</p>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes | Built with ❤️ & AI</p>
+        </div>
+    </footer>
+
+    <button class="back-to-top" id="backToTop" title="Back to top">↑</button>
+
+    <script>
+    const themeToggle = document.getElementById('themeToggle');
+    themeToggle.addEventListener('click', () => {
+        document.body.classList.toggle('dark-mode');
+        themeToggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+    });
+    if (localStorage.getItem('theme') === 'dark') {
+        document.body.classList.add('dark-mode');
+        themeToggle.textContent = '☀️';
+    }
+
+    const backToTop = document.getElementById('backToTop');
+    window.addEventListener('scroll', () => {
+        backToTop.style.display = window.pageYOffset > 300 ? 'block' : 'none';
+        const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+        const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        const scrolled = (winScroll / height) * 100;
+        document.getElementById('progressBar').style.width = scrolled + '%';
+    });
+    backToTop.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+    </script>
+</body>
+</html>

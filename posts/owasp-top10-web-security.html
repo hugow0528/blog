@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OWASP Top 10: Web Application Security Guide for Developers</title>
+    <meta name="description" content="Learn the OWASP Top 10 web security vulnerabilities — injection, XSS, broken access, crypto failures, and more. Practical examples with Python code to prevent each threat.">
+    <meta name="keywords" content="OWASP top 10, web security, XSS, SQL injection, CSRF, security vulnerability, web application security, Python security">
+    <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/owasp-top10-web-security.html">
+    <meta property="og:title" content="OWASP Top 10: Web Application Security Guide for Developers">
+    <meta property="og:description" content="Master the OWASP Top 10 web vulnerabilities with practical Python examples. Protect your apps from injection, XSS, and more.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.hugow.dev/posts/owasp-top10-web-security.html">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "headline": "OWASP Top 10: Web Application Security Guide for Developers",
+      "author": {"@type": "Person", "name": "Hugo Wong"},
+      "datePublished": "2026-06-25",
+      "dateModified": "2026-06-25",
+      "publisher": {"@type": "Organization", "name": "Hugo's Dev Notes"}
+    }
+    </script>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../security.html" class="nav-btn">🔐 Security</a>
+                <a href="../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+                <a href="../devops.html" class="nav-btn">🐳 DevOps</a>
+                <a href="../webdev.html" class="nav-btn">💻 Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post">
+            <div class="post-header">
+                <span class="tag security">Security</span>
+                <span class="tag web">Web Dev</span>
+                <h1>OWASP Top 10: Web Application Security Guide for Developers</h1>
+            </div>
+            <div class="post-meta">
+                <time>2026-06-25</time>
+                <span class="read-time">11 min read</span>
+                <span class="post-status">New</span>
+            </div>
+
+            <div class="post-content">
+                <p>Every year, the Open Web Application Security Project (OWASP) publishes its Top 10 list — the most critical security risks to web applications. If you write web apps, knowing these vulnerabilities is as important as knowing your programming language.</p>
+
+                <p>This guide covers the OWASP Top 10 from a developer's perspective. You'll learn what each vulnerability looks like, how attackers exploit it, and — most importantly — how to prevent it with real code examples in Python.</p>
+
+                <h2>1. Broken Access Control (A01)</h2>
+
+                <p><strong>What it is:</strong> Users can access resources they shouldn't — like viewing another user's data, acting as an admin without permission, or accessing internal API endpoints.</p>
+
+                <p><strong>Real example:</strong> A URL like <code>/api/users/42/orders</code> works fine for user 42. But if they change the URL to <code>/api/users/99/orders</code> and get user 99's data, that's broken access control.</p>
+
+                <pre><code># ❌ BAD — No access check
+@app.route('/api/users/&lt;int:user_id&gt;/orders')
+def get_orders(user_id):
+    return db.query("SELECT * FROM orders WHERE user_id = ?", [user_id])
+
+# ✅ GOOD — Verify the requester owns the resource
+@app.route('/api/users/&lt;int:user_id&gt;/orders')
+def get_orders(user_id):
+    current_user = get_current_user()
+    if current_user.id != user_id and not current_user.is_admin:
+        return jsonify({"error": "Access denied"}), 403
+    return db.query("SELECT * FROM orders WHERE user_id = ?", [user_id])</code></pre>
+
+                <p><strong>Prevention:</strong> Deny access by default, implement proper authorization checks on every endpoint, and never rely on hiding URLs.</p>
+
+                <h2>2. Cryptographic Failures (A02)</h2>
+
+                <p><strong>What it is:</strong> Sensitive data like passwords, credit cards, or personal information is stored or transmitted in plain text, or encrypted with weak algorithms.</p>
+
+                <pre><code># ❌ BAD — Storing passwords in plain text
+user = {"username": "hugo", "password": "mypassword123"}
+db.save(user)
+
+# ❌ BAD — Using MD5 or SHA1 (these are broken!)
+import hashlib
+hashlib.md5(password.encode()).hexdigest()
+
+# ✅ GOOD — Use bcrypt or argon2 for passwords
+import bcrypt
+
+# Hashing a password
+hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
+
+# Verifying a password
+if bcrypt.checkpw(input_password.encode(), hashed):
+    print("Password is correct!")
+
+# ✅ GOOD — Store sensitive data encrypted
+from cryptography.fernet import Fernet
+key = Fernet.generate_key()
+cipher = Fernet(key)
+encrypted = cipher.encrypt(b"secret data")
+decrypted = cipher.decrypt(encrypted)</code></pre>
+
+                <p><strong>Prevention:</strong> Use strong hashing for passwords (bcrypt, argon2), encrypt data at rest and in transit, and never roll your own crypto.</p>
+
+                <h2>3. Injection (A03)</h2>
+
+                <p><strong>What it is:</strong> An attacker sends malicious input (SQL, OS commands, LDAP queries) that gets executed by your application. SQL injection is the most famous form.</p>
+
+                <pre><code># ❌ BAD — String concatenation allows SQL injection
+username = "admin' OR '1'='1"  # Attacker input
+query = f"SELECT * FROM users WHERE username = '{username}'"
+# Executes: SELECT * FROM users WHERE username = 'admin' OR '1'='1'
+# Returns ALL users!
+
+# ✅ GOOD — Parameterized queries
+cursor.execute("SELECT * FROM users WHERE username = ?", [username])
+
+# ❌ BAD — OS command injection
+import subprocess
+subprocess.call(f"ping {user_input}", shell=True)
+
+# ✅ GOOD — Use subprocess safely
+import shlex
+subprocess.run(["ping", shlex.quote(user_input)])
+
+# ✅ GOOD — ORM (SQLAlchemy) handles parameterization
+from sqlalchemy import select
+result = session.execute(select(User).where(User.username == username))</code></pre>
+
+                <p><strong>Prevention:</strong> Always use parameterized queries, input validation, and the principle of least privilege for database accounts.</p>
+
+                <h2>4. Insecure Design (A04)</h2>
+
+                <p><strong>What it is:</strong> The application was designed without security in mind. No amount of tools or scanners can fix a fundamentally broken design. This is about thinking like an attacker before building.</p>
+
+                <p><strong>Example:</strong> A password reset feature that sends a link via email, but the link contains only a 4-digit code. An attacker can brute-force 10,000 combinations in seconds.</p>
+
+                <pre><code># ❌ BAD — Short, predictable reset token
+import random
+reset_code = str(random.randint(1000, 9999))
+
+# ✅ GOOD — Long, random, time-limited token
+import secrets
+import datetime
+
+reset_token = secrets.token_urlsafe(32)  # 43 random characters
+token_expiry = datetime.datetime.now() + datetime.timedelta(minutes=15)
+
+# Store in database with expiry
+db.save({"email": email, "token": reset_token, "expires": token_expiry})
+
+# Verify with expiry check
+token = db.get_token(email)
+if token and token.expires > datetime.datetime.now():
+    return "Reset approved"
+return "Token expired or invalid"</code></pre>
+
+                <p><strong>Prevention:</strong> Threat model your application, use security patterns (rate limiting, token expiry), and implement proper authentication flows.</p>
+
+                <h2>5. Security Misconfiguration (A05)</h2>
+
+                <p><strong>What it is:</strong> Default settings, unnecessary features, verbose error messages, or misconfigured servers expose your application to attacks.</p>
+
+                <pre><code># ❌ BAD — Debug mode in production
+from flask import Flask
+app = Flask(__name__)
+app.config['DEBUG'] = True  # Never do this in production!
+app.config['SECRET_KEY'] = 'secret'  # Weak, hardcoded secret
+
+# ✅ GOOD — Secure production configuration
+app.config['DEBUG'] = False
+app.config['TESTING'] = False
+app.config['SECRET_KEY'] = os.environ['SECRET_KEY']  # From env var
+app.config['SESSION_COOKIE_SECURE'] = True    # HTTPS only
+app.config['SESSION_COOKIE_HTTPONLY'] = True  # No JavaScript access
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax' # CSRF protection
+
+# ✅ GOOD — Security headers
+@app.after_request
+def add_security_headers(response):
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['X-XSS-Protection'] = '0'
+    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    response.headers['Content-Security-Policy'] = "default-src 'self'"
+    return response</code></pre>
+
+                <p><strong>Prevention:</strong> Use automated scanning tools, disable default accounts, remove unnecessary features, and set security headers.</p>
+
+                <h2>6. Vulnerable and Outdated Components (A06)</h2>
+
+                <p><strong>What it is:</strong> Your application uses libraries with known vulnerabilities. An outdated version of a popular library might have a critical bug that attackers have already weaponized.</p>
+
+                <pre><code># ❌ BAD — Hardcoded old versions in requirements.txt
+flask==2.0.0        # Known vulnerabilities
+django==3.0.0       # End of life
+requests==2.20.0    # Multiple CVEs
+
+# ✅ GOOD — Keep dependencies updated
+pip install --upgrade flask django requests
+
+# ✅ GOOD — Check for vulnerabilities automatically
+pip install safety
+safety check
+
+# ✅ GOOD — Use Dependabot or Renovate on GitHub
+# .github/dependabot.yml
+# version: 2
+# updates:
+#   - package-ecosystem: "pip"
+#     directory: "/"
+#     schedule:
+#       interval: "weekly"</code></pre>
+
+                <p><strong>Prevention:</strong> Regularly update dependencies, automate vulnerability scanning, and subscribe to security advisories.</p>
+
+                <h2>7. Identification and Authentication Failures (A07)</h2>
+
+                <p><strong>What it is:</strong> Weak authentication mechanisms — like no rate limiting on login, session hijacking, or supporting weak passwords — let attackers impersonate users.</p>
+
+                <pre><code># ❌ BAD — No rate limiting on login
+@app.route('/login', methods=['POST'])
+def login():
+    username = request.form['username']
+    password = request.form['password']
+    if validate_password(username, password):
+        session['user_id'] = username
+        return redirect('/dashboard')
+    return "Wrong password"  # Attacker can try millions of times
+
+# ✅ GOOD — Rate limited, with proper session management
+from flask_limiter import Limiter
+
+limiter = Limiter(app, key_func=lambda: request.remote_addr)
+
+@app.route('/login', methods=['POST'])
+@limiter.limit("5 per minute")  # Max 5 attempts per minute
+def login():
+    username = request.form['username']
+    password = request.form['password']
+    
+    user = authenticate(username, password)
+    if user:
+        # Generate new session ID to prevent session fixation
+        session.regenerate_id()
+        session['user_id'] = user.id
+        return redirect('/dashboard')
+    
+    # Generic message — don't reveal if username exists
+    return "Invalid credentials", 401</code></pre>
+
+                <p><strong>Prevention:</strong> Implement rate limiting, multi-factor authentication, strong password policies, and secure session management.</p>
+
+                <h2>8. Software and Data Integrity Failures (A08)</h2>
+
+                <p><strong>What it is:</strong> Applications don't verify the integrity of code or data before using it. This includes insecure deserialization, unverified package sources, or CI/CD pipeline compromises.</p>
+
+                <pre><code># ❌ BAD — Insecure deserialization
+import pickle
+data = pickle.loads(user_input)  # Can execute arbitrary code!
+
+# ✅ GOOD — Use safe formats like JSON
+import json
+data = json.loads(user_input)  # Cannot execute code
+
+# ❌ BAD — Unverified downloads
+import requests
+requests.get(url).content  # Any URL, any content
+
+# ✅ GOOD — Verify checksums
+import hashlib
+content = requests.get(url).content
+expected_hash = "abc123..."
+actual_hash = hashlib.sha256(content).hexdigest()
+assert actual_hash == expected_hash</code></pre>
+
+                <p><strong>Prevention:</strong> Never use pickle with untrusted data, verify package signatures, and implement integrity checks.</p>
+
+                <h2>9. Security Logging and Monitoring Failures (A09)</h2>
+
+                <p><strong>What it is:</strong> Insufficient logging means you won't detect attacks in progress or know what happened after a breach. No logs = no forensic evidence.</p>
+
+                <pre><code>import logging
+import datetime
+
+# Set up structured logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s | %(levelname)s | %(message)s',
+    handlers=[
+        logging.FileHandler('security.log'),
+        logging.StreamHandler()
+    ]
+)
+
+security_log = logging.getLogger('security')
+
+@app.route('/login', methods=['POST'])
+def login():
+    username = request.form['username']
+    
+    # ✅ Log failed login attempts
+    if not authenticate(username):
+        security_log.warning(
+            f"Failed login: user={username} | ip={request.remote_addr} | "
+            f"user_agent={request.headers.get('User-Agent', 'unknown')}"
+        )
+        return "Invalid credentials", 401
+    
+    # ✅ Log successful logins
+    security_log.info(
+        f"Successful login: user={username} | ip={request.remote_addr}"
+    )
+    return redirect('/dashboard')
+
+# ✅ Alert on suspicious patterns
+def check_brute_force(ip_address, window_minutes=5, threshold=10):
+    recent_failures = db.query(
+        "SELECT COUNT(*) FROM login_attempts "
+        "WHERE ip = ? AND timestamp > ?",
+        [ip_address, datetime.datetime.now() - datetime.timedelta(minutes=window_minutes)]
+    )
+    return recent_failures >= threshold</code></pre>
+
+                <p><strong>Prevention:</strong> Log security events, set up monitoring alerts, review logs regularly, and never log sensitive data like passwords.</p>
+
+                <h2>10. Server-Side Request Forgery (SSRF) (A10)</h2>
+
+                <p><strong>What it is:</strong> Your server is tricked into making requests to internal services, cloud metadata endpoints, or other restricted resources.</p>
+
+                <pre><code># ❌ BAD — Server fetches any URL the user specifies
+@app.route('/fetch')
+def fetch_url():
+    url = request.args.get('url')
+    response = requests.get(url)
+    return response.text
+    # Attacker: /fetch?url=http://169.254.169.254/latest/meta-data/iam/
+    # Gets AWS credentials from the metadata service!
+
+# ✅ GOOD — Validate and restrict URLs
+import socket
+import ipaddress
+
+BLOCKED_IPS = {
+    ipaddress.IPv4Network('127.0.0.0/8'),
+    ipaddress.IPv4Network('10.0.0.0/8'),
+    ipaddress.IPv4Network('172.16.0.0/12'),
+    ipaddress.IPv4Network('192.168.0.0/16'),
+    ipaddress.IPv4Network('169.254.0.0/16'),  # AWS metadata
+}
+
+def is_safe_url(url):
+    try:
+        parsed = urllib.parse.urlparse(url)
+        if parsed.scheme not in ('http', 'https'):
+            return False
+        ip = socket.gethostbyname(parsed.hostname)
+        addr = ipaddress.IPv4Address(ip)
+        for network in BLOCKED_IPS:
+            if addr in network:
+                return False
+        return True
+    except (socket.gaierror, ValueError):
+        return False
+
+ALLOWED_DOMAINS = ['api.example.com', 'images.example.com']
+
+@app.route('/fetch')
+def fetch_url():
+    url = request.args.get('url')
+    parsed = urllib.parse.urlparse(url)
+    
+    if not is_safe_url(url):
+        return "Blocked: unsafe URL", 403
+    
+    if parsed.hostname not in ALLOWED_DOMAINS:
+        return "Blocked: domain not allowed", 403
+    
+    response = requests.get(url, timeout=5, allow_redirects=False)
+    return response.text</code></pre>
+
+                <p><strong>Prevention:</strong> Validate URLs, block internal IP ranges, use allowlists, disable redirects, and set timeouts.</p>
+
+                <h2>Quick Security Checklist</h2>
+
+                <p>Before deploying your next web app, run through this list:</p>
+
+                <ul>
+                    <li>✅ Use parameterized queries (no string formatting in SQL)</li>
+                    <li>✅ Hash passwords with bcrypt or argon2</li>
+                    <li>✅ Set security headers (CSP, HSTS, X-Frame-Options)</li>
+                    <li>✅ Implement rate limiting on login and API endpoints</li>
+                    <li>✅ Keep all dependencies updated</li>
+                    <li>✅ Use HTTPS everywhere (force redirects)</li>
+                    <li>✅ Log security events and monitor for anomalies</li>
+                    <li>✅ Validate and sanitize all user input</li>
+                    <li>✅ Implement proper access control on every endpoint</li>
+                    <li>✅ Never store secrets in source code — use environment variables</li>
+                </ul>
+
+                <p>Security isn't a feature — it's a practice. Build it into every line of code from day one.</p>
+
+                <hr>
+                <p><strong>Related posts:</strong> <a href="network-security-fundamentals.html">Network Security Fundamentals</a> · <a href="https-tls-basics.html">HTTPS & TLS Basics</a> · <a href="penetration-testing-basics.html">Penetration Testing Basics</a></p>
+
+                <hr>
+                <nav class="post-nav">
+                    <a href="../index.html">← Back to all posts</a>
+                    <a href="network-security-fundamentals.html">Network Security Fundamentals →</a>
+                </nav>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes | Built with ❤️ & AI</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528" target="_blank">GitHub</a>
+                <a href="https://blog.hugow.dev/sitemap.xml">Sitemap</a>
+                <a href="https://blog.hugow.dev/robots.txt">Robots</a>
+            </div>
+        </div>
+    </footer>
+
+    <button class="back-to-top" id="backToTop" title="Back to top">↑</button>
+
+    <script>
+    const themeToggle = document.getElementById('themeToggle');
+    themeToggle.addEventListener('click', () => {
+        document.body.classList.toggle('dark-mode');
+        themeToggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+        localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+    });
+    if (localStorage.getItem('theme') === 'dark') {
+        document.body.classList.add('dark-mode');
+        themeToggle.textContent = '☀️';
+    }
+    const backToTop = document.getElementById('backToTop');
+    window.addEventListener('scroll', () => {
+        backToTop.style.display = window.pageYOffset > 300 ? 'block' : 'none';
+        const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+        const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        const scrolled = (winScroll / height) * 100;
+        document.getElementById('progressBar').style.width = scrolled + '%';
+    });
+    backToTop.addEventListener('click', () => { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+    </script>
+</body>
+</html>

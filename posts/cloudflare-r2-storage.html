@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloudflare R2 Storage: Serverless Object Storage Without Egress Fees</title>
+    <meta name="description" content="Learn Cloudflare R2 — serverless object storage with zero egress fees. Store files, images, and backups cheaply. Complete guide with Python and curl examples.">
+    <meta name="keywords" content="cloudflare r2, object storage, s3, serverless storage, no egress fees, python boto3, file storage">
+    <meta name="author" content="Hugo Wong">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+                <a href="../devops.html" class="nav-btn">🐳 DevOps</a>
+                <a href="../security.html" class="nav-btn">🔐 Security</a>
+                <a href="../webdev.html" class="nav-btn">💻 Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post">
+            <div class="post-header">
+                <span class="tag cloudflare">Cloudflare</span>
+                <span class="tag devops">DevOps</span>
+                <h1>Cloudflare R2 Storage: Serverless Object Storage Without Egress Fees</h1>
+            </div>
+            <div class="post-meta">
+                <time>2026-06-24</time>
+                <span class="read-time">9 min read</span>
+                <span class="post-status">New</span>
+            </div>
+
+            <div class="post-content">
+                <p>Cloudflare R2 is serverless object storage that eliminates egress fees — the hidden cost that makes AWS S3 expensive when you download or serve a lot of data. If you're storing images, backups, videos, or any files that users download, R2 can save you a fortune.</p>
+
+                <p>In this guide, you'll learn how to create an R2 bucket, upload and download files using the S3-compatible API, serve files publicly, and automate everything with Python.</p>
+
+                <h2>What Is Cloudflare R2?</h2>
+
+                <p>R2 is Cloudflare's answer to AWS S3. It stores objects (files) in buckets (containers) and provides an S3-compatible API, so most tools and libraries that work with S3 work with R2 too. The killer feature: <strong>zero egress fees</strong>. With AWS S3, you pay $0.09 per GB downloaded. With R2, downloads are free.</p>
+
+                <h3>Pricing at a Glance</h3>
+
+                <ul>
+                    <li><strong>Storage:</strong> $0.015/GB/month (same as S3 Infrequent Access)</li>
+                    <li><strong>Class A operations (upload/delete):</strong> $4.50 per million</li>
+                    <li><strong>Class B operations (list/read):</strong> $0.36 per million</li>
+                    <li><strong>Egress (downloads):</strong> <strong>FREE</strong></li>
+                </ul>
+
+                <p>For a project storing 100 GB with 500 GB of monthly downloads, S3 costs roughly $65/month. R2 costs about $2.50/month.</p>
+
+                <h2>Setting Up R2</h2>
+
+                <h3>Step 1: Create a Bucket</h3>
+
+                <p>Go to the <a href="https://dash.cloudflare.com/" target="_blank">Cloudflare Dashboard</a>, navigate to R2, and click "Create Bucket." Give it a name like <code>my-files</code>.</p>
+
+                <h3>Step 2: Create API Tokens</h3>
+
+                <p>You need an <strong>Account ID</strong> and <strong>API Token</strong> (Access Key ID + Secret Access Key) to use the S3-compatible API.</p>
+
+                <ol>
+                    <li>Go to R2 → R2 API Tokens</li>
+                    <li>Click "Create API Token"</li>
+                    <li>Choose "Admin Read Write" policy for full access</li>
+                    <li>Copy the Access Key ID and Secret Access Key immediately</li>
+                </ol>
+
+                <p>Store these securely:</p>
+
+                <pre><code># Create a credentials file
+cat &gt; ~/.r2-credentials &lt;&lt; EOF
+R2_ACCOUNT_ID=your_account_id_here
+R2_ACCESS_KEY_ID=your_access_key_here
+R2_SECRET_ACCESS_KEY=your_secret_key_here
+EOF
+
+chmod 600 ~/.r2-credentials</code></pre>
+
+                <h2>Using R2 with curl</h2>
+
+                <p>The easiest way to test R2 is with <code>curl</code>. Here's how to list objects in your bucket:</p>
+
+                <pre><code>export R2_ENDPOINT="https://&lt;account-id&gt;.r2.cloudflarestorage.com"
+export AWS_ACCESS_KEY_ID="your_access_key"
+export AWS_SECRET_ACCESS_KEY="your_secret_key"
+
+# List bucket contents
+aws s3 ls s3://my-files --endpoint-url=$R2_ENDPOINT
+
+# Upload a file
+aws s3 cp report.pdf s3://my-files/documents/ \
+  --endpoint-url=$R2_ENDPOINT
+
+# Download a file
+aws s3 cp s3://my-files/documents/report.pdf ./ \
+  --endpoint-url=$R2_ENDPOINT</code></pre>
+
+                <h2>Using R2 with Python (boto3)</h2>
+
+                <p>Since R2 is S3-compatible, you can use <code>boto3</code> — the AWS SDK for Python — to interact with it.</p>
+
+                <pre><code># Install boto3
+pip install boto3
+
+# Connect to R2
+import boto3
+import os
+
+r2 = boto3.client(
+    "s3",
+    endpoint_url="https://&lt;account-id&gt;.r2.cloudflarestorage.com",
+    aws_access_key_id=os.environ["R2_ACCESS_KEY_ID"],
+    aws_secret_access_key=os.environ["R2_SECRET_ACCESS_KEY"],
+    region_name="auto",
+)
+
+# Upload a file
+r2.upload_file("report.pdf", "my-files", "documents/report.pdf")
+
+# List all objects
+for obj in r2.list_objects_v2(Bucket="my-files")["Contents"]:
+    print(f"{obj['Key']} — {obj['Size']} bytes")
+
+# Download a file
+r2.download_file("my-files", "documents/report.pdf", "./report.pdf")
+
+# Set a public URL (optional — needs bucket settings enabled)
+r2.put_object_acl(
+    Bucket="my-files",
+    Key="documents/report.pdf",
+    ACL="public-read"
+)</code></pre>
+
+                <h2>Serving Files Publicly with R2</h2>
+
+                <p>By default, R2 objects are private. To serve files publicly, you have two options:</p>
+
+                <h3>Option 1: R2 Public Access</h3>
+
+                <p>Enable public access on your bucket in the dashboard, then set objects to <code>public-read</code>. Files become available at:</p>
+
+                <pre><code>https://pub-&lt;hash&gt;.r2.dev/my-files/documents/report.pdf</code></pre>
+
+                <h3>Option 2: Signed URLs (Temporary Access)</h3>
+
+                <p>For private files, generate a temporary URL that expires after a set time:</p>
+
+                <pre><code>from botocore.client import Config
+from datetime import datetime, timedelta
+import boto3
+
+r2 = boto3.client(
+    "s3",
+    endpoint_url="https://&lt;account-id&gt;.r2.cloudflarestorage.com",
+    aws_access_key_id=os.environ["R2_ACCESS_KEY_ID"],
+    aws_secret_access_key=os.environ["R2_SECRET_ACCESS_KEY"],
+)
+
+# Generate a presigned URL valid for 1 hour
+url = r2.generate_presigned_url(
+    "get_object",
+    Params={
+        "Bucket": "my-files",
+        "Key": "private/secret.pdf"
+    },
+    ExpiresIn=3600  # 1 hour in seconds
+)
+
+print(f"Download link: {url}")</code></pre>
+
+                <h3>Option 3: Cloudflare Tunnel for Static Hosting</h3>
+
+                <p>You can also pair R2 with a Cloudflare Worker or Tunnel to serve files behind your own domain with custom authentication, rate limiting, or transformations.</p>
+
+                <h2>Automated Backups with Python</h2>
+
+                <p>Here's a practical script that backs up a directory to R2 daily:</p>
+
+                <pre><code>import boto3
+import os
+import tarfile
+from datetime import datetime
+
+r2 = boto3.client(
+    "s3",
+    endpoint_url="https://&lt;account-id&gt;.r2.cloudflarestorage.com",
+    aws_access_key_id=os.environ["R2_ACCESS_KEY_ID"],
+    aws_secret_access_key=os.environ["R2_SECRET_ACCESS_KEY"],
+    region_name="auto",
+)
+
+def backup_directory(source_dir, bucket_name="backups"):
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H%M%S")
+    archive_name = f"backup_{timestamp}.tar.gz"
+
+    # Create compressed archive
+    with tarfile.open(archive_name, "w:gz") as tar:
+        tar.add(source_dir, arcname=os.path.basename(source_dir))
+
+    # Upload to R2
+    r2.upload_file(
+        archive_name,
+        bucket_name,
+        f"daily/{archive_name}"
+    )
+    print(f"✅ Uploaded {archive_name} to R2")
+
+    # Clean up local archive
+    os.remove(archive_name)
+
+    # Delete backups older than 30 days
+    response = r2.list_objects_v2(Bucket=bucket_name, Prefix="daily/")
+    cutoff = datetime.now().timestamp() - (30 * 86400)
+
+    for obj in response.get("Contents", []):
+        if obj["LastModified"].timestamp() &lt; cutoff:
+            r2.delete_object(Bucket=bucket_name, Key=obj["Key"])
+            print(f"🗑️ Deleted old backup: {obj['Key']}")
+
+# Run backup
+backup_directory("/home/user/my-data")</code></pre>
+
+                <h2>R2 vs S3 Comparison</h2>
+
+                <table>
+                    <tr><th>Feature</th><th>Cloudflare R2</th><th>AWS S3</th></tr>
+                    <tr><td>Storage cost</td><td>$0.015/GB</td><td>$0.023/GB</td></tr>
+                    <tr><td>Egress fees</td><td><strong>$0</strong></td><td>$0.09/GB</td></tr>
+                    <tr><td>PUT operations</td><td>$4.50/M</td><td>$5.00/M</td></tr>
+                    <tr><td>GET operations</td><td>$0.36/M</td><td>$0.0004/M</td></tr>
+                    <tr><td>S3-compatible</td><td>✅</td><td>✅ (native)</td></tr>
+                    <tr><td>CDN integration</td><td>Built-in</td><td>CloudFront (extra cost)</td></tr>
+                    <tr><td>Lifecycle rules</td><td>✅</td><td>✅</td></tr>
+                </table>
+
+                <h2>Best Practices</h2>
+
+                <ol>
+                    <li><strong>Use environment variables</strong> — never hardcode credentials in your code</li>
+                    <li><strong>Enable lifecycle rules</strong> — auto-delete or tier old objects to save money</li>
+                    <li><strong>Use presigned URLs</strong> for temporary, secure file sharing</li>
+                    <li><strong>Pair with Workers</strong> — serve files through a Cloudflare Worker for authentication, image resizing, or caching headers</li>
+                    <li><strong>Monitor usage</strong> — check the R2 dashboard weekly for storage and operation counts</li>
+                </ol>
+
+                <h2>Summary</h2>
+
+                <p>Cloudflare R2 is a powerful, cost-effective alternative to AWS S3. The zero egress fee alone makes it worth switching if you serve a lot of downloads. The S3-compatible API means you can migrate with minimal code changes. Try it for file storage, backups, static assets, or any use case where you want to store data without surprise bills.</p>
+
+                <div class="post-nav">
+                    <a href="../posts/cloudflare-tunnel.html" class="prev">← Cloudflare Tunnel Setup</a>
+                    <a href="../posts/cloudflare-zero-trust.html" class="next">Cloudflare Zero Trust →</a>
+                </div>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes. Built with ☁️ Cloudflare.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Reading progress bar
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + '%';
+        });
+
+        // Dark mode toggle
+        const toggle = document.getElementById('themeToggle');
+        const saved = localStorage.getItem('dark-mode');
+        if (saved === 'true') { document.body.classList.add('dark-mode'); toggle.textContent = '☀️'; }
+        toggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            localStorage.setItem('dark-mode', document.body.classList.contains('dark-mode'));
+            toggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+        });
+    </script>
+</body>
+</html>

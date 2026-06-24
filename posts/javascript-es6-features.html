@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JavaScript ES6+ Modern Features Every Developer Should Know</title>
+    <meta name="description" content="Learn modern JavaScript features — let/const, arrow functions, template literals, destructuring, modules, and more. Write cleaner code today.">
+    <meta name="keywords" content="javascript ES6, ES2015, arrow functions, destructuring, template literals, spread operator, modules, modern javascript tutorial">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+                <a href="../devops.html" class="nav-btn">🐳 DevOps</a>
+                <a href="../security.html" class="nav-btn">🔐 Security</a>
+                <a href="../webdev.html" class="nav-btn active">💻 Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post">
+            <div class="post-header">
+                <span class="tag web">Web Dev</span>
+                <h1>JavaScript ES6+ Modern Features Every Developer Should Know</h1>
+            </div>
+            <div class="post-meta">
+                <time>2026-06-24</time>
+                <span class="read-time">9 min read</span>
+                <span class="post-status">New</span>
+            </div>
+
+            <div class="post-content">
+                <p>JavaScript has evolved dramatically since the ES6 (ECMAScript 2015) release. Modern JavaScript is cleaner, more expressive, and less error-prone than the old way. Whether you're building web apps, Node.js servers, or anything in between, these features will make your code better.</p>
+
+                <p>In this tutorial, we'll cover the most important ES6+ features with practical examples you can use right away.</p>
+
+                <h2>1. let and const: Block-Safe Variables</h2>
+
+                <p>Before ES6, JavaScript only had <code>var</code> for declaring variables. The problem? <code>var</code> is function-scoped, not block-scoped, which leads to confusing bugs:</p>
+
+                <pre><code>// The old way — problematic
+for (var i = 0; i < 3; i++) {
+    setTimeout(() => console.log(i), 100);
+}
+// Output: 3, 3, 3 (not 0, 1, 2!)</code></pre>
+
+                <p>ES6 introduced <code>let</code> and <code>const</code>, which are <strong>block-scoped</strong> (limited to the nearest curly braces):</p>
+
+                <pre><code>// The modern way — correct
+for (let i = 0; i < 3; i++) {
+    setTimeout(() => console.log(i), 100);
+}
+// Output: 0, 1, 2 ✅
+
+// const for values that shouldn't change
+const API_URL = 'https://api.example.com';
+const MAX_RETRIES = 3;
+
+// let for values that do change
+let counter = 0;
+counter++; // works fine
+// counter = {}; // ❌ TypeError — can't reassign const, but let works</code></pre>
+
+                <p><strong>Rule of thumb:</strong> Use <code>const</code> by default. Switch to <code>let</code> only when you need to reassign. Never use <code>var</code> in new code.</p>
+
+                <h2>2. Template Literals: String Interpolation</h2>
+
+                <p>Forget string concatenation with <code>+</code>. Template literals use backticks and <code>${}</code> for clean string building:</p>
+
+                <pre><code>// Old way — messy
+const name = "Hugo";
+const greeting = "Hello, " + name + "! You have " + count + " messages.";
+
+// Modern way — clean
+const name = "Hugo";
+const count = 5;
+const greeting = `Hello, ${name}! You have ${count} messages.`;
+
+// Multi-line strings (newlines preserved!)
+const html = `
+    &lt;div class="card"&gt;
+        &lt;h2&gt;${title}&lt;/h2&gt;
+        &lt;p&gt;${description}&lt;/p&gt;
+        &lt;button&gt;Click Me&lt;/button&gt;
+    &lt;/div&gt;
+`;
+
+// Expressions inside ${} work
+const total = `Your total: $${price * quantity}`;
+const status = count > 0 ? "available" : "sold out";
+const message = `Items ${status} — ${count} in stock.`;</code></pre>
+
+                <h2>3. Arrow Functions: Concise Function Syntax</h2>
+
+                <p>Arrow functions provide a shorter syntax and lexically bind <code>this</code> (no more <code>bind()</code> or <code>.that = this</code> hacks):</p>
+
+                <pre><code>// Old way
+function add(a, b) {
+    return a + b;
+}
+
+// Arrow function — much shorter
+const add = (a, b) => a + b;
+
+// Single parameter — parentheses optional
+const double = x => x * 2;
+
+// With a block — use curly braces and return keyword
+const greet = (name, time) => {
+    const hour = time.getHours();
+    const greeting = hour < 12 ? "Good morning" : "Good afternoon";
+    return `${greeting}, ${name}!`;
+};
+
+// Arrow functions shine in callbacks
+const numbers = [1, 2, 3, 4, 5];
+
+// Filter and map in one chain
+const result = numbers
+    .filter(n => n > 2)       // [3, 4, 5]
+    .map(n => n * n)          // [9, 16, 25]
+    .reduce((sum, n) => sum + n); // 50
+
+console.log(result); // 50</code></pre>
+
+                <p><strong>Warning:</strong> Don't use arrow functions as object methods or constructors — they don't have their own <code>this</code>:</p>
+
+                <pre><code>// ❌ BAD — 'this' won't reference the object
+const user = {
+    name: "Hugo",
+    greet: () => console.log(`Hi, I'm ${this.name}`)
+};
+user.greet(); // "Hi, I'm undefined"
+
+// ✅ GOOD — regular method for object methods
+const user = {
+    name: "Hugo",
+    greet() {
+        console.log(`Hi, I'm ${this.name}`);
+    }
+};
+user.greet(); // "Hi, I'm Hugo"</code></pre>
+
+                <h2>4. Destructuring: Extract Values Cleanly</h2>
+
+                <p>Destructuring lets you unpack values from arrays and objects into variables:</p>
+
+                <h3>Object Destructuring</h3>
+                <pre><code>// Old way
+const user = { name: "Hugo", age: 28, city: "London", role: "developer" };
+const userName = user.name;
+const userAge = user.age;
+const userCity = user.city;
+
+// Modern way — clean one-liner
+const { name, age, city } = user;
+console.log(name); // "Hugo"
+console.log(age);  // 28
+console.log(city); // "London"
+
+// Rename variables
+const { name: userName, age: userAge } = user;
+
+// Default values for missing properties
+const { email = "no-email@example.com" } = user;
+console.log(email); // "no-email@example.com" (user has no email)
+
+// Common: extracting from function parameters
+function updateUser({ name, age, city = "Unknown" }) {
+    console.log(`Updating ${name}, age ${age}, from ${city}`);
+}
+
+updateUser({ name: "Hugo", age: 28 });
+// "Updating Hugo, age 28, from Unknown"</code></pre>
+
+                <h3>Array Destructuring</h3>
+                <pre><code>const colors = ["red", "green", "blue"];
+
+// Unpack by position
+const [first, second, third] = colors;
+console.log(first);  // "red"
+console.log(second); // "green"
+
+// Skip values
+const [first, , last] = colors;
+console.log(last); // "blue" (skipped "green")
+
+// Rest pattern — collect remaining items
+const [head, ...tail] = colors;
+console.log(head); // "red"
+console.log(tail); // ["green", "blue"]
+
+// Swap variables without a temp variable
+let a = 1;
+let b = 2;
+[a, b] = [b, a];
+console.log(a, b); // 2, 1</code></pre>
+
+                <h2>5. Spread and Rest Operators</h2>
+
+                <p>The spread operator (<code>...</code>) expands arrays and objects:</p>
+
+                <pre><code>// Spread arrays
+const fruits = ["apple", "banana"];
+const vegetables = ["carrot", "broccoli"];
+
+// Combine arrays
+const food = [...fruits, ...vegetables];
+console.log(food); // ["apple", "banana", "carrot", "broccoli"]
+
+// Add to beginning
+const newFood = ["orange", ...fruits, ...vegetables];
+
+// Spread objects
+const defaults = { theme: "dark", lang: "en", fontSize: 14 };
+const userPrefs = { theme: "light", fontSize: 18 };
+
+// Merge — later values override earlier
+const settings = { ...defaults, ...userPrefs };
+console.log(settings);
+// { theme: "light", lang: "en", fontSize: 18 }
+
+// Rest parameter in functions — collects all remaining args
+const sum = (...numbers) => numbers.reduce((a, b) => a + b, 0);
+console.log(sum(1, 2, 3, 4, 5)); // 15
+
+// Rest in destructuring
+const [first, ...rest] = [1, 2, 3, 4, 5];
+console.log(first); // 1
+console.log(rest);  // [2, 3, 4, 5]</code></pre>
+
+                <h2>6. Default Parameters</h2>
+
+                <p>No more checking for <code>undefined</code> — just set defaults right in the function signature:</p>
+
+                <pre><code>// Old way
+function createLink(url, text) {
+    text = text || "Click here"; // breaks if text is "" or 0
+}
+
+// Modern way
+function createLink(url, text = "Click here", target = "_blank") {
+    return `<a href="${url}" target="${target}">${text}</a>`;
+}
+
+createLink("https://example.com");
+// &lt;a href="https://example.com" target="_blank"&gt;Click here&lt;/a&gt;
+
+createLink("https://example.com", "Visit us", "_self");
+// &lt;a href="https://example.com" target="_self"&gt;Visit us&lt;/a&gt;</code></pre>
+
+                <h2>7. Modules: Import and Export</h2>
+
+                <p>ES6 modules let you split code into reusable files:</p>
+
+                <pre><code>// ─── mathUtils.js ───
+// Named exports
+export function add(a, b) { return a + b; }
+export function subtract(a, b) { return a - b; }
+
+// Default export (one per file)
+export default class Calculator {
+    history = [];
+    calculate(expr) {
+        this.history.push(expr);
+        return eval(expr); // simplified — don't eval in production!
+    }
+}
+
+// ─── main.js ───
+// Import named exports (use curly braces)
+import { add, subtract } from './mathUtils.js';
+console.log(add(5, 3)); // 8
+
+// Import default export (no curly braces)
+import Calculator from './mathUtils.js';
+
+// Import everything under an alias
+import * as math from './mathUtils.js';
+console.log(math.add(10, 20)); // 30</code></pre>
+
+                <p>In your HTML, use <code>&lt;script type="module"&gt;</code>:</p>
+
+                <pre><code>&lt;script type="module" src="main.js"&gt;&lt;/script&gt;</code></pre>
+
+                <h2>8. Optional Chaining and Nullish Coalescing</h2>
+
+                <p>Two operators that prevent runtime errors when dealing with potentially null/undefined values:</p>
+
+                <pre><code>// Optional chaining (?.) — stops at null/undefined instead of crashing
+const user = {
+    name: "Hugo",
+    address: {
+        city: "London"
+    }
+};
+
+// Safe access — returns undefined instead of throwing
+console.log(user.address?.city); // "London"
+console.log(user.phone?.number); // undefined (no crash!)
+
+// Nullish coalescing (??) — default only for null/undefined
+const count = null;
+const display = count ?? 0;
+console.log(display); // 0 (not the empty string, not 0 from falsy)
+
+// Difference from || operator
+const emptyString = "";
+console.log(emptyString || "default");  // "default" (empty string is falsy)
+console.log(emptyString ?? "default");   // "" (empty string is not null/undefined)</code></pre>
+
+                <h2>9. Practical Example: Building a Mini API Client</h2>
+
+                <p>Let's combine several features into a practical project:</p>
+
+                <pre><code>// apiClient.js — Reusable API client using modern JS
+class APIClient {
+    #apiKey; // Private field (ES2022)
+
+    constructor(baseUrl, apiKey) {
+        this.baseUrl = baseUrl;
+        this.#apiKey = apiKey;
+        this.timeout = 10000; // 10 seconds
+    }
+
+    async fetch(endpoint, options = {}) {
+        const url = `${this.baseUrl}${endpoint}`;
+
+        // Spread operator for combining default + custom options
+        const config = {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${this.#apiKey}`,
+                ...options.headers
+            },
+            ...options
+        };
+
+        try {
+            const response = await fetch(url, config);
+
+            // Optional chaining for safe property access
+            if (!response?.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+
+            // Nullish coalescing for default value
+            return {
+                success: true,
+                data: data ?? null,
+                count: data?.length ?? 0
+            };
+        } catch (error) {
+            return {
+                success: false,
+                error: error?.message ?? 'Unknown error',
+                data: null
+            };
+        }
+    }
+}
+
+// Usage
+const api = new APIClient('https://jsonplaceholder.typicode.com', 'your-key');
+
+async function loadPosts() {
+    const result = await api.fetch('/posts');
+
+    if (result.success) {
+        // Destructuring + arrow functions + template literals
+        const recentPosts = result.data
+            .filter(post => post.id <= 3)
+            .map(({ id, title, body }) => ({
+                id,
+                title: title?.slice(0, 50) ?? 'Untitled',
+                preview: body?.slice(0, 100) + '...' ?? ''
+            }));
+
+        console.table(recentPosts);
+    }
+}
+
+loadPosts();</code></pre>
+
+                <h2>Summary</h2>
+
+                <p>Modern JavaScript (ES6+) makes your code cleaner, safer, and more maintainable. Here's your quick-reference cheat sheet:</p>
+
+                <ul>
+                    <li><strong>const/let</strong> instead of var</li>
+                    <li><strong>Template literals</strong> with backticks instead of string concatenation</li>
+                    <li><strong>Arrow functions</strong> for callbacks and short functions</li>
+                    <li><strong>Destructuring</strong> to unpack objects and arrays</li>
+                    <li><strong>Spread/rest</strong> for combining and collecting values</li>
+                    <li><strong>Default parameters</strong> for clean function signatures</li>
+                    <li><strong>Modules</strong> for organized, reusable code</li>
+                    <li><strong>Optional chaining</strong> (<code>?.</code>) for safe property access</li>
+                    <li><strong>Nullish coalescing</strong> (<code>??</code>) for smart defaults</li>
+                </ul>
+
+                <p>Start applying these features in your next project. Your future self (and your teammates) will thank you.</p>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes | Built with ❤️ & AI</p>
+        </div>
+    </footer>
+
+    <button class="back-to-top" id="backToTop" title="Back to top">↑</button>
+
+    <script>
+    const themeToggle = document.getElementById('themeToggle');
+    themeToggle.addEventListener('click', () => {
+        document.body.classList.toggle('dark-mode');
+        themeToggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+    });
+    if (localStorage.getItem('theme') === 'dark') {
+        document.body.classList.add('dark-mode');
+        themeToggle.textContent = '☀️';
+    }
+
+    const backToTop = document.getElementById('backToTop');
+    window.addEventListener('scroll', () => {
+        backToTop.style.display = window.pageYOffset > 300 ? 'block' : 'none';
+        const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+        const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        const scrolled = (winScroll / height) * 100;
+        document.getElementById('progressBar').style.width = scrolled + '%';
+    });
+    backToTop.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+    </script>
+</body>
+</html>

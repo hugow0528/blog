@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS Grid & Flexbox: Modern Layout Guide - Hugo's Dev Notes</title>
+    <meta name="description" content="Master CSS Grid and Flexbox — the two powerful layout systems that replaced floats. Build responsive layouts with real examples.">
+    <meta name="keywords" content="CSS grid, flexbox, CSS layout, responsive design, web development, CSS tutorial">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/css-grid-flexbox.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+                <a href="../devops.html" class="nav-btn">🐳 DevOps</a>
+                <a href="../security.html" class="nav-btn">🔐 Security</a>
+                <a href="../webdev.html" class="nav-btn">💻 Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-content">
+            <div class="post-header">
+                <span class="tag web">Web Dev</span>
+                <h1>CSS Grid & Flexbox: Modern Layout Guide</h1>
+                <time>2026-06-24</time>
+                <span class="read-time">10 min read</span>
+            </div>
+
+            <p>Gone are the days of using floats and clearfixes for layout. CSS Grid and Flexbox give you powerful, intuitive tools to build any layout you can imagine. This guide walks you through both systems with practical examples you can use immediately.</p>
+
+            <h2>When to Use Grid vs Flexbox</h2>
+
+            <p>The simplest rule of thumb: <strong>Flexbox is for one-dimensional layouts</strong> (a row OR a column), and <strong>Grid is for two-dimensional layouts</strong> (rows AND columns). Use Flexbox for navigation bars, card lists in a row, or centering content. Use Grid for page layouts, dashboards, or anything where you need to control both axes.</p>
+
+            <blockquote>
+                <p>"Flexbox is one-dimensional — it works along a single axis. Grid is two-dimensional — it controls both rows and columns at the same time." — MDN Web Docs</p>
+            </blockquote>
+
+            <h2>Flexbox Fundamentals</h2>
+
+            <h3>Basic Flex Container</h3>
+
+            <p>To use Flexbox, set <code>display: flex</code> on a container. All direct children become flex items:</p>
+
+            <pre><code>.container {
+    display: flex;
+    gap: 1rem;
+    /* Main axis goes left to right by default */
+}
+
+.item {
+    background: #3b82f6;
+    color: white;
+    padding: 1rem;
+    border-radius: 8px;
+}</code></pre>
+
+            <h3>Justify Content and Align Items</h3>
+
+            <p>The two most-used properties control spacing and alignment:</p>
+
+            <pre><code>.container {
+    display: flex;
+    
+    /* Main axis (horizontal by default) */
+    justify-content: space-between;
+    /* Options: flex-start, flex-end, center, space-between, space-around, space-evenly */
+    
+    /* Cross axis (vertical by default) */
+    align-items: center;
+    /* Options: flex-start, flex-end, center, stretch, baseline */
+}</code></pre>
+
+            <h3>Flex Grow, Shrink, and Basis</h3>
+
+            <p>Control how items distribute available space:</p>
+
+            <pre><code>.item-1 {
+    flex: 1; /* Takes 1 share of remaining space */
+}
+
+.item-2 {
+    flex: 2; /* Takes 2 shares (twice as much as item-1) */
+}
+
+.item-3 {
+    flex: 0 0 200px; /* Don't grow, don't shrink, 200px wide */
+    /* Short for: flex-grow, flex-shrink, flex-basis */
+}</code></pre>
+
+            <h3>Practical Example: Navigation Bar</h3>
+
+            <p>Here's a real-world flexbox navigation bar:</p>
+
+            <pre><code>.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    background: #1e293b;
+    color: white;
+}
+
+.nav-brand {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.nav-links {
+    display: flex;
+    gap: 2rem;
+    list-style: none;
+}
+
+.nav-links a {
+    color: #e2e8f0;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.nav-links a:hover {
+    color: #60a5fa;
+}</code></pre>
+
+            <h3>Flexbox Wrapping</h3>
+
+            <p>When items exceed the container width, they can wrap to the next line:</p>
+
+            <pre><code>.card-container {
+    display: flex;
+    flex-wrap: wrap;       /* Allow items to wrap */
+    gap: 1rem;             /* Space between items */
+}
+
+.card {
+    flex: 1 1 300px;      /* Grow, shrink, minimum 300px */
+    /* Each card is at least 300px but can grow to fill space */
+}</code></pre>
+
+            <h2>CSS Grid Fundamentals</h2>
+
+            <h3>Basic Grid Container</h3>
+
+            <p>Set <code>display: grid</code> and define your columns and rows:</p>
+
+            <pre><code>.grid-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr; /* 3 equal columns */
+    grid-template-rows: auto;           /* Rows sized by content */
+    gap: 1rem;
+}</code></pre>
+
+            <p>The <code>fr</code> unit (fraction) is the most useful Grid feature. It divides available space proportionally.</p>
+
+            <h3>Grid Template Areas</h3>
+
+            <p>Name your areas for visual layout design:</p>
+
+            <pre><code>.page-layout {
+    display: grid;
+    grid-template-columns: 250px 1fr;
+    grid-template-rows: 60px 1fr 40px;
+    grid-template-areas:
+        "header header"
+        "sidebar main"
+        "footer footer";
+    min-height: 100vh;
+}
+
+.header  { grid-area: header; }
+.sidebar { grid-area: sidebar; background: #f1f5f9; }
+.main    { grid-area: main; }
+.footer  { grid-area: footer; background: #1e293b; color: white; }</code></pre>
+
+            <h3>Repeat Function and Minmax</h3>
+
+            <p>Create responsive columns without media queries:</p>
+
+            <pre><code>.responsive-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+/* This creates as many columns as will fit, 
+   each at least 280px wide, sharing remaining space equally */</code></pre>
+
+            <h3>Practical Example: Dashboard Layout</h3>
+
+            <p>Build a full dashboard with Grid:</p>
+
+            <pre><code>.dashboard {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: auto auto auto;
+    gap: 1.5rem;
+    padding: 2rem;
+}
+
+.stat-card {
+    grid-column: span 1;
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.chart-large {
+    grid-column: span 3; /* Spans 3 columns */
+    grid-row: span 2;    /* Spans 2 rows */
+}
+
+.chart-small {
+    grid-column: span 1;
+    grid-row: span 2;
+}
+
+.table-card {
+    grid-column: span 4; /* Full width */
+}</code></pre>
+
+            <h2>Combining Grid and Flexbox</h2>
+
+            <p>The best layouts use both. Grid handles the big structure, Flexbox handles the details inside components:</p>
+
+            <pre><code>/* Grid for page structure */
+.page {
+    display: grid;
+    grid-template-columns: 250px 1fr;
+    min-height: 100vh;
+}
+
+/* Flexbox for navigation items */
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+/* Flexbox for card content alignment */
+.card {
+    display: flex;
+    flex-direction: column;
+}
+
+.card-footer {
+    margin-top: auto; /* Push footer to bottom */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}</code></pre>
+
+            <h2>Common Layout Recipes</h2>
+
+            <h3>Center Anything</h3>
+
+            <pre><code>/* Flexbox centering */
+.center-flex {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+/* Grid centering */
+.center-grid {
+    display: grid;
+    place-items: center;
+    min-height: 100vh;
+}</code></pre>
+
+            <h3>Sticky Footer</h3>
+
+            <pre><code>.page {
+    display: grid;
+    grid-template-rows: 1fr auto; /* Content takes all space, footer at bottom */
+    min-height: 100vh;
+}
+
+.content { /* Stretches to fill available space */ }
+.footer  { /* Sticks to bottom */ }</code></pre>
+
+            <h3>Holy Grail Layout</h3>
+
+            <pre><code>.holy-grail {
+    display: grid;
+    grid-template-columns: 200px 1fr 200px;
+    grid-template-rows: 60px 1fr 40px;
+    min-height: 100vh;
+}
+
+/* On mobile, stack everything */
+@media (max-width: 768px) {
+    .holy-grail {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto;
+    }
+}</code></pre>
+
+            <h2>Common Mistakes to Avoid</h2>
+
+            <ul>
+                <li><strong>Using Grid for simple one-row layouts</strong> — use Flexbox instead; it's simpler and lighter</li>
+                <li><strong>Forgetting gap</strong> — both Grid and Flexbox support the <code>gap</code> property; don't use margins for spacing between items</li>
+                <li><strong>Nesting too deeply</strong> — Grid can often eliminate the need for wrapper divs that Flexbox might require</li>
+                <li><strong>Not testing responsive behavior</strong> — always check how your layout works on different screen sizes</li>
+                <li><strong>Using percentage widths with Grid</strong> — prefer <code>fr</code> units and <code>minmax()</code> for more predictable results</li>
+            </ul>
+
+            <h2>Browser Support</h2>
+
+            <p>Both CSS Grid and Flexbox have excellent browser support. All modern browsers fully support them. For very old browsers (IE11), Flexbox has partial support while Grid was not supported — but IE11 has been deprecated since 2022, so this is rarely a concern today.</p>
+
+            <h2>Practice Project: Build a Blog Card Grid</h2>
+
+            <p>Combine everything with this exercise:</p>
+
+            <pre><code>&lt;style&gt;
+.blog-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 2rem;
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.blog-card {
+    display: flex;
+    flex-direction: column;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.blog-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.card-image {
+    height: 200px;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+}
+
+.card-body {
+    flex: 1;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.card-body h3 {
+    margin: 0 0 0.5rem;
+}
+
+.card-meta {
+    margin-top: auto;
+    padding-top: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #64748b;
+    font-size: 0.875rem;
+}
+&lt;/style&gt;
+
+&lt;div class="blog-grid"&gt;
+    &lt;article class="blog-card"&gt;
+        &lt;div class="card-image"&gt;&lt;/div&gt;
+        &lt;div class="card-body"&gt;
+            &lt;h3&gt;CSS Grid & Flexbox&lt;/h3&gt;
+            &lt;p&gt;Master modern CSS layout systems...&lt;/p&gt;
+            &lt;div class="card-meta"&gt;
+                &lt;span&gt;Jun 24, 2026&lt;/span&gt;
+                &lt;span&gt;10 min read&lt;/span&gt;
+            &lt;/div&gt;
+        &lt;/div&gt;
+    &lt;/article&gt;
+&lt;/div&gt;</code></pre>
+
+            <h2>Summary</h2>
+
+            <p>CSS Grid and Flexbox are the foundation of modern web layouts. Remember: use Flexbox for components that flow in one direction, and Grid for page-level layouts with rows and columns. The <code>fr</code> unit, <code>minmax()</code>, <code>repeat()</code>, and <code>auto-fit</code> make responsive layouts surprisingly simple without media queries. Start with Flexbox for simple things, graduate to Grid for complex layouts, and combine both for the best results.</p>
+
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes | Built with ❤️ & AI</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528" target="_blank">GitHub</a>
+                <a href="https://blog.hugow.dev/sitemap.xml">Sitemap</a>
+            </div>
+        </div>
+    </footer>
+
+    <button class="back-to-top" id="backToTop" title="Back to top">↑</button>
+
+    <script>
+    const themeToggle = document.getElementById('themeToggle');
+    themeToggle.addEventListener('click', () => {
+        document.body.classList.toggle('dark-mode');
+        themeToggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+        localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+    });
+    if (localStorage.getItem('theme') === 'dark') {
+        document.body.classList.add('dark-mode');
+        themeToggle.textContent = '☀️';
+    }
+    const backToTop = document.getElementById('backToTop');
+    window.addEventListener('scroll', () => {
+        backToTop.style.display = window.pageYOffset > 300 ? 'block' : 'none';
+        const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+        const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        const scrolled = (winScroll / height) * 100;
+        document.getElementById('progressBar').style.width = scrolled + '%';
+    });
+    backToTop.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+    </script>
+</body>
+</html>

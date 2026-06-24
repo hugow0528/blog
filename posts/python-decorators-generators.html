@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Decorators & Generators: Advanced Patterns | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn Python decorators and generators — two powerful advanced patterns that make your code cleaner, faster, and more Pythonic. Practical examples included.">
+    <meta name="keywords" content="python decorators, python generators, yield, functools, advanced python, python patterns">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-decorators-generators.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../python.html" class="nav-btn active">🐍 Python</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post">
+            <div class="post-header">
+                <span class="tag python">Python</span>
+                <span class="tag">Advanced</span>
+                <h1>Python Decorators & Generators: Advanced Patterns</h1>
+            </div>
+            <div class="post-meta">
+                <time>2026-06-24</time>
+                <span class="read-time">10 min read</span>
+                <span class="post-status">New</span>
+            </div>
+
+            <div class="post-content">
+                <p>If you've been coding in Python for a while, you've probably seen the <code>@</code> symbol above function definitions and wondered what it actually does. You might also have seen the <code>yield</code> keyword and thought, "Why not just use <code>return</code>?" This guide answers both questions — and shows you how these patterns can dramatically improve your code.</p>
+
+                <h2>What Are Decorators?</h2>
+                <p>A <strong>decorator</strong> is a function that takes another function and extends its behavior without modifying it. Think of it like adding a wrapper around a gift — the gift stays the same, but now it looks better. Decorators are one of Python's most elegant features for writing clean, reusable code.</p>
+
+                <h3>Building Your First Decorator</h3>
+                <p>Let's start from scratch. Suppose you want to measure how long a function takes to run:</p>
+
+                <pre><code># Without a decorator — repetitive and messy
+import time
+
+def calculate_primes(n):
+    start = time.time()
+    result = [i for i in range(2, n) if all(i % j != 0 for j in range(2, i))]
+    end = time.time()
+    print(f"calculate_primes took {end - start:.4f} seconds")
+    return result
+
+def read_large_file(path):
+    start = time.time()
+    with open(path) as f:
+        content = f.read()
+    end = time.time()
+    print(f"read_large_file took {end - start:.4f} seconds")
+    return content</code></pre>
+
+                <p>Notice the repeated timing code. A decorator eliminates this duplication:</p>
+
+                <pre><code>import time
+import functools
+
+def timer(func):
+    """A decorator that measures function execution time."""
+    @functools.wraps(func)  # Preserves the original function's name and docstring
+    def wrapper(*args, **kwargs):
+        start = time.time()
+        result = func(*args, **kwargs)
+        elapsed = time.time() - start
+        print(f"⏱️ {func.__name__} took {elapsed:.4f} seconds")
+        return result
+    return wrapper
+
+# Now use it with the @ syntax
+@timer
+def calculate_primes(n):
+    return [i for i in range(2, n) if all(i % j != 0 for j in range(2, i))]
+
+@timer
+def reverse_string(text):
+    return text[::-1]
+
+# Try it out
+primes = calculate_primes(10000)
+reversed_text = reverse_string("Hello, Python!")
+# Output:
+# ⏱️ calculate_primes took 0.0342 seconds
+# ⏱️ reverse_string took 0.0000 seconds</code></pre>
+
+                <h3>How the <code>@</code> Syntax Works</h3>
+                <p>When you write <code>@timer</code> above a function, Python essentially runs:</p>
+
+                <pre><code>calculate_primes = timer(calculate_primes)</code></pre>
+
+                <p>The decorator receives the function, returns a new function (the wrapper), and the original name now points to the wrapper. That's why <code>@functools.wraps(func)</code> is important — it copies the original function's metadata so debugging and documentation still work correctly.</p>
+
+                <h3>Decorator with Arguments</h3>
+                <p>Sometimes you need to configure a decorator. For example, a retry decorator that retries a different number of times:</p>
+
+                <pre><code>import time
+import functools
+
+def retry(max_attempts=3, delay=1):
+    """A decorator factory that retries a function on failure."""
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            for attempt in range(1, max_attempts + 1):
+                try:
+                    return func(*args, **kwargs)
+                except Exception as e:
+                    if attempt == max_attempts:
+                        raise
+                    print(f"  Attempt {attempt} failed: {e}. Retrying in {delay}s...")
+                    time.sleep(delay)
+            return None
+        return wrapper
+    return decorator
+
+# Use it: @retry(max_attempts=5, delay=2)
+@retry(max_attempts=3, delay=0.5)
+def fetch_data(url):
+    # Simulates a flaky API call
+    import random
+    if random.random() < 0.7:
+        raise ConnectionError("Server timeout")
+    return {"status": "ok", "data": "your data here"}
+
+result = fetch_data("https://api.example.com/data")
+print(result)</code></pre>
+
+                <h3>Common Decorator Patterns</h3>
+
+                <p><strong>1. Memoization (caching results):</strong></p>
+
+                <pre><code>from functools import lru_cache
+
+@lru_cache(maxsize=128)
+def fibonacci(n):
+    """Calculate the nth Fibonacci number with memoization."""
+    if n < 2:
+        return n
+    return fibonacci(n - 1) + fibonacci(n - 2)
+
+# Without @lru_cache, fibonacci(500) would be incredibly slow.
+# With it, each value is computed exactly once.
+print(fibonacci(500))  # Instant!</code></pre>
+
+                <p><strong>2. Access control:</strong></p>
+
+                <pre><code>def require_permission(permission):
+    """Check if the user has a specific permission."""
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(user, *args, **kwargs):
+            if permission not in user.get("permissions", []):
+                raise PermissionError(f"Need '{permission}' to call {func.__name__}")
+            return func(user, *args, **kwargs)
+        return wrapper
+    return decorator
+
+@require_permission("admin")
+def delete_server(user, server_id):
+    print(f"Deleted server {server_id}")
+
+admin = {"name": "Hugo", "permissions": ["admin", "read"]}
+viewer = {"name": "Guest", "permissions": ["read"]}
+
+delete_server(admin, 42)       # Works fine
+delete_server(viewer, 42)      # Raises PermissionError</code></pre>
+
+                <hr>
+
+                <h2>What Are Generators?</h2>
+                <p>A <strong>generator</strong> is a special kind of function that produces a sequence of values one at a time, using <code>yield</code> instead of <code>return</code>. Unlike <code>return</code>, which ends a function, <code>yield</code> pauses it — preserving all local variables — and resumes when the next value is requested.</p>
+
+                <h3>Why Use Generators?</h3>
+                <p>Generators are <strong>memory efficient</strong>. Instead of building an entire list in memory, they produce items lazily. This matters when working with large datasets.</p>
+
+                <pre><code># Without a generator — loads everything into memory
+def read_all_lines(filepath):
+    with open(filepath) as f:
+        return f.readlines()  # Loads entire file into a list
+
+# With a generator — one line at a time
+def read_lines(filepath):
+    with open(filepath) as f:
+        for line in f:
+            yield line.strip()
+
+# Usage — both look the same!
+for line in read_lines("huge_file.txt"):
+    if "ERROR" in line:
+        print(line)</code></pre>
+
+                <h3>Building a Custom Range Generator</h3>
+
+                <pre><code>def my_range(start, stop=None, step=1):
+    """A generator that mimics Python's built-in range()."""
+    if stop is None:
+        start, stop = 0, start
+
+    current = start
+    if step > 0:
+        while current < stop:
+            yield current
+            current += step
+    elif step < 0:
+        while current > stop:
+            yield current
+            current += step
+
+# Use it just like range()
+for i in my_range(0, 10, 2):
+    print(i, end=" ")  # 0 2 4 6 8
+
+# You can also consume it into a list
+evens = list(my_range(0, 20, 2))
+print(evens)  # [0, 2, 4, 6, 8, 10, 12, 14, 16, 18]</code></pre>
+
+                <h3>Infinite Sequences</h3>
+                <p>One of the coolest things about generators: they can produce <strong>infinite sequences</strong> without running out of memory.</p>
+
+                <pre><code>def fibonacci_generator():
+    """An infinite Fibonacci sequence generator."""
+    a, b = 0, 1
+    while True:
+        yield a
+        a, b = b, a + b
+
+# Get the first 10 Fibonacci numbers
+fib = fibonacci_generator()
+first_ten = [next(fib) for _ in range(10)]
+print(first_ten)  # [0, 1, 1, 2, 3, 5, 8, 13, 21, 34]</code></pre>
+
+                <h3>Generator Expressions</h3>
+                <p>Python supports generator expressions — the lazy version of list comprehensions. Just swap <code>[]</code> for <code>()</code>:</p>
+
+                <pre><code># List comprehension — creates entire list in memory
+squares = [x**2 for x in range(1000000)]
+
+# Generator expression — computes one at a time
+squares_gen = (x**2 for x in range(1000000))
+
+# Perfect for single-pass operations
+total = sum(x**2 for x in range(1000000))  # No list created!
+first_square = next(x**2 for x in range(10) if x % 2 == 0)
+print(first_square)  # 0</code></pre>
+
+                <h3>Pipeline Processing</h3>
+                <p>Generators shine when you chain them together into processing pipelines:</p>
+
+                <pre><code>def open_log(filepath):
+    """Generator: open and yield lines from a file."""
+    with open(filepath) as f:
+        for line in f:
+            yield line
+
+def filter_errors(lines):
+    """Generator: keep only lines containing 'ERROR'."""
+    for line in lines:
+        if "ERROR" in line:
+            yield line
+
+def extract_timestamps(lines):
+    """Generator: extract just the timestamp from each error."""
+    for line in lines:
+        parts = line.split()
+        if len(parts) >= 2:
+            yield f"{parts[0]} {parts[1]}"
+
+def format_report(timestamps):
+    """Generator: format each timestamp into a report line."""
+    for ts in timestamps:
+        yield f"⚠️ Error at {ts}"
+
+# Chain them — each generator processes one item at a time
+report = (
+    open_log("server.log")
+    | filter_errors       # Only errors
+    | extract_timestamps  # Just timestamps
+    | format_report       # Nice output
+)
+
+# If Python supported | for generators, this would be:
+# pipeline = format_report(extract_timestamps(filter_errors(open_log("server.log"))))
+
+for line in format_report(extract_timestamps(filter_errors(open_log("server.log")))):
+    print(line)</code></pre>
+
+                <h2>Combining Decorators and Generators</h2>
+                <p>You can even decorate generator functions. Here's a caching decorator that works with generators:</p>
+
+                <pre><code>def cache_generator():
+    """A decorator that caches generator output in a list."""
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            cached = list(func(*args, **kwargs))
+            for item in cached:
+                yield item
+        return wrapper
+    return decorator
+
+@cache_generator()
+def slow_data():
+    """Simulate fetching data slowly."""
+    for i in range(5):
+        time.sleep(0.5)  # Simulates network delay
+        yield f"item_{i}"
+
+# First iteration — takes 2.5 seconds (5 * 0.5s)
+for item in slow_data():
+    print(item)
+
+# The items are cached after the first pass,
+# so subsequent operations on the same generator object are instant.</code></pre>
+
+                <h2>When to Use What</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Pattern</th>
+                            <th>Use When...</th>
+                            <th>Example</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Decorator</strong></td>
+                            <td>You need to add behavior to many functions (logging, timing, auth)</td>
+                            <td><code>@timer</code>, <code>@require_login</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Generator</strong></td>
+                            <td>Processing large or infinite sequences without loading everything into memory</td>
+                            <td>Reading large files, data pipelines</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Both</strong></td>
+                            <td>You want to modify how a generator behaves</td>
+                            <td>Caching, logging, retrying generators</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h2>Practice Challenge</h2>
+                <p>Try building these on your own:</p>
+                <ol>
+                    <li>A <code>@log_calls</code> decorator that prints the function name and arguments every time it's called.</li>
+                    <li>A <code>countdown(n)</code> generator that yields <code>n, n-1, ..., 1, 0</code>.</li>
+                    <li>A <code>@validate_positive</code> decorator that raises an error if any argument is negative.</li>
+                </ol>
+
+                <h2>Summary</h2>
+                <p>Decorators and generators are two of Python's most powerful advanced features. Decorators let you <strong>compose behavior</strong> cleanly with the <code>@</code> syntax. Generators let you <strong>stream data efficiently</strong> with <code>yield</code>. Together, they make your code more readable, more efficient, and more Pythonic.</p>
+
+                <p><strong>Next up:</strong> Check out our <a href="python-oop-classes.html">Python OOP guide</a> or dive into <a href="python-apis.html">Python APIs</a> to start building real applications.</p>
+            </div>
+
+            <div class="post-nav">
+                <a href="python-oop-classes.html" class="prev-post">← Previous: Python OOP</a>
+                <a href="../index.html" class="back-to-top">↑ Back to Home</a>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes | Built with ❤️ & AI</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528" target="_blank">GitHub</a>
+                <a href="https://blog.hugow.dev/sitemap.xml">Sitemap</a>
+            </div>
+        </div>
+    </footer>
+
+    <button class="back-to-top" id="backToTop" title="Back to top">↑</button>
+
+    <script>
+    const themeToggle = document.getElementById('themeToggle');
+    themeToggle.addEventListener('click', () => {
+        document.body.classList.toggle('dark-mode');
+        themeToggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+        localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+    });
+    if (localStorage.getItem('theme') === 'dark') {
+        document.body.classList.add('dark-mode');
+        themeToggle.textContent = '☀️';
+    }
+    const backToTop = document.getElementById('backToTop');
+    window.addEventListener('scroll', () => {
+        backToTop.style.display = window.pageYOffset > 300 ? 'block' : 'none';
+    });
+    backToTop.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+    window.addEventListener('scroll', () => {
+        const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+        const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        const scrolled = (winScroll / height) * 100;
+        document.getElementById('progressBar').style.width = scrolled + '%';
+    });
+    </script>
+</body>
+</html>

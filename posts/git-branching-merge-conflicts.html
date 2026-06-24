@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Git Branching Strategies and Merge Conflicts Explained | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn Git branching strategies — feature branches, GitFlow, trunk-based development — and how to resolve merge conflicts. Real-world workflow examples for teams.">
+    <meta name="keywords" content="git branching, merge conflicts, gitflow, feature branch, rebase, git workflow, version control">
+    <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/git-branching-merge-conflicts.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+            <p class="subtitle">Cloudflare · Python · AI Coding · DevOps</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+
+        <article class="post-content">
+            <span class="tag devops">DevOps</span>
+            <h1>Git Branching Strategies and Merge Conflicts Explained</h1>
+            <time>June 24, 2026 · 8 min read</time>
+
+            <p>You know the Git basics — <code>init</code>, <code>add</code>, <code>commit</code>, <code>push</code>. But how do teams of multiple developers work on the same codebase without stepping on each other's toes? The answer is <strong>branching strategies</strong>. And when things inevitably go wrong? That's where understanding <strong>merge conflicts</strong> saves your project.</p>
+
+            <p>This guide covers the most popular branching models, when to use each, and a step-by-step walkthrough of resolving merge conflicts like a pro.</p>
+
+            <h2>What Is a Branch?</h2>
+
+            <p>A branch in Git is simply a lightweight pointer to a specific commit. When you create a branch, you're creating an independent line of development that can evolve without affecting your main codebase.</p>
+
+            <pre><code># Create a new branch called "feature/login"
+git branch feature/login
+
+# Switch to it
+git checkout feature/login
+
+# Or do both in one command
+git checkout -b feature/login
+
+# See all branches
+git branch -a</code></pre>
+
+            <p>Think of branches like parallel universes. In the "feature/login" universe, you can make changes, test them, and experiment. When you're happy, you merge it back into the "main" universe.</p>
+
+            <blockquote>
+                <strong>Best practice:</strong> Never commit directly to <code>main</code> (or <code>master</code>). Always create a feature branch, test your changes there, then merge via a Pull Request (PR) or Merge Request (MR).
+            </blockquote>
+
+            <h2>Popular Branching Strategies</h2>
+
+            <h3>1. Feature Branch Workflow (Simple & Popular)</h3>
+
+            <p>The most straightforward strategy. Every new feature or bug fix gets its own branch, which is merged into <code>main</code> via a Pull Request.</p>
+
+            <pre><code># Your workflow:
+git checkout main
+git pull origin main
+git checkout -b feature/add-search
+
+# ... make changes, commit ...
+git add .
+git commit -m "Add search functionality"
+git push origin feature/add-search
+
+# Then create a Pull Request on GitHub/GitLab
+# After review and approval, merge into main</code></pre>
+
+            <p><strong>When to use:</strong> Small teams, startups, or projects where rapid iteration matters more than strict release cycles. This is the default GitHub Flow.</p>
+
+            <h3>2. GitFlow (Structured & Predictable)</h3>
+
+            <p>GitFlow uses multiple branches with specific roles:</p>
+
+            <ul>
+                <li><strong><code>main</code></strong> — Production-ready code. Only receives merges from <code>release</code> or <code>hotfix</code> branches.</li>
+                <li><strong><code>develop</code></strong> — Integration branch. All feature branches merge here first.</li>
+                <li><strong><code>feature/*</code></strong> — One branch per new feature. Branch off from <code>develop</code>.</li>
+                <li><strong><code>release/*</code></strong> — Preparation branch for an upcoming release. Branch off from <code>develop</code>.</li>
+                <li><strong><code>hotfix/*</code></strong> — Quick fixes for production. Branch off from <code>main</code>.</li>
+            </ul>
+
+            <pre><code># GitFlow example workflow:
+
+# Start a new feature
+git checkout develop
+git checkout -b feature/user-profile
+
+# Work, commit, push
+git add .
+git commit -m "Add user profile page"
+git push origin feature/user-profile
+
+# Merge feature into develop (via PR)
+git checkout develop
+git merge feature/user-profile
+git branch -d feature/user-profile
+
+# Prepare a release
+git checkout develop
+git checkout -b release/v1.2.0
+# Final testing, version bump, changelog...
+git merge release/v1.2.0 main
+git merge release/v1.2.0 develop
+git tag v1.2.0
+git push origin main --tags</code></pre>
+
+            <p><strong>When to use:</strong> Larger teams with scheduled releases, enterprise projects, or when you need a clear separation between development and production code.</p>
+
+            <h3>3. Trunk-Based Development (Fast & Modern)</h3>
+
+            <p>Short-lived branches (lasting hours, not days) that merge into a single "trunk" (main) multiple times per day. Often paired with feature flags and CI/CD.</p>
+
+            <pre><code># Trunk-based workflow:
+git checkout main
+git pull origin main
+git checkout -b fix/typo-readme
+
+# Make quick fix
+git add .
+git commit -m "Fix typo in README"
+git push origin fix/typo-readme
+
+# Merge immediately (same day)
+git checkout main
+git merge fix/typo-readme --squash
+git branch -d fix/typo-readme
+git push origin main</code></pre>
+
+            <p><strong>When to use:</strong> Teams practicing continuous deployment, companies like Google and Netflix, projects with strong automated testing.</p>
+
+            <h2>Understanding Merge Conflicts</h2>
+
+            <p>A merge conflict happens when Git cannot automatically combine changes from two branches. This occurs when both branches modify the same lines in the same file.</p>
+
+            <h3>How a Conflict Looks</h3>
+
+            <p>Let's say two developers edit the same <code>app.py</code> file:</p>
+
+            <p><strong>Developer A</strong> changes line 5:</p>
+            <pre><code>def greet(name):
+    return f"Hello, {name}! Welcome to our app."  # Changed by A</code></pre>
+
+            <p><strong>Developer B</strong> changes the same line 5:</p>
+            <pre><code>def greet(name):
+    return f"Hey, {name}! Nice to see you."  # Changed by B</code></pre>
+
+            <p>When Developer A tries to merge Developer B's branch, Git marks the conflict:</p>
+
+            <pre><code>def greet(name):
+<<<<<<< main
+    return f"Hello, {name}! Welcome to our app."
+=======
+    return f"Hey, {name}! Nice to see you."
+>>>>>>> feature/new-greeting</code></pre>
+
+            <h3>Step-by-Step: Resolving Merge Conflicts</h3>
+
+            <pre><code># 1. Try the merge (this will fail with conflicts)
+git checkout main
+git merge feature/new-greeting
+# CONFLICT (content): Merge conflict in app.py
+
+# 2. Find which files have conflicts
+git status
+# Both modified:   app.py
+
+# 3. Open the conflicted file (app.py)
+# Look for the &lt;======= and ======= markers
+# Decide which change to keep, or combine them
+
+# 4. Edit the file to resolve:
+# Option A: Keep Developer A's version (delete B's section)
+# Option B: Keep Developer B's version (delete A's section)
+# Option C: Combine both (write your own resolution)
+
+def greet(name):
+    return f"Hello, {name}! Nice to see you!"  # Combined!
+
+# 5. Mark the conflict as resolved
+git add app.py
+
+# 6. Complete the merge
+git commit -m "Merge feature/new-greeting: combine greeting styles"</code></pre>
+
+            <h3>Pro Tips for Avoiding Conflicts</h3>
+
+            <ol>
+                <li><strong>Pull before you branch:</strong> Always run <code>git pull origin main</code> before creating a new branch. This ensures you start from the latest code.</li>
+                <li><strong>Rebase frequently:</strong> Instead of merging main into your feature branch, rebase to keep a clean, linear history.</li>
+                <li><strong>Communicate:</strong> If you and a teammate are editing the same file, coordinate. A quick Slack message prevents hours of conflict resolution.</li>
+                <li><strong>Small, focused PRs:</strong> The fewer files you change per branch, the lower the conflict risk.</li>
+                <li><strong>Use merge tools:</strong> VS Code, GitHub Desktop, and tools like <code>meld</code> or <code>kdiff3</code> provide visual conflict resolution.</li>
+            </ol>
+
+            <h2>Rebase vs Merge: What's the Difference?</h2>
+
+            <p>Both combine branches, but they do it differently:</p>
+
+            <h3>Merge (Preserves History)</h3>
+            <pre><code># Creates a merge commit that records both histories
+git checkout main
+git merge feature/xyz
+# Result: A "V" shape in your history with a merge commit</code></pre>
+
+            <h3>Rebase (Linear History)</h3>
+            <pre><code># Rewrites your feature branch commits on top of main
+git checkout feature/xyz
+git rebase main
+# Result: A straight line — as if you had worked on the latest main all along
+# Then fast-forward merge:
+git checkout main
+git merge feature/xyz</code></pre>
+
+            <blockquote>
+                <strong>Golden rule of rebasing:</strong> Never rebase commits that you've already pushed to a shared branch. Rebase only your local, unshared work. If you break someone else's history, they will not forgive you.
+            </blockquote>
+
+            <h2>Essential Git Commands for Branching</h2>
+
+            <pre><code># View branch history with a nice tree
+git log --oneline --graph --all
+
+# Compare two branches
+git diff main...feature/xyz
+
+# Stash your uncommitted work (to switch branches cleanly)
+git stash
+git checkout other-branch
+git stash pop  # Retrieve your stashed work
+
+# Abort a messy merge
+git merge --abort
+
+# Reset to a previous state (use with caution!)
+git reset --hard HEAD~1  # Undo last commit
+git reset --soft HEAD~1  # Undo commit but keep changes staged</code></pre>
+
+            <h2>Putting It All Together: A Real Workflow</h2>
+
+            <p>Here's a complete workflow for contributing to a team project:</p>
+
+            <pre><code># 1. Update your local copy
+git checkout main
+git pull origin main
+
+# 2. Create a feature branch with a descriptive name
+git checkout -b feature/add-dark-mode
+
+# 3. Work: edit files, test, commit often
+git add src/theme.js
+git commit -m "Add dark mode toggle component"
+
+git add src/styles.css
+git commit -m "Style dark mode colors"
+
+# 4. Rebase on latest main (keeps history clean)
+git fetch origin
+git rebase origin/main
+
+# 5. Push and create Pull Request
+git push origin feature/add-dark-mode
+# → Go to GitHub, create PR, request review
+
+# 6. After review, squash-merge on GitHub
+# (or handle it locally)
+git checkout main
+git merge --squash feature/add-dark-mode
+git commit -m "Add dark mode support (#42)"
+git branch -d feature/add-dark-mode
+git push origin main</code></pre>
+
+            <h2>Summary</h2>
+
+            <p>Branching is how teams collaborate without chaos. Start simple with the Feature Branch Workflow, and adopt GitFlow if your project grows complex. Always resolve merge conflicts by understanding the changes, not just deleting markers. And remember: a clean git history makes debugging easier six months from now.</p>
+
+            <p><strong>Next up:</strong> Learn how to automate your entire workflow with CI/CD pipelines. Check out our <a href="posts/github-actions-cicd.html">GitHub Actions: CI/CD Pipeline</a> guide.</p>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes | Built with ❤️ & AI</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528" target="_blank">GitHub</a>
+                <a href="https://blog.hugow.dev/sitemap.xml">Sitemap</a>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

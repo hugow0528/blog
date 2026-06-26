@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docker Volumes & Data Persistence: Don't Lose Your Data | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn Docker volumes, bind mounts, and tmpfs for persistent data storage. Save databases, config files, and application state that survives container restarts.">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/docker-volumes-data-persistence.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+                <a href="../devops.html" class="nav-btn">🐳 DevOps</a>
+                <a href="../security.html" class="nav-btn">🔐 Security</a>
+                <a href="../webdev.html" class="nav-btn">💻 Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+        
+        <article class="post-content">
+            <span class="tag devops">DevOps</span>
+            <span class="tag security">Security</span>
+            <h1>Docker Volumes & Data Persistence: Don't Lose Your Data</h1>
+            <time>June 26, 2026 · 12 min read</time>
+
+            <p>Here's the biggest Docker trap for beginners: <strong>everything inside a container is temporary</strong>. When you run <code>docker rm -f mydb</code>, every file, every database record, every config file disappears. Gone forever.</p>
+
+            <p>Docker volumes solve this. They let you store data <em>outside</em> the container, so it survives restarts, upgrades, and even container deletion. This guide covers all three persistence methods: <strong>named volumes</strong>, <strong>bind mounts</strong>, and <strong>tmpfs mounts</strong>.</p>
+
+            <h2>The Problem: Ephemeral Containers</h2>
+
+            <p>Run a database container and create data:</p>
+            <pre><code># Start a Redis container
+docker run --name myredis -d redis:7
+
+# Write data to it
+docker exec myredis redis-cli SET greeting "hello from docker"
+docker exec myredis redis-cli GET greeting
+# "hello from docker"
+
+# Remove the container
+docker rm -f myredis
+
+# Start a fresh container
+docker run --name myredis -d redis:7
+docker exec myredis redis-cli GET greeting
+# (nil)  ← Data is gone!</code></pre>
+
+            <p>This happens because container storage lives on a <strong>temporary filesystem layer</strong>. Remove the container, remove the data. For databases, logs, and uploads — this is a disaster waiting to happen.</p>
+
+            <h2>Solution 1: Named Volumes (Recommended for Databases)</h2>
+
+            <p>Named volumes are Docker-managed storage. Docker stores them in <code>/var/lib/docker/volumes/</code> on Linux. You reference them by name — Docker handles the rest.</p>
+
+            <h3>Create and use a named volume</h3>
+            <pre><code># Create a named volume (Docker manages it)
+docker volume create redis_data
+
+# Mount it to the container
+docker run --name myredis \
+    -d \
+    -v redis_data:/data \
+    redis:7
+
+# Write data
+docker exec myredis redis-cli SET greeting "hello again"
+
+# Remove and recreate the container
+docker rm -f myredis
+
+docker run --name myredis \
+    -d \
+    -v redis_data:/data \
+    redis:7
+
+# Data is still there!
+docker exec myredis redis-cli GET greeting
+# "hello again"  ✅</code></pre>
+
+            <p>The <code>-v redis_data:/data</code> flag maps the named volume <code>redis_data</code> to the <code>/data</code> path inside the container. Docker creates the volume automatically if it doesn't exist.</p>
+
+            <h3>Manage volumes</h3>
+            <pre><code># List all volumes
+docker volume ls
+# local   redis_data
+
+# Inspect a volume (see mount location)
+docker volume inspect redis_data
+# "Mountpoint": "/var/lib/docker/volumes/redis_data/_data"
+
+# Remove unused volumes
+docker volume prune
+
+# Remove a specific volume
+docker volume rm redis_data</code></pre>
+
+            <h3>Share data between containers</h3>
+            <pre><code># Container 1 writes data
+docker run --name writer \
+    -v shared_data:/shared \
+    -d alpine sh -c "echo 'from writer' > /shared/data.txt && sleep 3600"
+
+# Container 2 reads the same data
+docker run --name reader \
+    -v shared_data:/shared \
+    alpine cat /shared/data.txt
+# from writer</code></pre>
+
+            <h2>Solution 2: Bind Mounts (For Development)</h2>
+
+            <p>Bind mounts map a <strong>specific host directory</strong> into the container. You pick the exact path. This is perfect for development — edit code on your host, see changes instantly in the container.</p>
+
+            <pre><code># Mount your project directory
+docker run --name webapp \
+    -p 8080:8080 \
+    -v $(pwd)/app:/usr/src/app \
+    -v $(pwd)/app/node_modules:/usr/src/app/node_modules \
+    node:20-alpine \
+    sh -c "cd /usr/src/app && npm start"</code></pre>
+
+            <p>Now any file change in your local <code>app/</code> directory is visible inside the container immediately. No rebuild needed.</p>
+
+            <h3>Bind mount with docker-compose.yml</h3>
+            <pre><code>services:
+  webapp:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./src:/usr/src/app      # Mount source code
+      - node_modules:/usr/src/app/node_modules  # Named vol for deps
+    environment:
+      - NODE_ENV=development
+
+volumes:
+  node_modules:</code></pre>
+
+            <p><strong>Why use a named volume for node_modules?</strong> Because if you bind mount <code>./src</code>, your host's <code>node_modules</code> (built for your OS) would overwrite the container's (built for Linux), breaking things. The named volume keeps dependencies container-native.</p>
+
+            <h2>Solution 3: tmpfs Mounts (In-Memory, for Secrets)</h3>
+
+            <p>tmpfs mounts store data in <strong>RAM only</strong> — fast, but lost when the container stops. Perfect for sensitive data like passwords, API keys, or temporary session data.</p>
+
+            <pre><code># Mount /secrets as tmpfs (in RAM, not on disk)
+docker run --name secure_app \
+    --tmpfs /secrets:rw,noexec,nosuid,size=100m \
+    my-app:latest</code></pre>
+
+            <p>Benefits:</p>
+            <ul>
+                <li><strong>No disk writes</strong> — secrets never touch the filesystem</li>
+                <li><strong>Auto-deleted</strong> — data gone when container stops</li>
+                <li><strong>Fast</strong> — RAM is faster than disk</li>
+            </ul>
+
+            <h2>Comparison: When to Use What</h2>
+
+            <pre><code>┌──────────────────┬──────────────┬──────────────┬──────────────┐
+│                  │ Named Volume │ Bind Mount   │ tmpfs Mount  │
+├──────────────────┼──────────────┼──────────────┼──────────────┤
+│ Managed by       │ Docker       │ You          │ Docker       │
+│ Persistence      │ ✅ Persistent│ ✅ Persistent│ ❌ In-memory │
+│ Best for         │ Databases    │ Dev source   │ Secrets      │
+│ Backup           │ docker cp    │ cp on host   │ N/A          │
+│ Cross-platform   │ ✅ Yes       │ ⚠️ Path diffs│ ✅ Yes       │
+│ Performance      │ Good         │ Good         │ Best (RAM)   │
+└──────────────────┴──────────────┴──────────────┴──────────────┘</code></pre>
+
+            <h2>Real-World Example: Full-Stack App with Docker Compose</h2>
+
+            <p>Let's build a complete app stack with proper data persistence:</p>
+            <pre><code># docker-compose.yml
+services:
+  # Web app
+  web:
+    build: ./web
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./web/src:/app/src        # Live code reload
+      - uploads:/app/uploads      # User file uploads
+    depends_on:
+      - db
+      - cache
+    environment:
+      - DATABASE_URL=postgresql://user:pass@db:5432/myapp
+      - REDIS_URL=redis://cache:6379
+
+  # PostgreSQL database
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: myapp
+    volumes:
+      - pgdata:/var/lib/postgresql/data   # Persistent DB
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql  # Seed data
+    ports:
+      - "5432:5432"
+
+  # Redis cache
+  cache:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+
+volumes:
+  pgdata:         # Database files survive restarts
+  redis_data:     # Cache survives restarts
+  uploads:        # User uploads survive restarts</code></pre>
+
+            <p>Create a seed script <code>db/init.sql</code>:</p>
+            <pre><code>-- db/init.sql
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+INSERT INTO users (name, email) VALUES
+    ('Hugo', 'hugo@example.com'),
+    ('Alice', 'alice@example.com');</code></pre>
+
+            <p>Start everything:</p>
+            <pre><code>docker compose up -d
+
+# Check all containers are running
+docker compose ps
+# NAME      STATUS    PORTS
+# web       Up        0.0.0.0:3000->3000
+# db        Up        0.0.0.0:5432->5432
+# cache     Up        0.0.0.0:6379->6379
+
+# Test database connection
+docker compose exec db psql -U user -d myapp -c "SELECT * FROM users;"
+
+# Stop and restart — data survives
+docker compose down
+docker compose up -d
+docker compose exec db psql -U user -d myapp -c "SELECT count(*) FROM users;"
+# count = 2  ✅</code></pre>
+
+            <h2>Back Up and Restore Volumes</h2>
+
+            <p>Named volumes need backups too. Here's how:</p>
+
+            <h3>Backup a volume</h3>
+            <pre><code># Backup PostgreSQL volume to a tar file
+docker run --rm \
+    -v pgdata:/db \
+    -v $(pwd):/backup \
+    alpine \
+    tar czf /backup/pg_backup_$(date +%Y%m%d).tar.gz -C /db .
+
+# Check the backup
+ls -lh pg_backup_*.tar.gz
+# -rw-r--r-- 1 user user 2.4M Jun 26 pg_backup_20260626.tar.gz</code></pre>
+
+            <h3>Restore a volume</h3>
+            <pre><code># Stop containers using the volume
+docker compose down
+
+# Remove existing volume
+docker volume rm pgdata
+
+# Restore from backup
+docker run --rm \
+    -v pgdata:/db \
+    -v $(pwd):/backup \
+    alpine \
+    sh -c "cd /db && tar xzf /backup/pg_backup_20260626.tar.gz"
+
+# Restart
+docker compose up -d</code></pre>
+
+            <h3>Automated daily backups</h3>
+
+            <p>Create <code>backup.sh</code>:</p>
+            <pre><code>#!/bin/bash
+BACKUP_DIR="$HOME/docker-backups"
+DATE=$(date +%Y%m%d_%H%M%S)
+
+mkdir -p "$BACKUP_DIR"
+
+# Backup PostgreSQL
+docker run --rm \
+    -v pgdata:/db \
+    -v "$BACKUP_DIR":/backup \
+    alpine tar czf "/backup/pg_$DATE.tar.gz" -C /db .
+
+# Backup Redis
+docker run --rm \
+    -v redis_data:/data \
+    -v "$BACKUP_DIR":/backup \
+    alpine tar czf "/backup/redis_$DATE.tar.gz" -C /data .
+
+# Keep only last 7 days
+find "$BACKUP_DIR" -name "*.tar.gz" -mtime +7 -delete
+
+echo "✅ Backed up at $DATE"</code></pre>
+
+            <p>Add to crontab for daily backups at 2 AM:</p>
+            <pre><code>0 2 * * * /path/to/backup.sh >> /var/log/docker-backup.log 2>&1</code></pre>
+
+            <h2>Volume Permissions: The #1 Gotcha</h2>
+
+            <p>Permission errors are the most common volume issue. Docker containers often run as <code>root</code> (UID 0), but your host directory might be owned by your user (UID 1000).</p>
+
+            <pre><code># The error you'll see:
+# EACCES: permission denied, open '/usr/src/app/config.yml'
+
+# Fix: Set the correct ownership
+sudo chown -R 1000:1000 ./my-project
+
+# Or run the container with matching UID
+docker run -u $(id -u):$(id -g) -v $(pwd):/app myapp
+
+# In docker-compose.yml:
+services:
+  web:
+    user: "${UID:-1000}:${GID:-1000}"
+    volumes:
+      - .:/app</code></pre>
+
+            <h2>Docker Volume Drivers</h2>
+
+            <p>Docker supports volume drivers for advanced scenarios:</p>
+            <pre><code># Local driver (default)
+docker volume create --driver local my_vol
+
+# NFS driver for shared storage across hosts
+docker volume create --driver local \
+    --opt type=nfs \
+    --opt o=addr=192.168.1.100,rw \
+    --opt device=:/srv/nfs \
+    nfs_shared
+
+# AWS EBS driver (via Docker plugin)
+docker volume create --driver ebs my_ebs_vol</code></pre>
+
+            <blockquote>
+                <strong>Rule of thumb:</strong> Use named volumes for databases and any data you can't afford to lose. Use bind mounts for development code. Use tmpfs for secrets and temporary data.
+            </blockquote>
+
+            <h2>Quick Commands Reference</h2>
+
+            <pre><code># Volume basics
+docker volume create my_vol         # Create
+docker volume ls                     # List all
+docker volume inspect my_vol        # Details + location
+docker volume rm my_vol             # Remove one
+docker volume prune                 # Remove all unused
+
+# Container with volume
+docker run -v my_vol:/data container  # Named volume
+docker run -v ./host:/data container   # Bind mount
+docker run --tmpfs /tmp container      # In-memory
+
+# Backup
+docker run --rm -v my_vol:/src -v $(pwd):/dst alpine tar czf /dst/backup.tar.gz -C /src .
+
+# Docker Compose
+docker compose up -d                 # Start with volumes
+docker compose down -v              # Stop AND remove volumes!</code></pre>
+
+            <h2>Next Steps</h2>
+            <ul>
+                <li>Learn <a href="posts/docker-compose.html">Docker Compose</a> for multi-container apps</li>
+                <li>Explore <a href="posts/docker-networking-builds.html">Docker networking and multi-stage builds</a></li>
+                <li>Set up <a href="posts/github-actions-cicd.html">CI/CD with GitHub Actions</a> to deploy Docker images</li>
+            </ul>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes. Built with vibe coding.</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528" target="_blank">GitHub</a>
+                <a href="https://blog.hugow.dev/sitemap.xml">Sitemap</a>
+            </div>
+        </div>
+    </footer>
+
+    <button class="back-to-top" id="backToTop" title="Back to top">↑</button>
+
+    <script>
+    const themeToggle = document.getElementById('themeToggle');
+    themeToggle.addEventListener('click', () => {
+        document.body.classList.toggle('dark-mode');
+        themeToggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+        localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+    });
+    if (localStorage.getItem('theme') === 'dark') {
+        document.body.classList.add('dark-mode');
+        themeToggle.textContent = '☀️';
+    }
+    const backToTop = document.getElementById('backToTop');
+    window.addEventListener('scroll', () => {
+        backToTop.style.display = window.pageYOffset > 300 ? 'block' : 'none';
+        const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+        const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        const scrolled = (winScroll / height) * 100;
+        document.getElementById('progressBar').style.width = scrolled + '%';
+    });
+    backToTop.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+    </script>
+</body>
+</html>

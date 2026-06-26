@@ -7,6 +7,54 @@
       <priority>1.0</priority>
    </url>
    <url>
+      <loc>https://blog.hugow.dev/posts/terraform-modules-reusability.html</loc>
+      <lastmod>2026-06-26</lastmod>
+      <changefreq>monthly</changefreq>
+      <priority>0.8</priority>
+   </url>
+   <url>
+      <loc>https://blog.hugow.dev/posts/git-hooks-pre-commit.html</loc>
+      <lastmod>2026-06-26</lastmod>
+      <changefreq>monthly</changefreq>
+      <priority>0.8</priority>
+   </url>
+   <url>
+      <loc>https://blog.hugow.dev/posts/python-packaging-publishing.html</loc>
+      <lastmod>2026-06-26</lastmod>
+      <changefreq>monthly</changefreq>
+      <priority>0.8</priority>
+   </url>
+   <url>
+      <loc>https://blog.hugow.dev/posts/docker-volumes-data-persistence.html</loc>
+      <lastmod>2026-06-26</lastmod>
+      <changefreq>monthly</changefreq>
+      <priority>0.8</priority>
+   </url>
+   <url>
+      <loc>https://blog.hugow.dev/posts/python-list-comprehensions.html</loc>
+      <lastmod>2026-06-25</lastmod>
+      <changefreq>monthly</changefreq>
+      <priority>0.8</priority>
+   </url>
+   <url>
+      <loc>https://blog.hugow.dev/posts/terraform-state-remote-backends.html</loc>
+      <lastmod>2026-06-25</lastmod>
+      <changefreq>monthly</changefreq>
+      <priority>0.8</priority>
+   </url>
+   <url>
+      <loc>https://blog.hugow.dev/posts/python-testing-pytest.html</loc>
+      <lastmod>2026-06-25</lastmod>
+      <changefreq>monthly</changefreq>
+      <priority>0.8</priority>
+   </url>
+   <url>
+      <loc>https://blog.hugow.dev/posts/cloudflare-pages.html</loc>
+      <lastmod>2026-06-25</lastmod>
+      <changefreq>monthly</changefreq>
+      <priority>0.8</priority>
+   </url>
+   <url>
       <loc>https://blog.hugow.dev/posts/python-modules-packages.html</loc>
       <lastmod>2026-06-25</lastmod>
       <changefreq>monthly</changefreq>

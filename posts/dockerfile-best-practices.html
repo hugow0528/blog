@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dockerfile Best Practices: Build Smaller, Faster, Secure Images | Hugo's Dev Notes</title>
+    <meta name="description" content="Master Dockerfile best practices — multi-stage builds, image optimization, security scanning, and proven patterns for production-ready Docker images.">
+    <meta name="keywords" content="dockerfile best practices, docker image optimization, multi-stage build, docker security, container image size, devops">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/dockerfile-best-practices.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+                <a href="../devops.html" class="nav-btn">🐳 DevOps</a>
+                <a href="../security.html" class="nav-btn">🔐 Security</a>
+                <a href="../webdev.html" class="nav-btn">💻 Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+        
+        <article class="post-content">
+            <span class="tag devops">DevOps</span>
+            <h1>Dockerfile Best Practices: Build Smaller, Faster, Secure Images</h1>
+            <time>June 26, 2026 · 12 min read</time>
+
+            <p>You've learned Docker basics and Docker Compose. Now you need to write <strong>Dockerfiles</strong> that actually work well in production. A bad Dockerfile gives you bloated 1.5 GB images that take forever to build and push. A great one gives you a 45 MB image that deploys in seconds.</p>
+
+            <p>This guide covers proven Dockerfile best practices with real before/after examples — multi-stage builds, layer caching, security hardening, and image optimization techniques used by teams running containers in production.</p>
+
+            <h2>1. Start with the Right Base Image</h2>
+
+            <p>The base image is the foundation of everything. Choose wisely — your image size and security start here.</p>
+
+            <p><strong>Use minimal base images:</strong></p>
+
+            <pre><code># ❌ BAD — 800 MB just for the base image
+FROM python:3.11
+
+# ✅ GOOD — 130 MB
+FROM python:3.11-slim
+
+# ✅ BEST for production — 45 MB
+FROM python:3.11-alpine</code></pre>
+
+            <p>Python image sizes:</p>
+            <ul>
+                <li><code>python:3.11</code> — 894 MB (full Ubuntu)</li>
+                <li><code>python:3.11-slim</code> — 130 MB (minimal Debian)</li>
+                <li><code>python:3.11-alpine</code> — 45 MB (Alpine Linux)</li>
+            </ul>
+
+            <p><strong>Always pin exact versions</strong> instead of using <code>latest</code> tags. Reproducible builds are non-negotiable in production:</p>
+
+            <pre><code># ❌ BAD — non-deterministic, breaks at any time
+FROM python:latest
+FROM node:18
+
+# ✅ GOOD — pinned to exact digests or versions
+FROM python@sha256:abc123...
+FROM python:3.11.7-slim</code></pre>
+
+            <h2>2. Multi-Stage Builds: Keep Only What You Need</h2>
+
+            <p>Multi-stage builds let you compile or install dependencies in one stage and copy only the final artifacts into a lean runtime image. This is the #1 technique for reducing image size.</p>
+
+            <p><strong>Before (single stage, bloated):</strong></p>
+
+            <pre><code>FROM python:3.11
+WORKDIR /app
+
+# Installs build tools (gcc, make, etc.) permanently
+RUN apt-get update && apt-get install -y \
+    gcc \
+    libpq-dev \
+    build-essential
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+CMD ["python", "app.py"]</code></pre>
+
+            <p><strong>After (multi-stage, 80% smaller):</strong></p>
+
+            <pre><code># Stage 1: Builder — install dependencies + compile
+FROM python:3.11-slim AS builder
+WORKDIR /build
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc libpq-dev && rm -rf /var/lib/apt/lists/*
+COPY requirements.txt .
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+# Stage 2: Runtime — copy only compiled packages
+FROM python:3.11-slim
+WORKDIR /app
+COPY --from=builder /install /usr/local
+COPY . .
+CMD ["python", "app.py"]</code></pre>
+
+            <p>The final image contains <strong>only</strong> the Python runtime and your compiled packages — no compilers, no build tools, no extra OS packages. Typical reduction: 894 MB → 150 MB.</p>
+
+            <p><strong>Go example (even more dramatic):</strong></p>
+
+            <pre><code># Stage 1: Compile the Go binary
+FROM golang:1.22 AS builder
+WORKDIR /build
+COPY go.mod go.sum .
+RUN go mod download
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -o /app
+
+# Stage 2: Run the compiled binary in a scratch image
+FROM scratch
+COPY --from=builder /app /app
+EXPOSE 8080
+CMD ["/app"]</code></pre>
+
+            <p>The final image is just your compiled binary — no OS, no shell, no runtime. Typically 10-15 MB instead of 800+ MB.</p>
+
+            <h2>3. Leverage Layer Caching for Faster Builds</h2>
+
+            <p>Docker caches each <code>FROM</code>, <code>COPY</code>, and <code>RUN</code> layer. If a layer hasn't changed, Docker skips rebuilding it. The trick is to <strong>order your commands</strong> from least-changing to most-changing.</p>
+
+            <pre><code># ✅ GOOD — dependencies rarely change, cache is reused
+FROM python:3.11-slim
+WORKDIR /app
+
+# Layer 1: Change only when dependencies change (cached most of the time)
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Layer 2: Changes every time you code (always rebuilt, but fast)
+COPY . .
+
+CMD ["python", "app.py"]
+
+---
+
+# ❌ BAD — code changes invalidate the pip install cache every time
+FROM python:3.11-slim
+WORKDIR /app
+
+COPY . .
+RUN pip install --no-cache-dir -r requirements.txt
+
+CMD ["python", "app.py"]</code></pre>
+
+            <p><strong>Real-world impact:</strong> With the good ordering, your daily code changes take 2 seconds to build (just COPY). With bad ordering, every change triggers a full <code>pip install</code> that takes 30-60 seconds.</p>
+
+            <p><strong>Advanced tip — hash-based caching:</strong> For Node.js projects, copy only the lockfile to get maximum cache hits:</p>
+
+            <pre><code>FROM node:20-alpine
+WORKDIR /app
+
+# Only reinstall when package.json or package-lock.json changes
+COPY package.json package-lock.json ./
+RUN npm ci --production
+
+# Install dev dependencies in a separate layer for testing
+COPY package.json package-lock.json ./
+RUN npm ci
+
+COPY . .
+RUN npm run build
+
+CMD ["npm", "start"]</code></pre>
+
+            <h2>4. Keep Images Small with Clean Commands</h2>
+
+            <p>Each <code>RUN</code> command creates a new layer. Combine related commands and clean up in the <strong>same</strong> layer to avoid wasting space.</p>
+
+            <pre><code># ❌ BAD — each RUN creates a layer with the packages staying
+RUN apt-get update
+RUN apt-get install -y curl
+RUN apt-get install -y git
+RUN curl -sL https://deb.nodesource.com/setup_20.x | bash -
+RUN apt-get install -y nodejs
+
+# ✅ GOOD — one layer, cleaned up before committing
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    git \
+    ca-certificates \
+    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
+    && apt-get purge -y --auto-remove curl git \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*</code></pre>
+
+            <p>Notice the <code>&&</code> chaining — all commands run in a single layer, and cleanup happens before the layer is committed. The temporary files never end up in your image.</p>
+
+            <h2>5. Security Hardening for Production</h2>
+
+            <p>Running containers as root is the #1 Docker security anti-pattern. Here's how to lock down your images:</p>
+
+            <h3>Create a Non-Root User</h3>
+
+            <pre><code>FROM python:3.11-slim
+WORKDIR /app
+
+# Create a dedicated user and group
+RUN groupadd -r appuser && useradd -r -g appuser -d /app -s /sbin/nologin appuser
+
+# Copy files and set ownership
+COPY --chown=appuser:appuser . .
+
+# Switch to the non-root user
+USER appuser
+
+CMD ["python", "app.py"]</code></pre>
+
+            <h3>Set Read-Only Root Filesystem</h3>
+
+            <p>At runtime, mount the root filesystem as read-only (via Docker run or Docker Compose):</p>
+
+            <pre><code># Docker Compose example
+services:
+  app:
+    build: .
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /app/cache
+    volumes:
+      - ./data:/app/data:ro</code></pre>
+
+            <h3>Scan for Vulnerabilities</h3>
+
+            <p>Add vulnerability scanning to your pipeline. <code>trivy</code> is a free, fast scanner:</p>
+
+            <pre><code># In CI/CD
+docker build -t myapp:latest .
+trivy image --severity HIGH,CRITICAL myapp:latest
+
+# Or integrate in pre-commit or GitHub Actions
+- name: Scan image
+  uses: aquasecurity/trivy-action@master
+  with:
+    image-ref: 'myapp:latest'
+    format: 'table'
+    exit-code: '1'
+    severity: 'HIGH,CRITICAL'</code></pre>
+
+            <h2>6. Use .dockerignore to Exclude Unnecessary Files</h2>
+
+            <p>Just like <code>.gitignore</code>, a <code>.dockerignore</code> file prevents unnecessary files from being sent to the Docker daemon. This speeds up builds and keeps images clean.</p>
+
+            <pre><code># .dockerignore
+.git
+.gitignore
+*.md
+.env
+.venv
+__pycache__
+*.pyc
+node_modules
+.dockerignore
+Dockerfile
+docker-compose.yml
+tests/
+.venv/
+.vscode/
+.idea/</code></pre>
+
+            <p>Without this, Docker sends <strong>everything</strong> in your build context — including your .git directory, virtual environments, and test files — potentially adding hundreds of megabytes to the build.</p>
+
+            <h2>7. HEALTHCHECK for Production Reliability</h2>
+
+            <p>Add a health check so Docker (and your orchestrator) knows if your container is actually working:</p>
+
+            <pre><code>FROM python:3.11-slim
+WORKDIR /app
+COPY . .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Health check — Docker restarts the container if this fails 3 times
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+CMD ["python", "app.py"]</code></pre>
+
+            <h2>Complete Production Dockerfile Example</h2>
+
+            <p>Here's a full Dockerfile combining all these best practices for a Python Flask API:</p>
+
+            <pre><code># Build stage
+FROM python:3.11-slim AS builder
+WORKDIR /build
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc libpq-dev && rm -rf /var/lib/apt/lists/*
+COPY requirements.txt .
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+# Runtime stage
+FROM python:3.11-slim
+
+# Security: non-root user
+RUN groupadd -r appuser && useradd -r -g appuser -d /app -s /sbin/nologin appuser
+
+WORKDIR /app
+COPY --from=builder /install /usr/local
+COPY --chown=appuser:appuser . .
+
+# Environment
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PORT=8000
+
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
+
+USER appuser
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "4", "app:app"]</code></pre>
+
+            <h2>Quick Reference: Dockerfile Checklist</h2>
+
+            <table class="table">
+                <thead>
+                    <tr><th>Practice</th><th>Why</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Use minimal base images</td><td>Smaller, faster, less attack surface</td></tr>
+                    <tr><td>Pin exact image versions</td><td>Reproducible builds</td></tr>
+                    <tr><td>Multi-stage builds</td><td>Remove build tools from runtime</td></tr>
+                    <tr><td>Order layers least-changing first</td><td>Faster builds via caching</td></tr>
+                    <tr><td>Combine RUN commands + clean up</td><td>Smaller final image</td></tr>
+                    <tr><td>Use .dockerignore</td><td>Faster context transfer</td></tr>
+                    <tr><td>Non-root USER</td><td>Security hardening</td></tr>
+                    <tr><td>Add HEALTHCHECK</td><td>Production reliability</td></tr>
+                    <tr><td>Scan for vulnerabilities</td><td>Catch CVEs before deploy</td></tr>
+                    <tr><td>Use --no-install-recommends</td><td>Avoid unnecessary packages</td></tr>
+                </tbody>
+            </table>
+
+            <h2>Next Steps</h2>
+
+            <p>Check out the related tutorials:</p>
+            <ul>
+                <li><a href="docker-basics.html">Docker Basics</a> — Containers and images fundamentals</li>
+                <li><a href="docker-compose.html">Docker Compose</a> — Multi-container applications</li>
+                <li><a href="docker-networking-builds.html">Docker Networking & Multi-Stage Builds</a> — Networks and advanced builds</li>
+                <li><a href="docker-volumes-data-persistence.html">Docker Volumes & Data Persistence</a> — Save your data</li>
+            </ul>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes. Built with 🤖 and ☕</p>
+        </div>
+    </footer>
+
+    <script>
+        // Progress bar
+        window.onscroll = function() {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            document.getElementById("progressBar").style.width = (winScroll / height) * 100 + "%";
+        };
+
+        // Dark mode toggle
+        const toggle = document.getElementById('themeToggle');
+        toggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            toggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+            localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+        });
+        if (localStorage.getItem('darkMode') === 'true') {
+            document.body.classList.add('dark-mode');
+            toggle.textContent = '☀️';
+        }
+    </script>
+</body>
+</html>

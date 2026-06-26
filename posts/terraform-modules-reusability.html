@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terraform Modules & Reusable Infrastructure: Stop Copy-Pasting Code | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn Terraform modules — reusable, parameterized infrastructure blocks. Build your own modules, use public modules, and share code across teams.">
+    <meta name="keywords" content="terraform modules, terraform registry, infrastructure reuse, terraform best practices, iac, devops">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/terraform-modules-reusability.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+                <a href="../devops.html" class="nav-btn">🐳 DevOps</a>
+                <a href="../security.html" class="nav-btn">🔐 Security</a>
+                <a href="../webdev.html" class="nav-btn">💻 Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+        
+        <article class="post-content">
+            <span class="tag devops">DevOps</span>
+            <h1>Terraform Modules & Reusable Infrastructure: Stop Copy-Pasting Code</h1>
+            <time>June 26, 2026 · 11 min read</time>
+
+            <p>You've learned Terraform basics and created some infrastructure. Now you notice a pattern: <strong>you keep writing the same VPC, the same S3 bucket, the same EC2 instance</strong> across different projects. Copy-pasting infrastructure code is a recipe for bugs, drift, and maintenance nightmares.</p>
+
+            <p>Terraform <strong>modules</strong> solve this. They let you package infrastructure into reusable, parameterized blocks — like functions in Python, but for your cloud resources. This guide walks you through building your own modules, using the public registry, and structuring modules for real teams.</p>
+
+            <h2>What Is a Terraform Module?</h2>
+
+            <p>A Terraform module is a self-contained set of <code>.tf</code> files that define infrastructure. Every Terraform configuration is technically a module — even a single <code>main.tf</code> file is called the <strong>root module</strong>. The real power comes when you <em>call</em> one module from another.</p>
+
+            <blockquote>
+                <p><strong>Think of it like Python imports:</strong> just as <code>import requests</code> gives you HTTP functionality without writing it yourself, a Terraform module gives you complete infrastructure blocks without duplicating the definition.</p>
+            </blockquote>
+
+            <h3>The Problem Without Modules</h3>
+
+            <pre><code># Project A: main.tf
+resource "aws_s3_bucket" "data" {
+  bucket = "my-project-a-data"
+  tags = {
+    Environment = "production"
+    Owner       = "team-frontend"
+  }
+}
+
+# Project B: main.tf (copy-pasted!)
+resource "aws_s3_bucket" "data" {
+  bucket = "my-project-b-data"
+  tags = {
+    Environment = "production"
+    Owner       = "team-backend"  # Different owner, but everything else the same
+  }
+}</code></pre>
+
+            <p>Now imagine you need to add versioning, encryption, and lifecycle rules to every bucket. You'd have to edit <em>every single copy</em>. Modules centralize this.</p>
+
+            <h2>Creating Your First Module</h2>
+
+            <p>Let's build a reusable S3 bucket module. Create this directory structure:</p>
+
+            <pre><code>modules/
+└── s3_bucket/
+    ├── main.tf
+    ├── variables.tf
+    └── outputs.tf</code></pre>
+
+            <h3>Step 1: Define Inputs (<code>variables.tf</code>)</h3>
+
+            <pre><code># modules/s3_bucket/variables.tf
+variable "bucket_name" {
+  description = "Name of the S3 bucket"
+  type        = string
+}
+
+variable "tags" {
+  description = "Tags to apply to the bucket"
+  type        = map(string)
+  default     = {}
+}
+
+variable "enable_versioning" {
+  description = "Enable versioning on the bucket"
+  type        = bool
+  default     = true
+}
+
+variable "enable_encryption" {
+  description = "Enable server-side encryption"
+  type        = bool
+  default     = true
+}</code></pre>
+
+            <h3>Step 2: Write the Resources (<code>main.tf</code>)</h3>
+
+            <pre><code># modules/s3_bucket/main.tf
+resource "aws_s3_bucket" "this" {
+  bucket = var.bucket_name
+
+  tags = merge(var.tags, {
+    ManagedBy = "terraform"
+    Module    = "s3_bucket"
+  })
+}
+
+resource "aws_s3_bucket_versioning" "this" {
+  count = var.enable_versioning ? 1 : 0
+
+  bucket = aws_s3_bucket.this.id
+
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "this" {
+  count = var.enable_encryption ? 1 : 0
+
+  bucket = aws_s3_bucket.this.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "aws:kms"
+    }
+  }
+}</code></pre>
+
+            <h3>Step 3: Define Outputs (<code>outputs.tf</code>)</h3>
+
+            <pre><code># modules/s3_bucket/outputs.tf
+output "bucket_id" {
+  description = "The ID of the S3 bucket"
+  value       = aws_s3_bucket.this.id
+}
+
+output "bucket_arn" {
+  description = "The ARN of the S3 bucket"
+  value       = aws_s3_bucket.this.arn
+}
+
+output "bucket_domain_name" {
+  description = "The domain name of the bucket"
+  value       = aws_s3_bucket.this.bucket_domain_name
+}</code></pre>
+
+            <h2>Using Your Module</h2>
+
+            <p>Now call this module from your root configuration:</p>
+
+            <pre><code># main.tf
+module "frontend_bucket" {
+  source = "./modules/s3_bucket"
+
+  bucket_name = "my-frontend-assets-prod"
+  tags = {
+    Environment = "production"
+    Owner       = "team-frontend"
+  }
+  enable_versioning = true
+}
+
+module "backend_bucket" {
+  source = "./modules/s3_bucket"
+
+  bucket_name = "my-backend-data-prod"
+  tags = {
+    Environment = "production"
+    Owner       = "team-backend"
+  }
+  enable_versioning = true
+  enable_encryption = true
+}</code></pre>
+
+            <p>Two buckets, one module definition. Add logging support? Edit <em>one file</em>. Want to remove versioning for a test bucket? Override the variable for just that instance.</p>
+
+            <h3>Accessing Module Outputs</h3>
+
+            <pre><code># Use outputs from your modules
+resource "aws_cloudfront_distribution" "cdn" {
+  origin {
+    domain_name = module.frontend_bucket.bucket_domain_name
+    origin_id   = module.frontend_bucket.bucket_id
+  }
+}</code></pre>
+
+            <h2>Using the Terraform Public Registry</h2>
+
+            <p>You don't always need to write your own modules. The <a href="https://registry.terraform.io" target="_blank">Terraform Registry</a> has thousands of community-built modules.</p>
+
+            <pre><code># Use a popular VPC module from the registry
+module "vpc" {
+  source  = "terraform-aws-modules/vpc/aws"
+  version = "5.1.0"
+
+  name = "my-vpc"
+  cidr = "10.0.0.0/16"
+
+  azs             = ["us-east-1a", "us-east-1b", "us-east-1c"]
+  private_subnets = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+  public_subnets  = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"]
+
+  enable_nat_gateway = true
+  single_nat_gateway = true
+
+  tags = {
+    Terraform   = "true"
+    Environment = "production"
+  }
+}</code></pre>
+
+            <p>This single module call creates a VPC with public/private subnets, NAT gateway, internet gateway, and route tables. What would be 200+ lines becomes 20.</p>
+
+            <h3>Module Sources: Where Can Modules Come From?</h3>
+
+            <pre><code># Local path
+module "local" {
+  source = "./modules/s3_bucket"
+}
+
+# Terraform Registry
+module "registry" {
+  source  = "terraform-aws-modules/vpc/aws"
+  version = "5.1.0"
+}
+
+# GitHub
+module "github" {
+  source = "git::https://github.com/org/module.git?ref=v1.0.0"
+}
+
+# Git with subdirectory
+module "git_subdir" {
+  source = "git::https://github.com/org/modules.git//networking?ref=v2.0.0"
+}
+
+# HTTP archive
+module "http" {
+  source = "https://example.com/modules/vpc.zip"
+}</code></pre>
+
+            <h2>Module Design Best Practices</h2>
+
+            <h3>1. Keep Modules Focused (Single Responsibility)</h3>
+            <p>Each module should do <em>one thing well</em>. An S3 module handles S3. A VPC module handles networking. Don't mix concerns — that's how you get unmaintainable mega-modules.</p>
+
+            <h3>2. Use Sensitive Variables Properly</h3>
+            <pre><code>variable "db_password" {
+  description = "Database master password"
+  type        = string
+  sensitive   = true  # Won't show in terraform plan output
+}</code></pre>
+
+            <h3>3. Version Your Modules</h3>
+            <p>Always pin versions for registry modules. For local modules, use Git tags:</p>
+            <pre><code># Pin to a specific version
+module "vpc" {
+  source  = "terraform-aws-modules/vpc/aws"
+  version = "~> 5.0"  # >= 5.0.0, < 6.0.0
+}
+
+# Use Git tag for self-hosted modules
+module "network" {
+  source = "git::https://github.com/myorg/infra-modules.git?ref=v1.2.0"
+}</code></pre>
+
+            <h3>4. Write Readme Files</h3>
+            <p>Every module deserves a <code>README.md</code> with inputs, outputs, and an example. This is non-negotiable for team usage.</p>
+
+            <h3>5. Test With Terraform Validate</h3>
+            <pre><code># Validate syntax without applying
+terraform init
+terraform validate
+
+# Validate a specific module
+terraform init -backend=false
+cd modules/s3_bucket
+terraform validate</code></pre>
+
+            <h2>Real-World Module Structure for Teams</h2>
+
+            <p>Here's how production teams typically organize their Terraform code:</p>
+
+            <pre><code>infrastructure/
+├── modules/
+│   ├── vpc/
+│   ├── s3_bucket/
+│   ├── rds/
+│   └── ec2/
+├── environments/
+│   ├── dev/
+│   │   ├── main.tf
+│   │   ├── variables.tf
+│   │   └── terraform.tfvars
+│   ├── staging/
+│   │   ├── main.tf
+│   │   ├── variables.tf
+│   │   └── terraform.tfvars
+│   └── prod/
+│       ├── main.tf
+│       ├── variables.tf
+│       └── terraform.tfvars
+├── .gitignore
+└── README.md</code></pre>
+
+            <p>Each environment calls the same modules with different configurations. Change the module, and all environments get the improvement.</p>
+
+            <h3>Example: Dev Environment</h3>
+
+            <pre><code># environments/dev/main.tf
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+
+provider "aws" {
+  region = var.aws_region
+}
+
+module "vpc" {
+  source = "../../modules/vpc"
+
+  environment       = "dev"
+  cidr              = "10.0.0.0/16"
+  instance_count    = 1
+  enable_nat        = false  # Save money in dev
+}
+
+module "app_bucket" {
+  source = "../../modules/s3_bucket"
+
+  bucket_name        = "myapp-dev-assets"
+  enable_versioning  = false  # Don't need history in dev
+  enable_encryption  = true
+}</code></pre>
+
+            <h2>Module Dependencies and Count</h3>
+
+            <p>Sometimes you need a variable number of resources. Combine <code>count</code> with module calls:</p>
+
+            <pre><code># Create 3 S3 buckets from a list
+locals {
+  bucket_names = ["uploads", "exports", "backups"]
+}
+
+module "buckets" {
+  source = "./modules/s3_bucket"
+  count  = length(local.bucket_names)
+
+  bucket_name       = "${var.project}-${local.bucket_names[count.index]}"
+  enable_versioning = true
+
+  tags = {
+    Purpose = local.bucket_names[count.index]
+  }
+}
+
+# Access specific bucket outputs
+output "uploads_arn" {
+  value = module.buckets[0].bucket_arn
+}
+
+output "exports_arn" {
+  value = module.buckets[1].bucket_arn
+}</code></pre>
+
+            <h2>Common Pitfalls to Avoid</h2>
+
+            <ul>
+                <li><strong>Too many variables:</strong> If your module has 30+ inputs, it's probably doing too much. Split it up.</li>
+                <li><strong>Hardcoded values inside modules:</strong> Everything should be parameterized. Even the region.</li>
+                <li><strong>Ignoring outputs:</strong> Always expose what downstream modules need. Better to have extra outputs than missing ones.</li>
+                <li><strong>No version pinning:</strong> An unversioned module can silently break your infrastructure when it gets updated.</li>
+                <li><strong>Creating resources without naming:</strong> Always include <code>name</code> or <code>identifier</code> variables so resources are recognizable in the cloud console.</li>
+            </ul>
+
+            <h2>Summary</h2>
+
+            <p>Terraform modules transform your infrastructure from copy-paste scripts into clean, reusable code. The key takeaways:</p>
+
+            <ol>
+                <li><strong>Structure:</strong> <code>main.tf</code> + <code>variables.tf</code> + <code>outputs.tf</code></li>
+                <li><strong>Sources:</strong> local paths, Terraform Registry, Git, HTTP archives</li>
+                <li><strong>Best practices:</strong> single responsibility, version pinning, sensitive handling, documentation</li>
+                <li><strong>Team pattern:</strong> shared <code>modules/</code> folder with per-environment directories</li>
+            </ol>
+
+            <p>Start small — module-ize your most-repeated resource today. Your future self (and your team) will thank you.</p>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes | Built with ❤️ & AI</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528" target="_blank">GitHub</a>
+                <a href="https://blog.hugow.dev/sitemap.xml">Sitemap</a>
+                <a href="https://blog.hugow.dev/robots.txt">Robots</a>
+            </div>
+        </div>
+    </footer>
+
+    <button class="back-to-top" id="backToTop" title="Back to top">↑</button>
+
+    <script>
+    const themeToggle = document.getElementById('themeToggle');
+    themeToggle.addEventListener('click', () => {
+        document.body.classList.toggle('dark-mode');
+        themeToggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+        localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+    });
+    if (localStorage.getItem('theme') === 'dark') {
+        document.body.classList.add('dark-mode');
+        themeToggle.textContent = '☀️';
+    }
+    const backToTop = document.getElementById('backToTop');
+    window.addEventListener('scroll', () => {
+        backToTop.style.display = window.pageYOffset > 300 ? 'block' : 'none';
+        const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+        const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        const scrolled = (winScroll / height) * 100;
+        document.getElementById('progressBar').style.width = scrolled + '%';
+    });
+    backToTop.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+    </script>
+</body>
+</html>

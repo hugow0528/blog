@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Testing with pytest: Write Reliable Code from Day One</title>
+    <meta name="description" content="Learn Python testing with pytest — write your first tests, use assertions, fixtures, parameterization, and mock objects. Beginner-friendly with working examples.">
+    <meta name="keywords" content="python testing, pytest, unit testing, test fixtures, mock, assert, TDD, python automation, software testing">
+    <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-testing-pytest.html">
+    <meta property="og:title" content="Python Testing with pytest: Write Reliable Code from Day One">
+    <meta property="og:description" content="Master Python testing with pytest — assertions, fixtures, parameterization, and mocks. Practical examples you can run today.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.hugow.dev/posts/python-testing-pytest.html">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "headline": "Python Testing with pytest: Write Reliable Code from Day One",
+      "author": {"@type": "Person", "name": "Hugo Wong"},
+      "datePublished": "2026-06-25",
+      "dateModified": "2026-06-25",
+      "publisher": {"@type": "Organization", "name": "Hugo's Dev Notes"}
+    }
+    </script>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+                <a href="../devops.html" class="nav-btn">🐳 DevOps</a>
+                <a href="../security.html" class="nav-btn">🔐 Security</a>
+                <a href="../webdev.html" class="nav-btn">💻 Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post">
+            <div class="post-header">
+                <span class="tag python">Python</span>
+                <span class="tag devops">DevOps</span>
+                <h1>Python Testing with pytest: Write Reliable Code from Day One</h1>
+            </div>
+            <div class="post-meta">
+                <time>2026-06-25</time>
+                <span class="read-time">10 min read</span>
+                <span class="post-status">New</span>
+            </div>
+
+            <div class="post-content">
+                <p>Writing tests might feel optional when you're just starting out — but untested code is code you can't trust to change. In Python, the <strong>pytest</strong> framework makes testing fast, readable, and enjoyable. By the end of this guide, you'll be writing automated tests that catch bugs before they reach production.</p>
+
+                <p>Testing isn't about proving your code works. It's about building confidence that your code keeps working when you inevitably refactor it three months from now.</p>
+
+                <h2>Why pytest Over unittest?</h2>
+
+                <p>Python ships with <code>unittest</code>, but pytest is the community favorite for good reasons:</p>
+
+                <ul>
+                    <li><strong>Simpler syntax</strong> — use plain <code>assert</code> instead of <code>self.assertEqual()</code></li>
+                    <li><strong>Better error messages</strong> — pytest tells you exactly what went wrong and why</li>
+                    <li><strong>Auto-discovery</strong> — just run <code>pytest</code> and it finds your tests</li>
+                    <li><strong>Huge plugin ecosystem</strong> — coverage, parallel runs, web testing, and more</li>
+                </ul>
+
+                <p>Install pytest with pip:</p>
+
+                <pre><code>pip install pytest</code></pre>
+
+                <h2>Your First Test</h2>
+
+                <p>Let's start with a simple function and test it. Create <code>calculator.py</code>:</p>
+
+                <pre><code># calculator.py
+def add(a, b):
+    return a + b
+
+def divide(a, b):
+    if b == 0:
+        raise ValueError("Cannot divide by zero")
+    return a / b</code></pre>
+
+                <p>Now create <code>test_calculator.py</code> in the same directory. pytest requires test files to start with <code>test_</code> or end with <code>_test.py</code>:</p>
+
+                <pre><code># test_calculator.py
+from calculator import add, divide
+import pytest
+
+def test_add():
+    assert add(2, 3) == 5
+    assert add(-1, 1) == 0
+    assert add(0, 0) == 0
+
+def test_add_floats():
+    assert add(0.1, 0.2) == pytest.approx(0.3)
+
+def test_divide():
+    assert divide(10, 2) == 5.0
+    assert divide(7, 2) == pytest.approx(3.5)
+
+def test_divide_by_zero():
+    with pytest.raises(ValueError, match="Cannot divide by zero"):
+        divide(10, 0)</code></pre>
+
+                <p>Run the tests:</p>
+
+                <pre><code>$ pytest test_calculator.py
+==================== test session starts ====================
+collected 4 items
+
+test_calculator.py ....                                    [100%]
+
+===================== 4 passed in 0.01s =====================</code></pre>
+
+                <p>That's it. No classes, no setUp methods, no boilerplate. Four tests, four dots.</p>
+
+                <h2>Understanding Assertions</h2>
+
+                <p>The heart of pytest is the <code>assert</code> statement. Unlike other languages, pytest rewrites <code>assert</code> at runtime to give you detailed failure info:</p>
+
+                <pre><code>def test_string_methods():
+    text = "  Hello, World!  "
+    
+    # Strip whitespace
+    assert text.strip() == "Hello, World!"
+    
+    # Check case
+    assert text.upper() == "  HELLO, WORLD!  "
+    assert text.startswith("  ")
+    assert text.endswith("  ")
+    
+    # String containment
+    assert "World" in text
+    assert "Python" not in text
+    
+    # Truthiness
+    assert bool(text) == True
+    assert bool("") == False</code></pre>
+
+                <p>If any assertion fails, pytest shows you the actual values:</p>
+
+                <pre><code>$ pytest
+==================== test session starts ====================
+FAILED test_strings.py::test_string_methods - AssertionError
+assert "Hello" in "Goodbye"
+ +  where "Hello" in "Goodbye"
+
+===================== 1 failed in 0.01s =====================</code></pre>
+
+                <h2>Fixtures: Shared Setup Without Repetition</h2>
+
+                <p>Fixtures replace setUp/tearDown. They let you define reusable setup code that multiple tests can share:</p>
+
+                <pre><code># test_users.py
+import pytest
+
+@pytest.fixture
+def sample_users():
+    """Return a list of user dictionaries for testing"""
+    return [
+        {"id": 1, "name": "Alice", "email": "alice@example.com", "active": True},
+        {"id": 2, "name": "Bob", "email": "bob@example.com", "active": True},
+        {"id": 3, "name": "Charlie", "email": "charlie@example.com", "active": False},
+    ]
+
+@pytest.fixture
+def active_users(sample_users):
+    """Build on another fixture — only active users"""
+    return [u for u in sample_users if u["active"]]
+
+def test_user_count(sample_users):
+    assert len(sample_users) == 3
+
+def test_all_names_present(sample_users):
+    names = [u["name"] for u in sample_users]
+    assert "Alice" in names
+    assert "Bob" in names
+    assert "Charlie" in names
+
+def test_active_filter(active_users):
+    assert len(active_users) == 2
+    assert all(u["active"] for u in active_users)</code></pre>
+
+                <p>The magic is simple: if a test function takes <code>sample_users</code> as a parameter, pytest finds the matching fixture and passes its result. No imports needed.</p>
+
+                <h2>Parametrized Tests</h2>
+
+                <p>When you have the same test logic with different inputs, use <code>@pytest.mark.parametrize</code> to avoid repeating yourself:</p>
+
+                <pre><code># test_calculator_advanced.py
+from calculator import add, divide
+import pytest
+
+@pytest.mark.parametrize("a, b, expected", [
+    (1, 2, 3),
+    (-1, -1, -2),
+    (0, 0, 0),
+    (100, 200, 300),
+    (-5, 5, 0),
+])
+def test_add_various_cases(a, b, expected):
+    """One test, five data sets — runs as 5 separate tests"""
+    assert add(a, b) == expected
+
+@pytest.mark.parametrize("a, b, expected", [
+    (10, 2, 5.0),
+    (9, 3, 3.0),
+    (1, 1, 1.0),
+    (7, 3, pytest.approx(2.333333333)),
+])
+def test_divide_various_cases(a, b, expected):
+    assert divide(a, b) == expected</code></pre>
+
+                <p>Running this produces 9 test results from just 2 test functions. Each parameter combination is its own test with its own pass/fail status.</p>
+
+                <h2>Mocking External Dependencies</h2>
+
+                <p>Real-world code calls APIs, reads files, and hits databases. You don't want your tests to depend on all that — use mocks instead:</p>
+
+                <pre><code># test_mock_api.py
+import pytest
+from unittest.mock import patch, MagicMock
+
+def get_weather(city):
+    """Simulates calling an external weather API"""
+    import requests
+    response = requests.get(f"https://api.weather.com/{city}")
+    response.raise_for_status()
+    return response.json()
+
+@patch("requests.get")
+def test_get_weather_success(mock_get):
+    """Mock a successful API response"""
+    mock_response = MagicMock()
+    mock_response.json.return_value = {"temp": 22, "city": "Tokyo"}
+    mock_response.raise_for_status = MagicMock()
+    mock_get.return_value = mock_response
+    
+    result = get_weather("tokyo")
+    
+    assert result["temp"] == 22
+    assert result["city"] == "Tokyo"
+    mock_get.assert_called_once_with("https://api.weather.com/tokyo")
+
+@patch("requests.get")
+def test_get_weather_failure(mock_get):
+    """Mock an API error"""
+    mock_get.side_effect = requests.exceptions.ConnectionError("Timeout")
+    
+    with pytest.raises(requests.exceptions.ConnectionError):
+        get_weather("somewhere")</code></pre>
+
+                <p>Mocks let you test your code's logic in isolation — no network, no database, no flaky external services.</p>
+
+                <h2>Organizing Tests with conftest.py</h2>
+
+                <p>As your test suite grows, put shared fixtures in <code>conftest.py</code>. pytest automatically discovers this file without any imports:</p>
+
+                <pre><code># conftest.py — shared fixtures for ALL tests
+import pytest
+
+@pytest.fixture
+def db_connection():
+    """Simulated database connection"""
+    connection = {"data": [], "connected": True}
+    yield connection
+    # Cleanup runs after each test
+    connection["connected"] = False
+
+@pytest.fixture
+def api_client():
+    """Simulated API client"""
+    return {"base_url": "https://api.example.com", "headers": {}}</code></pre>
+
+                <p>Directory structure for a real project:</p>
+
+                <pre><code>my_project/
+├── calculator.py
+├── users.py
+├── api_client.py
+├── tests/
+│   ├── conftest.py          # shared fixtures
+│   ├── test_calculator.py
+│   ├── test_users.py
+│   └── test_api_client.py
+└── pytest.ini               # configuration</code></pre>
+
+                <h2>Running Tests with Useful Flags</h2>
+
+                <pre><code># Run all tests
+pytest
+
+# Verbose output — show each test name
+pytest -v
+
+# Run a specific test file
+pytest tests/test_calculator.py
+
+# Run a specific test function
+pytest tests/test_calculator.py::test_add
+
+# Run tests matching a keyword
+pytest -k "add"
+
+# Stop on first failure
+pytest -x
+
+# Show prints and verbose
+pytest -v -s
+
+# Generate coverage report
+pytest --cov=my_project
+
+# Run only failed tests from last run
+pytest --lf</code></pre>
+
+                <h2>Quick-Start Checklist</h2>
+
+                <blockquote>
+                    <ul>
+                        <li>Install pytest: <code>pip install pytest</code></li>
+                        <li>Name test files <code>test_*.py</code> and test functions <code>test_*</code></li>
+                        <li>Use plain <code>assert</code> for checking results</li>
+                        <li>Use <code>@pytest.fixture</code> for shared setup</li>
+                        <li>Use <code>@pytest.mark.parametrize</code> for multiple inputs</li>
+                        <li>Mock external calls with <code>unittest.mock</code></li>
+                        <li>Put shared fixtures in <code>conftest.py</code></li>
+                        <li>Run <code>pytest -v</code> to see what's happening</li>
+                    </ul>
+                </blockquote>
+
+                <h2>Next Steps</h2>
+
+                <p>Once you're comfortable with basic pytest, explore:</p>
+
+                <ul>
+                    <li><strong>pytest-cov</strong> — measure code coverage so you know what's tested</li>
+                    <li><strong>pytest-xdist</strong> — run tests in parallel for faster feedback</li>
+                    <li><strong>pytest-mock</strong> — a simpler API for creating mocks</li>
+                    <li><strong>hypothesis</strong> — property-based testing that generates inputs for you</li>
+                </ul>
+
+                <p>Testing isn't overhead — it's the safety net that lets you code faster with confidence. Start small, test your most important functions first, and build the habit early.</p>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes | Built with ❤️ & AI</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528" target="_blank">GitHub</a>
+                <a href="https://blog.hugow.dev/sitemap.xml">Sitemap</a>
+                <a href="https://blog.hugow.dev/robots.txt">Robots</a>
+            </div>
+        </div>
+    </footer>
+
+    <button class="back-to-top" id="backToTop" title="Back to top">↑</button>
+
+    <script>
+    // Dark Mode Toggle
+    const themeToggle = document.getElementById('themeToggle');
+    themeToggle.addEventListener('click', () => {
+        document.body.classList.toggle('dark-mode');
+        themeToggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+        localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+    });
+    if (localStorage.getItem('theme') === 'dark') {
+        document.body.classList.add('dark-mode');
+        themeToggle.textContent = '☀️';
+    }
+    // Back to Top
+    const backToTop = document.getElementById('backToTop');
+    window.addEventListener('scroll', () => {
+        backToTop.style.display = window.pageYOffset > 300 ? 'block' : 'none';
+    });
+    backToTop.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+    // Progress Bar
+    window.addEventListener('scroll', () => {
+        const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+        const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        const scrolled = (winScroll / height) * 100;
+        document.getElementById('progressBar').style.width = scrolled + '%';
+    });
+    </script>
+</body>
+</html>

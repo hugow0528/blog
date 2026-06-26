@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloudflare Pages: Deploy Static Sites in Seconds</title>
+    <meta name="description" content="Learn Cloudflare Pages — deploy static sites from Git with zero config. Free hosting, automatic HTTPS, CI/CD, and edge caching. Complete beginner guide.">
+    <meta name="keywords" content="cloudflare pages, static hosting, jekyll, hugo, next.js, git deploy, free hosting, edge network, serverless hosting">
+    <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/cloudflare-pages.html">
+    <meta property="og:title" content="Cloudflare Pages: Deploy Static Sites in Seconds">
+    <meta property="og:description" content="Deploy static sites from Git with Cloudflare Pages — free hosting, automatic HTTPS, CI/CD pipeline, and global edge network.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.hugow.dev/posts/cloudflare-pages.html">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "headline": "Cloudflare Pages: Deploy Static Sites in Seconds",
+      "author": {"@type": "Person", "name": "Hugo Wong"},
+      "datePublished": "2026-06-25",
+      "dateModified": "2026-06-25",
+      "publisher": {"@type": "Organization", "name": "Hugo's Dev Notes"}
+    }
+    </script>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+                <a href="../devops.html" class="nav-btn">🐳 DevOps</a>
+                <a href="../security.html" class="nav-btn">🔐 Security</a>
+                <a href="../webdev.html" class="nav-btn">💻 Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post">
+            <div class="post-header">
+                <span class="tag cloudflare">Cloudflare</span>
+                <span class="tag devops">DevOps</span>
+                <h1>Cloudflare Pages: Deploy Static Sites in Seconds</h1>
+            </div>
+            <div class="post-meta">
+                <time>2026-06-25</time>
+                <span class="read-time">9 min read</span>
+                <span class="post-status">New</span>
+            </div>
+
+            <div class="post-content">
+                <p>If you've ever built a static website — a blog, documentation, a portfolio — you know the pain of finding hosting. Traditional web hosts are overkill. VPS servers need maintenance. <strong>Cloudflare Pages</strong> solves all of this by connecting directly to your Git repository and deploying automatically every time you push code.</p>
+
+                <p>Best part? It's free for personal projects, includes automatic HTTPS, and serves your site from Cloudflare's global edge network of 300+ cities. Let's build and deploy a static site from scratch.</p>
+
+                <h2>What Are Cloudflare Pages?</h2>
+
+                <p>Cloudflare Pages is a hosting platform for static websites. You point it at a Git repository, and it:</p>
+
+                <ul>
+                    <li><strong>BUILDs</strong> your site automatically from your build tool (Hugo, Jekyll, Next.js, Astro, or plain HTML)</li>
+                    <li><strong>DEPLOYS</strong> every commit as a preview URL you can share for review</li>
+                    <li><strong>PUBLISHES</strong> your production branch to a custom domain with free HTTPS</li>
+                    <li><strong>CACHES</strong> content at the edge for lightning-fast global load times</li>
+                </ul>
+
+                <p>It's the Cloudflare equivalent of Vercel or Netlify — but with the added benefit of running on the same edge network that powers Cloudflare's CDN, WAF, and DDoS protection.</p>
+
+                <h2>Prerequisites</h2>
+
+                <ul>
+                    <li>A free Cloudflare account (sign up at <a href="https://dash.cloudflare.com" target="_blank">dash.cloudflare.com</a>)</li>
+                    <li>A GitHub or GitLab account with a repository containing your site</li>
+                    <li>Your domain's DNS managed by Cloudflare (for custom domains)</li>
+                </ul>
+
+                <h2>Create a Simple Static Site</h2>
+
+                <p>Let's create a minimal static site so we have something to deploy. Make a project directory:</p>
+
+                <pre><code>$ mkdir my-site && cd my-site
+
+# Create the HTML file
+cat > index.html &lt;&lt; 'EOF'
+&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+    &lt;title&gt;My Static Site&lt;/title&gt;
+    &lt;style&gt;
+        body { font-family: system-ui; max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+        h1 { color: #2563eb; }
+        .card { background: #f8fafc; padding: 1.5rem; border-radius: 8px; margin: 1rem 0; }
+    &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;h1&gt;Hello from Cloudflare Pages!&lt;/h1&gt;
+    &lt;p&gt;This site is deployed on Cloudflare's global edge network.&lt;/p&gt;
+    &lt;div class="card"&gt;
+        &lt;h2&gt;Why Pages?&lt;/h2&gt;
+        &lt;ul&gt;
+            &lt;li&gt;Free forever for personal use&lt;/li&gt;
+            &lt;li&gt;Automatic HTTPS&lt;/li&gt;
+            &lt;li&gt;Git-based deployments&lt;/li&gt;
+            &lt;li&gt;Edge caching in 300+ cities&lt;/li&gt;
+        &lt;/ul&gt;
+    &lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+EOF
+
+# Initialize Git and push
+git init
+git add .
+git commit -m "Initial commit"
+git branch -M main
+git remote add origin https://github.com/YOUR_USERNAME/my-site.git
+git push -u origin main</code></pre>
+
+                <h2>Connect to Cloudflare Pages</h2>
+
+                <p>Now deploy it through the Cloudflare dashboard:</p>
+
+                <ol>
+                    <li><strong>Log in</strong> to <a href="https://dash.cloudflare.com" target="_blank">dash.cloudflare.com</a></li>
+                    <li>Navigate to <strong>Workers &amp; Pages</strong> → <strong>Pages</strong> → <strong>Create a project</strong></li>
+                    <li>Choose <strong>Connect to Git</strong> and select your GitHub/GitLab account</li>
+                    <li>Select the repository you just pushed</li>
+                    <li>Configure the build settings:</li>
+                </ol>
+
+                <blockquote>
+                    <p><strong>For plain HTML:</strong></p>
+                    <ul>
+                        <li>Framework preset: <strong>None</strong> (or "Other")</li>
+                        <li>Build command: leave empty (or <code>echo "No build needed"</code>)</li>
+                        <li>Build output directory: <code>.</code> (root) or your output folder</li>
+                    </ul>
+                </blockquote>
+
+                <blockquote>
+                    <p><strong>For Hugo (static site generator):</p></p>
+                    <ul>
+                        <li>Framework preset: <strong>Hugo</strong></li>
+                        <li>Build command: <code>hugo</code></li>
+                        <li>Build output directory: <code>public</code></li>
+                    </ul>
+                </blockquote>
+
+                <blockquote>
+                    <p><strong>For Next.js:</strong></p>
+                    <ul>
+                        <li>Framework preset: <strong>Next.js</strong></li>
+                        <li>Build command: <code>npm run build</code></li>
+                        <li>Build output directory: <code>.next</code></li>
+                    </ul>
+                </blockquote>
+
+                <p>Click <strong>Save and Deploy</strong>. Cloudflare clones your repo, runs the build command, and deploys. Your first deployment gets a URL like <code>your-project.pages.dev</code>.</p>
+
+                <h2>Preview Deployments</h2>
+
+                <p>Every branch or pull request gets its own unique URL. This means you can:</p>
+
+                <pre><code># Create a feature branch
+git checkout -b feature/new-page
+
+# Create a new page
+cat > about.html &lt;&lt; 'EOF'
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;title&gt;About&lt;/title&gt;
+    &lt;style&gt;body{font-family:system-ui;max-width:600px;margin:2rem auto}&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;h1&gt;About This Site&lt;/h1&gt;
+    &lt;p&gt;Built with static HTML and deployed on Cloudflare Pages.&lt;/p&gt;
+    &lt;a href="index.html"&gt;← Back home&lt;/a&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+EOF
+
+git add .
+git commit -m "Add about page"
+git push -u origin feature/new-page</code></pre>
+
+                <p>Cloudflare automatically detects the new branch and deploys a preview. You'll get a URL like <code>feature-new-page-your-project.pages.dev</code> to share with collaborators for review — without touching production.</p>
+
+                <h2>Custom Domains and Redirects</h2>
+
+                <p>To use your own domain (like <code>blog.hugow.dev</code>):</p>
+
+                <ol>
+                    <li>Go to your Pages project → <strong>Custom Domains</strong></li>
+                    <li>Enter your domain name (e.g., <code>blog.hugow.dev</code>)</li>
+                    <li>Cloudflare automatically creates the DNS records</li>
+                    <li>Free HTTPS certificate provisions automatically</li>
+                </ol>
+
+                <p>You can also add redirects and rewrites using a <code>_redirects</code> file in your build output directory:</p>
+
+                <pre><code># _redirects file (placed in build output root)
+# Syntax: from to [options]
+
+# Simple redirect
+/old-page /new-page 301
+
+# Redirect with proxy
+/api/* https://api.example.com/:splat 200
+
+# Wildcard redirect
+/blog/* /posts/:splat 302</code></pre>
+
+                <h2>Environment Variables</h2>
+
+                <p>Pages supports environment variables for builds and runtime. Set them in the dashboard under <strong>Settings → Environment Variables</strong>, or use the CLI:</p>
+
+                <pre><code># Install the Cloudflare CLI
+npm install -g wrangler
+
+# Set an environment variable
+wrangler pages secret put API_KEY
+
+# It prompts for the value, stores it encrypted
+
+# Use in your code (Node.js / Workers runtime)
+const apiKey = process.env.API_KEY</code></pre>
+
+                <p>Common use cases: API keys for build-time data fetching, analytics IDs, feature flags, and different settings per environment (production vs preview).</p>
+
+                <h2>Using the Cloudflare CLI (wrangler)</h2>
+
+                <p>You can deploy entirely from the command line:</p>
+
+                <pre><code># Install wrangler
+npm install -g wrangler
+
+# Log in
+wrangler login
+
+# Deploy from local directory
+wrangler pages deploy ./my-site --project-name=my-site
+
+# Deploy with a branch name (triggers preview)
+wrangler pages deploy ./my-site \
+    --project-name=my-site \
+    --branch=feature/new-layout
+
+# List deployments
+wrangler pages deployment list --project-name=my-site</code></pre>
+
+                <h2>Pages vs R2 vs Workers</h2>
+
+                <p>Cloudflare offers multiple hosting options. Here's when to use which:</p>
+
+                <table style="width:100%; border-collapse: collapse; margin: 1rem 0;">
+                    <tr style="background: #f1f5f9;">
+                        <th style="padding: 0.75rem; text-align: left; border: 1px solid #e2e8f0;">Feature</th>
+                        <th style="padding: 0.75rem; text-align: left; border: 1px solid #e2e8f0;">Pages</th>
+                        <th style="padding: 0.75rem; text-align: left; border: 1px solid #e2e8f0;">R2</th>
+                        <th style="padding: 0.75rem; text-align: left; border: 1px solid #e2e8f0;">Workers</th>
+                    </tr>
+                    <tr>
+                        <td style="padding: 0.75rem; border: 1px solid #e2e8f0;">Best for</td>
+                        <td style="padding: 0.75rem; border: 1px solid #e2e8f0;">Static sites, blogs</td>
+                        <td style="padding: 0.75rem; border: 1px solid #e2e8f0;">File storage, backups</td>
+                        <td style="padding: 0.75rem; border: 1px solid #e2e8f0;">Serverless APIs</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 0.75rem; border: 1px solid #e2e8f0;">Free tier</td>
+                        <td style="padding: 0.75rem; border: 1px solid #e2e8f0;">100K builds/mo</td>
+                        <td style="padding: 0.75rem; border: 1px solid #e2e8f0;">10 GB storage</td>
+                        <td style="padding: 0.75rem; border: 1px solid #e2e8f0;">100K req/day</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 0.75rem; border: 1px solid #e2e8f0;">CI/CD</td>
+                        <td style="padding: 0.75rem; border: 1px solid #e2e8f0;">Built-in</td>
+                        <td style="padding: 0.75rem; border: 1px solid #e2e8f0;">Manual / API</td>
+                        <td style="padding: 0.75rem; border: 1px solid #e2e8f0;">Git / CLI</td>
+                    </tr>
+                </table>
+
+                <h2>Deploy a Hugo Blog to Pages</h2>
+
+                <p>Since many of our readers are building blogs, here's a quick Hugo + Pages walkthrough:</p>
+
+                <pre><code># Install Hugo
+brew install hugo    # macOS
+# or: sudo apt install hugo  # Ubuntu
+
+# Create a new Hugo site
+hugo new site my-blog
+cd my-blog
+
+# Add a theme
+git init
+git submodule add https://github.com/theNewDynamic/gohugo-theme-ananke themes/ananke
+
+# Configure Hugo
+cat > config.toml &lt;&lt; 'EOF'
+baseURL = 'https://my-blog.pages.dev/'
+languageCode = 'en-us'
+title = 'My Blog'
+theme = 'ananke'
+
+[params]
+  favicon = ''
+EOF
+
+# Create a post
+hugo new posts/hello-world.md
+
+# Build locally to test
+hugo server
+
+# Commit and push
+git add .
+git commit -m "Initial Hugo blog"
+git remote add origin https://github.com/YOUR_USERNAME/my-blog.git
+git push -u origin main</code></pre>
+
+                <p>Then connect to Cloudflare Pages as described above, using Hugo as the framework preset. Within minutes, your blog is live.</p>
+
+                <h2>Performance Tips</h2>
+
+                <ul>
+                    <li><strong>Use a lightweight theme</strong> — fewer dependencies mean faster builds and faster pages</li>
+                    <li><strong>Optimize images</strong> — use WebP format, compress before uploading</li>
+                    <li><strong>Leverage browser caching</strong> — Pages sets strong cache headers by default</li>
+                    <li><strong>Minify assets</strong> — enable minification in your build tool</li>
+                    <li><strong>Use a CDN for large assets</strong> — pair Pages with R2 for file downloads</li>
+                </ul>
+
+                <h2>Quick-Start Checklist</h2>
+
+                <blockquote>
+                    <ul>
+                        <li>Create a Git repo with your site files</li>
+                        <li>Connect the repo to Cloudflare Pages</li>
+                        <li>Set the build command and output directory</li>
+                        <li>Deploy — Cloudflare handles the rest</li>
+                        <li>Add a custom domain and enable HTTPS</li>
+                        <li>Use preview deployments for every branch</li>
+                    </ul>
+                </blockquote>
+
+                <p>Cloudflare Pages removes the entire "how do I host this" problem. Push code, get a URL. Preview branches, review changes. Connect a domain, get free HTTPS. It's hosting that gets out of your way so you can focus on building.</p>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes | Built with ❤️ & AI</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528" target="_blank">GitHub</a>
+                <a href="https://blog.hugow.dev/sitemap.xml">Sitemap</a>
+                <a href="https://blog.hugow.dev/robots.txt">Robots</a>
+            </div>
+        </div>
+    </footer>
+
+    <button class="back-to-top" id="backToTop" title="Back to top">↑</button>
+
+    <script>
+    // Dark Mode Toggle
+    const themeToggle = document.getElementById('themeToggle');
+    themeToggle.addEventListener('click', () => {
+        document.body.classList.toggle('dark-mode');
+        themeToggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+        localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+    });
+    if (localStorage.getItem('theme') === 'dark') {
+        document.body.classList.add('dark-mode');
+        themeToggle.textContent = '☀️';
+    }
+    // Back to Top
+    const backToTop = document.getElementById('backToTop');
+    window.addEventListener('scroll', () => {
+        backToTop.style.display = window.pageYOffset > 300 ? 'block' : 'none';
+    });
+    backToTop.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+    // Progress Bar
+    window.addEventListener('scroll', () => {
+        const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+        const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        const scrolled = (winScroll / height) * 100;
+        document.getElementById('progressBar').style.width = scrolled + '%';
+    });
+    </script>
+</body>
+</html>

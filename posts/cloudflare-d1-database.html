@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloudflare D1: Serverless SQLite Database at the Edge | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn Cloudflare D1 — a serverless SQLite database that runs at the edge. Create schemas, run queries, and build full-stack apps with Workers + D1. Complete beginner guide with working code.">
+    <meta name="keywords" content="Cloudflare D1, serverless database, SQLite, edge database, Workers, D1 API, SQL, wrangler, Cloudflare">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/cloudflare-d1-database.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+        
+        <article class="post-content">
+            <span class="tag cloudflare">Cloudflare</span>
+            <h1>Cloudflare D1: Serverless SQLite Database at the Edge</h1>
+            <time>June 26, 2026 · 11 min read</time>
+
+            <p>Cloudflare D1 is a fully managed, serverless SQLite database that runs on Cloudflare's edge network. It gives you the simplicity and SQL familiarity of SQLite with the scale and distribution of a managed cloud database — no provisioning, no patching, no downtime.</p>
+
+            <p>In this guide, we'll cover everything from creating your first D1 database to building a complete full-stack API with Cloudflare Workers. You'll learn schema design, query execution, migrations, and how to connect D1 to a Workers application.</p>
+
+            <h2>What Is Cloudflare D1?</h2>
+
+            <p>D1 is Cloudflare's answer to "how do I run a real database at the edge?" It uses SQLite as its underlying engine, which means you get a fully compliant SQL database that speaks the language you already know. But unlike a traditional SQLite file sitting on a single server, D1 distributes your data across Cloudflare's global network.</p>
+
+            <pre><code>Traditional database:
+  App → Single database server (one region)
+  Problem: latency for users far from the server
+
+Cloudflare D1:
+  App → Workers → D1 (query routed to nearest region)
+  Benefit: fast reads, low-latency writes, automatic scaling</code></pre>
+
+            <p>Key features:</p>
+
+            <ul>
+                <li>📦 <strong>SQLite-compatible</strong> — standard SQL queries, familiar syntax</li>
+                <li>🌍 <strong>Edge-ready</strong> — integrates seamlessly with Cloudflare Workers</li>
+                <li>💰 <strong>Generous free tier</strong> — 5 million row reads, 100k writes/day</li>
+                <li>🔄 <strong>Local development</strong> — run queries locally with Wrangler, no cloud needed</li>
+                <li>📋 <strong>Migration support</strong> — define your schema in SQL files, version-controlled</li>
+                <li>🔐 <strong>Secure</strong> — encrypted at rest, no direct public access</li>
+            </ul>
+
+            <h2>When to Use D1</h2>
+
+            <p>D1 isn't the right tool for every job. Here's when it shines and when to consider alternatives:</p>
+
+            <h3>✅ Great for:</h3>
+            <ul>
+                <li>Full-stack apps built on Cloudflare Workers</li>
+                <li>Small to medium datasets (millions of rows)</li>
+                <li>CRUD APIs, content management, user profiles</li>
+                <li>Prototypes and MVPs that need a real database</li>
+                <li>Edge-optimized read-heavy workloads</li>
+            </ul>
+
+            <h3>❌ Consider alternatives for:</h3>
+            <ul>
+                <li>Complex analytical queries (use a data warehouse)</li>
+                <li>Massive writes at high throughput (use a traditional RDS/Cloudflare Workers with external DB)</li>
+                <li>Blobs, images, files (use Cloudflare R2)</li>
+                <li>Key-value caching (use Cloudflare Workers KV)</li>
+            </ul>
+
+            <h2>Setup: Create Your First D1 Database</h2>
+
+            <p>First, make sure you have Wrangler installed:</p>
+
+            <pre><code># Install Wrangler (if not already installed)
+npm install -g wrangler
+
+# Log in
+wrangler login</code></pre>
+
+            <p>Now create a Workers project with D1:</p>
+
+            <pre><code># Create a new Workers project
+wrangler init my-app
+cd my-app
+
+# Create a new D1 database
+wrangler d1 create my-database
+
+# You'll see output like:
+# ⛅ Created database "my-database" in US
+# Database ID: abc123-def456-ghi789</code></pre>
+
+            <p>Save the database ID — you'll need it in your <code>wrangler.toml</code> configuration:</p>
+
+            <pre><code># wrangler.toml
+name = "my-app"
+main = "src/index.js"
+compatibility_date = "2026-06-26"
+
+[[d1_databases]]
+binding = "DB"              # Available in your Worker as env.DB
+database_name = "my-database"
+database_id = "abc123-def456-ghi789"</code></pre>
+
+            <h2>Define Your Schema with Migrations</h2>
+
+            <p>D1 uses SQL migration files to define and evolve your database schema. Create a <code>migrations</code> directory:</p>
+
+            <pre><code>mkdir migrations
+
+# Create your first migration file
+cat > migrations/001_create_users.sql << 'EOF'
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL UNIQUE,
+    email TEXT NOT NULL UNIQUE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS posts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    body TEXT NOT NULL,
+    published INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE INDEX idx_posts_user_id ON posts(user_id);
+CREATE INDEX idx_posts_published ON posts(published);
+EOF</code></pre>
+
+            <p>Apply migrations locally for testing:</p>
+
+            <pre><code># Run migrations against local D1 database
+wrangler d1 execute my-database \
+  --local \
+  --file=migrations/001_create_users.sql</code></pre>
+
+            <p>Push to the cloud database:</p>
+
+            <pre><code># Apply migrations to production D1
+wrangler d1 execute my-database \
+  --remote \
+  --file=migrations/001_create_users.sql</code></pre>
+
+            <h2>Query D1 from Cloudflare Workers</h2>
+
+            <p>Now let's build a Worker that interacts with our D1 database. Here's a complete CRUD API:</p>
+
+            <pre><code>// src/index.js
+
+export default {
+    async fetch(request, env) {
+        const url = new URL(request.url);
+        const path = url.pathname;
+
+        // Route: GET /api/users — List all users
+        if (path === "/api/users" && request.method === "GET") {
+            const result = await env.DB.prepare(
+                "SELECT id, username, email, created_at FROM users ORDER BY created_at DESC"
+            ).all();
+            return Response.json(result);
+        }
+
+        // Route: POST /api/users — Create a user
+        if (path === "/api/users" && request.method === "POST") {
+            const body = await request.json();
+            const { username, email } = body;
+
+            // Validate input
+            if (!username || !email) {
+                return Response.json(
+                    { error: "username and email are required" },
+                    { status: 400 }
+                );
+            }
+
+            const result = await env.DB.prepare(
+                "INSERT INTO users (username, email) VALUES (?, ?)"
+            ).bind(username, email).run();
+
+            return Response.json(
+                { id: result.meta.last_row_id, username, email },
+                { status: 201 }
+            );
+        }
+
+        // Route: GET /api/users/:id — Get a single user
+        const userMatch = path.match(/^\/api\/users\/(\d+)$/);
+        if (userMatch && request.method === "GET") {
+            const userId = userMatch[1];
+            const result = await env.DB.prepare(
+                "SELECT id, username, email, created_at FROM users WHERE id = ?"
+            ).bind(userId).first();
+
+            if (!result) {
+                return Response.json({ error: "User not found" }, { status: 404 });
+            }
+            return Response.json(result);
+        }
+
+        // Route: GET /api/posts — List published posts with author info
+        if (path === "/api/posts" && request.method === "GET") {
+            const result = await env.DB.prepare(`
+                SELECT posts.id, posts.title, posts.body, posts.created_at,
+                       users.username as author
+                FROM posts
+                JOIN users ON posts.user_id = users.id
+                WHERE posts.published = 1
+                ORDER BY posts.created_at DESC
+                LIMIT 20
+            `).all();
+            return Response.json(result);
+        }
+
+        // Route: POST /api/posts — Create a post
+        if (path === "/api/posts" && request.method === "POST") {
+            const body = await request.json();
+            const { user_id, title, body: postBody } = body;
+
+            if (!user_id || !title || !postBody) {
+                return Response.json(
+                    { error: "user_id, title, and body are required" },
+                    { status: 400 }
+                );
+            }
+
+            const result = await env.DB.prepare(
+                "INSERT INTO posts (user_id, title, body) VALUES (?, ?, ?)"
+            ).bind(user_id, title, postBody).run();
+
+            return Response.json(
+                { id: result.meta.last_row_id, title, user_id },
+                { status: 201 }
+            );
+        }
+
+        // Route: PUT /api/posts/:id/publish — Publish a post
+        const publishMatch = path.match(/^\/api\/posts\/(\d+)\/publish$/);
+        if (publishMatch && request.method === "PUT") {
+            const postId = publishMatch[1];
+            await env.DB.prepare(
+                "UPDATE posts SET published = 1 WHERE id = ?"
+            ).bind(postId).run();
+
+            return Response.json({ published: true, id: postId });
+        }
+
+        return Response.json({ error: "Not found" }, { status: 404 });
+    }
+};</code></pre>
+
+            <h2>Understanding the D1 Query API</h2>
+
+            <p>D1 provides several query methods on the binding object (<code>env.DB</code>):</p>
+
+            <h3>Execute a Query and Get Results</h3>
+
+            <pre><code>// .all() — Returns all rows as an array
+const { results } = await env.DB.prepare("SELECT * FROM users").all();
+
+// .first() — Returns only the first row
+const user = await env.DB.prepare(
+    "SELECT * FROM users WHERE username = ?"
+).bind("alice").first();
+
+// .run() — For INSERT/UPDATE/DELETE (no result rows)
+const result = await env.DB.prepare(
+    "UPDATE users SET email = ? WHERE id = ?"
+).bind("new@email.com", 42).run();
+
+// result.meta contains: { duration, rows_read, rows_written, last_row_id }</code></pre>
+
+            <h3>Parameterized Queries (Prevent SQL Injection)</h3>
+
+            <p>Always use parameterized queries with <code>.bind()</code> — never concatenate user input into SQL:</p>
+
+            <pre><code>// ✅ SAFE — parameterized query
+const user = await env.DB.prepare(
+    "SELECT * FROM users WHERE email = ?"
+).bind(userInput).first();
+
+// ❌ DANGEROUS — SQL injection vulnerability!
+// const user = await env.DB.prepare(
+//     `SELECT * FROM users WHERE email = '${userInput}'`
+// ).first();</code></pre>
+
+            <h3>Bulk Operations</h3>
+
+            <p>For multiple queries in a single round trip, use <code>batch()</code>:</p>
+
+            <pre><code>const results = await env.DB.batch([
+    env.DB.prepare("SELECT COUNT(*) as total FROM users"),
+    env.DB.prepare("SELECT COUNT(*) as total FROM posts"),
+    env.DB.prepare("SELECT * FROM users ORDER BY created_at DESC LIMIT 5")
+]);
+
+// results[0].results — user count
+// results[1].results — post count
+// results[2].results — latest users</code></pre>
+
+            <h2>Local Development Workflow</h2>
+
+            <p>Wrangler provides a local D1 simulator so you can develop and test without hitting the cloud:</p>
+
+            <pre><code># Start local development server with D1
+wrangler dev
+
+# Your Worker runs locally, using a local SQLite database
+# Test with curl:
+curl http://localhost:8787/api/users
+curl -X POST http://localhost:8787/api/users \
+  -H "Content-Type: application/json" \
+  -d '{"username": "alice", "email": "alice@example.com"}'</code></pre>
+
+            <p>The local database lives in <code>.wrangler/state/v3/d1/miniflare-d1/</code> and is reset each time you stop the dev server. Great for development — but remember to run your migrations against the real database before deploying.</p>
+
+            <h2>Deploy Your Application</h2>
+
+            <pre><code># Deploy your Worker + D1 to production
+wrangler deploy</code></pre>
+
+            <p>That's it. Your Worker is now live, connected to a real distributed database, with SSL, DDoS protection, and global CDN baked in.</p>
+
+            <h2>D1 Limitations to Know</h2>
+
+            <p>D1 is great but has some boundaries worth understanding:</p>
+
+            <ul>
+                <li><strong>Write latency</strong> — writes are replicated, so they're slower than reads (typically 100-300ms)</li>
+                <li><strong>Database size</strong> — free tier allows 5 GB, paid plans go higher</li>
+                <li><strong>Query limits</strong> — no raw BLOB storage; use R2 for large files</li>
+                <li><strong>No transactions</strong> — as of now, D1 doesn't support multi-statement transactions</li>
+                <li><strong>SQLite dialect</strong> — some PostgreSQL/MySQL features won't exist (stored procedures, window functions in older versions)</li>
+            </ul>
+
+            <h2>Real-World Project: Blog Backend</h2>
+
+            <p>Let's put it all together with a migration for a full blog system:</p>
+
+            <pre><code>-- migrations/002_add_blog.sql
+CREATE TABLE IF NOT EXISTS tags (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS post_tags (
+    post_id INTEGER NOT NULL,
+    tag_id INTEGER NOT NULL,
+    PRIMARY KEY (post_id, tag_id),
+    FOREIGN KEY (post_id) REFERENCES posts(id),
+    FOREIGN KEY (tag_id) REFERENCES tags(id)
+);
+
+CREATE TABLE IF NOT EXISTS comments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    post_id INTEGER NOT NULL,
+    username TEXT NOT NULL,
+    body TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (post_id) REFERENCES posts(id)
+);</code></pre>
+
+            <p>And a query that uses joins for a rich blog feed:</p>
+
+            <pre><code>// GET /api/blog/feed
+const feed = await env.DB.prepare(`
+    SELECT 
+        posts.id,
+        posts.title,
+        posts.body,
+        posts.created_at,
+        users.username as author,
+        GROUP_CONCAT(tags.name, ', ') as tags,
+        (SELECT COUNT(*) FROM comments WHERE comments.post_id = posts.id) as comment_count
+    FROM posts
+    JOIN users ON posts.user_id = users.id
+    LEFT JOIN post_tags ON posts.id = post_tags.post_id
+    LEFT JOIN tags ON post_tags.tag_id = tags.id
+    WHERE posts.published = 1
+    GROUP BY posts.id
+    ORDER BY posts.created_at DESC
+    LIMIT 10
+`).all();</code></pre>
+
+            <h2>Summary</h2>
+
+            <p>Cloudflare D1 brings the simplicity of SQLite to the edge, paired perfectly with Workers for building full-stack applications. You get a real SQL database with zero infrastructure to manage, a generous free tier, and seamless local development.</p>
+
+            <p>The workflow is simple: define migrations in SQL files, test locally with <code>wrangler dev</code>, and deploy with <code>wrangler deploy</code>. Your application goes from local machine to global edge network in one command.</p>
+
+            <p>For your next project, consider D1 as your go-to database — especially when you're already working within the Cloudflare ecosystem with Workers, Pages, R2, and the rest of the platform.</p>
+
+            <blockquote>
+                <strong>Pro tip:</strong> Combine D1 with Cloudflare Workers KV for a powerful two-tier data layer — use KV for fast, cacheable data (configs, feature flags, counters) and D1 for structured, relational data (users, posts, orders).
+            </blockquote>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes | Built with ❤️ & AI</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528" target="_blank">GitHub</a>
+                <a href="https://blog.hugow.dev/sitemap.xml">Sitemap</a>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

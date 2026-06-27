@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python String Methods & Regular Expressions: Master Text Processing | Hugo's Dev Notes</title>
+    <meta name="description" content="Master Python string methods and regular expressions — split, join, format, search, replace, and pattern matching. Complete beginner guide with real-world examples and working code.">
+    <meta name="keywords" content="Python strings, regular expressions, regex, re module, string methods, text processing, pattern matching, Python tutorial">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-strings-regex.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+        
+        <article class="post-content">
+            <span class="tag python">Python</span>
+            <h1>Python String Methods & Regular Expressions: Master Text Processing</h1>
+            <time>June 26, 2026 · 12 min read</time>
+
+            <p>Strings are the lifeblood of almost every Python program. Whether you're processing user input, parsing API responses, cleaning data, or building a web scraper, you'll spend a significant portion of your coding time working with text.</p>
+
+            <p>In this guide, we'll cover the most useful Python string methods and then dive into regular expressions — the powerful pattern-matching tool that takes your text processing from basic to professional. You'll leave with practical skills you can use immediately.</p>
+
+            <h2>Essential String Methods</h2>
+
+            <p>Python strings have built-in methods that handle the vast majority of text processing tasks. Let's go through the ones you'll use most.</p>
+
+            <h3>Case Conversion</h3>
+
+            <pre><code>text = "Hello, World!"
+
+# Convert to uppercase, lowercase, or title case
+print(text.upper())       # "HELLO, WORLD!"
+print(text.lower())       # "hello, world!"
+print(text.title())       # "Hello, World!"
+print(text.capitalize())  # "Hello, world!"
+print(text.swapcase())    # "hELLO, wORLD!"
+
+# Real-world example: normalize email addresses
+email = "Alice.Example@GMAIL.com"
+normalized = email.lower()  # "alice.example@gmail.com"</code></pre>
+
+            <h3>Searching and Checking Content</h3>
+
+            <pre><code>text = "The quick brown fox jumps over the lazy dog"
+
+# Check if a substring exists
+print("fox" in text)              # True
+print("cat" in text)              # False
+
+# Find the position of a substring
+print(text.find("fox"))           # 16 (index position)
+print(text.find("cat"))           # -1 (not found)
+
+# Count occurrences
+print(text.count("o"))            # 4
+print(text.count("the"))          # 1 (case-sensitive!)
+print(text.lower().count("the"))  # 2
+
+# Check start and end of string
+url = "https://blog.hugow.dev"
+print(url.startswith("https://")) # True
+print(url.endswith(".dev"))       # True
+
+# Real-world: validate file types
+filename = "report.pdf"
+if filename.endswith((".pdf", ".docx", ".xlsx")):
+    print("Accepted file type")</code></pre>
+
+            <h3>Splitting and Joining Strings</h3>
+
+            <pre><code># Split a string into a list
+sentence = "Python is awesome"
+words = sentence.split()
+print(words)  # ['Python', 'is', 'awesome']
+
+# Split with a custom delimiter
+csv_data = "Alice,30,Engineer\nBob,25,Designer"
+lines = csv_data.split("\n")
+first_name = lines[0].split(",")[0]  # "Alice"
+
+# Split with a limit (maxsplit)
+data = "first,second,third,fourth"
+parts = data.split(",", maxsplit=2)
+print(parts)  # ['first', 'second', 'third,fourth']
+
+# Join a list back into a string
+words = ["Python", "is", "awesome"]
+sentence = " ".join(words)
+print(sentence)  # "Python is awesome"
+
+# Real-world: build file paths
+parts = ["home", "admin", "projects", "blog"]
+path = "/".join(parts)  # "home/admin/projects/blog"</code></pre>
+
+            <h3>Stripping and Cleaning</h3>
+
+            <pre><code># Remove whitespace from edges
+text = "   Hello, World!   "
+print(text.strip())    # "Hello, World!"
+print(text.lstrip())   # "Hello, World!   "
+print(text.rstrip())   # "   Hello, World!"
+
+# Remove specific characters
+price = "$1,299.99"
+print(price.strip("$ "))  # "1,299.99"
+
+# Remove newlines and tabs (common when reading files)
+raw = "\n\nHello from a file\n\n"
+clean = raw.strip()  # "Hello from a file"
+
+# Replace characters
+text = "hello world"
+print(text.replace(" ", "_"))  # "hello_world"
+
+# Replace with a limit
+text = "the cat sat on the mat"
+print(text.replace("the", "a", 1))  # "a cat sat on the mat"</code></pre>
+
+            <h3>String Formatting</h3>
+
+            <pre><code>name = "Alice"
+age = 30
+score = 95.678
+
+# Method 1: f-strings (recommended, Python 3.6+)
+message = f"Hello, {name}! You are {age} years old."
+print(message)  # "Hello, Alice! You are 30 years old."
+
+# f-strings with formatting
+print(f"Score: {score:.2f}")      # "Score: 95.68"
+print(f"Score: {score:.1%}")      # "Score: 9567.800%"
+print(f"ID: {42:05d}")            # "ID: 00042"
+print(f"Hex: {255:#x}")           # "Hex: 0xff"
+
+# Method 2: .format()
+message = "Hello, {}! You are {}.".format(name, age)
+
+# Method 3: Template strings (for user-provided templates)
+from string import Template
+t = Template("Hello, $name!")
+print(t.substitute(name="Bob"))  # "Hello, Bob!"</code></pre>
+
+            <h3>Useful Checks</h3>
+
+            <pre><code>print("hello".islower())    # True
+print("HELLO".isupper())    # True
+print("Hello".istitle())    # True
+print("123".isdigit())      # True
+print("abc123".isalnum())   # True
+print("abc".isalpha())      # True
+print("   ".isspace())      # True
+print("Hello World".isascii())  # True
+
+# Real-world: validate input
+def is_valid_username(username):
+    if len(username) < 3:
+        return False, "Username must be at least 3 characters"
+    if len(username) > 20:
+        return False, "Username must be at most 20 characters"
+    if not username.isalnum():
+        return False, "Username can only contain letters and numbers"
+    return True, "Valid"</code></pre>
+
+            <h2>Introduction to Regular Expressions</h2>
+
+            <p>String methods handle simple text processing, but when you need to find patterns — email addresses, phone numbers, dates, URLs — regular expressions (regex) become essential.</p>
+
+            <p>Python's <code>re</code> module provides regex support:</p>
+
+            <pre><code>import re</code></pre>
+
+            <h3>Regex Pattern Cheatsheet</h3>
+
+            <pre><code>Pattern    | Matches
+-----------|------------------------------------------
+.          | Any character except newline
+\d         | Any digit (0-9)
+\D         | Any non-digit
+\w         | Any word character (a-z, A-Z, 0-9, _)
+\W         | Any non-word character
+\s         | Any whitespace (space, tab, newline)
+\S         | Any non-whitespace
+[abc]      | Any character in the set
+[^abc]     | Any character NOT in the set
+a|b        | "a" OR "b"
+^          | Start of string
+$          | End of string
+*          | Zero or more of the preceding
++          | One or more of the preceding
+?          | Zero or one of the preceding
+{n}        | Exactly n repetitions
+{m,n}      | Between m and n repetitions
+\( \)      | Capture group (escape parentheses)
+(?:)       | Non-capturing group</code></pre>
+
+            <h3>re.search() — Find a Pattern</h3>
+
+            <pre><code>import re
+
+text = "Contact us at support@example.com or sales@company.org"
+
+# Search for an email pattern
+pattern = r'\w+@\w+\.\w+'
+match = re.search(pattern, text)
+
+if match:
+    print(match.group())    # "support@example.com"
+    print(match.start())    # 16 (start position)
+    print(match.end())      # 35 (end position)
+
+# Search returns only the FIRST match</code></pre>
+
+            <h3>re.findall() — Get All Matches</h3>
+
+            <pre><code>text = "Contact us at support@example.com or sales@company.org"
+
+# Find ALL email addresses
+emails = re.findall(r'\w+@\w+\.\w+', text)
+print(emails)  # ['support@example.com', 'sales@company.org']
+
+# Find all phone numbers
+log = "Call 555-1234, 555-5678, or 555-9012"
+phones = re.findall(r'\d{3}-\d{4}', log)
+print(phones)  # ['555-1234', '555-5678', '555-9012']
+
+# Find all URLs
+page = "Visit https://python.org and http://example.com for more"
+urls = re.findall(r'https?://\S+', page)
+print(urls)  # ['https://python.org', 'http://example.com']</code></pre>
+
+            <h3>re.sub() — Search and Replace</h3>
+
+            <pre><code>text = "I paid $15.99 for shoes and $29.99 for socks"
+
+# Remove currency symbols
+clean = re.sub(r'\$', '', text)
+print(clean)  # "I paid 15.99 for shoes and 29.99 for socks"
+
+# Anonymize email addresses
+text = "Contact alice@gmail.com or bob@yahoo.com for details"
+anonymized = re.sub(r'\w+@\w+\.\w+', '[email protected]', text)
+print(anonymized)
+# "Contact [email protected] or [email protected] for details"
+
+# Replace with a function for complex transformations
+text = "Alice is 30 years old and Bob is 25"
+def add_one(match):
+    return str(int(match.group()) + 1)
+
+result = re.sub(r'\d+', add_one, text)
+print(result)  # "Alice is 31 years old and Bob is 26"</code></pre>
+
+            <h3>re.split() — Split by Pattern</h3>
+
+            <pre><code>text = "Python,JavaScript;Rust:C++"
+
+# Split by multiple delimiters
+languages = re.split(r'[,;:]', text)
+print(languages)  # ['Python', 'JavaScript', 'Rust', 'C++']</code></pre>
+
+            <h3>Capture Groups — Extract Specific Parts</h3>
+
+            <pre><code>text = "Today is 2026-06-26 and tomorrow is 2026-06-27"
+
+# Capture year, month, day
+pattern = r'(\d{4})-(\d{2})-(\d{2})'
+
+for match in re.finditer(pattern, text):
+    print(f"Full match: {match.group(0)}")
+    print(f"  Year:  {match.group(1)}")
+    print(f"  Month: {match.group(2)}")
+    print(f"  Day:   {match.group(3)}")
+
+# Named capture groups (more readable)
+pattern = r'(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})'
+match = re.search(pattern, text)
+print(match.group("year"))   # "2026"
+print(match.group("month"))  # "06"
+print(match.group("day"))    # "26"</code></pre>
+
+            <h2>Real-World Examples</h2>
+
+            <h3>Example 1: Email Validation</h3>
+
+            <pre><code>import re
+
+def validate_email(email):
+    """Validate an email address with regex."""
+    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    return re.match(pattern, email) is not None
+
+# Test it
+print(validate_email("user@example.com"))     # True
+print(validate_email("user.name+tag@domain.co"))  # True
+print(validate_email("invalid@"))              # False
+print(validate_email("@nodomain.com"))         # False
+print(validate_email("no-at-sign.com"))        # False</code></pre>
+
+            <h3>Example 2: Log File Parser</h3>
+
+            <pre><code>import re
+from collections import Counter
+
+# Sample log lines
+logs = """
+2026-06-26 10:15:23 INFO  User login successful
+2026-06-26 10:15:45 ERROR Failed to connect to database
+2026-06-26 10:16:02 WARNING Disk usage above 80%
+2026-06-26 10:16:30 INFO  File uploaded successfully
+2026-06-26 10:17:01 ERROR Timeout waiting for response
+2026-06-26 10:17:45 INFO  User logout
+2026-06-26 10:18:12 ERROR Connection refused by remote host
+2026-06-26 10:18:55 WARNING Memory usage above 90%
+"""
+
+# Parse log levels
+pattern = r'(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2}) (\w+) (.+)'
+
+parsed_logs = []
+for line in re.finditer(pattern, logs):
+    parsed_logs.append({
+        "date": line.group(1),
+        "time": line.group(2),
+        "level": line.group(3),
+        "message": line.group(4)
+    })
+
+# Count by level
+levels = Counter(log["level"] for log in parsed_logs)
+print("Log summary:", dict(levels))
+# {'INFO': 3, 'ERROR': 3, 'WARNING': 2}
+
+# Extract all error messages
+errors = [log["message"] for log in parsed_logs if log["level"] == "ERROR"]
+print("Errors:", errors)</code></pre>
+
+            <h3>Example 3: Data Cleaning for CSV</h3>
+
+            <pre><code>import re
+
+# Messy data from a scraped website
+raw_data = """
+John Smith  |  john.smith@email.com  |  (555) 123-4567  |  $85,000
+Jane Doe    |  jane@company.org      |  555.987.6543    |  $72,500.00
+Bob Wilson  |  bob.w+test@gmail.com  |  +1-555-111-2222 |  $95,000
+"""
+
+def clean_record(line):
+    """Clean a single record from messy data."""
+    # Split by pipe delimiter
+    parts = [p.strip() for p in line.split("|")]
+    if len(parts) != 4:
+        return None
+    
+    name = parts[0].strip()
+    email = parts[1].strip().lower()
+    
+    # Extract just digits from phone
+    phone_digits = re.sub(r'\D', '', parts[2])
+    phone = f"({phone_digits[:3]}) {phone_digits[3:6]}-{phone_digits[6:]}"
+    
+    # Remove currency and commas from salary
+    salary = re.sub(r'[\$,]', '', parts[3])
+    salary = float(salary)
+    
+    return {
+        "name": name,
+        "email": email,
+        "phone": phone,
+        "salary": salary
+    }
+
+# Process all records
+records = [clean_record(line) for line in raw_data.strip().split("\n")]
+records = [r for r in records if r is not None]  # Remove failures
+
+for record in records:
+    print(record)
+# {'name': 'John Smith', 'email': 'john.smith@email.com',
+#  'phone': '(555) 123-4567', 'salary': 85000.0}</code></pre>
+
+            <h3>Example 4: Password Strength Checker</h3>
+
+            <pre><code>import re
+
+def check_password_strength(password):
+    """Check password strength and return feedback."""
+    issues = []
+    
+    if len(password) < 8:
+        issues.append("Password must be at least 8 characters")
+    
+    if not re.search(r'[A-Z]', password):
+        issues.append("Add at least one uppercase letter")
+    
+    if not re.search(r'[a-z]', password):
+        issues.append("Add at least one lowercase letter")
+    
+    if not re.search(r'\d', password):
+        issues.append("Add at least one digit")
+    
+    if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
+        issues.append("Add at least one special character")
+    
+    if issues:
+        return False, issues
+    
+    return True, ["Password is strong! ✅"]
+
+# Test passwords
+for pwd in ["weak", "Strong1!", "MyP@ssw0rdIsGr8"]:
+    valid, feedback = check_password_strength(pwd)
+    print(f"'{pwd}': {feedback}")</code></pre>
+
+            <h2>Performance Tips</h2>
+
+            <p>When working with strings and regex at scale, keep these tips in mind:</p>
+
+            <ul>
+                <li><strong>Compile patterns</strong> — if you use a regex multiple times, compile it once: <code>pattern = re.compile(r'\d+')</code>, then use <code>pattern.findall(text)</code></li>
+                <li><strong>Use raw strings</strong> — always write regex as <code>r'\d+'</code> not <code>'\\d+'</code> to avoid escaping confusion</li>
+                <li><strong>Prefer string methods when possible</strong> — <code>in</code> operator is faster than <code>re.search()</code> for simple substring checks</li>
+                <li><strong>Avoid <code>*</code> and <code>+</code> greediness issues</strong> — use <code>*?</code> or <code>+?</code> for non-greedy matching when needed</li>
+                <li><strong>Use <code>re.VERBOSE</code> for complex patterns</strong> — allows comments and whitespace in your regex for readability</li>
+            </ul>
+
+            <pre><code># Compiled pattern (faster for repeated use)
+email_pattern = re.compile(
+    r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+)
+
+# Reusable
+email_pattern.match("test@example.com")
+email_pattern.match("another@test.org")
+
+# VERBOSE mode for complex patterns
+phone_pattern = re.compile(r'''
+    \(?           # Optional opening paren
+    (\d{3})       # Area code
+    \)?           # Optional closing paren
+    [\s.-]?       # Optional separator
+    (\d{3})       # First 3 digits
+    [\s.-]?       # Optional separator
+    (\d{4})       # Last 4 digits
+''', re.VERBOSE)</code></pre>
+
+            <h2>Summary</h2>
+
+            <p>Python gives you two powerful tools for text processing: built-in string methods for everyday tasks, and regular expressions for pattern matching. Master both and you'll handle virtually any text manipulation challenge.</p>
+
+            <p>Start with string methods — they're simple, fast, and readable. Reach for regex when you need to find patterns, validate formats, or extract structured data from unstructured text.</p>
+
+            <blockquote>
+                <strong>Remember:</strong> Regex is powerful but can become unreadable quickly. When a pattern gets complex, break it into steps, use <code>re.VERBOSE</code> with comments, and always write tests for your regex patterns.
+            </blockquote>
+
+            <p>Practice these methods on real data — parse logs, clean CSV files, validate user input, extract information from web pages. The more you use strings and regex, the more intuitive they become.</p>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes | Built with ❤️ & AI</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528" target="_blank">GitHub</a>
+                <a href="https://blog.hugow.dev/sitemap.xml">Sitemap</a>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

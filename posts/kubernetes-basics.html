@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kubernetes Basics: Containers at Scale - Hugo's Dev Notes</title>
+    <meta name="description" content="Learn Kubernetes from scratch — pods, deployments, services, and scaling. Move from Docker Compose to production-ready container orchestration with practical examples.">
+    <meta name="keywords" content="kubernetes, k8s, containers, orchestration, pods, deployments, services, docker, devops, scaling">
+    <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/kubernetes-basics.html">
+    <meta property="og:title" content="Kubernetes Basics: Containers at Scale">
+    <meta property="og:description" content="Learn Kubernetes from scratch — pods, deployments, services, and scaling with practical examples.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.hugow.dev/posts/kubernetes-basics.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+                <a href="../devops.html" class="nav-btn">🐳 DevOps</a>
+                <a href="../security.html" class="nav-btn">🔐 Security</a>
+                <a href="../webdev.html" class="nav-btn">💻 Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-full">
+            <header class="post-header">
+                <span class="tag devops">DevOps</span>
+                <span class="tag">Kubernetes</span>
+                <span class="tag">K8s</span>
+                <h1>Kubernetes Basics: Containers at Scale</h1>
+                <div class="post-meta">
+                    <time>2026-06-27</time>
+                    <span class="read-time">11 min read</span>
+                    <span class="post-status">New</span>
+                </div>
+            </header>
+
+            <div class="post-content">
+                <p>You've mastered Docker and Docker Compose. You've even explored Docker Swarm for orchestration. Now it's time to meet <strong>Kubernetes</strong> (or <strong>k8s</strong>) — the industry-standard container orchestrator that powers millions of applications worldwide.</p>
+
+                <p>Kubernetes might look intimidating at first — there's a lot of YAML and terminology. But the core concepts are simple once you see them in action. This guide takes you from zero to deploying a real application, one concept at a time.</p>
+
+                <h2>What Problem Does Kubernetes Solve?</h2>
+
+                <p>Docker Compose is great for development and small deployments. But what happens when you need to:</p>
+                <ul>
+                    <li>🔄 <strong>Auto-restart</strong> a crashed container?</li>
+                    <li>📈 <strong>Scale</strong> from 1 to 10 instances during a traffic spike?</li>
+                    <li>🔄 <strong>Update</strong> your app without any downtime?</li>
+                    <li>🔗 <strong>Connect</strong> services across multiple servers?</li>
+                </ul>
+
+                <p>That's where Kubernetes steps in. It's a platform that manages containers at scale — handling deployment, scaling, networking, and self-healing automatically.</p>
+
+                <h2>Kubernetes Architecture in Plain English</h2>
+
+                <p>Every Kubernetes cluster has two parts:</p>
+
+                <h3>Control Plane (The Brain)</h3>
+                <ul>
+                    <li><strong>API Server</strong> — The front door. Every command goes through here</li>
+                    <li><strong>etcd</strong> — The database. Stores the entire cluster state</li>
+                    <li><strong>Scheduler</strong> — Decides which node runs each container</li>
+                    <li><strong>Controller Manager</strong> — Watches for problems and fixes them</li>
+                </ul>
+
+                <h3>Worker Nodes (The Muscle)</h3>
+                <ul>
+                    <li><strong>Kubelet</strong> — The agent on each node, talks to the control plane</li>
+                    <li><strong>Container Runtime</strong> — Actually runs the containers (containerd, Docker)</li>
+                    <li><strong>Kube-proxy</strong> — Handles networking and routing traffic</li>
+                </ul>
+
+                <h2>Core Concepts (The Big Five)</h2>
+
+                <h3>1. Pod — The Smallest Unit</h3>
+
+                <p>A <strong>Pod</strong> is the smallest deployable unit in Kubernetes. Think of it as a wrapper around one (or more) containers. You almost never create pods directly — higher-level resources manage them for you.</p>
+
+                <pre><code># See your pods
+kubectl get pods
+
+# Describe a pod in detail
+kubectl describe pod my-pod
+
+# Get logs from a pod
+kubectl logs my-pod</code></pre>
+
+                <h3>2. Deployment — Manage Your Pods</h3>
+
+                <p>A <strong>Deployment</strong> defines how many copies of your app should run and how to update them. It's the most commonly used resource.</p>
+
+                <pre><code># deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app
+spec:
+  replicas: 3  # Run 3 copies
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      containers:
+      - name: my-app
+        image: my-app:1.0
+        ports:
+        - containerPort: 8080</code></pre>
+
+                <p>Deploy it with <code>kubectl apply -f deployment.yaml</code>. Kubernetes will create 3 pods running your app. If one crashes, it automatically starts a replacement.</p>
+
+                <h3>3. Service — Expose Your Pods</h3>
+
+                <p>Pods get random IP addresses and can come and go. A <strong>Service</strong> gives you a stable network endpoint to reach your pods.</p>
+
+                <pre><code># service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-app-service
+spec:
+  selector:
+    app: my-app  # Routes to pods with this label
+  ports:
+  - port: 80       # Service port
+    targetPort: 8080  # Pod port
+  type: ClusterIP  # Internal only</code></pre>
+
+                <p>Three service types:</p>
+                <ul>
+                    <li><strong>ClusterIP</strong> (default) — internal network only</li>
+                    <li><strong>NodePort</strong> — opens a port on every node</li>
+                    <li><strong>LoadBalancer</strong> — provisions a cloud load balancer</li>
+                </ul>
+
+                <h3>4. ConfigMap & Secret — Configuration</h3>
+
+                <p>Never hardcode configuration in your container image. Use <strong>ConfigMaps</strong> for non-sensitive data and <strong>Secrets</strong> for sensitive data:</p>
+
+                <pre><code># configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+data:
+  DATABASE_HOST: "postgres.default.svc.cluster.local"
+  DATABASE_PORT: "5432"
+  LOG_LEVEL: "info"
+
+---
+# secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: app-secrets
+type: Opaque
+data:
+  # Base64 encoded! Use: echo -n "password" | base64
+  DATABASE_PASSWORD: cGFzc3dvcmQxMjM=
+  API_KEY: c2VjcmV0LWtleQ==</code></pre>
+
+                <p>Reference them in your deployment:</p>
+
+                <pre><code>spec:
+  template:
+    spec:
+      containers:
+      - name: my-app
+        image: my-app:1.0
+        envFrom:
+        - configMapRef:
+            name: app-config
+        - secretRef:
+            name: app-secrets</code></pre>
+
+                <h3>5. Namespace — Organize Resources</h3>
+
+                <p>Namespaces let you split a cluster into virtual clusters — perfect for separating dev, staging, and production:</p>
+
+                <pre><code># Create namespaces
+kubectl create namespace development
+kubectl create namespace staging
+kubectl create namespace production
+
+# Deploy to a specific namespace
+kubectl apply -f deployment.yaml -n development
+
+# List resources in a namespace
+kubectl get all -n development</code></pre>
+
+                <h2>Hands-On: Deploy a Full Application</h2>
+
+                <p>Let's deploy a complete web application with a frontend, backend, and database. We'll use <strong>kubectl</strong> and Minikube (a local Kubernetes cluster for development).</p>
+
+                <h3>Step 1: Set Up Minikube</h3>
+
+                <pre><code># Install Minikube (https://minikube.sigs.k8s.io/docs/start/)
+minikube start --driver=docker
+
+# Verify it's running
+kubectl cluster-info
+kubectl get nodes</code></pre>
+
+                <h3>Step 2: Create the Database (StatefulSet)</h3>
+
+                <pre><code># postgres.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:16
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_DB
+          value: "appdb"
+        - name: POSTGRES_USER
+          value: "admin"
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-secret
+              key: password
+        volumeMounts:
+        - name: postgres-data
+          mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+  - metadata:
+      name: postgres-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+spec:
+  selector:
+    app: postgres
+  ports:
+  - port: 5432
+  clusterIP: None  # Headless service for StatefulSet</code></pre>
+
+                <p><strong>Why StatefulSet instead of Deployment?</strong> Databases need persistent storage with stable names. A StatefulSet guarantees that pod-0 always gets the same disk, even after restarts.</p>
+
+                <h3>Step 3: Create the Backend API</h3>
+
+                <pre><code># backend.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+      - name: backend
+        image: python:3.12-slim
+        command: ["python", "app.py"]
+        ports:
+        - containerPort: 8000
+        env:
+        - name: DATABASE_HOST
+          value: "postgres"  # Kubernetes DNS!
+        - name: DATABASE_PORT
+          value: "5432"
+        - name: DATABASE_NAME
+          value: "appdb"
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+spec:
+  selector:
+    app: backend
+  ports:
+  - port: 8000
+    targetPort: 8000
+  type: ClusterIP</code></pre>
+
+                <p>Notice the <strong>probes</strong>: readinessProbe tells Kubernetes when the app is ready to receive traffic. livenessProbe restarts the app if it stops responding. Both are essential for reliable deployments.</p>
+
+                <h3>Step 4: Create the Frontend</h3>
+
+                <pre><code># frontend.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: html
+          mountPath: /usr/share/nginx/html
+      volumes:
+      - name: html
+        configMap:
+          name: frontend-html
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-html
+data:
+  index.html: |
+    &lt;!DOCTYPE html&gt;
+    &lt;html&gt;
+    &lt;head&gt;
+      &lt;title&gt;My App&lt;/title&gt;
+      &lt;style&gt;
+        body { font-family: sans-serif; text-align: center; padding: 50px; }
+        h1 { color: #2563eb; }
+      &lt;/style&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+      &lt;h1&gt;🚀 Hello from Kubernetes!&lt;/h1&gt;
+      &lt;p&gt;Served from a frontend pod.&lt;/p&gt;
+    &lt;/body&gt;
+    &lt;/html&gt;
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+spec:
+  selector:
+    app: frontend
+  ports:
+  - port: 80
+    targetPort: 80
+  type: NodePort</code></pre>
+
+                <h3>Step 5: Deploy Everything</h3>
+
+                <pre><code># Apply all resources
+kubectl apply -f postgres.yaml
+kubectl apply -f backend.yaml
+kubectl apply -f frontend.yaml
+
+# Watch everything come up
+kubectl get all
+kubectl get pods -w
+
+# Access the frontend
+minikube service frontend</code></pre>
+
+                <h2>Scaling Made Easy</h2>
+
+                <p>One of Kubernetes' biggest advantages: scaling is a single command.</p>
+
+                <pre><code># Scale manually
+kubectl scale deployment backend --replicas=5
+
+# Auto-scale based on CPU usage
+kubectl autoscale deployment backend \
+  --min=2 --max=10 --cpu-percent=70
+
+# Check the autoscaler
+kubectl get hpa</code></pre>
+
+                <p>The Horizontal Pod Autoscaler (HPA) automatically adds pods when CPU goes above 70% and removes them when it drops below 65%. Zero manual intervention.</p>
+
+                <h2>Zero-Downtime Deployments</h2>
+
+                <p>Updating your app without any downtime is one click in Kubernetes:</p>
+
+                <pre><code># Update the image version
+kubectl set image deployment/backend \
+  backend=my-app:2.0
+
+# Watch the rollout
+kubectl rollout status deployment/backend
+kubectl rollout history deployment/backend
+
+# Oops, need to roll back?
+kubectl rollout undo deployment/backend</code></pre>
+
+                <p>Kubernetes uses a <strong>rolling update</strong> strategy by default: it creates new pods with the updated image, then gradually replaces old ones. Your app stays online the entire time.</p>
+
+                <h2>Essential kubectl Commands</h2>
+
+                <pre><code># Cluster overview
+kubectl cluster-info
+kubectl get nodes
+
+# Resources
+kubectl get pods -A              # All pods in all namespaces
+kubectl get services
+kubectl get deployments
+kubectl get all -n default
+
+# Debugging
+kubectl logs pod-name           # View logs
+kubectl logs -f pod-name        # Follow logs (like tail -f)
+kubectl describe pod pod-name   # Detailed info + events
+kubectl exec -it pod-name -- sh # Shell into a pod
+
+# Manage resources
+kubectl apply -f file.yaml      # Create/update resources
+kubectl delete -f file.yaml     # Delete resources
+kubectl get -f file.yaml -o yaml  # See what's deployed</code></pre>
+
+                <h2>Kubernetes vs Docker Compose vs Docker Swarm</h2>
+
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Feature</th>
+                            <th>Docker Compose</th>
+                            <th>Docker Swarm</th>
+                            <th>Kubernetes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Learning curve</td>
+                            <td>Easy</td>
+                            <td>Medium</td>
+                            <td>Steep</td>
+                        </tr>
+                        <tr>
+                            <td>Auto-scaling</td>
+                            <td>No</td>
+                            <td>Basic</td>
+                            <td>Advanced (HPA/VPA)</td>
+                        </tr>
+                        <tr>
+                            <td>Self-healing</td>
+                            <td>Restart only</td>
+                            <td>Yes</td>
+                            <td>Yes (advanced)</td>
+                        </tr>
+                        <tr>
+                            <td>Ecosystem</td>
+                            <td>Docker Hub</td>
+                            <td>Docker Hub</td>
+                            <td>Massive (Helm, Istio...)</td>
+                        </tr>
+                        <tr>
+                            <td>Best for</td>
+                            <td>Development</td>
+                            <td>Small teams</td>
+                            <td>Production at scale</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h2>Next Steps After Basics</h2>
+
+                <ul>
+                    <li><strong>Helm</strong> — Package manager for Kubernetes (like pip for K8s)</li>
+                    <li><strong>Ingress</strong> — Route external traffic to services</li>
+                    <li><strong>Persistent Volumes</strong> — Storage that survives pod restarts</li>
+                    <li><strong>Kustomize</strong> — Manage configurations without templates</li>
+                    <li><strong>Service Mesh (Istio/Linkerd)</strong> — Advanced traffic management</li>
+                    <li><strong>Kubernetes on Cloud</strong> — EKS (AWS), GKE (Google), AKS (Azure)</li>
+                </ul>
+
+                <h2>Summary</h2>
+
+                <p>Kubernetes is the standard for container orchestration. The key concepts are simple:</p>
+                <ul>
+                    <li>📦 <strong>Pods</strong> — containers in a wrapper</li>
+                    <li>🔄 <strong>Deployments</strong> — manage and update pods</li>
+                    <li>🌐 <strong>Services</strong> — stable network endpoints</li>
+                    <li>⚙️ <strong>ConfigMaps/Secrets</strong> — external configuration</li>
+                    <li>📂 <strong>Namespaces</strong> — virtual clusters</li>
+                    <li>📈 <strong>HPA</strong> — automatic scaling</li>
+                </ul>
+
+                <p>Start with Minikube locally, learn the basics with <code>kubectl</code>, then graduate to managed Kubernetes on cloud providers. It's a journey worth taking — Kubernetes skills open doors to virtually every DevOps role.</p>
+
+                <div class="post-nav">
+                    <a href="docker-swarm-orchestration.html" class="prev-post">← Docker Swarm Orchestration</a>
+                    <a href="terraform-workspaces.html" class="next-post">Terraform Workspaces →</a>
+                </div>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes | Built with ❤️ & AI</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528" target="_blank">GitHub</a>
+                <a href="https://blog.hugow.dev/sitemap.xml">Sitemap</a>
+            </div>
+        </div>
+    </footer>
+
+    <button class="back-to-top" id="backToTop" title="Back to top">↑</button>
+
+    <script>
+    // Reading progress bar
+    window.onscroll = function() {
+        const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+        const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        const scrolled = (winScroll / height) * 100;
+        document.getElementById("progressBar").style.width = scrolled + "%";
+        
+        const btn = document.getElementById("backToTop");
+        if (winScroll > 300) btn.style.display = "block";
+        else btn.style.display = "none";
+    };
+    document.getElementById("backToTop").onclick = function() {
+        window.scrollTo({top: 0, behavior: 'smooth'});
+    };
+    
+    // Dark mode toggle
+    const toggle = document.getElementById("themeToggle");
+    const saved = localStorage.getItem("darkMode");
+    if (saved === "true") { document.body.classList.add("dark-mode"); toggle.textContent = "☀️"; }
+    toggle.onclick = function() {
+        document.body.classList.toggle("dark-mode");
+        localStorage.setItem("darkMode", document.body.classList.contains("dark-mode"));
+        toggle.textContent = document.body.classList.contains("dark-mode") ? "☀️" : "🌙";
+    };
+    </script>
+</body>
+</html>

@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS Custom Properties (Variables): Build Themes and Design Systems | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn CSS Custom Properties — variables in CSS that enable theming, consistent design systems, and dynamic styles. Beginner guide with practical examples.">
+    <meta name="keywords" content="css variables, custom properties, css theming, design system, cascade layers, web development tutorial">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+            <p class="subtitle">Cloudflare · Python · AI Coding · DevOps</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+
+        <article class="post-content">
+            <span class="tag web">Web Dev</span>
+            <h1>CSS Custom Properties (Variables): Build Themes and Design Systems</h1>
+            <time>June 27, 2026 · 10 min read</time>
+
+            <p>Before CSS Custom Properties, sharing a color across your stylesheet meant repeating <code>#2563eb</code> in dozens of places. Change it once and you'd have to update every single occurrence. CSS variables solved this problem and unlocked powerful new patterns like dark mode, theming, and design systems.</p>
+
+            <p>CSS Custom Properties (commonly called "CSS variables") are user-defined values that you can set once and reuse throughout your stylesheet. They cascade like any other CSS property, which makes them incredibly flexible.</p>
+
+            <blockquote>
+                <strong>Key idea:</strong> CSS variables are values stored in a named container. Unlike preprocessor variables (Sass/Less), CSS variables live in the browser — they can be changed dynamically with JavaScript, respond to media queries, and even be inherited differently per element.
+            </blockquote>
+
+            <h2>Syntax: Declaration and Usage</h2>
+
+            <p>CSS variables use a <code>--</code> prefix to declare and <code>var()</code> to reference:</p>
+
+            <pre><code>/* Declare a variable */
+:root {
+  --primary-color: #2563eb;
+  --text-color: #1e293b;
+  --border-radius: 12px;
+  --spacing-unit: 8px;
+}
+
+/* Use the variable */
+.header {
+  background-color: var(--primary-color);
+  color: var(--text-color);
+  border-radius: var(--border-radius);
+  padding: calc(var(--spacing-unit) * 3);
+}</code></pre>
+
+            <p>Notice <code>:root</code> — this targets the <code>&lt;html&gt;</code> element, making the variable globally available. You can also declare variables on any selector for more local scope.</p>
+
+            <h2>Fallback Values</h2>
+
+            <p>Always provide a fallback in case a variable is undefined:</p>
+
+            <pre><code>.card {
+  /* Uses --card-bg if defined, otherwise falls back to white */
+  background: var(--card-bg, white);
+
+  /* Fallback works with calc too */
+  margin: var(--card-margin, calc(var(--spacing-unit) * 2));
+}</code></pre>
+
+            <h2>Why CSS Variables Beat Preprocessor Variables</h2>
+
+            <p>Sass and Less variables compile away before reaching the browser. CSS variables are different:</p>
+
+            <ul>
+                <li><strong>Cascade</strong> — CSS variables follow the normal cascade. You can override them per component.</li>
+                <li><strong>JavaScript access</strong> — Read and write variables at runtime.</li>
+                <li><strong>Responsive</strong> — Change variables inside media queries without duplicating entire rule sets.</li>
+                <li><strong>No build step</strong> — Works in plain CSS, no compilation needed.</li>
+            </ul>
+
+            <pre><code>/* This Sass pattern... */
+$primary: blue;
+.button { background: $primary; }
+
+/* Becomes this CSS pattern with more power */
+:root { --primary: blue; }
+.button { background: var(--primary); }
+
+/* Override just for dark mode */
+.dark .button { --primary: #60a5fa; }</code></pre>
+
+            <h2>Building a Dark Mode with CSS Variables</h2>
+
+            <p>This is the most popular use case. Define light and dark palettes as variable sets:</p>
+
+            <pre><code>/* Light theme (default) */
+:root {
+  --bg-primary: #f8fafc;
+  --bg-surface: #ffffff;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --border-color: #e2e8f0;
+  --accent: #2563eb;
+  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+/* Dark theme */
+[data-theme="dark"] {
+  --bg-primary: #0f172a;
+  --bg-surface: #1e293b;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --border-color: #334155;
+  --accent: #60a5fa;
+  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3);
+}
+
+/* Use variables everywhere */
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow);
+  color: var(--text-secondary);
+}</code></pre>
+
+            <p>Toggle dark mode with one line of JavaScript:</p>
+
+            <pre><code>// Toggle dark mode
+document.documentElement.setAttribute(
+  'data-theme',
+  document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'
+);
+
+// Persist preference
+localStorage.setItem('theme',
+  document.documentElement.getAttribute('data-theme')
+);
+
+// Load saved preference on page load
+const saved = localStorage.getItem('theme');
+if (saved) {
+  document.documentElement.setAttribute('data-theme', saved);
+}</code></pre>
+
+            <p>You can also respect the user's system preference automatically:</p>
+
+            <pre><code>/* Apply dark theme if user prefers dark mode */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --bg-primary: #0f172a;
+    --bg-surface: #1e293b;
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --border-color: #334155;
+    --accent: #60a5fa;
+  }
+}</code></pre>
+
+            <h2>CSS Variables with calc() for Spacing Systems</h2>
+
+            <p>Create a consistent spacing system using a base unit:</p>
+
+            <pre><code>:root {
+  --space-unit: 0.25rem; /* 4px base unit */
+}
+
+/* Usage — every spacing value is a multiple of 4px */
+.padding-sm { padding: calc(var(--space-unit) * 2); }  /* 8px */
+.padding-md { padding: calc(var(--space-unit) * 4); }  /* 16px */
+.padding-lg { padding: calc(var(--space-unit) * 8); }  /* 32px */
+.padding-xl { padding: calc(var(--space-unit) * 12); } /* 48px */
+
+.margin-top-sm { margin-top: calc(var(--space-unit) * 2); }
+.margin-top-md { margin-top: calc(var(--space-unit) * 4); }
+
+/* Font sizes */
+.text-sm { font-size: calc(var(--space-unit) * 3); }  /* 12px */
+.text-base { font-size: calc(var(--space-unit) * 4); } /* 16px */
+.text-lg { font-size: calc(var(--space-unit) * 5); }   /* 20px */
+.text-xl { font-size: calc(var(--space-unit) * 6); }   /* 24px */</code></pre>
+
+            <h2>Component-Level Variable Overrides</h2>
+
+            <p>Since CSS variables cascade, you can define defaults globally and override them per component:</p>
+
+            <pre><code>/* Global defaults */
+:root {
+  --btn-bg: #2563eb;
+  --btn-text: #ffffff;
+  --btn-radius: 25px;
+  --btn-padding: 0.5rem 1rem;
+}
+
+.button {
+  background: var(--btn-bg);
+  color: var(--btn-text);
+  border-radius: var(--btn-radius);
+  padding: var(--btn-padding);
+  border: none;
+  cursor: pointer;
+}
+
+/* Override for danger button */
+.button--danger {
+  --btn-bg: #ef4444;
+}
+
+/* Override for outline button */
+.button--outline {
+  --btn-bg: transparent;
+  --btn-text: var(--btn-bg, #2563eb);
+  border: 2px solid var(--btn-text);
+}
+
+<!-- Usage in HTML -->
+<button class="button">Default</button>
+<button class="button button--danger">Delete</button>
+<button class="button button--outline">Cancel</button></code></pre>
+
+            <h2>Complete Practical Example: Themed Dashboard Card</h2>
+
+            <p>Here's a full example showing variables powering a complete component:</p>
+
+            <pre><code>&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+&lt;style&gt;
+  :root {
+    --bg: #f8fafc;
+    --surface: #ffffff;
+    --text: #1e293b;
+    --text-light: #64748b;
+    --accent: #2563eb;
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --border: #e2e8f0;
+    --radius: 12px;
+  }
+
+  [data-theme="dark"] {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --text: #f1f5f9;
+    --text-light: #94a3b8;
+    --accent: #60a5fa;
+    --success: #4ade80;
+    --warning: #fbbf24;
+    --border: #334155;
+  }
+
+  body {
+    font-family: system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 2rem;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    max-width: 320px;
+  }
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  .badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .badge--success {
+    background: var(--success);
+    color: white;
+  }
+
+  .stat {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  .label {
+    color: var(--text-light);
+    font-size: 0.875rem;
+  }
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;div class="card"&gt;
+    &lt;div class="card-header"&gt;
+      &lt;span class="label"&gt;Active Users&lt;/span&gt;
+      &lt;span class="badge badge--success"&gt;+12%&lt;/span&gt;
+    &lt;/div&gt;
+    &lt;div class="stat"&gt;1,284&lt;/div&gt;
+    &lt;div class="label"&gt;vs 1,146 last week&lt;/div&gt;
+  &lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+
+            <h2>Browser Support and Gotchas</h2>
+
+            <p>CSS Custom Properties are supported in all modern browsers (Chrome 49+, Firefox 31+, Safari 9.1+, Edge 79+). They work great, but watch out for these common mistakes:</p>
+
+            <ul>
+                <li><strong>Whitespaces matter</strong> — <code>--color: red </code> (trailing space) becomes <code>red </code> as the value, which can break functions like <code>rgb()</code>.</li>
+                <li><strong>Invalid values cascade</strong> — If a variable has an invalid value for a property, the property falls back to its inherited value (not the variable's fallback).</li>
+                <li><strong>No type checking</strong> — CSS doesn't warn if you use a color variable in a size property. Be careful with <code>var(--spacing)</code> used as <code>background-color</code>.</li>
+                <li><strong>Custom properties on :root vs body</strong> — Use <code>:root</code> for global variables. <code>body</code> has a slightly higher specificity and can cause confusing overrides.</li>
+            </ul>
+
+            <pre><code>/* Common gotcha: invalid value breaks calc() */
+:root {
+  --size: 16px;
+}
+
+.bad { width: calc(var(--size) / 2); }     /* Works: 8px */
+/* Don't do this: */
+:root { --size: 16px ; }  /* trailing space = "16px " */
+.worse { width: calc(var(--size) / 2); }   /* Fails! */</code></pre>
+
+            <h2>CSS Variables + Container Queries</h2>
+
+            <p>The newest superpower: combine CSS variables with container queries for component-level responsiveness:</p>
+
+            <pre><code>.card-container {
+  container-type: inline-size;
+  container-name: card;
+}
+
+.card {
+  --font-size: 1rem;
+  --padding: 1rem;
+}
+
+@container card (min-width: 400px) {
+  .card {
+    --font-size: 1.25rem;
+    --padding: 1.5rem;
+  }
+}
+
+@container card (min-width: 600px) {
+  .card {
+    --font-size: 1.5rem;
+    --padding: 2rem;
+  }
+}</code></pre>
+
+            <h2>Summary</h2>
+
+            <p>CSS Custom Properties are the foundation of modern CSS architecture. They enable:</p>
+
+            <ul>
+                <li>✅ Easy dark mode and theming</li>
+                <li>✅ Consistent design systems with shared tokens</li>
+                <li>✅ Component-level customization without class explosion</li>
+                <li>✅ Dynamic style changes with JavaScript</li>
+                <li>✅ Responsive values that adapt without duplicating rules</li>
+            </ul>
+
+            <blockquote>
+                <strong>Next steps:</strong> If you want to see CSS in action, check out the <a href="posts/css-grid-flexbox.html">CSS Grid & Flexbox guide</a> or <a href="posts/css-animations-transitions.html">CSS Animations & Transitions</a> tutorial. Combine those layout and animation skills with CSS variables for truly powerful, maintainable stylesheets.
+            </blockquote>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes. Built with ☕ and curiosity.</p>
+        </div>
+    </footer>
+</body>
+</html>

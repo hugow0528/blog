@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Async/Await: Concurrency Made Simple - Hugo's Dev Notes</title>
+    <meta name="description" content="Learn Python async/await — write concurrent code that handles multiple tasks at once. Coroutines, event loops, asyncio, and real-world examples with working code.">
+    <meta name="keywords" content="python async, await, asyncio, concurrency, coroutines, event loop, python beginner, non-blocking">
+    <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-async-await.html">
+    <meta property="og:title" content="Python Async/Await: Concurrency Made Simple">
+    <meta property="og:description" content="Learn Python async/await — write concurrent code that handles multiple tasks at once with real examples.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.hugow.dev/posts/python-async-await.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+                <a href="../devops.html" class="nav-btn">🐳 DevOps</a>
+                <a href="../security.html" class="nav-btn">🔐 Security</a>
+                <a href="../webdev.html" class="nav-btn">💻 Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-full">
+            <header class="post-header">
+                <span class="tag python">Python</span>
+                <span class="tag">Async</span>
+                <span class="tag">Concurrency</span>
+                <h1>Python Async/Await: Concurrency Made Simple</h1>
+                <div class="post-meta">
+                    <time>2026-06-27</time>
+                    <span class="read-time">10 min read</span>
+                    <span class="post-status">New</span>
+                </div>
+            </header>
+
+            <div class="post-content">
+                <p>You've learned Python functions, loops, and error handling. Now it's time to level up with <strong>async/await</strong> — Python's way of running multiple tasks at the same time without the complexity of threading or multiprocessing.</p>
+
+                <p>Think about it this way: when you're cooking dinner, you don't stand and stare at the boiling water. You set the pot, then chop vegetables while the water heats up. That's async programming — start a task, do something else, come back when it's ready.</p>
+
+                <h2>Why Async? The Problem with Waiting</h2>
+
+                <p>Most Python code runs <strong>sequentially</strong> — one line after another. This is fine for simple scripts, but when your code needs to wait for something (a web API response, reading a file, a database query), it just... sits there. Doing nothing. Wasting time.</p>
+
+                <p><strong>Sequential code (slow):</strong></p>
+
+                <pre><code># Each request waits for the previous one to finish
+import time
+
+def fetch_data(url):
+    print(f"Fetching {url}...")
+    time.sleep(2)  # Simulating network delay
+    return f"Data from {url}"
+
+start = time.time()
+
+result1 = fetch_data("https://api.weather.com")
+result2 = fetch_data("https://api.news.com")
+result3 = fetch_data("https://api.prices.com")
+
+elapsed = time.time() - start
+print(f"Total time: {elapsed:.1f} seconds")
+# Output: Total time: 6.0 seconds 😩</code></pre>
+
+                <p>Three requests, each taking 2 seconds = 6 seconds total. But those requests don't actually depend on each other! We could do them all at once.</p>
+
+                <h2>Async to the Rescue</h2>
+
+                <p>Python's <code>asyncio</code> module lets us run multiple tasks concurrently using <strong>coroutines</strong> — special functions that can pause and resume:</p>
+
+                <pre><code>import asyncio
+import time
+
+# Define an async function (coroutine)
+async def fetch_data(url):
+    print(f"Fetching {url}...")
+    await asyncio.sleep(2)  # Non-blocking wait
+    return f"Data from {url}"
+
+async def main():
+    start = time.time()
+    
+    # Run all three requests concurrently!
+    results = await asyncio.gather(
+        fetch_data("https://api.weather.com"),
+        fetch_data("https://api.news.com"),
+        fetch_data("https://api.prices.com")
+    )
+    
+    elapsed = time.time() - start
+    print(f"Results: {results}")
+    print(f"Total time: {elapsed:.1f} seconds")
+
+asyncio.run(main())
+# Output: Total time: 2.0 seconds 🎉</code></pre>
+
+                <p>Same three requests, but now they run <strong>concurrently</strong> — all at once. 6 seconds becomes 2 seconds. That's a 3x speedup with minimal code changes.</p>
+
+                <h2>Key Concepts: async and await</h2>
+
+                <h3>1. <code>async def</code> — Declaring a Coroutine</h3>
+
+                <p>The <code>async def</code> keyword tells Python this function is a coroutine. It doesn't execute immediately when called — it returns a coroutine object that needs to be <strong>awaited</strong>.</p>
+
+                <pre><code>async def greet(name):
+    await asyncio.sleep(1)  # Simulate work
+    return f"Hello, {name}!"
+
+# Calling it returns a coroutine, NOT the result
+task = greet("Hugo")  # &lt;coroutine object greet&gt;
+# Need to await it to get the actual result</code></pre>
+
+                <h3>2. <code>await</code> — Pausing Until Ready</h3>
+
+                <p>The <code>await</code> keyword pauses the current coroutine until the awaited task completes, then returns the result. While paused, the event loop runs other coroutines.</p>
+
+                <pre><code>async def main():
+    # This PAUSES here, lets other tasks run
+    greeting = await greet("Hugo")
+    print(greeting)  # "Hello, Hugo!"</code></pre>
+
+                <h3>3. The Event Loop</h3>
+
+                <p>The event loop is the engine that runs your coroutines. It manages all the tasks, switching between them as they pause and resume. You rarely need to manage it directly — <code>asyncio.run()</code> creates and runs it for you.</p>
+
+                <h2>Running Tasks Concurrently</h2>
+
+                <h3>Method 1: <code>asyncio.gather()</code> — Run All Together</h3>
+
+                <pre><code>async def fetch_user(user_id):
+    await asyncio.sleep(1)
+    return {"id": user_id, "name": f"User {user_id}"}
+
+async def fetch_orders(user_id):
+    await asyncio.sleep(1)
+    return [{"item": f"Order {i}"} for i in range(3)]
+
+async def fetch_profile(user_id):
+    await asyncio.sleep(1)
+    return {"bio": f"Bio for user {user_id}", "avatar": "img.png"}
+
+async def main():
+    # All three fetch at the same time
+    user, orders, profile = await asyncio.gather(
+        fetch_user(42),
+        fetch_orders(42),
+        fetch_profile(42)
+    )
+    print(f"User: {user['name']}")
+    print(f"Orders: {len(orders)} items")
+    print(f"Profile: {profile['bio']}")
+
+# Total time: ~1 second (not 3 seconds!)</code></pre>
+
+                <h3>Method 2: <code>asyncio.create_task()</code> — Fine Control</h3>
+
+                <pre><code>async def download_file(filename, size):
+    """Simulate downloading files of different sizes"""
+    print(f"Starting download: {filename}")
+    await asyncio.sleep(size)  # Larger files take longer
+    print(f"Downloaded: {filename}")
+    return filename
+
+async def main():
+    # Create tasks immediately — they start running right away
+    task1 = asyncio.create_task(download_file("image.png", 3))
+    task2 = asyncio.create_task(download_file("video.mp4", 1))
+    task3 = asyncio.create_task(download_file("audio.mp3", 2))
+    
+    # Wait for each to complete (video finishes first!)
+    result2 = await task2  # 1 second
+    result3 = await task3  # 1 more second  
+    result1 = await task1  # 1 more second
+    
+    print("All downloads complete!")
+    
+# Output:
+# Starting download: image.png
+# Starting download: video.mp4
+# Starting download: audio.mp3
+# Downloaded: video.mp4
+# Downloaded: audio.mp3
+# Downloaded: image.png</code></pre>
+
+                <h2>Real-World Example: Concurrent API Client</h2>
+
+                <p>Here's a practical async API client that fetches data from multiple endpoints simultaneously:</p>
+
+                <pre><code>import asyncio
+import aiohttp  # pip install aiohttp
+
+async def fetch_with_session(session, url):
+    """Fetch a single URL using a shared session"""
+    try:
+        async with session.get(url) as response:
+            data = await response.json()
+            return {"url": url, "status": response.status, "data": data}
+    except Exception as e:
+        return {"url": url, "status": "error", "error": str(e)}
+
+async def fetch_multiple(urls):
+    """Fetch multiple URLs concurrently"""
+    async with aiohttp.ClientSession() as session:
+        # Create a task for each URL
+        tasks = [fetch_with_session(session, url) for url in urls]
+        # Run all tasks concurrently
+        results = await asyncio.gather(*tasks)
+    return results
+
+async def main():
+    urls = [
+        "https://jsonplaceholder.typicode.com/posts/1",
+        "https://jsonplaceholder.typicode.com/users/1",
+        "https://jsonplaceholder.typicode.com/comments/1",
+    ]
+    
+    results = await fetch_multiple(urls)
+    
+    for result in results:
+        if result["status"] == 200:
+            print(f"✅ {result['url']}: {result['status']}")
+        else:
+            print(f"❌ {result['url']}: {result['error']}")
+
+asyncio.run(main())</code></pre>
+
+                <p>The key advantage: a <code>ClientSession</code> reuses TCP connections, and <code>asyncio.gather()</code> makes all requests simultaneously. For 3 endpoints, this might take 100ms instead of 300ms.</p>
+
+                <h2>Error Handling in Async Code</h2>
+
+                <p>Async code uses regular try/except blocks, just like synchronous code:</p>
+
+                <pre><code>async def safe_fetch(session, url, timeout=10):
+    try:
+        async with session.get(url, timeout=timeout) as response:
+            if response.status == 200:
+                return await response.json()
+            return {"error": f"HTTP {response.status}"}
+    except asyncio.TimeoutError:
+        return {"error": "Request timed out"}
+    except Exception as e:
+        return {"error": str(e)}
+
+async def main():
+    async with aiohttp.ClientSession() as session:
+        result = await safe_fetch(session, "https://api.example.com")
+        print(result)</code></pre>
+
+                <p>You can also use <code>asyncio.gather(..., return_exceptions=True)</code> to prevent one failed task from cancelling all others:</p>
+
+                <pre><code>async def main():
+    results = await asyncio.gather(
+        fetch_data("https://fast-api.com"),
+        fetch_data("https://slow-api.com"),
+        fetch_data("https://broken-api.com"),
+        return_exceptions=True  # Don't crash on errors
+    )
+    
+    for i, result in enumerate(results):
+        if isinstance(result, Exception):
+            print(f"Request {i} failed: {result}")
+        else:
+            print(f"Request {i} succeeded: {result}")</code></pre>
+
+                <h2>Async vs Threads: When to Use What</h2>
+
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Use Async When...</th>
+                            <th>Use Threads When...</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>I/O-bound (network, files, APIs)</td>
+                            <td>CPU-bound (calculations, image processing)</td>
+                        </tr>
+                        <tr>
+                            <td>Many concurrent connections</td>
+                            <td>Few heavy computations</td>
+                        </tr>
+                        <tr>
+                            <td>You need lightweight concurrency</td>
+                            <td>You're using non-async libraries</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h2>Common Async Patterns</h2>
+
+                <h3>Rate Limiting with Semaphore</h3>
+
+                <pre><code>async def rate_limited_fetch(semaphore, session, url):
+    async with semaphore:  # Only 5 requests at a time
+        async with session.get(url) as response:
+            return await response.json()
+
+async def main():
+    semaphore = asyncio.Semaphore(5)  # Max 5 concurrent
+    urls = [f"https://api.example.com/data/{i}" for i in range(100)]
+    
+    async with aiohttp.ClientSession() as session:
+        tasks = [rate_limited_fetch(semaphore, session, url) for url in urls]
+        results = await asyncio.gather(*tasks)</code></pre>
+
+                <h3>Timeout Control</h3>
+
+                <pre><code>async def main():
+    try:
+        result = await asyncio.wait_for(
+            some_slow_operation(),
+            timeout=5.0  # Give up after 5 seconds
+        )
+    except asyncio.TimeoutError:
+        print("Operation took too long!")</code></pre>
+
+                <h2>Async Libraries You Should Know</h2>
+
+                <ul>
+                    <li><strong>aiohttp</strong> — Async HTTP client and server</li>
+                    <li><strong>httpx</strong> — Async version of the requests library</li>
+                    <li><strong>asyncpg</strong> — Async PostgreSQL driver</li>
+                    <li><strong>aioredis</strong> — Async Redis client</li>
+                    <li><strong>Motor</strong> — Async MongoDB driver</li>
+                    <li><strong>FastAPI</strong> — Async web framework (see our web tutorial)</li>
+                </ul>
+
+                <h2>Common Mistakes to Avoid</h2>
+
+                <h3>❌ Forgetting <code>await</code></h3>
+                <pre><code># BUG: Returns a coroutine, not the result!
+result = fetch_data(url)  # Missing await!
+
+# FIX: Always await coroutines
+result = await fetch_data(url)</code></pre>
+
+                <h3>❌ Using <code>time.sleep()</code> instead of <code>asyncio.sleep()</code></h3>
+                <pre><code># BUG: Blocks the entire event loop!
+await time.sleep(2)
+
+# FIX: Use async sleep
+await asyncio.sleep(2)</code></pre>
+
+                <h3>❌ Mixing sync and async code</h3>
+                <pre><code># BUG: Regular function in async context
+async def main():
+    data = regular_function()  # This is fine but blocks the loop
+
+# Better: Use a thread pool for sync calls
+import concurrent.futures
+loop = asyncio.get_event_loop()
+data = await loop.run_in_executor(None, regular_function)</code></pre>
+
+                <h2>Summary</h2>
+
+                <p>Python async/await lets you write concurrent code that's:</p>
+                <ul>
+                    <li>⚡ <strong>Faster</strong> — handle multiple I/O tasks simultaneously</li>
+                    <li>📖 <strong>Readable</strong> — looks like sequential code but runs concurrently</li>
+                    <li>🪶 <strong>Lightweight</strong> — thousands of coroutines vs dozens of threads</li>
+                    <li>🔧 <strong>Controlled</strong> — semaphores, timeouts, and error handling built-in</li>
+                </ul>
+
+                <p>Start with <code>asyncio.gather()</code> for running independent tasks, use <code>asyncio.create_task()</code> when you need fine-grained control, and always use async-compatible libraries (aiohttp, httpx, asyncpg) to get the full benefit.</p>
+
+                <p>Want to see async in action with a full web API? Check out our <a href="python-apis.html">Python APIs tutorial</a> next!</p>
+
+                <div class="post-nav">
+                    <a href="python-decorators-generators.html" class="prev-post">← Python Decorators & Generators</a>
+                    <a href="vibe-coding-full-app.html" class="next-post">Vibe Coding Full App →</a>
+                </div>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes | Built with ❤️ & AI</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528" target="_blank">GitHub</a>
+                <a href="https://blog.hugow.dev/sitemap.xml">Sitemap</a>
+            </div>
+        </div>
+    </footer>
+
+    <button class="back-to-top" id="backToTop" title="Back to top">↑</button>
+
+    <script>
+    // Reading progress bar
+    window.onscroll = function() {
+        const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+        const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        const scrolled = (winScroll / height) * 100;
+        document.getElementById("progressBar").style.width = scrolled + "%";
+        
+        // Back to top button
+        const btn = document.getElementById("backToTop");
+        if (winScroll > 300) btn.style.display = "block";
+        else btn.style.display = "none";
+    };
+    document.getElementById("backToTop").onclick = function() {
+        window.scrollTo({top: 0, behavior: 'smooth'});
+    };
+    
+    // Dark mode toggle
+    const toggle = document.getElementById("themeToggle");
+    const saved = localStorage.getItem("darkMode");
+    if (saved === "true") { document.body.classList.add("dark-mode"); toggle.textContent = "☀️"; }
+    toggle.onclick = function() {
+        document.body.classList.toggle("dark-mode");
+        localStorage.setItem("darkMode", document.body.classList.contains("dark-mode"));
+        toggle.textContent = document.body.classList.contains("dark-mode") ? "☀️" : "🌙";
+    };
+    </script>
+</body>
+</html>

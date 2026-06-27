@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Conditional Logic: if/elif/else — Make Decisions in Code</title>
+    <meta name="description" content="Master Python conditional statements — if, elif, else, comparison operators, boolean logic, ternary expressions, and real-world examples. Beginner-friendly Python tutorial.">
+    <meta name="keywords" content="python if statement, python conditions, elif, boolean operators, comparison operators, ternary, python tutorial">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+                <a href="../devops.html" class="nav-btn">🐳 DevOps</a>
+                <a href="../security.html" class="nav-btn">🔐 Security</a>
+                <a href="../webdev.html" class="nav-btn">💻 Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post">
+            <div class="post-header">
+                <span class="tag python">Python</span>
+                <h1>Python Conditional Logic: if/elif/else — Make Decisions in Code</h1>
+            </div>
+
+            <div class="post-meta">
+                <time>2026-06-26</time>
+                <span class="read-time">10 min read</span>
+                <span class="post-status">New</span>
+            </div>
+
+            <div class="post-content">
+                <p>Every useful program needs to make decisions. Should a user be logged in? Is this number positive or negative? Does this file exist? In Python, conditional logic answers these questions using <code>if</code>, <code>elif</code>, and <code>else</code>. This guide takes you from basic comparisons to real-world decision-making patterns.</p>
+
+                <h2>The if Statement</h2>
+
+                <p>The simplest conditional — check one condition and act if it's <code>True</code>:</p>
+
+                <pre><code>temperature = 35
+
+if temperature > 30:
+    print("It's hot outside! 🌡️")
+
+# Output: It's hot outside! 🌡️</code></pre>
+
+                <p><strong>Key things to notice:</strong></p>
+
+                <ul>
+                    <li>The condition <code>temperature > 30</code> evaluates to <code>True</code> or <code>False</code></li>
+                    <li>The colon <code>:</code> after the condition is REQUIRED — Python uses it to mark a new block</li>
+                    <li>The indented lines below are the "body" — they only run if the condition is true</li>
+                    <li>Python uses 4 spaces of indentation (not braces or parentheses)</li>
+                </ul>
+
+                <h2>if/else: Two Choices</h2>
+
+                <p>Add <code>else</code> for a fallback when the condition is <code>False</code>:</p>
+
+                <pre><code>age = 16
+
+if age >= 18:
+    print("You can vote! 🗳️")
+else:
+    print("You need to wait a bit.")
+
+# Output: You need to wait a bit.</code></pre>
+
+                <p>Exactly one branch runs — never both, never neither. The <code>else</code> catches every case the <code>if</code> didn't.</p>
+
+                <h2>if/elif/else: Multiple Choices</h2>
+
+                <p>When you have more than two options, use <code>elif</code> (short for "else if"):</p>
+
+                <pre><code>score = 85
+
+if score >= 90:
+    grade = "A"
+elif score >= 80:
+    grade = "B"
+elif score >= 70:
+    grade = "C"
+elif score >= 60:
+    grade = "D"
+else:
+    grade = "F"
+
+print(f"Score: {score} → Grade: {grade}")
+
+# Output: Score: 85 → Grade: B</code></pre>
+
+                <p><strong>How it works:</strong> Python checks each condition in order, top to bottom. The FIRST one that's true wins, and the rest are skipped entirely. This means the order matters — <code>score >= 90</code> must come before <code>score >= 80</code>, because a score of 95 satisfies both. If the 80-check came first, every A-score would incorrectly become a B.</p>
+
+                <h2>Comparison Operators</h2>
+
+                <p>Conditions use comparison operators to produce <code>True</code> or <code>False</code>:</p>
+
+                <table class="code-table">
+                    <thead>
+                        <tr>
+                            <th>Operator</th>
+                            <th>Meaning</th>
+                            <th>Example</th>
+                            <th>Result</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>==</code></td>
+                            <td>Equal to</td>
+                            <td><code>5 == 5</code></td>
+                            <td>True</td>
+                        </tr>
+                        <tr>
+                            <td><code>!=</code></td>
+                            <td>Not equal to</td>
+                            <td><code>5 != 3</code></td>
+                            <td>True</td>
+                        </tr>
+                        <tr>
+                            <td><code>></code></td>
+                            <td>Greater than</td>
+                            <td><code>10 > 5</code></td>
+                            <td>True</td>
+                        </tr>
+                        <tr>
+                            <td><code><</code></td>
+                            <td>Less than</td>
+                            <td><code>3 < 7</code></td>
+                            <td>True</td>
+                        </tr>
+                        <tr>
+                            <td><code>>=</code></td>
+                            <td>Greater or equal</td>
+                            <td><code>5 >= 5</code></td>
+                            <td>True</td>
+                        </tr>
+                        <tr>
+                            <td><code><=</code></td>
+                            <td>Less or equal</td>
+                            <td><code>3 <= 2</code></td>
+                            <td>False</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <p><strong>Common mistake:</strong> Use <code>==</code> to compare values, not <code>=</code>. A single <code>=</code> assigns a value:</p>
+
+                <pre><code>x = 5    # ✅ Assigns 5 to x
+if x == 5:  # ✅ Compares x to 5
+    print("x is five!")
+
+if x = 5:   # ❌ SyntaxError! Single = is assignment</code></pre>
+
+                <h2>Boolean Operators: and, or, not</h2>
+
+                <p>Combine conditions with <code>and</code>, <code>or</code>, and <code>not</code>:</p>
+
+                <pre><code>age = 25
+has_license = True
+
+# Both must be true
+if age >= 18 and has_license:
+    print("You can drive! 🚗")
+
+# Only one needs to be true
+is_weekend = False
+is_holiday = True
+if is_weekend or is_holiday:
+    print("Day off! 🎉")
+
+# Reverses True/False
+if not has_license:
+    print("Get your license first.")
+else:
+    print("All good!")
+
+# Output: You can drive! 🚗
+#         Day off! 🎉
+#         All good!</code></pre>
+
+                <p>Truth tables:</p>
+
+                <table class="code-table">
+                    <thead>
+                        <tr>
+                            <th>a</th>
+                            <th>b</th>
+                            <th>a and b</th>
+                            <th>a or b</th>
+                            <th>not a</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>True</td><td>True</td><td>True</td><td>True</td><td>False</td></tr>
+                        <tr><td>True</td><td>False</td><td>False</td><td>True</td><td>False</td></tr>
+                        <tr><td>False</td><td>True</td><td>False</td><td>True</td><td>True</td></tr>
+                        <tr><td>False</td><td>False</td><td>False</td><td>False</td><td>True</td></tr>
+                    </tbody>
+                </table>
+
+                <h2>Truthy and Falsy Values</h2>
+
+                <p>In Python, you don't always need <code>== True</code>. Many values are "truthy" or "falsy" by default:</p>
+
+                <pre><code># These are ALL FALSY (evaluate to False in conditions):
+False
+None
+0
+0.0
+""          # empty string
+[]          # empty list
+{}          # empty dict
+set()       # empty set
+
+# Everything else is TRUTHY:
+True
+1
+-1
+"hello"
+[1, 2]
+{"name": "Hugo"}</code></pre>
+
+                <p>This lets you write clean checks:</p>
+
+                <pre><code>name = input("Enter your name: ")
+
+# Instead of: if name != "":
+if name:
+    print(f"Hello, {name}!")
+else:
+    print("You didn't enter a name.")
+
+# Checking if a list has items
+items = []
+if not items:
+    print("The cart is empty.")  # Simpler than: if len(items) == 0</code></pre>
+
+                <h2>The "in" Operator</h2>
+
+                <p>Check membership in a string, list, tuple, or dictionary:</p>
+
+                <pre><code># Strings
+email = "user@example.com"
+if "@" in email and "." in email:
+    print("Looks like a valid email!")
+
+# Lists
+fruits = ["apple", "banana", "cherry"]
+if "banana" in fruits:
+    print("We have bananas! 🍌")
+
+# Dictionaries (checks keys)
+user = {"name": "Hugo", "role": "admin"}
+if "role" in user:
+    print(f"User role: {user['role']}")
+
+# Negation
+if "banana" not in fruits:
+    print("No bananas today.")</code></pre>
+
+                <h2>Real-World Example: User Login Validator</h2>
+
+                <p>Let's combine everything into a practical function:</p>
+
+                <pre><code>def validate_login(username, password):
+    """Check if login credentials are valid."""
+    
+    # Check for empty inputs
+    if not username or not password:
+        return "Error: Username and password are required."
+    
+    # Check minimum length
+    if len(password) < 8:
+        return "Error: Password must be at least 8 characters."
+    
+    # Check for strong password
+    has_upper = any(c.isupper() for c in password)
+    has_digit = any(c.isdigit() for c in password)
+    has_special = any(not c.isalnum() for c in password)
+    
+    if not (has_upper and has_digit and has_special):
+        return "Error: Password needs uppercase, digit, and special character."
+    
+    # Simulated database check
+    valid_users = {
+        "admin": "Admin@123!",
+        "user": "User!2024x"
+    }
+    
+    if username in valid_users and valid_users[username] == password:
+        return f"Welcome back, {username}! ✅"
+    else:
+        return "Error: Invalid username or password."
+
+# Test it
+print(validate_login("admin", "Admin@123!"))
+# Welcome back, admin! ✅
+
+print(validate_login("admin", "weak"))
+# Error: Password must be at least 8 characters.
+
+print(validate_login("", "Admin@123!"))
+# Error: Username and password are required.</code></pre>
+
+                <h2>The Ternary Operator (One-Line if/else)</h2>
+
+                <p>For simple conditions, Python has a one-liner:</p>
+
+                <pre><code># Standard if/else:
+if age >= 18:
+    status = "adult"
+else:
+    status = "minor"
+
+# Ternary equivalent:
+status = "adult" if age >= 18 else "minor"</code></pre>
+
+                <p>The pattern is: <code>value_if_true if condition else value_if_false</code>. Use it for simple assignments — don't cram complex logic into one line:</p>
+
+                <pre><code>price = 100
+discount = 0.2 if price > 50 else 0  # ✅ Clean
+final_price = price * (1 - discount)
+
+# ❌ Don't do this:
+result = "too long and confusing" if condition1 and condition2 else "still confusing" if condition3 else "unreadable"</code></pre>
+
+                <h2>match/case: Python's Switch Statement</h2>
+
+                <p>Python 3.10+ introduced structural pattern matching — Python's version of a switch statement:</p>
+
+                <pre><code>role = "admin"
+
+match role:
+    case "admin":
+        print("Full system access granted 🔑")
+    case "editor":
+        print("Can edit and publish content ✏️")
+    case "viewer":
+        print("Read-only access 👀")
+    case _:
+        print("Unknown role — please contact support")</code></pre>
+
+                <p>The <code>case _:</code> is the "catch-all" — equivalent to <code>else</code> in if/elif chains. Use <code>match/case</code> when checking a single variable against many specific values. Use <code>if/elif</code> when you need complex conditions with <code>and</code>/<code>or</code>.</p>
+
+                <h2>Real-World Example: Discount Calculator</h2>
+
+                <pre><code>def calculate_discount(price, is_member, has_coupon, season=""):
+    """Calculate final price with layered discounts."""
+    
+    discount = 0
+    
+    # Member discount: 10%
+    if is_member:
+        discount += 0.10
+    
+    # Coupon discount: 15%
+    if has_coupon:
+        discount += 0.15
+    
+    # Seasonal bonus using match/case
+    match season:
+        case "black_friday":
+            discount += 0.25
+        case "christmas":
+            discount += 0.15
+        case "new_year":
+            discount += 0.10
+        case "":
+            pass  # No seasonal discount
+        case _:
+            print(f"Warning: Unknown season '{season}'")
+    
+    # Cap discount at 50%
+    discount = min(discount, 0.50)
+    
+    final_price = price * (1 - discount)
+    
+    print(f"Original: ${price:.2f}")
+    print(f"Discount: {discount:.0%}")
+    print(f"Final price: ${final_price:.2f}")
+    
+    return final_price
+
+# Test scenarios
+calculate_discount(200, True, True, "black_friday")
+# Original: $200.00
+# Discount: 50%
+# Final price: $100.00
+
+calculate_discount(50, False, False, "")
+# Original: $50.00
+# Discount: 0%
+# Final price: $50.00</code></pre>
+
+                <h2>Common Pitfalls to Avoid</h2>
+
+                <h3>1. Using = instead of ==</h3>
+                <pre><code>if x = 5:    # ❌ SyntaxError: assignment in condition
+if x == 5:   # ✅ Correct comparison</code></pre>
+
+                <h3>2. Wrong indentation</h3>
+                <pre><code>if x > 0:
+print("positive")   # ❌ IndentationError
+if x > 0:
+    print("positive")  # ✅ Properly indented</code></pre>
+
+                <h3>3. Comparing floating-point equality</h3>
+                <pre><code>0.1 + 0.2 == 0.3    # ❌ False! Floating-point imprecision
+
+# Use math.isclose() instead:
+import math
+math.isclose(0.1 + 0.2, 0.3)   # ✅ True</code></pre>
+
+                <h3>4. Forgetting that order matters in elif chains</h3>
+                <pre><code># This always returns "passing" for any score >= 60:
+if score >= 60:
+    grade = "passing"   # Checks first — catches everything >= 60
+elif score >= 90:
+    grade = "A"         # Never reached for scores >= 60
+
+# Fix: check more specific conditions first
+if score >= 90:
+    grade = "A"
+elif score >= 60:
+    grade = "passing"</code></pre>
+
+                <h2>Summary</h2>
+
+                <p>Conditional logic is the decision-making engine of every Python program. The core pattern:</p>
+
+                <pre><code>if condition_1:
+    # runs when condition_1 is True
+elif condition_2:
+    # runs when condition_1 is False AND condition_2 is True
+else:
+    # runs when neither condition is True</code></pre>
+
+                <p>Key takeaways:</p>
+
+                <ol>
+                    <li>Use <code>==</code> for comparison, <code>=</code> for assignment</li>
+                    <li>Combine conditions with <code>and</code>, <code>or</code>, <code>not</code></li>
+                    <li>Leverage truthy/falsy for cleaner empty checks</li>
+                    <li>Use <code>in</code> for membership testing</li>
+                    <li>Ternary operator for simple one-line assignments</li>
+                    <li><code>match/case</code> for multi-value checks (Python 3.10+)</li>
+                    <li>Always put the most specific conditions FIRST in elif chains</li>
+                </ol>
+
+                <p>Practice by writing small functions — a grading system, a discount calculator, an input validator. Each one reinforces how conditions chain together to handle real-world logic.</p>
+            </div>
+        </article>
+
+        <nav class="post-nav">
+            <a href="css-animations-transitions.html" class="post-nav-link prev">← CSS Animations & Transitions</a>
+            <a href="python-context-managers.html" class="post-nav-link next">Python Context Managers →</a>
+        </nav>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes | Built with ❤️ & AI</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528" target="_blank">GitHub</a>
+                <a href="https://blog.hugow.dev/sitemap.xml">Sitemap</a>
+            </div>
+        </div>
+    </footer>
+
+    <button class="back-to-top" id="backToTop" title="Back to top">↑</button>
+
+    <script>
+    const themeToggle = document.getElementById('themeToggle');
+    themeToggle.addEventListener('click', () => {
+        document.body.classList.toggle('dark-mode');
+        themeToggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+        localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+    });
+    if (localStorage.getItem('theme') === 'dark') {
+        document.body.classList.add('dark-mode');
+        themeToggle.textContent = '☀️';
+    }
+    const backToTop = document.getElementById('backToTop');
+    window.addEventListener('scroll', () => {
+        backToTop.style.display = window.pageYOffset > 300 ? 'block' : 'none';
+        const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+        const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        const scrolled = (winScroll / height) * 100;
+        document.getElementById('progressBar').style.width = scrolled + '%';
+    });
+    backToTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+    </script>
+</body>
+</html>

@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vibe Coding: Build a Full Web App from Scratch with AI | Hugo's Dev Notes</title>
+    <meta name="description" content="Build a complete web application from zero to deployed using AI coding tools. Real-world walkthrough with Cursor, Claude Code, and GitHub Copilot.">
+    <meta name="keywords" content="vibe coding, AI development, cursor, claude code, github copilot, full stack, web app, AI coding tutorial">
+    <meta name="author" content="Hugo Wong">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+                <a href="../devops.html" class="nav-btn">🐳 DevOps</a>
+                <a href="../security.html" class="nav-btn">🔐 Security</a>
+                <a href="../webdev.html" class="nav-btn">💻 Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-detail">
+            <header class="post-detail-header">
+                <div class="tags">
+                    <span class="tag vibe">AI Coding</span>
+                    <span class="tag">Vibe Coding</span>
+                    <span class="tag">Full Stack</span>
+                </div>
+                <h1>Vibe Coding: Build a Full Web App from Scratch with AI</h1>
+                <div class="post-meta">
+                    <time>2026-06-27</time>
+                    <span class="read-time">12 min read</span>
+                </div>
+            </header>
+
+            <div class="post-content">
+                <p class="lead">Watch an AI coding assistant take a project description and turn it into a working full-stack application. We'll walk through the entire process — from the first prompt to a deployed app — using Cursor, Claude Code, and GitHub Copilot.</p>
+
+                <h2>The Project: A Task Manager with Priority Levels</h2>
+                <p>We're building a task management app with these features:</p>
+                <ul>
+                    <li>Create, read, update, and delete tasks (CRUD)</li>
+                    <li>Priority levels: low, medium, high, urgent</li>
+                    <li>Search and filter by priority</li>
+                    <li>Clean, modern UI</li>
+                    <li>SQLite backend with Python FastAPI</li>
+                </ul>
+
+                <p>No boilerplate. No scaffolding tools. Just us, the AI, and a clear prompt. Let's go.</p>
+
+                <h2>Phase 1: The Setup Prompt</h2>
+                <p>Open your AI coding tool (we'll use Cursor for this example) and start with a <strong>project-level prompt</strong>. This is the most important prompt you'll write — it sets the foundation for everything that follows.</p>
+
+                <pre><code># Paste this into Cursor's Chat (Cmd+L) or Claude Code
+
+Build a task manager web application with:
+
+BACKEND:
+- Python FastAPI
+- SQLite database with SQLAlchemy ORM
+- RESTful API endpoints for CRUD operations
+- Pydantic models for request/response validation
+- SQLite database file: tasks.db
+
+FRONTEND:
+- Plain HTML/CSS/JavaScript (no framework)
+- Fetch API for backend communication
+- Clean, modern card-based design
+- Responsive layout
+
+DATA MODEL:
+- Task: id (int), title (str), description (str), priority (enum: low, medium, high, urgent), status (enum: pending, in_progress, done), created_at (datetime), updated_at (datetime)
+
+FOLDER STRUCTURE:
+- app/
+  - main.py        (FastAPI app)
+  - models.py      (SQLAlchemy models)
+  - schemas.py     (Pydantic schemas)
+  - database.py    (DB setup)
+  - api/
+    - tasks.py     (API routes)
+- static/
+  - index.html
+  - style.css
+  - app.js
+- requirements.txt
+
+Generate all files with full, working code.</code></pre>
+
+                <p><strong>Key tip:</strong> The more specific your prompt, the better the output. Notice we specified folder structure, data models, technologies, and even the database filename. Vague prompts get vague results.</p>
+
+                <h2>Phase 2: Reviewing the AI Output</h2>
+                <p>The AI generates all the files. Here's what you should check <strong>before</strong> running anything:</p>
+
+                <h3>1. Database Models Look Correct</h3>
+                <pre><code># models.py — verify this matches your requirements
+from sqlalchemy import Column, Integer, String, Enum, DateTime
+from sqlalchemy.orm import declarative_base
+from datetime import datetime
+import enum
+
+Base = declarative_base()
+
+class Priority(str, enum.Enum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    URGENT = "urgent"
+
+class Status(str, enum.Enum):
+    PENDING = "pending"
+    IN_PROGRESS = "in_progress"
+    DONE = "done"
+
+class Task(Base):
+    __tablename__ = "tasks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(200), nullable=False)
+    description = Column(String(1000), default="")
+    priority = Column(Enum(Priority), default=Priority.MEDIUM)
+    status = Column(Enum(Status), default=Status.PENDING)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)</code></pre>
+
+                <h3>2. API Routes Handle Edge Cases</h3>
+                <p>Check that the generated API handles missing tasks, validation errors, and returns proper HTTP status codes:</p>
+
+                <pre><code># api/tasks.py — verify error handling
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+from .. import models, schemas
+from ..database import get_db
+from typing import List
+
+router = APIRouter()
+
+@router.get("/", response_model=List[schemas.TaskRead])
+def list_tasks(
+    search: str = None,
+    priority: str = None,
+    status: str = None,
+    db: Session = Depends(get_db)
+):
+    """List tasks with optional search and filters."""
+    query = db.query(models.Task)
+
+    if search:
+        query = query.filter(
+            models.Task.title.ilike(f"%{search}%") |
+            models.Task.description.ilike(f"%{search}%")
+        )
+    if priority:
+        query = query.filter(models.Task.priority == priority)
+    if status:
+        query = query.filter(models.Task.status == status)
+
+    # Sort by priority (urgent first) then creation date
+    return query.order_by(
+        models.Task.priority.desc(),
+        models.Task.created_at.desc()
+    ).all()
+
+@router.post("/", response_model=schemas.TaskRead, status_code=201)
+def create_task(task: schemas.TaskCreate, db: Session = Depends(get_db)):
+    """Create a new task."""
+    db_task = models.Task(**task.model_dump())
+    db.add(db_task)
+    db.commit()
+    db.refresh(db_task)
+    return db_task
+
+@router.get("/{task_id}", response_model=schemas.TaskRead)
+def get_task(task_id: int, db: Session = Depends(get_db)):
+    """Get a single task by ID."""
+    task = db.query(models.Task).filter(models.Task.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return task
+
+@router.put("/{task_id}", response_model=schemas.TaskRead)
+def update_task(task_id: int, task_update: schemas.TaskUpdate, db: Session = Depends(get_db)):
+    """Update a task."""
+    db_task = db.query(models.Task).filter(models.Task.id == task_id).first()
+    if not db_task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    for key, value in task_update.model_dump(exclude_unset=True).items():
+        setattr(db_task, key, value)
+
+    db.commit()
+    db.refresh(db_task)
+    return db_task
+
+@router.delete("/{task_id}", status_code=204)
+def delete_task(task_id: int, db: Session = Depends(get_db)):
+    """Delete a task."""
+    db_task = db.query(models.Task).filter(models.Task.id == task_id).first()
+    if not db_task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    db.delete(db_task)
+    db.commit()</code></pre>
+
+                <h2>Phase 3: The Frontend Iteration</h2>
+                <p>The AI's initial HTML is usually functional but rarely polished. This is where you iterate with <strong>targeted prompts</strong> instead of rewriting everything:</p>
+
+                <pre><code># Iteration 1 — Fix the layout
+"The task cards are stacked vertically. Make them a responsive grid 
+with 3 columns on desktop, 2 on tablet, 1 on mobile. Add a subtle 
+shadow and rounded corners to each card."
+
+# Iteration 2 — Improve colors
+"Update the priority badges: urgent = red (#ef4444), high = orange 
+(#f97316), medium = yellow (#eab308), low = green (#22c55e). 
+Use pill-shaped badges with matching borders."
+
+# Iteration 3 — Add animations
+"Add a smooth fade-in animation when new tasks appear. When a task 
+is deleted, slide it out to the right before removing it. Keep it 
+subtle — nothing distracting."</code></pre>
+
+                <p><strong>Key insight:</strong> Small, specific iterations produce better results than one massive "make it pretty" prompt. The AI works like a junior developer — give it clear, actionable instructions.</p>
+
+                <h2>Phase 4: Testing with the AI</h2>
+                <p>Don't just run the app and hope. Ask the AI to write tests:</p>
+
+                <pre><code># Prompt for the AI:
+"Write pytest tests for the task API endpoints. Test:
+1. Creating a task returns 201 and the correct data
+2. Listing tasks returns all tasks
+3. Filtering by priority works correctly
+4. Searching finds tasks by title
+5. Updating a task changes the specified fields
+6. Deleting a task removes it and returns 204
+7. Getting a non-existent task returns 404
+8. Updating a non-existent task returns 404
+
+Use test client and an in-memory SQLite database."</code></pre>
+
+                <p>The AI generates tests like this:</p>
+
+                <pre><code># tests/test_tasks.py
+import pytest
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from app.main import app
+from app.database import Base, get_db
+from fastapi.testclient import TestClient
+
+SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
+engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
+TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+def override_get_db():
+    try:
+        db = TestingSessionLocal()
+        yield db
+    finally:
+        db.close()
+
+app.dependency_overrides[get_db] = override_get_db
+client = TestClient(app)
+
+@pytest.fixture(autouse=True)
+def setup_database():
+    """Create tables before each test, drop after."""
+    Base.metadata.create_all(bind=engine)
+    yield
+    Base.metadata.drop_all(bind=engine)
+
+def test_create_task():
+    response = client.post("/tasks/", json={
+        "title": "Test task",
+        "description": "Testing task creation",
+        "priority": "high"
+    })
+    assert response.status_code == 201
+    data = response.json()
+    assert data["title"] == "Test task"
+    assert data["priority"] == "high"
+    assert data["status"] == "pending"
+    assert "id" in data
+
+def test_list_tasks():
+    # Create two tasks first
+    client.post("/tasks/", json={"title": "Task 1", "priority": "high"})
+    client.post("/tasks/", json={"title": "Task 2", "priority": "low"})
+
+    response = client.get("/tasks/")
+    assert response.status_code == 200
+    tasks = response.json()
+    assert len(tasks) == 2
+
+def test_filter_by_priority():
+    client.post("/tasks/", json={"title": "Urgent thing", "priority": "urgent"})
+    client.post("/tasks/", json={"title": "Chill thing", "priority": "low"})
+
+    response = client.get("/tasks/?priority=urgent")
+    tasks = response.json()
+    assert len(tasks) == 1
+    assert tasks[0]["priority"] == "urgent"
+
+def test_search_tasks():
+    client.post("/tasks/", json={"title": "Buy groceries"})
+    client.post("/tasks/", json={"title": "Write report"})
+
+    response = client.get("/tasks/?search=groceries")
+    tasks = response.json()
+    assert len(tasks) == 1
+    assert tasks[0]["title"] == "Buy groceries"
+
+def test_get_task_not_found():
+    response = client.get("/tasks/99999")
+    assert response.status_code == 404
+
+def test_update_task():
+    create_resp = client.post("/tasks/", json={"title": "Original"})
+    task_id = create_resp.json()["id"]
+
+    update_resp = client.put(f"/tasks/{task_id}", json={"status": "done"})
+    assert update_resp.status_code == 200
+    assert update_resp.json()["status"] == "done"
+
+def test_delete_task():
+    create_resp = client.post("/tasks/", json={"title": "To delete"})
+    task_id = create_resp.json()["id"]
+
+    delete_resp = client.delete(f"/tasks/{task_id}")
+    assert delete_resp.status_code == 204
+
+    # Verify it's gone
+    get_resp = client.get(f"/tasks/{task_id}")
+    assert get_resp.status_code == 404</code></pre>
+
+                <h2>Phase 5: Running the Application</h2>
+                <p>With all files generated, the startup is straightforward:</p>
+
+                <pre><code># Install dependencies
+pip install -r requirements.txt
+
+# requirements.txt (generated by AI):
+fastapi==0.115.0
+uvicorn[standard]==0.30.0
+sqlalchemy==2.0.35
+pydantic==2.9.0
+pytest==8.3.0
+httpx==0.27.0
+
+# Run the development server
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+# The frontend serves at http://localhost:8000/
+# The API is at http://localhost:8000/tasks/</code></pre>
+
+                <h2>Phase 6: Bug Fixing with AI</h2>
+                <p>Something almost always goes wrong. That's fine — the AI excels at debugging when you give it the error message:</p>
+
+                <pre><code># Copy the error and paste it into the AI:
+
+"Getting this error when I try to create a task:
+
+pydantic_core._pydantic_core.ValidationError: 1 validation error for TaskCreate
+description
+  Field required [type=missing, input={'title': 'My task'}, ...]
+
+The description field should be optional with a default empty string. Fix the 
+Pydantic schema."</code></pre>
+
+                <p>The AI will spot the issue in <code>schemas.py</code>:</p>
+
+                <pre><code># Before (broken — description required):
+class TaskCreate(BaseModel):
+    title: str
+    description: str  # ← this makes it required
+    priority: Priority = Priority.MEDIUM
+
+# After (fixed — description optional):
+class TaskCreate(BaseModel):
+    title: str
+    description: str = ""  # ← default value makes it optional
+    priority: Priority = Priority.MEDIUM</code></pre>
+
+                <h2>Choosing Your AI Tool</h2>
+                <p>Each tool has different strengths for vibe coding:</p>
+
+                <h3>Cursor (Editor-based)</h3>
+                <p><strong>Best for:</strong> Full project scaffolding, multi-file generation, iterative design.<br>
+                <strong>Superpower:</strong> Cmd+K for inline edits, Cmd+L for chat, Composer for multi-file changes.<br>
+                <strong>Cost:</strong> $20/month for Pro tier.</p>
+
+                <h3>Claude Code (Terminal-based)</h3>
+                <p><strong>Best for:</strong> Code reviews, refactoring, understanding existing codebases.<br>
+                <strong>Superpower:</strong> Can read, edit, and create files directly from terminal. Great for CI/CD integration.<br>
+                <strong>Cost:</strong> Uses Claude API credits.</p>
+
+                <h3>GitHub Copilot (IDE-integrated)</h3>
+                <p><strong>Best for:</strong> Line-by-line autocomplete, filling in boilerplate, quick fixes.<br>
+                <strong>Superpower:</strong> Works in any IDE with Copilot extension. Tab to accept suggestions.<br>
+                <strong>Cost:</strong> $10/month.</p>
+
+                <h3>My Recommended Stack</h3>
+                <ol>
+                    <li><strong>Cursor</strong> for the initial build and UI work</li>
+                    <li><strong>Claude Code</strong> for code review and security checks</li>
+                    <li><strong>GitHub Copilot</strong> for day-to-day autocomplete while writing tests</li>
+                </ol>
+
+                <h2>Vibe Coding Principles</h2>
+                <p>After building dozens of projects with AI, here are the principles that actually matter:</p>
+
+                <h3>1. You Are Still the Engineer</h3>
+                <p>AI writes code. You decide what code to write, how to architect it, and whether it's correct. The AI is a force multiplier, not a replacement. <strong>Always review every line</strong> before accepting it into production.</p>
+
+                <h3>2. Iterate in Small Steps</h3>
+                <p>"Build me a full e-commerce site" gets you 20 files of mediocre code. "Build me a product listing page with this exact data model" gets you something you can actually use. Break projects into <strong>small, verifiable</strong> steps.</p>
+
+                <h3>3. Context Is Everything</h3>
+                <p>The AI only knows what you tell it. Include:
+                <ul>
+                    <li>Technology choices and versions</li>
+                    <li>Folder structure expectations</li>
+                    <li>Code style preferences (naming, formatting)</li>
+                    <li>Existing code that the new code needs to integrate with</li>
+                    <li>Known constraints (performance, security, compliance)</li>
+                </ul>
+                </p>
+
+                <h3>4. Test What Matters</h3>
+                <p>AI-generated code can look correct while being wrong. Write tests for:
+                <ul>
+                    <li>API endpoints (especially error handling)</li>
+                    <li>Database operations (especially edge cases)</li>
+                    <li>User input validation</li>
+                    <li>Authentication and authorization flows</li>
+                </ul>
+                </p>
+
+                <h3>5. Security Review Is Non-Negotiable</h3>
+                <p>AI doesn't think about security unless you tell it to. Always ask:
+                <ul>
+                    <li>"Review this code for security vulnerabilities"</li>
+                    <li>"Are there any injection risks in these endpoints?"</li>
+                    <li>"Is sensitive data properly handled?"</li>
+                </ul>
+                </p>
+
+                <h2>Deploying with AI</h2>
+                <p>Even deployment gets the vibe coding treatment. Here's a prompt to generate a Docker setup:</p>
+
+                <pre><code>"Create a Dockerfile and docker-compose.yml for this FastAPI app.
+Requirements:
+- Multi-stage build for smallest image
+- Non-root user for security
+- Health check endpoint at /health
+- docker-compose includes the FastAPI service only (SQLite is file-based)
+- Port mapping: 8000:8000
+- Volume mount for the SQLite database
+- Restart policy: unless-stopped"</code></pre>
+
+                <h2>What Vibe Coding Is NOT</h2>
+                <p>It's important to be realistic:</p>
+                <ul>
+                    <li><strong>Not magic:</strong> You still need to understand what the code does. If you can't explain it, don't merge it.</li>
+                    <li><strong>Not free:</strong> Time spent reviewing, testing, and debugging AI output is real time.</li>
+                    <li><strong>Not always right:</strong> AI confidently writes wrong code. Tests catch this — always write tests.</li>
+                    <li><strong>Not a learning replacement:</strong> Use AI to accelerate what you know. Learn the fundamentals first, then use AI to go further.</li>
+                </ul>
+
+                <h2>Final Thoughts</h2>
+                <p>Vibe coding changes the development workflow from "writing every line" to "specifying, reviewing, and iterating." You become an architect and reviewer rather than a typist. The projects you can build in a day now take minutes of focused prompting and review.</p>
+                <p>Start small. Build a single API endpoint. Then a full CRUD app. Then a real project. With each step, your prompting skills improve and the AI becomes more valuable.</p>
+
+                <p>For the full vibe coding toolkit, check our guides on <a href="vibe-coding-workflow.html">Vibe Coding Workflow</a>, <a href="vibe-coding-tools.html">Top AI Coding Tools</a>, and <a href="claude-code-guide.html">Claude Code Guide</a>.</p>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes | Built with ❤️ & AI</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528" target="_blank">GitHub</a>
+                <a href="../sitemap.xml">Sitemap</a>
+            </div>
+        </div>
+    </footer>
+
+    <button class="back-to-top" id="backToTop" title="Back to top">↑</button>
+
+    <script>
+    // Dark Mode Toggle
+    const themeToggle = document.getElementById('themeToggle');
+    themeToggle.addEventListener('click', () => {
+        document.body.classList.toggle('dark-mode');
+        themeToggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+        localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+    });
+    if (localStorage.getItem('theme') === 'dark') {
+        document.body.classList.add('dark-mode');
+        themeToggle.textContent = '☀️';
+    }
+
+    // Back to Top
+    const backToTop = document.getElementById('backToTop');
+    window.addEventListener('scroll', () => {
+        backToTop.style.display = window.pageYOffset > 300 ? 'block' : 'none';
+    });
+    backToTop.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // Reading Progress Bar
+    window.addEventListener('scroll', () => {
+        const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+        const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        const scrolled = (winScroll / height) * 100;
+        document.getElementById('progressBar').style.width = scrolled + '%';
+    });
+    </script>
+</body>
+</html>

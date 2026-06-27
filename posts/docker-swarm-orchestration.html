@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docker Swarm: Orchestrate Containers Without Kubernetes Complexity | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn Docker Swarm — built-in container orchestration. Deploy services, scale apps, manage clusters with Docker's native tool. No Kubernetes needed for small-to-medium teams.">
+    <meta name="keywords" content="docker swarm, container orchestration, docker service, docker stack, swarm mode, devops tutorial">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+            <p class="subtitle">Cloudflare · Python · AI Coding · DevOps</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+
+        <article class="post-content">
+            <span class="tag devops">DevOps</span>
+            <h1>Docker Swarm: Orchestrate Containers Without Kubernetes Complexity</h1>
+            <time>June 27, 2026 · 11 min read</time>
+
+            <p>You've learned Docker containers, Docker Compose, and Dockerfiles. Now you're ready for the next step: running your containers across multiple machines, scaling them automatically, and keeping them alive when things go wrong. That's where Docker Swarm comes in — a built-in orchestration tool that requires zero extra installation.</p>
+
+            <p>Swarm mode is already part of Docker Engine. While Kubernetes dominates the large-scale enterprise market, Docker Swarm remains the simplest way to orchestrate containers for small-to-medium applications, development teams, and hobby projects.</p>
+
+            <blockquote>
+                <strong>Key idea:</strong> Docker Swarm turns a group of Docker hosts into a single virtual host. You tell Swarm <em>what</em> you want to run, and it handles placement, scaling, and health monitoring automatically.
+            </blockquote>
+
+            <h2>Swarm vs Kubernetes vs Docker Compose</h2>
+
+            <p>Three tools, different scales:</p>
+
+            <ul>
+                <li><strong>Docker Compose</strong> — Runs multi-container apps on a single machine. Great for development.</li>
+                <li><strong>Docker Swarm</strong> — Manages containers across multiple machines. Simple CLI, built-in to Docker.</li>
+                <li><strong>Kubernetes (K8s)</strong> — Full-featured orchestration with steep learning curve. For large-scale production.</li>
+            </ul>
+
+            <p>If you're running 1–20 services across 2–10 machines, Swarm is likely all you need. If you need advanced scheduling, custom controllers, or run hundreds of services, consider Kubernetes.</p>
+
+            <h2>Swarm Architecture: Managers and Workers</h2>
+
+            <p>A Swarm cluster consists of two node types:</p>
+
+            <ul>
+                <li><strong>Manager nodes</strong> — Handle cluster management, scheduling, and orchestration. A Swarm needs at least one manager (odd number recommended for high availability).</li>
+                <li><strong>Worker nodes</strong> — Run your containers. They don't participate in cluster decisions.</li>
+            </ul>
+
+            <p>Managers use the Raft consensus algorithm to keep the cluster state consistent. This means even if one manager fails, the remaining managers can elect a new leader and keep running.</p>
+
+            <h2>Initialize Your First Swarm Cluster</h2>
+
+            <p>Let's start with a single-machine Swarm (you can add more machines later):</p>
+
+            <pre><code># Initialize Swarm on your local machine
+docker swarm init
+
+# Output:
+# Swarm initialized: current node (abc123) is now a manager.
+# To add a worker to this swarm, run the following command:
+#
+#   docker swarm join \
+#     --token SWMTKN-1-xxxxx \
+#     192.168.1.100:2377</code></pre>
+
+            <p>If you want to add another manager instead of a worker:</p>
+
+            <pre><code># Get the manager join token
+docker swarm join-token manager
+
+# On the new manager machine, run the displayed command
+docker swarm join \
+  --token SWMTKN-1-xxxxx \
+  192.168.1.100:2377</code></pre>
+
+            <p>Verify your cluster:</p>
+
+            <pre><code># List all nodes in the cluster
+docker node ls
+
+# Output:
+# ID            HOSTNAME    STATUS    AVAILABILITY   MANAGER STATUS
+# abc123        node-01     Ready     Active         Leader
+# def456        node-02     Ready     Active         Reachable</code></pre>
+
+            <h2>Deploy Your First Service</h2>
+
+            <p>In Swarm, you don't run containers directly — you deploy <strong>services</strong>. A service is a definition of what to run. Swarm handles running, rescheduling, and scaling.</p>
+
+            <pre><code># Deploy a Nginx web server with 2 replicas
+docker service create \
+  --name web \
+  --replicas 2 \
+  --publish published=80,target=80 \
+  nginx:alpine
+
+# Check the service status
+docker service ls
+docker service ps web</code></pre>
+
+            <p>Swarm distributes the 2 replicas across available nodes. Each replica gets access to the published port through Swarm's built-in load balancer (routing mesh).</p>
+
+            <h2>Scale and Update Services</h2>
+
+            <p>Scaling is a single command:</p>
+
+            <pre><code># Scale the web service to 5 replicas
+docker service scale web=5
+
+# Scale multiple services at once
+docker service scale web=5 api=3 db=1</code></pre>
+
+            <p>Rolling updates let you change images without downtime:</p>
+
+            <pre><code># Update to a new image version
+docker service update \
+  --image nginx:1.27-alpine \
+  --update-parallelism 1 \
+  --update-delay 10s \
+  web
+
+# This updates one replica at a time, waiting 10s between each</code></pre>
+
+            <h2>Multi-Service Deployments with Docker Stack</h2>
+
+            <p>Docker Stack lets you deploy entire applications defined in a <code>docker-compose.yml</code> file onto a Swarm cluster:</p>
+
+            <pre><code># Create docker-compose.yml
+cat > docker-compose.yml << 'EOF'
+version: '3.8'
+
+services:
+  web:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    replicas: 3
+    networks:
+      - frontend
+
+  api:
+    image: python:3.12-slim
+    command: python -m http.server 5000
+    replicas: 2
+    networks:
+      - frontend
+      - backend
+    environment:
+      - DATABASE_URL=postgres://user:pass@db:5432/app
+
+  db:
+    image: postgres:16-alpine
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - backend
+    environment:
+      - POSTGRES_PASSWORD=pass
+
+volumes:
+  pgdata:
+
+networks:
+  frontend:
+  backend:
+EOF</code></pre>
+
+            <pre><code># Deploy the stack
+docker stack deploy -c docker-compose.yml myapp
+
+# Check stack status
+docker stack services myapp
+docker stack ps myapp
+
+# Remove the stack when done
+docker stack rm myapp</code></pre>
+
+            <h2>Docker Secrets: Securely Store Sensitive Data</h2>
+
+            <p>Never put passwords in your compose file. Docker Secrets encrypt sensitive data at rest and deliver it securely to services:</p>
+
+            <pre><code># Create a secret from a file
+echo "super-secret-password" | docker secret create db_password -
+
+# Create a secret with compose
+cat > compose-secrets.yml << 'EOF'
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    secrets:
+      - db_password
+    environment:
+      - POSTGRES_PASSWORD_FILE=/run/secrets/db_password
+
+secrets:
+  db_password:
+    file: ./db_password.txt
+EOF
+
+docker stack deploy -c compose-secrets.yml myapp</code></pre>
+
+            <p>Inside the container, the secret is available as a file at <code>/run/secrets/db_password</code>. It's never exposed as an environment variable.</p>
+
+            <h2>Health Checks and Constraints</h2>
+
+            <p>Ensure your services are healthy and placed where you want them:</p>
+
+            <pre><code>services:
+  api:
+    image: myapp:latest
+    replicas: 3
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    placement:
+      constraints:
+        - node.role == manager
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M</code></pre>
+
+            <h2>Common Swarm Commands Cheat Sheet</h2>
+
+            <pre><code># Cluster management
+docker swarm init                    # Initialize cluster
+docker swarm join-token worker       # Get worker join command
+docker node ls                       # List nodes
+docker node promote &lt;node&gt;          # Make a node a manager
+docker node drain &lt;node&gt;            # Stop scheduling on a node
+docker swarm leave --force          # Force leave a node
+
+# Services
+docker service create &lt;options&gt;      # Create a service
+docker service ls                    # List services
+docker service ps &lt;service&gt;         # Task status
+docker service scale &lt;s&gt;=&lt;n&gt;        # Scale service
+docker service update &lt;s&gt; --image=  # Update image
+docker service logs &lt;service&gt;       # View logs
+docker service rm &lt;service&gt;         # Remove service
+
+# Stack
+docker stack deploy -c file.yml n   # Deploy stack
+docker stack services &lt;stack&gt;       # List stack services
+docker stack ps &lt;stack&gt;             # List stack tasks
+docker stack rm &lt;stack&gt;             # Remove stack
+
+# Secrets
+docker secret ls                    # List secrets
+docker secret create name -         # Create from stdin
+docker secret rm name               # Remove secret</code></pre>
+
+            <h2>When to Choose Docker Swarm</h2>
+
+            <p>Docker Swarm is the right choice when:</p>
+
+            <ul>
+                <li>You want orchestration without learning a new complex tool</li>
+                <li>Your team has 1–50 people</li>
+                <li>You run 1–100 services across a few dozen nodes</li>
+                <li>You already know Docker and want a natural progression</li>
+                <li>You don't need the advanced features Kubernetes provides</li>
+            </ul>
+
+            <p>Consider Kubernetes when you need multi-cluster management, a rich ecosystem of add-ons, or are running at Google-scale. For most small-to-medium applications, Swarm delivers all the orchestration you need with a fraction of the complexity.</p>
+
+            <blockquote>
+                <strong>Next steps:</strong> If you enjoyed this guide, check out the <a href="posts/docker-compose.html">Docker Compose tutorial</a> or <a href="posts/dockerfile-best-practices.html">Dockerfile best practices</a> to strengthen your container skills.
+            </blockquote>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes. Built with ☕ and curiosity.</p>
+        </div>
+    </footer>
+</body>
+</html>

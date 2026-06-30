@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hugo's Dev Notes | Cloudflare, Python & AI Coding Tutorials</title>
+    <title>Hugo's Dev Notes | Cloudflare, Python &amp; AI Coding Tutorials</title>
     
     <!-- SEO Meta Tags -->
     <meta name="description" content="Learn Cloudflare setup, Python programming, and Vibe Coding with AI tools. Step-by-step tutorials for beginners. Real projects, real code.">
@@ -13,7 +13,7 @@
     <link rel="canonical" href="https://blog.hugow.dev/">
     
     <!-- Open Graph -->
-    <meta property="og:title" content="Hugo's Dev Notes | Cloudflare, Python & Vibe Coding">
+    <meta property="og:title" content="Hugo's Dev Notes | Cloudflare, Python &amp; Vibe Coding">
     <meta property="og:description" content="Learn Cloudflare setup, Python programming, and Vibe Coding with AI. Step-by-step tutorials for beginners.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://blog.hugow.dev/">
@@ -21,7 +21,7 @@
     
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Hugo's Dev Notes | Cloudflare, Python & Vibe Coding">
+    <meta name="twitter:title" content="Hugo's Dev Notes | Cloudflare, Python &amp; Vibe Coding">
     <meta name="twitter:description" content="Learn Cloudflare setup, Python programming, and Vibe Coding with AI.">
     
     <!-- Structured Data -->
@@ -46,1245 +46,1304 @@
     <!-- Reading Progress Bar -->
     <div class="progress-bar" id="progressBar"></div>
 
-    <!-- Dark Mode Toggle -->
-    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+    <!-- Theme Toggle -->
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
 
     <header>
         <div class="container">
             <div class="logo">
-                <h1><a href="index.html">🚀 Hugo's Dev Notes</a></h1>
+                <h1><a href="index.html">Hugo's Dev Notes</a></h1>
                 <p class="subtitle">Cloudflare · Python · AI Coding</p>
             </div>
             <nav>
-                <a href="index.html" class="nav-btn active">🏠 Home</a>
-                <a href="cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
-                <a href="python.html" class="nav-btn">🐍 Python</a>
-                <a href="vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
-                <a href="devops.html" class="nav-btn">🐳 DevOps</a>
-                <a href="security.html" class="nav-btn">🔐 Security</a>
-                <a href="webdev.html" class="nav-btn">💻 Web Dev</a>
+                <a href="index.html" class="nav-btn active">Home</a>
+                <a href="cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="python.html" class="nav-btn">Python</a>
+                <a href="vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="devops.html" class="nav-btn">DevOps</a>
+                <a href="security.html" class="nav-btn">Security</a>
+                <a href="webdev.html" class="nav-btn">Web Dev</a>
             </nav>
         </div>
     </header>
 
     <main class="container">
-        <!-- Search Box -->
-        <div class="search-box">
-            <input type="text" id="searchInput" placeholder="🔍 Search tutorials... (Cloudflare, Python, AI coding)" onkeyup="filterPosts()">
+        <!-- Hero Section -->
+        <section class="hero">
+            <h1>Learn by <span class="gradient-text">Building</span></h1>
+            <p class="hero-subtitle">Step-by-step tutorials on Cloudflare, Python, DevOps, and AI-powered coding. Real projects, real code, no fluff.</p>
+            <div class="hero-stats">
+                <div class="hero-stat">
+                    <span class="hero-stat-value">84+</span>
+                    <span class="hero-stat-label">Tutorials</span>
+                </div>
+                <div class="hero-stat">
+                    <span class="hero-stat-value">6</span>
+                    <span class="hero-stat-label">Topics</span>
+                </div>
+                <div class="hero-stat">
+                    <span class="hero-stat-value">Weekly</span>
+                    <span class="hero-stat-label">Updated</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Search -->
+        <div class="search-wrapper">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Search tutorials..." onkeyup="searchPosts()">
+            </div>
         </div>
 
-        <!-- Featured Section -->
-        <section class="featured">
-            <div class="section-header">
-                <h2>🔥 Latest Tutorials</h2>
-                <p class="section-subtitle">New posts every week</p>
+        <!-- Filter Pills -->
+        <div class="filter-bar">
+            <button class="filter-pill active" onclick="filterPosts('all', this)">All</button><button class="filter-pill" onclick="filterPosts('cloudflare', this)">☁️ Cloudflare <span class="count">15</span></button><button class="filter-pill" onclick="filterPosts('python', this)">🐍 Python <span class="count">32</span></button><button class="filter-pill" onclick="filterPosts('devops', this)">🐳 DevOps <span class="count">33</span></button><button class="filter-pill" onclick="filterPosts('security', this)">🔐 Security <span class="count">8</span></button><button class="filter-pill" onclick="filterPosts('vibe', this)">🤖 AI Coding <span class="count">6</span></button><button class="filter-pill" onclick="filterPosts('web', this)">💻 Web Dev <span class="count">7</span></button>
+        </div>
+
+        <!-- Posts Grid -->
+        <div class="posts" id="postsContainer">
+
+        <article class="post" data-tags="vibe">
+            <div class="post-tags">
+                <span class="tag vibe">AI Coding</span>
             </div>
-            
-            <div class="posts" id="postsContainer">
-
-                <article class="post" data-tags="cloudflare workers cron triggers scheduler scheduled tasks edge automation wrangler">
-                    <div class="post-header">
-                        <span class="tag cloudflare">Cloudflare</span>
-                        <span class="tag devops">DevOps</span>
-                        <h2><a href="posts/cloudflare-workers-cron.html">Cloudflare Workers Cron Triggers: Scheduled Tasks on the Edge</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Learn Cloudflare Workers Cron Triggers — schedule tasks to run on the Cloudflare edge. Build periodic API calls, data cleanup, health checks, and automated workflows. Working examples with wrangler.toml and Python integration.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-30</time>
-                        <span class="read-time">10 min read</span>
-                        <span class="post-status">New</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="html forms validation input types client-side javascript file upload accessibility">
-                    <div class="post-header">
-                        <span class="tag web">Web Dev</span>
-                        <h2><a href="posts/html-forms-validation.html">HTML Forms &amp; Validation: Build Interactive Forms That Work</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Master HTML forms — input types, validation attributes, form layout, file uploads, and JavaScript form handling. Build real-world forms with client-side and server-side validation. Beginner-friendly with working examples.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-30</time>
-                        <span class="read-time">11 min read</span>
-                        <span class="post-status">New</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="cloudflare workers kv key-value storage serverless edge namespace cache api">
-                    <div class="post-header">
-                        <span class="tag cloudflare">Cloudflare</span>
-                        <span class="tag devops">DevOps</span>
-                        <h2><a href="posts/cloudflare-workers-kv.html">Cloudflare Workers KV: Serverless Key-Value Database Made Easy</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Learn Cloudflare Workers KV — a globally distributed key-value store. Create namespaces, write and read data, build counters and cached APIs. Practical Worker code examples and Python API scripts you can deploy today.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-30</time>
-                        <span class="read-time">13 min read</span>
-                        <span class="post-status">New</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="python dataclass decorator boilerplate type hints default_factory immutable post_init">
-                    <div class="post-header">
-                        <span class="tag python">Python</span>
-                        <h2><a href="posts/python-dataclasses.html">Python Dataclasses: Write Cleaner Classes with Less Boilerplate</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Stop writing repetitive __init__, __repr__, and __eq__ methods. Learn Python dataclasses — type annotations, default values, field(), frozen immutability, __post_init__ validation, and dict conversion. From basic to advanced with real examples.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-30</time>
-                        <span class="read-time">12 min read</span>
-                        <span class="post-status">New</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="python debugging pdb breakpoint logging traceback error vscode tools">
-                    <div class="post-header">
-                        <span class="tag python">Python</span>
-                        <span class="tag devops">DevOps</span>
-                        <h2><a href="posts/python-debugging.html">Python Debugging: Stop Guessing, Start Finding Bugs Fast</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Stop guessing why your code fails. Learn Python debugging from strategic print() statements to pdb breakpoints, logging tricks, conditional breakpoints, and VS Code debugging. Five levels of debugging power with practical examples.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-30</time>
-                        <span class="read-time">12 min read</span>
-                        <span class="post-status">New</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="docker healthcheck compose monitoring restart policy container devops compose condition">
-                    <div class="post-header">
-                        <span class="tag devops">DevOps</span>
-                        <h2><a href="posts/docker-healthchecks.html">Docker Health Checks & Container Monitoring: Know If Your Containers Are Actually Working</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Learn Docker HEALTHCHECK instructions, container monitoring, restart policies, and Docker Compose health dependencies. Stop wondering if your containers are actually working. Health endpoints, compose conditions, and real-world patterns.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-30</time>
-                        <span class="read-time">11 min read</span>
-                        <span class="post-status">New</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="cloudflare api python automation dns workers rest requests deployment">
-                    <div class="post-header">
-                        <span class="tag cloudflare">Cloudflare</span>
-                        <span class="tag python">Python</span>
-                        <h2><a href="posts/cloudflare-api-python.html">Cloudflare API with Python: Automate DNS, Workers &amp; More</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Automate Cloudflare with Python — manage DNS records, deploy Workers, configure zones, and handle everything programmatically. Full working scripts for creating, updating, and deleting DNS records with retry logic and CI/CD integration.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-30</time>
-                        <span class="read-time">14 min read</span>
-                        <span class="post-status">New</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="git tags semantic versioning semver release automation versioning github actions">
-                    <div class="post-header">
-                        <span class="tag devops">DevOps</span>
-                        <h2><a href="posts/git-tags-versioning.html">Git Tags &amp; Semantic Versioning: Release Management Made Simple</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Master Git tags and semantic versioning — create releases, tag versions, build changelogs, and automate deployments. Learn MAJOR.MINOR.PATCH versioning with a complete Python bump script and GitHub Actions workflow.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-30</time>
-                        <span class="read-time">11 min read</span>
-                        <span class="post-status">New</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="python dictionary set operations merge comprehensions data processing frozenset">
-                    <div class="post-header">
-                        <span class="tag python">Python</span>
-                        <h2><a href="posts/python-dict-set-operations.html">Python Dictionary &amp; Set Operations: Merges, Comprehensions &amp; More</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Master Python dictionaries and sets — merging, comprehensions, set operations (union, intersection, difference), and real-world data manipulation examples. Build lookup tables, deduplicate data, and index collections like a pro.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-29</time>
-                        <span class="read-time">12 min read</span>
-                        <span class="post-status">New</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="ssh keys authentication ssh_config passwordless remote security devops tunnel">
-                    <div class="post-header">
-                        <span class="tag security">Security</span>
-                        <span class="tag devops">DevOps</span>
-                        <h2><a href="posts/ssh-keys-config.html">SSH Keys &amp; ssh_config: Passwordless Login and Secure Remote Access</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Set up SSH key-based authentication for passwordless login. Configure ssh_config for aliases, port forwarding, and multiple servers. Practical guide with working examples for production.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-29</time>
-                        <span class="read-time">13 min read</span>
-                        <span class="post-status">New</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="python f-strings string formatting format method interpolation beginner strings">
-                    <div class="post-header">
-                        <span class="tag python">Python</span>
-                        <h2><a href="posts/python-fstrings-formatting.html">Python f-strings &amp; String Formatting: Write Cleaner Code</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Master Python string formatting — from the old % operator to modern f-strings. Inline expressions, debug formatting, number alignment, progress bars, and formatted tables. Practical examples you can run today.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-29</time>
-                        <span class="read-time">11 min read</span>
-                        <span class="post-status">New</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="cloudflare cache rules caching edge CDN bandwidth speed optimization purge">
-                    <div class="post-header">
-                        <span class="tag cloudflare">Cloudflare</span>
-                        <span class="tag devops">DevOps</span>
-                        <h2><a href="posts/cloudflare-cache-rules.html">Cloudflare Cache Rules &amp; Caching Strategy: Speed Up Your Site 10x</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Master Cloudflare Cache Rules — cache static assets, API responses, and pages. Configure TTL, purge strategies, Nginx/Apache headers, and Python API purging. Reduce origin load by 80-95%.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-29</time>
-                        <span class="read-time">11 min read</span>
-                        <span class="post-status">New</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="prometheus monitoring observability docker kubernetes metrics promql grafana alerts devops">
-                    <div class="post-header">
-                        <span class="tag devops">DevOps</span>
-                        <h2><a href="posts/prometheus-monitoring.html">Prometheus Monitoring: Observe Your Containers Like a Pro</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Learn Prometheus monitoring for Docker and Kubernetes — install, configure targets, write PromQL queries, create alerts, and build Grafana dashboards. Beginner-friendly with working Python exporter examples.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-29</time>
-                        <span class="read-time">12 min read</span>
-                        <span class="post-status">New</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="python iterators generators itertools lazy evaluation memory efficient data processing yield chain groupby">
-                    <div class="post-header">
-                        <span class="tag python">Python</span>
-                        <h2><a href="posts/python-iterators-itertools.html">Python Iterators &amp; <code>itertools</code>: Process Data with Lazy Evaluation</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Master Python iterators, generators, and the itertools module — lazy evaluation, infinite sequences, groupby, chain, and memory-efficient data processing. Beginner-friendly with real code examples.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-29</time>
-                        <span class="read-time">10 min read</span>
-                        <span class="post-status">New</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="cloudflare access authentication sso saml identity zero trust security jwt api">
-                    <div class="post-header">
-                        <span class="tag cloudflare">Cloudflare</span>
-                        <span class="tag security">Security</span>
-                        <h2><a href="posts/cloudflare-access-auth.html">Cloudflare Access: Secure Your Apps with Identity-Based Authentication</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Learn Cloudflare Access — protect your apps, dashboards, and internal tools with identity-based authentication. Setup SSO, email, and One-Time Pins with working Python API examples and JWT decoding.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-28</time>
-                        <span class="read-time">11 min read</span>
-                        <span class="post-status">New</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="python regex regular expressions pattern matching re module string validation text processing">
-                    <div class="post-header">
-                        <span class="tag python">Python</span>
-                        <h2><a href="posts/python-regex-patterns.html">Python Regular Expressions (regex): Pattern Matching Made Easy</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Master Python regular expressions — match patterns, extract data, validate input, search and replace strings. Beginner-friendly guide with working examples including email validation and log parsing.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-28</time>
-                        <span class="read-time">10 min read</span>
-                        <span class="post-status">New</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="vibe coding ai tools comparison copilot cursor claude code developer tools 2026">
-                    <div class="post-header">
-                        <span class="tag vibe">AI Coding</span>
-                        <h2><a href="posts/ai-coding-tools-comparison.html">Vibe Coding: Copilot vs Cursor vs Claude Code — Which AI Tool Wins in 2026?</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Comprehensive comparison of the top AI coding tools — GitHub Copilot, Cursor, and Claude Code. Features, pricing, strengths, limitations, and how to pick the right one for your workflow. Real insights from hands-on use.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-28</time>
-                        <span class="read-time">14 min read</span>
-                        <span class="post-status">New</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="http rest api methods status codes headers curl python requests fetch web">
-                    <div class="post-header">
-                        <span class="tag web">Web Dev</span>
-                        <span class="tag python">Python</span>
-                        <h2><a href="posts/http-rest-api-guide.html">HTTP & REST APIs: Understanding the Web's Language</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Master HTTP methods, status codes, headers, REST API design, and practical API consumption. Beginner-friendly guide with curl, Python requests, and JavaScript fetch examples you can run today.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-28</time>
-                        <span class="read-time">12 min read</span>
-                        <span class="post-status">New</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="python json serialization data exchange api config parsing encoder">
-                    <div class="post-header">
-                        <span class="tag python">Python</span>
-                        <h2><a href="posts/python-json-serialization.html">Python JSON &amp; Data Serialization: Save, Load, and Exchange Data</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Master Python JSON handling — parse, serialize, save to files, handle nested data, work with APIs, and convert between Python types and JSON. Practical examples for beginners.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-28</time>
-                        <span class="read-time">11 min read</span>
-                        <span class="post-status">New</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="cloudflare load balancing pools monitors health-checks failover high-availability geo">
-                    <div class="post-header">
-                        <span class="tag cloudflare">Cloudflare</span>
-                        <span class="tag devops">DevOps</span>
-                        <h2><a href="posts/cloudflare-load-balancing.html">Cloudflare Load Balancing: Distribute Traffic Across Multiple Servers</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Learn Cloudflare Load Balancing — distribute traffic across multiple servers, configure health checks, set up pools, and ensure high availability. Complete beginner guide with working examples.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-28</time>
-                        <span class="read-time">11 min read</span>
-                        <span class="post-status">New</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="terraform workspaces environments dev staging prod state variable infrastructure">
-                    <div class="post-header">
-                        <span class="tag devops">DevOps</span>
-                        <h2><a href="posts/terraform-workspaces.html">Terraform Workspaces: Manage Multiple Environments from One Codebase</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Learn Terraform workspaces — manage dev, staging, and production environments from a single codebase. Switch states, override variables, and organize infrastructure cleanly without duplicating code.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-28</time>
-                        <span class="read-time">12 min read</span>
-                        <span class="post-status">New</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="python async await asyncio concurrency non-blocking io httpx task">
-                    <div class="post-header">
-                        <span class="tag python">Python</span>
-                        <h2><a href="posts/python-async-await.html">Python Async/Await (asyncio): Do Multiple Things at Once</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Learn Python asyncio — async/await, concurrent tasks, and non-blocking I/O. Build faster programs that do multiple things at once with working code examples.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-28</time>
-                        <span class="read-time">12 min read</span>
-                        <span class="post-status">New</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="python logging configuration json structured production 12-factor dotenv handlers">
-                    <div class="post-header">
-                        <span class="tag python">Python</span>
-                        <span class="tag devops">DevOps</span>
-                        <h2><a href="posts/python-logging-configuration.html">Python Logging & Configuration Management: Production-Ready Apps</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Master Python logging and configuration — the logging module, log levels, handlers, formatters, rotating files, JSON logging, and 12-factor config management. Move beyond print() to production-ready patterns with real examples.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-27</time>
-                        <span class="read-time">11 min read</span>
-                        <span class="post-status">New</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="cloudflare stream video transcoding streaming python upload player analytics">
-                    <div class="post-header">
-                        <span class="tag cloudflare">Cloudflare</span>
-                        <span class="tag python">Python</span>
-                        <h2><a href="posts/cloudflare-stream.html">Cloudflare Stream: Video Upload, Transcoding & Streaming Made Easy</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Learn Cloudflare Stream — upload, transcode, and stream video with automatic quality optimization, DRM, and analytics. Complete guide with Python SDK examples, custom upload pages, and direct upload workflows.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-27</time>
-                        <span class="read-time">10 min read</span>
-                        <span class="post-status">New</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="python context manager with statement enter exit resource management contextlib">
-                    <div class="post-header">
-                        <span class="tag python">Python</span>
-                        <h2><a href="posts/python-context-managers.html">Python Context Managers: The 'with' Statement Explained</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Master Python context managers — the 'with' statement, __enter__/__exit__, contextlib, and custom resource management. Clean, safe resource handling with real-world examples.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-26</time>
-                        <span class="read-time">10 min read</span>
-                        <span class="post-status">New</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="docker dockerfile best practices multi-stage build image optimization security cache">
-                    <div class="post-header">
-                        <span class="tag devops">DevOps</span>
-                        <h2><a href="posts/dockerfile-best-practices.html">Dockerfile Best Practices: Build Smaller, Faster, Secure Images</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Master Dockerfile best practices — multi-stage builds, image optimization, layer caching, security hardening, and proven patterns for production-ready containers. From 1.5 GB to 45 MB.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-26</time>
-                        <span class="read-time">12 min read</span>
-                        <span class="post-status">New</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="devops terraform modules reusable infrastructure iac registry team">
-                    <div class="post-header">
-                        <span class="tag devops">DevOps</span>
-                        <h2><a href="posts/terraform-modules-reusability.html">Terraform Modules & Reusable Infrastructure: Stop Copy-Pasting Code</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Learn Terraform modules — reusable, parameterized infrastructure blocks. Build your own modules, use the public registry, version pinning, and structure code for teams. From copy-paste to clean, maintainable IaC.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-26</time>
-                        <span class="read-time">11 min read</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="devops git hooks pre-commit code quality automation linting formatting">
-                    <div class="post-header">
-                        <span class="tag devops">DevOps</span>
-                        <h2><a href="posts/git-hooks-pre-commit.html">Git Hooks & Pre-Commit: Automate Your Development Workflow</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Catch bugs, format code, and run tests before every commit — automate quality checks with Git hooks and the pre-commit framework. Ship cleaner code with zero effort from your whole team.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-26</time>
-                        <span class="read-time">10 min read</span>
-                        <span class="post-status">New</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="python packaging pypi publish pyproject build twine distribution">
-                    <div class="post-header">
-                        <span class="tag python">Python</span>
-                        <span class="tag devops">DevOps</span>
-                        <h2><a href="posts/python-packaging-publishing.html">Python Packaging & Publishing: Share Your Code on PyPI</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Package and publish your Python projects to PyPI — create pyproject.toml, build wheels, test on TestPyPI, upload with twine, and automate with GitHub Actions. From zero to pip install.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-26</time>
-                        <span class="read-time">11 min read</span>
-                        <span class="post-status">New</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="docker volumes bind mounts data persistence backup tmpfs docker-compose">
-                    <div class="post-header">
-                        <span class="tag devops">DevOps</span>
-                        <span class="tag security">Security</span>
-                        <h2><a href="posts/docker-volumes-data-persistence.html">Docker Volumes & Data Persistence: Don't Lose Your Data</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Master Docker volumes, bind mounts, and tmpfs — save databases, config files, and application data that survives container restarts. Includes backup strategies and real-world compose examples.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-26</time>
-                        <span class="read-time">12 min read</span>
-                        <span class="post-status">New</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="python list comprehensions generator expressions pythonic code filter map">
-                    <div class="post-header">
-                        <span class="tag python">Python</span>
-                        <h2><a href="posts/python-list-comprehensions.html">Python List Comprehensions & Generator Expressions: Write Cleaner, FASTER Code</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Master Python list comprehensions and generator expressions — the Pythonic way to create lists, filter data, and transform collections with elegant one-liners. Includes real-world data cleaning example.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-25</time>
-                        <span class="read-time">10 min read</span>
-                        <span class="post-status">New</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="terraform state remote backend s3 dynamodb locking iac team collaboration">
-                    <div class="post-header">
-                        <span class="tag devops">DevOps</span>
-                        <h2><a href="posts/terraform-state-remote-backends.html">Terraform State & Remote Backends: Team-Friendly Infrastructure</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Learn Terraform state management — remote backends (S3 + DynamoDB), state locking, sensitive data handling, workspaces, and team collaboration patterns for production infrastructure.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-25</time>
-                        <span class="read-time">10 min read</span>
-                        <span class="post-status">New</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="python testing pytest unit testing assert fixtures mock tdd">
-                    <div class="post-header">
-                        <span class="tag python">Python</span>
-                        <span class="tag devops">DevOps</span>
-                        <h2><a href="posts/python-testing-pytest.html">Python Testing with pytest: Write Reliable Code from Day One</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Learn Python testing with pytest — write your first tests, use assertions, fixtures, parameterization, and mock objects. Beginner-friendly with working examples you can run today.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-25</time>
-                        <span class="read-time">10 min read</span>
-                        <span class="post-status">New</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="cloudflare pages static hosting deploy git ci/cd edge network free">
-                    <div class="post-header">
-                        <span class="tag cloudflare">Cloudflare</span>
-                        <span class="tag devops">DevOps</span>
-                        <h2><a href="posts/cloudflare-pages.html">Cloudflare Pages: Deploy Static Sites in Seconds</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Deploy static sites from Git with Cloudflare Pages — free hosting, automatic HTTPS, CI/CD pipeline, and edge caching in 300+ cities. Complete beginner guide with Hugo and plain HTML examples.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-25</time>
-                        <span class="read-time">9 min read</span>
-                        <span class="post-status">New</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="python modules packages import pip pyproject code organization library">
-                    <div class="post-header">
-                        <span class="tag python">Python</span>
-                        <h2><a href="posts/python-modules-packages.html">Python Modules & Packages: Organize Your Code Like a Pro</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Learn Python modules and packages — split code into reusable pieces, import libraries, create your own packages, and manage dependencies with pip. Practical examples from basic imports to publishing.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-25</time>
-                        <span class="read-time">9 min read</span>
-                        <span class="post-status">New</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="owasp top10 web security injection xss csrf authentication python">
-                    <div class="post-header">
-                        <span class="tag security">Security</span>
-                        <span class="tag web">Web Dev</span>
-                        <h2><a href="posts/owasp-top10-web-security.html">OWASP Top 10: Web Application Security Guide for Developers</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Master the OWASP Top 10 web vulnerabilities — injection, XSS, broken access, crypto failures, and more. Practical Python examples showing bad code vs secure code for every threat.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-25</time>
-                        <span class="read-time">11 min read</span>
-                        <span class="post-status">New</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="cloudflare r2 storage serverless object s3 egress fees">
-                    <div class="post-header">
-                        <span class="tag cloudflare">Cloudflare</span>
-                        <span class="tag devops">DevOps</span>
-                        <h2><a href="posts/cloudflare-r2-storage.html">Cloudflare R2 Storage: Serverless Object Storage Without Egress Fees</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Learn Cloudflare R2 — serverless object storage with zero egress fees. Store files, images, and backups cheaply. Complete guide with Python boto3 and curl examples.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-24</time>
-                        <span class="read-time">9 min read</span>
-                        <span class="post-status">New</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="python type hints mypy static typing type checking">
-                    <div class="post-header">
-                        <span class="tag python">Python</span>
-                        <h2><a href="posts/python-type-hints.html">Python Type Hints and Type Checking: Write Cleaner, Safer Code</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Master Python type hints and mypy — catch bugs before runtime, improve IDE support, and write professional Python code. Beginner-friendly with practical examples.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-24</time>
-                        <span class="read-time">10 min read</span>
-                        <span class="post-status">New</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="python decorators generators yield advanced functools">
-                    <div class="post-header">
-                        <span class="tag python">Python</span>
-                        <h2><a href="posts/python-decorators-generators.html">Python Decorators & Generators: Advanced Patterns</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Master Python decorators and generators — two powerful advanced patterns. Learn @decorators, yield, functools, memoization, and how to build clean, efficient Python code.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-24</time>
-                        <span class="read-time">10 min read</span>
-                        <span class="post-status">New</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="docker networking multi-stage builds bridge image optimization devops">
-                    <div class="post-header">
-                        <span class="tag devops">DevOps</span>
-                        <h2><a href="posts/docker-networking-builds.html">Docker Networking & Multi-Stage Builds</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Master Docker networking (bridge, host, custom networks) and multi-stage builds to create smaller, faster container images. Real-world examples and best practices.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-24</time>
-                        <span class="read-time">10 min read</span>
-                        <span class="post-status">New</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="javascript es6 arrow functions destructuring spread modern">
-                    <div class="post-header">
-                        <span class="tag web">Web Dev</span>
-                        <h2><a href="posts/javascript-es6-features.html">JavaScript ES6+ Modern Features Every Developer Should Know</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Learn modern JavaScript — let/const, arrow functions, template literals, destructuring, spread/rest, modules, optional chaining, and more with practical examples.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-24</time>
-                        <span class="read-time">9 min read</span>
-                        <span class="post-status">New</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="network security firewall ids ips segmentation defense">
-                    <div class="post-header">
-                        <span class="tag security">Security</span>
-                        <h2><a href="posts/network-security-fundamentals.html">Network Security Fundamentals: Firewalls, IDS, and Defense Strategies</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Learn network security fundamentals — firewalls, intrusion detection, network segmentation, defense-in-depth, and a practical security checklist you can apply today.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-24</time>
-                        <span class="read-time">10 min read</span>
-                        <span class="post-status">New</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="git branching merge conflicts gitflow version control workflow">
-                    <div class="post-header">
-                        <span class="tag devops">DevOps</span>
-                        <h2><a href="posts/git-branching-merge-conflicts.html">Git Branching Strategies & Merge Conflicts</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Learn Git branching strategies — feature branches, GitFlow, trunk-based development — and how to resolve merge conflicts step by step.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-24</time>
-                        <span class="read-time">8 min read</span>
-                        <span class="post-status">New</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="vibe coding ai workflow cursor claude copilot prompt">
-                    <div class="post-header">
-                        <span class="tag vibe">AI Coding</span>
-                        <h2><a href="posts/vibe-coding-workflow.html">Vibe Coding Workflow: From Prompt to Production</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>A complete workflow for building apps with AI — planning prompts, scaffolding, reviewing, testing, and deploying. Ship faster without losing quality.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-24</time>
-                        <span class="read-time">10 min read</span>
-                        <span class="post-status">New</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="docker compose containers multi-container orchestration">
-                    <div class="post-header">
-                        <span class="tag devops">DevOps</span>
-                        <h2><a href="posts/docker-compose.html">Docker Compose: Multi-Container Applications</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Define and run multi-container apps with Docker Compose — services, volumes, networks, and profiles. One YAML file, one command.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-24</time>
-                        <span class="read-time">9 min read</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="css grid flexbox layout web">
-                    <div class="post-header">
-                        <span class="tag web">Web Dev</span>
-                        <h2><a href="posts/css-grid-flexbox.html">CSS Grid & Flexbox: Modern Layout Guide</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Master CSS Grid and Flexbox — the two powerful layout systems that replaced floats. Build responsive layouts with real examples.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-24</time>
-                        <span class="read-time">10 min read</span>
-                        <span class="post-status">New</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="cloudflare tunnel hosting">
-                    <div class="post-header">
-                        <span class="tag cloudflare">Cloudflare</span>
-                        <h2><a href="posts/cloudflare-tunnel.html">How to Set Up Cloudflare Tunnel (Step by Step)</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Learn how to expose your local server to the internet using Cloudflare Tunnel — no port forwarding, no public IP needed. Complete guide from install to deployment.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-17</time>
-                        <span class="read-time">5 min read</span>
-                        <span class="post-status">Featured</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="cloudflare dns domain setup">
-                    <div class="post-header">
-                        <span class="tag cloudflare">Cloudflare</span>
-                        <h2><a href="posts/cloudflare-dns.html">Cloudflare DNS Setup: Complete Guide</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Complete guide to managing DNS with Cloudflare — A records, CNAME, proxies, and troubleshooting common errors like Error 1014.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-17</time>
-                        <span class="read-time">6 min read</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="python beginner programming">
-                    <div class="post-header">
-                        <span class="tag python">Python</span>
-                        <h2><a href="posts/python-first-script.html">Your First Python Script: Complete Beginner Guide</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Never written Python before? This guide takes you from zero to running your first script in 15 minutes. No prior coding experience needed.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-17</time>
-                        <span class="read-time">8 min read</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="python variables data types">
-                    <div class="post-header">
-                        <span class="tag python">Python</span>
-                        <h2><a href="posts/python-variables.html">Python Variables & Data Types Explained</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Understanding variables, strings, integers, lists, and dictionaries in Python. The foundation you need before building real projects.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-17</time>
-                        <span class="read-time">7 min read</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="vibe coding ai chatgpt copilot">
-                    <div class="post-header">
-                        <span class="tag vibe">AI Coding</span>
-                        <h2><a href="posts/what-is-vibe-coding.html">What is Vibe Coding? AI-Powered Development</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Discover Vibe Coding — the new way to build software using AI assistants. Write less code, get more done with ChatGPT, Copilot, and Claude.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-17</time>
-                        <span class="read-time">6 min read</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="vibe coding tools cursor copilot">
-                    <div class="post-header">
-                        <span class="tag vibe">AI Coding</span>
-                        <h2><a href="posts/vibe-coding-tools.html">Top AI Coding Tools: Copilot, Cursor & Claude</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Compare the best AI coding tools in 2026. When to use GitHub Copilot vs Cursor vs Claude Code. Real workflow examples and pricing.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-17</time>
-                        <span class="read-time">8 min read</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="cloudflare workers serverless">
-                    <div class="post-header">
-                        <span class="tag cloudflare">Cloudflare</span>
-                        <h2><a href="posts/cloudflare-workers.html">Cloudflare Workers: Serverless Functions Made Easy</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Deploy serverless functions globally with Cloudflare Workers. Build APIs, edge computing, and serverless web apps.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-23</time>
-                        <span class="read-time">7 min read</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="cloudflare rules firewall security">
-                    <div class="post-header">
-                        <span class="tag cloudflare">Cloudflare</span>
-                        <h2><a href="posts/cloudflare-rules.html">Cloudflare Rules: Advanced Traffic Filtering</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Master Cloudflare Rules — WAF, rate limiting, geo-blocking, and custom filtering rules.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-23</time>
-                        <span class="read-time">6 min read</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="cloudflare zero trust access">
-                    <div class="post-header">
-                        <span class="tag cloudflare">Cloudflare</span>
-                        <h2><a href="posts/cloudflare-zero-trust.html">Cloudflare Zero Trust: Secure Access Gateway</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Protect your apps with Cloudflare Zero Trust — identity-aware access, SSO, and secure remote access.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-23</time>
-                        <span class="read-time">8 min read</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="python functions return parameters">
-                    <div class="post-header">
-                        <span class="tag python">Python</span>
-                        <h2><a href="posts/python-functions.html">Python Functions: Complete Guide</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Learn to write functions in Python — parameters, return values, scope, and lambda functions.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-23</time>
-                        <span class="read-time">7 min read</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="python loops for while break continue">
-                    <div class="post-header">
-                        <span class="tag python">Python</span>
-                        <h2><a href="posts/python-loops.html">Python Loops: For and While Loops</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Master loops in Python — for loops, while loops, break, continue, and enumerate.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-23</time>
-                        <span class="read-time">6 min read</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="python lists dictionaries tuples sets">
-                    <div class="post-header">
-                        <span class="tag python">Python</span>
-                        <h2><a href="posts/python-lists-dictionaries.html">Python Lists & Dictionaries</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Work with lists, dictionaries, tuples, and sets in Python — the most used data structures.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-23</time>
-                        <span class="read-time">8 min read</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="python error handling try except finally">
-                    <div class="post-header">
-                        <span class="tag python">Python</span>
-                        <h2><a href="posts/python-error-handling.html">Python Error Handling: Try/Except</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Handle errors gracefully in Python — try, except, else, finally, and custom exceptions.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-23</time>
-                        <span class="read-time">6 min read</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="python oop classes objects methods">
-                    <div class="post-header">
-                        <span class="tag python">Python</span>
-                        <h2><a href="posts/python-oop-classes.html">Python OOP: Classes and Objects</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Learn Object-Oriented Programming in Python — classes, objects, inheritance, and polymorphism.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-23</time>
-                        <span class="read-time">9 min read</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="python file operations read write open">
-                    <div class="post-header">
-                        <span class="tag python">Python</span>
-                        <h2><a href="posts/python-file-operations.html">Python File Operations</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Read and write files in Python — open, read, write, append, and context managers.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-23</time>
-                        <span class="read-time">5 min read</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="python virtual environments venv pip">
-                    <div class="post-header">
-                        <span class="tag python">Python</span>
-                        <h2><a href="posts/python-virtual-environments.html">Python Virtual Environments</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Isolate your Python projects with virtual environments — venv, pip, and requirements.txt.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-23</time>
-                        <span class="read-time">5 min read</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="python apis requests json http">
-                    <div class="post-header">
-                        <span class="tag python">Python</span>
-                        <h2><a href="posts/python-apis.html">Python APIs: Making HTTP Requests</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Interact with web APIs using Python — requests, JSON, REST, and error handling.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-23</time>
-                        <span class="read-time">7 min read</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="python web scraping beautifulsoup selenium">
-                    <div class="post-header">
-                        <span class="tag python">Python</span>
-                        <h2><a href="posts/python-web-scraping.html">Python Web Scraping</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Extract data from websites with Python — BeautifulSoup, Selenium, and ethical scraping.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-23</time>
-                        <span class="read-time">8 min read</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="docker containers images deployment">
-                    <div class="post-header">
-                        <span class="tag devops">DevOps</span>
-                        <h2><a href="posts/docker-basics.html">Docker Basics: Containers Explained</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Learn Docker from scratch — containers, images, Dockerfiles, and multi-container apps.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-23</time>
-                        <span class="read-time">7 min read</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="github actions ci/cd pipeline workflow">
-                    <div class="post-header">
-                        <span class="tag devops">DevOps</span>
-                        <h2><a href="posts/github-actions-cicd.html">GitHub Actions: CI/CD Pipeline</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Automate testing and deployment with GitHub Actions — workflows, jobs, and runners.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-23</time>
-                        <span class="read-time">6 min read</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="git github version control branching">
-                    <div class="post-header">
-                        <span class="tag devops">DevOps</span>
-                        <h2><a href="posts/git-github-basics.html">Git & GitHub: Version Control</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Master Git version control — init, add, commit, branch, merge, and GitHub workflows.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-23</time>
-                        <span class="read-time">8 min read</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="env vars secrets environment variables">
-                    <div class="post-header">
-                        <span class="tag devops">DevOps</span>
-                        <h2><a href="posts/env-vars-secrets.html">Environment Variables & Secrets</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Securely manage secrets — environment variables, .env files, and encryption.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-23</time>
-                        <span class="read-time">5 min read</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="terraform infrastructure iac cloud">
-                    <div class="post-header">
-                        <span class="tag devops">DevOps</span>
-                        <h2><a href="posts/terraform-basics.html">Terraform Basics: Infrastructure as Code</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Provision infrastructure with Terraform — providers, resources, and state management.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-23</time>
-                        <span class="read-time">7 min read</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="https tls ssl certificates security">
-                    <div class="post-header">
-                        <span class="tag security">Security</span>
-                        <h2><a href="posts/https-tls-basics.html">HTTPS & TLS: Secure Communications</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Understand HTTPS, TLS, SSL certificates, and how they secure the web.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-23</time>
-                        <span class="read-time">6 min read</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="ssh security keys authentication">
-                    <div class="post-header">
-                        <span class="tag security">Security</span>
-                        <h2><a href="posts/ssh-security.html">SSH Security: Secure Remote Access</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Secure your SSH connections — keys, authentication, and hardening.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-23</time>
-                        <span class="read-time">6 min read</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="penetration testing ethical hacking security">
-                    <div class="post-header">
-                        <span class="tag security">Security</span>
-                        <h2><a href="posts/penetration-testing-basics.html">Penetration Testing Basics</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Learn ethical hacking — reconnaissance, scanning, exploitation, and reporting.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-23</time>
-                        <span class="read-time">8 min read</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="javascript dom manipulation events">
-                    <div class="post-header">
-                        <span class="tag web">Web Dev</span>
-                        <h2><a href="posts/javascript-dom-manipulation.html">JavaScript DOM Manipulation</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Interact with web pages using JavaScript — select elements, modify content, and handle events.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-23</time>
-                        <span class="read-time">7 min read</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="javascript async await promises callbacks">
-                    <div class="post-header">
-                        <span class="tag web">Web Dev</span>
-                        <h2><a href="posts/javascript-promises-async-await.html">JavaScript Async/Await & Promises</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Master asynchronous JavaScript — callbacks, promises, async/await, and error handling.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-23</time>
-                        <span class="read-time">8 min read</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="responsive design css media queries flexbox grid">
-                    <div class="post-header">
-                        <span class="tag web">Web Dev</span>
-                        <h2><a href="posts/responsive-web-design.html">Responsive Web Design</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Build websites that work on all devices — media queries, flexbox, grid, and mobile-first design.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-23</time>
-                        <span class="read-time">6 min read</span>
-                    </div>
-                </article>
-
-                <article class="post" data-tags="claude code ai assistant coding">
-                    <div class="post-header">
-                        <span class="tag vibe">AI Coding</span>
-                        <h2><a href="posts/claude-code-guide.html">Claude Code Guide: AI Assistant</a></h2>
-                    </div>
-                    <div class="post-excerpt">
-                        <p>Use Claude Code for faster development — code generation, debugging, and refactoring.</p>
-                    </div>
-                    <div class="post-meta">
-                        <time>2026-06-23</time>
-                        <span class="read-time">6 min read</span>
-                    </div>
-                </article>
-
+            <h2 class="post-title"><a href="posts/what-is-vibe-coding.html">What is Vibe Coding? (And How to Start Today)</a></h2>
+            <div class="post-excerpt">
+                <p>Result: A working blog in under 10 minutes. Zero HTML experience needed....</p>
             </div>
-        </section>
-
-        <!-- Newsletter Section -->
-        <section class="newsletter">
-            <h2>📬 Stay Updated</h2>
-            <p>New tutorials every week. Cloudflare, Python, AI coding tips.</p>
-            <div class="newsletter-cta">
-                <a href="https://github.com/hugow0528/blog" target="_blank" class="btn-primary">⭐ Star on GitHub</a>
-                <a href="https://blog.hugow.dev/rss.xml" class="btn-secondary">📡 RSS Feed</a>
+            <div class="post-meta">
+                <span class="post-date">June 17, 2026 · 6 min read</span>
+                <span class="post-read-time">3 min read</span>
+                
             </div>
-        </section>
+        </article>
+        <article class="post" data-tags="vibe">
+            <div class="post-tags">
+                <span class="tag vibe">AI Coding</span>
+            </div>
+            <h2 class="post-title"><a href="posts/vibe-coding-workflow.html">Vibe Coding Workflow: From Prompt to Production</a></h2>
+            <div class="post-excerpt">
+                <p>AI coding tools have exploded in 2025 and 2026. Cursor, Claude Code, GitHub Copilot — they&#x27;re not just autocomplete anymore. They can plan features, write entire files, fix bugs, a...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">June 24, 2026 · 10 min read</span>
+                <span class="post-read-time">8 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="vibe">
+            <div class="post-tags">
+                <span class="tag vibe">AI Coding</span>
+            </div>
+            <h2 class="post-title"><a href="posts/vibe-coding-tools.html">Best Vibe Coding Tools (2026 Edition)</a></h2>
+            <div class="post-excerpt">
+                <p>There are dozens of AI coding tools out there. Which ones actually work? Here&#x27;s my comparison after testing them all....</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">June 17, 2026 · 10 min read</span>
+                <span class="post-read-time">3 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="vibe">
+            <div class="post-tags">
+                <span class="tag vibe">AI Coding</span>
+            </div>
+            <h2 class="post-title"><a href="posts/vibe-coding-full-app.html">Vibe Coding: Build a Full Web App from Scratch with AI</a></h2>
+            <div class="post-excerpt">
+                <p>No boilerplate. No scaffolding tools. Just us, the AI, and a clear prompt. Let&#x27;s go....</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-27</span>
+                <span class="post-read-time">11 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="devops">
+            <div class="post-tags">
+                <span class="tag devops">DevOps</span>
+            </div>
+            <h2 class="post-title"><a href="posts/terraform-workspaces.html">Terraform Workspaces: Manage Multiple Environments from One Codebase</a></h2>
+            <div class="post-excerpt">
+                <p>One of the most common infrastructure challenges is managing separate environments — development, staging, and production — from a single Terraform codebase. You want the same conf...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">June 28, 2026</span>
+                <span class="post-read-time">7 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="devops">
+            <div class="post-tags">
+                <span class="tag devops">DevOps</span>
+            </div>
+            <h2 class="post-title"><a href="posts/terraform-state-remote-backends.html">Terraform State &amp; Remote Backends: Team-Friendly Infrastructure</a></h2>
+            <div class="post-excerpt">
+                <p>This guide covers everything you need to know about state management, remote backends, locking, and making Terraform work for teams....</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-25</span>
+                <span class="post-read-time">8 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="devops">
+            <div class="post-tags">
+                <span class="tag devops">DevOps</span>
+            </div>
+            <h2 class="post-title"><a href="posts/terraform-modules-reusability.html">Terraform Modules &amp; Reusable Infrastructure: Stop Copy-Pasting Code</a></h2>
+            <div class="post-excerpt">
+                <p>Let&#x27;s build a reusable S3 bucket module. Create this directory structure:...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">June 26, 2026 · 11 min read</span>
+                <span class="post-read-time">7 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="devops">
+            <div class="post-tags">
+                <span class="tag devops">DevOps</span>
+            </div>
+            <h2 class="post-title"><a href="posts/terraform-basics.html">Terraform Basics: Infrastructure as Code for Beginners</a></h2>
+            <div class="post-excerpt">
+                <p>In this guide, we&#x27;ll go from installing Terraform to provisioning real cloud resources — all through declarative configuration files. No clicking, no guessing, no &quot;it works on my l...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">June 23, 2026 · 10 min read</span>
+                <span class="post-read-time">7 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="security">
+            <div class="post-tags">
+                <span class="tag security">Security</span>
+            </div>
+            <h2 class="post-title"><a href="posts/ssh-security.html">SSH Security: Secure Your Remote Server Access</a></h2>
+            <div class="post-excerpt">
+                <p>SSH (Secure Shell) is the most common way to access remote servers. It&#x27;s powerful, ubiquitous, and — by default — surprisingly insecure. Attackers run automated SSH brute-force att...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">June 23, 2026 · 10 min read</span>
+                <span class="post-read-time">8 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="security,devops">
+            <div class="post-tags">
+                <span class="tag security">Security</span><span class="tag devops">DevOps</span>
+            </div>
+            <h2 class="post-title"><a href="posts/ssh-keys-config.html">SSH Keys &amp; ssh_config: Passwordless Login and Secure Remote Access</a></h2>
+            <div class="post-excerpt">
+                <p>Password-based SSH login is slow and vulnerable to brute-force attacks. SSH key-based authentication is faster, more secure, and the standard way developers connect to remote serve...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-29</span>
+                <span class="post-read-time">9 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+        </article>
+        <article class="post" data-tags="devops">
+            <div class="post-tags">
+                <span class="tag devops">DevOps</span>
+            </div>
+            <h2 class="post-title"><a href="posts/responsive-web-design.html">Responsive Web Design with CSS: Build Layouts That Work Everywhere</a></h2>
+            <div class="post-excerpt">
+                <p>Over 60% of global web traffic comes from mobile devices. Google&#x27;s search ranking algorithm favors mobile-friendly sites. And users expect a smooth experience whether they&#x27;re on a ...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">June 22, 2026 · 10 min read</span>
+                <span class="post-read-time">9 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags">
+                <span class="tag python">Python</span>
+            </div>
+            <h2 class="post-title"><a href="posts/python-web-scraping.html">Python Web Scraping with BeautifulSoup: Beginner Guide</a></h2>
+            <div class="post-excerpt">
+                <p>Web scraping lets your Python programs extract data from websites automatically. Collect product prices, monitor news articles, aggregate job listings, or gather research data — al...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">June 22, 2026 · 9 min read</span>
+                <span class="post-read-time">8 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags">
+                <span class="tag python">Python</span>
+            </div>
+            <h2 class="post-title"><a href="posts/python-virtual-environments.html">Python Virtual Environments and pip: Isolate Your Projects</a></h2>
+            <div class="post-excerpt">
+                <p>If both projects share the same Python installation, installing version 2.31.0 for Project B breaks Project A. And if you install packages globally, your system Python becomes clut...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">June 24, 2026 · 10 min read</span>
+                <span class="post-read-time">7 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags">
+                <span class="tag python">Python</span>
+            </div>
+            <h2 class="post-title"><a href="posts/python-variables.html">Python Variables &amp; Data Types for Beginners</a></h2>
+            <div class="post-excerpt">
+                <p>Every program works with data. Python makes it easy — no type declarations, no complex syntax. Just create and use....</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">June 17, 2026 · 7 min read</span>
+                <span class="post-read-time">3 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags">
+                <span class="tag python">Python</span>
+            </div>
+            <h2 class="post-title"><a href="posts/python-type-hints.html">Python Type Hints and Type Checking: Write Cleaner, Safer Code</a></h2>
+            <div class="post-excerpt">
+                <p>mypy caught the error without running the code. That&#x27;s the power of static type checking....</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-24</span>
+                <span class="post-read-time">6 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python,devops">
+            <div class="post-tags">
+                <span class="tag python">Python</span><span class="tag devops">DevOps</span>
+            </div>
+            <h2 class="post-title"><a href="posts/python-testing-pytest.html">Python Testing with pytest: Write Reliable Code from Day One</a></h2>
+            <div class="post-excerpt">
+                <p>Testing isn&#x27;t about proving your code works. It&#x27;s about building confidence that your code keeps working when you inevitably refactor it three months from now....</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-25</span>
+                <span class="post-read-time">7 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags">
+                <span class="tag python">Python</span>
+            </div>
+            <h2 class="post-title"><a href="posts/python-strings-regex.html">Python String Methods &amp; Regular Expressions: Master Text Processing</a></h2>
+            <div class="post-excerpt">
+                <p>Strings are the lifeblood of almost every Python program. Whether you&#x27;re processing user input, parsing API responses, cleaning data, or building a web scraper, you&#x27;ll spend a sign...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">June 26, 2026 · 12 min read</span>
+                <span class="post-read-time">9 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags">
+                <span class="tag python">Python</span>
+            </div>
+            <h2 class="post-title"><a href="posts/python-regex-patterns.html">Python Regular Expressions (regex): Pattern Matching Made Easy</a></h2>
+            <div class="post-excerpt">
+                <p>Let&#x27;s build a real-world email validator. This is one of the most common use cases for regex:...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-28</span>
+                <span class="post-read-time">8 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python,devops">
+            <div class="post-tags">
+                <span class="tag python">Python</span><span class="tag devops">DevOps</span>
+            </div>
+            <h2 class="post-title"><a href="posts/python-packaging-publishing.html">Python Packaging &amp; Publishing: Share Your Code on PyPI</a></h2>
+            <div class="post-excerpt">
+                <p>This guide walks you through packaging a real Python project, building distribution files, and uploading to PyPI — from zero to published....</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">June 26, 2026 · 11 min read</span>
+                <span class="post-read-time">7 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags">
+                <span class="tag python">Python</span>
+            </div>
+            <h2 class="post-title"><a href="posts/python-oop-classes.html">Python Classes and OOP: Object-Oriented Programming for Beginners</a></h2>
+            <div class="post-excerpt">
+                <p>In this tutorial, we&#x27;ll build from the ground up: creating your first class, understanding objects, inheritance, and real-world patterns — all with working code you can run immedia...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">June 23, 2026 · 11 min read</span>
+                <span class="post-read-time">8 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags">
+                <span class="tag python">Python</span>
+            </div>
+            <h2 class="post-title"><a href="posts/python-modules-packages.html">Python Modules &amp; Packages: Organize Your Code Like a Pro</a></h2>
+            <div class="post-excerpt">
+                <p>If your Python script has grown past 100 lines, it&#x27;s probably time to organize it. Modules and packages are how Python developers split code into manageable, reusable pieces — just...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-25</span>
+                <span class="post-read-time">7 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags">
+                <span class="tag python">Python</span>
+            </div>
+            <h2 class="post-title"><a href="posts/python-loops.html">Python For Loops and While Loops: Complete Beginner Guide</a></h2>
+            <div class="post-excerpt">
+                <p>Without loops, processing 1,000 items means 1,000 lines of code. With loops, it takes 5. Loops are used in:...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">June 20, 2026 · 7 min read</span>
+                <span class="post-read-time">5 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python,devops">
+            <div class="post-tags">
+                <span class="tag python">Python</span><span class="tag devops">DevOps</span>
+            </div>
+            <h2 class="post-title"><a href="posts/python-logging-configuration.html">Python Logging &amp;amp; Configuration Management: Build Production-Ready Apps</a></h2>
+            <div class="post-excerpt">
+                <p>Python logging has 5 standard levels, from least to most severe:...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-27</span>
+                <span class="post-read-time">9 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags">
+                <span class="tag python">Python</span>
+            </div>
+            <h2 class="post-title"><a href="posts/python-lists-dictionaries.html">Python Lists and Dictionaries: Master the Core Data Structures</a></h2>
+            <div class="post-excerpt">
+                <p>In this tutorial, we&#x27;ll cover everything you need to know about lists and dictionaries, with practical examples you can run immediately. By the end, you&#x27;ll build a real-world proje...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">June 23, 2026 · 10 min read</span>
+                <span class="post-read-time">9 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags">
+                <span class="tag python">Python</span>
+            </div>
+            <h2 class="post-title"><a href="posts/python-list-comprehensions.html">Python List Comprehensions &amp; Generator Expressions: Write Cleaner, FASTER Code</a></h2>
+            <div class="post-excerpt">
+                <p>If you&#x27;ve ever written a loop just to collect results into a list, stop — there&#x27;s a better way. Let&#x27;s dive in....</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-25</span>
+                <span class="post-read-time">8 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags">
+                <span class="tag python">Python</span>
+            </div>
+            <h2 class="post-title"><a href="posts/python-json-serialization.html">Python JSON &amp; Data Serialization: Save, Load, and Exchange Data</a></h2>
+            <div class="post-excerpt">
+                <p>JSON is a lightweight text format for storing and exchanging data. It uses key-value pairs, arrays, and nested structures — concepts you already know from Python dictionaries and l...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-28</span>
+                <span class="post-read-time">7 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags">
+                <span class="tag python">Python</span>
+            </div>
+            <h2 class="post-title"><a href="posts/python-iterators-itertools.html">Python Iterators Itertools</a></h2>
+            <div class="post-excerpt">
+                <p>These terms sound similar but mean different things. Here&#x27;s the quick version:...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-29</span>
+                <span class="post-read-time">12 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags">
+                <span class="tag python">Python</span>
+            </div>
+            <h2 class="post-title"><a href="posts/python-functions.html">Python Functions: Define, Call, and Master Reusable Code</a></h2>
+            <div class="post-excerpt">
+                <p></p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">June 22, 2026 · 9 min read</span>
+                <span class="post-read-time">8 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags">
+                <span class="tag python">Python</span>
+            </div>
+            <h2 class="post-title"><a href="posts/python-fstrings-formatting.html">Python f-strings and String Formatting: Write Cleaner Code</a></h2>
+            <div class="post-excerpt">
+                <p></p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">June 29, 2026</span>
+                <span class="post-read-time">8 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags">
+                <span class="tag python">Python</span>
+            </div>
+            <h2 class="post-title"><a href="posts/python-first-script.html">Your First Python Script: Complete Beginner Guide</a></h2>
+            <div class="post-excerpt">
+                <p>Never written a line of code? No problem. Python is the most beginner-friendly programming language. In 15 minutes, you&#x27;ll go from zero to running your own program....</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">June 17, 2026 · 8 min read</span>
+                <span class="post-read-time">3 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags">
+                <span class="tag python">Python</span>
+            </div>
+            <h2 class="post-title"><a href="posts/python-file-operations.html">Python File Operations: Read, Write, and Manage Files</a></h2>
+            <div class="post-excerpt">
+                <p>Almost every real Python program needs to work with files — reading configuration, logging output, processing data, or saving results. File operations are one of those fundamental ...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">June 21, 2026 · 11 min read</span>
+                <span class="post-read-time">7 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags">
+                <span class="tag python">Python</span>
+            </div>
+            <h2 class="post-title"><a href="posts/python-error-handling.html">Python Error Handling: try/except, Custom Exceptions &amp; Best Practices</a></h2>
+            <div class="post-excerpt">
+                <p>Every Python program encounters errors. A file that doesn&#x27;t exist, a network request that times out, a JSON string that&#x27;s malformed — if you don&#x27;t handle these gracefully, your pro...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">June 22, 2026 · 10 min read</span>
+                <span class="post-read-time">8 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags">
+                <span class="tag python">Python</span>
+            </div>
+            <h2 class="post-title"><a href="posts/python-dict-set-operations.html">Python Dictionary &amp; Set Operations: Merges, Comprehensions &amp; More</a></h2>
+            <div class="post-excerpt">
+                <p>After learning basic lists and dictionaries, the next step is mastering the operations that make these data structures truly powerful. Dictionaries let you look up data by key inst...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-29</span>
+                <span class="post-read-time">9 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags">
+                <span class="tag python">Python</span>
+            </div>
+            <h2 class="post-title"><a href="posts/python-decorators-generators.html">Python Decorators &amp; Generators: Advanced Patterns</a></h2>
+            <div class="post-excerpt">
+                <p>Let&#x27;s start from scratch. Suppose you want to measure how long a function takes to run:...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-24</span>
+                <span class="post-read-time">8 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python,devops">
+            <div class="post-tags">
+                <span class="tag python">Python</span><span class="tag devops">DevOps</span>
+            </div>
+            <h2 class="post-title"><a href="posts/python-debugging.html">Python Debugging: Stop Guessing, Start Finding Bugs Fast</a></h2>
+            <div class="post-excerpt">
+                <p>This is a real technique. Before adding any debug prints, write comments explaining what each line should do, line by line:...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-30</span>
+                <span class="post-read-time">8 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags">
+                <span class="tag python">Python</span>
+            </div>
+            <h2 class="post-title"><a href="posts/python-dataclasses.html">Python Dataclasses: Write Cleaner Classes with Less Boilerplate</a></h2>
+            <div class="post-excerpt">
+                <p>One of the most useful features: automatically convert between dictionaries and dataclasses. This is incredibly handy when working with JSON APIs:...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-30</span>
+                <span class="post-read-time">9 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags">
+                <span class="tag python">Python</span>
+            </div>
+            <h2 class="post-title"><a href="posts/python-context-managers.html">Python Context Managers</a></h2>
+            <div class="post-excerpt">
+                <p>Let&#x27;s build a context manager that measures how long code takes to run:...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">June 26, 2026 · 10 min read</span>
+                <span class="post-read-time">7 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags">
+                <span class="tag python">Python</span>
+            </div>
+            <h2 class="post-title"><a href="posts/python-conditional-logic.html">Python Conditional Logic: if/elif/else — Make Decisions in Code</a></h2>
+            <div class="post-excerpt">
+                <p>Python 3.10+ introduced structural pattern matching — Python&#x27;s version of a switch statement:...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-26</span>
+                <span class="post-read-time">8 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags">
+                <span class="tag python">Python</span>
+            </div>
+            <h2 class="post-title"><a href="posts/python-async-await.html">Python Async/Await (asyncio): Do Multiple Things at Once</a></h2>
+            <div class="post-excerpt">
+                <p>Three API calls that might take 3 seconds total in sequential code complete in roughly the time of the slowest single call. For even more URLs, the speedup is dramatic....</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">June 28, 2026</span>
+                <span class="post-read-time">6 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags">
+                <span class="tag python">Python</span>
+            </div>
+            <h2 class="post-title"><a href="posts/python-apis.html">Python APIs: Fetch Data from the Web</a></h2>
+            <div class="post-excerpt">
+                <p>APIs (Application Programming Interfaces) let your Python programs talk to the internet. Fetch weather data, post to Twitter, query GitHub, interact with AI models — it all starts ...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">June 21, 2026 · 8 min read</span>
+                <span class="post-read-time">7 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="devops">
+            <div class="post-tags">
+                <span class="tag devops">DevOps</span>
+            </div>
+            <h2 class="post-title"><a href="posts/prometheus-monitoring.html">Prometheus Monitoring: Observe Your Containers Like a Pro</a></h2>
+            <div class="post-excerpt">
+                <p>Prometheus was created by SoundCloud in 2012 and has become the de facto standard for cloud-native monitoring. It&#x27;s a core project of the Cloud Native Computing Foundation (CNCF) a...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-29</span>
+                <span class="post-read-time">10 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+        </article>
+        <article class="post" data-tags="security">
+            <div class="post-tags">
+                <span class="tag security">Security</span>
+            </div>
+            <h2 class="post-title"><a href="posts/penetration-testing-basics.html">Penetration Testing Basics: A Beginner&#x27;s Guide to Ethical Hacking</a></h2>
+            <div class="post-excerpt">
+                <p>Ever wondered how security professionals find weaknesses in systems before hackers exploit them? Penetration testing (or &quot;pentesting&quot;) is the practice of simulating real-world atta...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">June 22, 2026 · 12 min read</span>
+                <span class="post-read-time">6 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="security,web">
+            <div class="post-tags">
+                <span class="tag security">Security</span><span class="tag web">Web Dev</span>
+            </div>
+            <h2 class="post-title"><a href="posts/owasp-top10-web-security.html">OWASP Top 10: Web Application Security Guide for Developers</a></h2>
+            <div class="post-excerpt">
+                <p>Every year, the Open Web Application Security Project (OWASP) publishes its Top 10 list — the most critical security risks to web applications. If you write web apps, knowing these...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-25</span>
+                <span class="post-read-time">10 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="security">
+            <div class="post-tags">
+                <span class="tag security">Security</span>
+            </div>
+            <h2 class="post-title"><a href="posts/network-security-fundamentals.html">Network Security Fundamentals: Firewalls, IDS, and Defense Strategies</a></h2>
+            <div class="post-excerpt">
+                <p>Network security is the practice of protecting computer networks from unauthorized access, misuse, or disruption. Whether you&#x27;re managing a home lab, a small business network, or a...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-24</span>
+                <span class="post-read-time">7 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="devops">
+            <div class="post-tags">
+                <span class="tag devops">DevOps</span>
+            </div>
+            <h2 class="post-title"><a href="posts/kubernetes-basics.html">Kubernetes Basics: Containers at Scale</a></h2>
+            <div class="post-excerpt">
+                <p>Kubernetes might look intimidating at first — there&#x27;s a lot of YAML and terminology. But the core concepts are simple once you see them in action. This guide takes you from zero to...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-27</span>
+                <span class="post-read-time">9 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="devops">
+            <div class="post-tags">
+                <span class="tag devops">DevOps</span>
+            </div>
+            <h2 class="post-title"><a href="posts/javascript-promises-async-await.html">JavaScript Promises and Async/Await: A Complete Beginner&#x27;s Guide</a></h2>
+            <div class="post-excerpt">
+                <p>This guide takes you from callbacks to modern async/await, with clear examples you can run right in your browser&#x27;s developer console....</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">June 22, 2026 · 11 min read</span>
+                <span class="post-read-time">8 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="web">
+            <div class="post-tags">
+                <span class="tag web">Web Dev</span>
+            </div>
+            <h2 class="post-title"><a href="posts/javascript-es6-features.html">JavaScript ES6+ Modern Features Every Developer Should Know</a></h2>
+            <div class="post-excerpt">
+                <p>JavaScript has evolved dramatically since the ES6 (ECMAScript 2015) release. Modern JavaScript is cleaner, more expressive, and less error-prone than the old way. Whether you&#x27;re bu...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-24</span>
+                <span class="post-read-time">9 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="devops">
+            <div class="post-tags">
+                <span class="tag devops">DevOps</span>
+            </div>
+            <h2 class="post-title"><a href="posts/javascript-dom-manipulation.html">JavaScript DOM Manipulation: Build Interactive Web Pages</a></h2>
+            <div class="post-excerpt">
+                <p>The DOM is a tree-like representation of your HTML page that JavaScript can read and modify. When you click a button, type in a form, or scroll a page, JavaScript uses the DOM to m...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">June 24, 2026 · 11 min read</span>
+                <span class="post-read-time">8 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="security">
+            <div class="post-tags">
+                <span class="tag security">Security</span>
+            </div>
+            <h2 class="post-title"><a href="posts/https-tls-basics.html">How HTTPS and TLS Work: Cybersecurity Basics</a></h2>
+            <div class="post-excerpt">
+                <p>That green padlock in your browser isn&#x27;t just a design decoration — it&#x27;s the result of a complex security handshake happening in milliseconds. Understanding how HTTPS and TLS work ...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">June 20, 2026 · 8 min read</span>
+                <span class="post-read-time">6 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="web,python">
+            <div class="post-tags">
+                <span class="tag web">Web Dev</span><span class="tag python">Python</span>
+            </div>
+            <h2 class="post-title"><a href="posts/http-rest-api-guide.html">HTTP &amp; REST APIs: Understanding the Web&#x27;s Language</a></h2>
+            <div class="post-excerpt">
+                <p>Every time you visit a website, submit a form, or use a mobile app, HTTP is working behind the scenes. HTTP (Hypertext Transfer Protocol) is the language that powers the entire web...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">June 28, 2026</span>
+                <span class="post-read-time">10 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="web">
+            <div class="post-tags">
+                <span class="tag web">Web Dev</span>
+            </div>
+            <h2 class="post-title"><a href="posts/html-forms-validation.html">HTML Forms &amp;amp; Validation: Build Interactive Forms That Work</a></h2>
+            <div class="post-excerpt">
+                <p>Master HTML forms — input types, validation attributes, form layout, file uploads, and JavaScript form handling. Build real-world forms with client-side and server-side validation....</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-30</span>
+                <span class="post-read-time">7 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+        </article>
+        <article class="post" data-tags="devops">
+            <div class="post-tags">
+                <span class="tag devops">DevOps</span>
+            </div>
+            <h2 class="post-title"><a href="posts/github-actions-cicd.html">GitHub Actions CI/CD: Automate Your Workflow</a></h2>
+            <div class="post-excerpt">
+                <p>GitHub Actions lets you automate your development workflow directly in your repository. Run tests on every commit, build Docker images, deploy to servers — all triggered automatica...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">June 22, 2026 · 10 min read</span>
+                <span class="post-read-time">7 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="devops">
+            <div class="post-tags">
+                <span class="tag devops">DevOps</span>
+            </div>
+            <h2 class="post-title"><a href="posts/git-tags-versioning.html">Git Tags &amp; Semantic Versioning: Release Management Made Simple</a></h2>
+            <div class="post-excerpt">
+                <p>Git tags are like bookmarks for specific commits. Unlike branches, which move forward as you commit, tags point forever to the exact commit you created them at. They&#x27;re the standar...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-30</span>
+                <span class="post-read-time">6 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+        </article>
+        <article class="post" data-tags="devops">
+            <div class="post-tags">
+                <span class="tag devops">DevOps</span>
+            </div>
+            <h2 class="post-title"><a href="posts/git-hooks-pre-commit.html">Git Hooks &amp; Pre-Commit: Automate Your Development Workflow</a></h2>
+            <div class="post-excerpt">
+                <p>Let&#x27;s create a simple pre-commit hook that prevents committing Python files with syntax errors:...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">June 26, 2026 · 10 min read</span>
+                <span class="post-read-time">8 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="devops">
+            <div class="post-tags">
+                <span class="tag devops">DevOps</span>
+            </div>
+            <h2 class="post-title"><a href="posts/git-github-basics.html">Git and GitHub for Beginners: Version Control Step by Step</a></h2>
+            <div class="post-excerpt">
+                <p>You&#x27;re writing code. You made a change, and now something is broken. You wish you could go back to yesterday&#x27;s version. Or maybe you&#x27;re working on a new feature and don&#x27;t want to b...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">June 24, 2026 · 12 min read</span>
+                <span class="post-read-time">11 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="devops">
+            <div class="post-tags">
+                <span class="tag devops">DevOps</span>
+            </div>
+            <h2 class="post-title"><a href="posts/git-branching-merge-conflicts.html">Git Branching Strategies and Merge Conflicts Explained</a></h2>
+            <div class="post-excerpt">
+                <p>This guide covers the most popular branching models, when to use each, and a step-by-step walkthrough of resolving merge conflicts like a pro....</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">June 24, 2026 · 8 min read</span>
+                <span class="post-read-time">7 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="devops">
+            <div class="post-tags">
+                <span class="tag devops">DevOps</span>
+            </div>
+            <h2 class="post-title"><a href="posts/env-vars-secrets.html">Environment Variables and Secrets Management for Developers</a></h2>
+            <div class="post-excerpt">
+                <p>You&#x27;ve probably seen this before — an API key or database password hardcoded right in the source code:...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">June 23, 2026 · 9 min read</span>
+                <span class="post-read-time">7 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="devops">
+            <div class="post-tags">
+                <span class="tag devops">DevOps</span>
+            </div>
+            <h2 class="post-title"><a href="posts/dockerfile-best-practices.html">Dockerfile Best Practices: Build Smaller, Faster, Secure Images</a></h2>
+            <div class="post-excerpt">
+                <p>This guide covers proven Dockerfile best practices with real before/after examples — multi-stage builds, layer caching, security hardening, and image optimization techniques used b...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">June 26, 2026 · 12 min read</span>
+                <span class="post-read-time">7 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="devops,security">
+            <div class="post-tags">
+                <span class="tag devops">DevOps</span><span class="tag security">Security</span>
+            </div>
+            <h2 class="post-title"><a href="posts/docker-volumes-data-persistence.html">Docker Volumes &amp; Data Persistence: Don&#x27;t Lose Your Data</a></h2>
+            <div class="post-excerpt">
+                <p>Let&#x27;s build a complete app stack with proper data persistence:...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">June 26, 2026 · 12 min read</span>
+                <span class="post-read-time">8 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="devops">
+            <div class="post-tags">
+                <span class="tag devops">DevOps</span>
+            </div>
+            <h2 class="post-title"><a href="posts/docker-swarm-orchestration.html">Docker Swarm: Orchestrate Containers Without Kubernetes Complexity</a></h2>
+            <div class="post-excerpt">
+                <p>You&#x27;ve learned Docker containers, Docker Compose, and Dockerfiles. Now you&#x27;re ready for the next step: running your containers across multiple machines, scaling them automatically,...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">June 27, 2026 · 11 min read</span>
+                <span class="post-read-time">6 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="devops">
+            <div class="post-tags">
+                <span class="tag devops">DevOps</span>
+            </div>
+            <h2 class="post-title"><a href="posts/docker-networking-builds.html">Docker Networking &amp; Multi-Stage Builds</a></h2>
+            <div class="post-excerpt">
+                <p>By default, each Docker container runs in its own isolated network namespace. This means a container can&#x27;t reach other containers, your host machine, or external services — unless ...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-24</span>
+                <span class="post-read-time">7 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="devops">
+            <div class="post-tags">
+                <span class="tag devops">DevOps</span>
+            </div>
+            <h2 class="post-title"><a href="posts/docker-healthchecks.html">Docker Health Checks &amp; Container Monitoring: Know If Your Containers Are Actually Working</a></h2>
+            <div class="post-excerpt">
+                <p>You can add a health check directly on the command line (no Dockerfile or compose needed):...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-30</span>
+                <span class="post-read-time">7 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+        </article>
+        <article class="post" data-tags="devops">
+            <div class="post-tags">
+                <span class="tag devops">DevOps</span>
+            </div>
+            <h2 class="post-title"><a href="posts/docker-compose.html">Docker Compose: Multi-Container Applications</a></h2>
+            <div class="post-excerpt">
+                <p>On most modern Docker installations, Compose is included as a Docker CLI plugin. Check your version:...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-24</span>
+                <span class="post-read-time">6 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="devops">
+            <div class="post-tags">
+                <span class="tag devops">DevOps</span>
+            </div>
+            <h2 class="post-title"><a href="posts/docker-basics.html">Docker for Beginners: Containers, Images &amp; Docker Compose</a></h2>
+            <div class="post-excerpt">
+                <p>Docker lets you package an application and everything it needs into a lightweight container that runs the same way on your laptop, your server, or in the cloud. No more &quot;it works o...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">June 21, 2026 · 9 min read</span>
+                <span class="post-read-time">7 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="web">
+            <div class="post-tags">
+                <span class="tag web">Web Dev</span>
+            </div>
+            <h2 class="post-title"><a href="posts/css-grid-flexbox.html">CSS Grid &amp; Flexbox: Modern Layout Guide</a></h2>
+            <div class="post-excerpt">
+                <p>Gone are the days of using floats and clearfixes for layout. CSS Grid and Flexbox give you powerful, intuitive tools to build any layout you can imagine. This guide walks you throu...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-24</span>
+                <span class="post-read-time">7 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="web">
+            <div class="post-tags">
+                <span class="tag web">Web Dev</span>
+            </div>
+            <h2 class="post-title"><a href="posts/css-custom-properties.html">CSS Custom Properties (Variables): Build Themes and Design Systems</a></h2>
+            <div class="post-excerpt">
+                <p>CSS Custom Properties (commonly called &quot;CSS variables&quot;) are user-defined values that you can set once and reuse throughout your stylesheet. They cascade like any other CSS property...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">June 27, 2026 · 10 min read</span>
+                <span class="post-read-time">6 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="web">
+            <div class="post-tags">
+                <span class="tag web">Web Dev</span>
+            </div>
+            <h2 class="post-title"><a href="posts/css-animations-transitions.html">CSS Animations &amp; Transitions: Bring Your Websites to Life</a></h2>
+            <div class="post-excerpt">
+                <p>Ever visit a website where buttons smoothly change color when you hover, cards lift up elegantly, or a loading spinner spins perfectly? That&#x27;s the power of CSS animations and trans...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-26</span>
+                <span class="post-read-time">8 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="cloudflare">
+            <div class="post-tags">
+                <span class="tag cloudflare">Cloudflare</span>
+            </div>
+            <h2 class="post-title"><a href="posts/cloudflare-zero-trust.html">Cloudflare Zero Trust for Beginners: Secure Your Apps Without Coding</a></h2>
+            <div class="post-excerpt">
+                <p>In this guide, we&#x27;ll walk through everything: from your first login screen to advanced device policies and data loss prevention....</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">June 21, 2026 · 10 min read</span>
+                <span class="post-read-time">7 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="cloudflare">
+            <div class="post-tags">
+                <span class="tag cloudflare">Cloudflare</span>
+            </div>
+            <h2 class="post-title"><a href="posts/cloudflare-workers.html">Cloudflare Workers: Serverless Code at the Edge</a></h2>
+            <div class="post-excerpt">
+                <p>Cloudflare Workers let you run JavaScript, TypeScript, or Python code on Cloudflare&#x27;s global network — without managing servers. Your code runs in 300+ data centers worldwide, exec...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">June 22, 2026 · 10 min read</span>
+                <span class="post-read-time">10 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="cloudflare,devops">
+            <div class="post-tags">
+                <span class="tag cloudflare">Cloudflare</span><span class="tag devops">DevOps</span>
+            </div>
+            <h2 class="post-title"><a href="posts/cloudflare-workers-kv.html">Cloudflare Workers KV: Serverless Key-Value Database Made Easy</a></h2>
+            <div class="post-excerpt">
+                <p>In this guide, you&#x27;ll learn how to create a KV namespace, write and read data from Workers, use KV for caching, and build a real counter API. All with working code examples you can...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-30</span>
+                <span class="post-read-time">8 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+        </article>
+        <article class="post" data-tags="cloudflare,devops">
+            <div class="post-tags">
+                <span class="tag cloudflare">Cloudflare</span><span class="tag devops">DevOps</span>
+            </div>
+            <h2 class="post-title"><a href="posts/cloudflare-workers-cron.html">Cloudflare Workers Cron Triggers: Scheduled Tasks on the Edge</a></h2>
+            <div class="post-excerpt">
+                <p>Learn how to schedule automated tasks with Cloudflare Workers Cron Triggers — no server to maintain, no cron daemon to manage. Build periodic API calls, data cleanup jobs, health c...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-30</span>
+                <span class="post-read-time">6 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+        </article>
+        <article class="post" data-tags="cloudflare">
+            <div class="post-tags">
+                <span class="tag cloudflare">Cloudflare</span>
+            </div>
+            <h2 class="post-title"><a href="posts/cloudflare-tunnel.html">How to Set Up Cloudflare Tunnel (Step by Step)</a></h2>
+            <div class="post-excerpt">
+                <p>One tunnel, multiple subdomains. Each points to a different local port....</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">June 17, 2026 · 5 min read</span>
+                <span class="post-read-time">3 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="cloudflare,python">
+            <div class="post-tags">
+                <span class="tag cloudflare">Cloudflare</span><span class="tag python">Python</span>
+            </div>
+            <h2 class="post-title"><a href="posts/cloudflare-stream.html">Cloudflare Stream: Video Upload, Transcoding &amp; Streaming Made Easy</a></h2>
+            <div class="post-excerpt">
+                <p>In this guide, you&#x27;ll learn how to upload videos, embed players, manage uploads programmatically with Python, and set up a complete video streaming pipeline....</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-27</span>
+                <span class="post-read-time">6 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="cloudflare">
+            <div class="post-tags">
+                <span class="tag cloudflare">Cloudflare</span>
+            </div>
+            <h2 class="post-title"><a href="posts/cloudflare-rules.html">Cloudflare Rules: Page Rules, Transform Rules &amp; WAF for Beginners</a></h2>
+            <div class="post-excerpt">
+                <p>Think of it like traffic signs on a highway. A &quot;Speed Limit 60&quot; sign applies to all cars. But a &quot;Trucks Turn Right&quot; sign only applies to trucks — that&#x27;s a condition-based rule....</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">June 24, 2026 · 10 min read</span>
+                <span class="post-read-time">8 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="cloudflare,devops">
+            <div class="post-tags">
+                <span class="tag cloudflare">Cloudflare</span><span class="tag devops">DevOps</span>
+            </div>
+            <h2 class="post-title"><a href="posts/cloudflare-r2-storage.html">Cloudflare R2 Storage: Serverless Object Storage Without Egress Fees</a></h2>
+            <div class="post-excerpt">
+                <p>Cloudflare R2 is serverless object storage that eliminates egress fees — the hidden cost that makes AWS S3 expensive when you download or serve a lot of data. If you&#x27;re storing ima...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-24</span>
+                <span class="post-read-time">5 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="cloudflare,devops">
+            <div class="post-tags">
+                <span class="tag cloudflare">Cloudflare</span><span class="tag devops">DevOps</span>
+            </div>
+            <h2 class="post-title"><a href="posts/cloudflare-pages.html">Cloudflare Pages: Deploy Static Sites in Seconds</a></h2>
+            <div class="post-excerpt">
+                <p>Best part? It&#x27;s free for personal projects, includes automatic HTTPS, and serves your site from Cloudflare&#x27;s global edge network of 300+ cities. Let&#x27;s build and deploy a static sit...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-25</span>
+                <span class="post-read-time">8 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="cloudflare,devops">
+            <div class="post-tags">
+                <span class="tag cloudflare">Cloudflare</span><span class="tag devops">DevOps</span>
+            </div>
+            <h2 class="post-title"><a href="posts/cloudflare-load-balancing.html">Cloudflare Load Balancing: Distribute Traffic Across Multiple Servers</a></h2>
+            <div class="post-excerpt">
+                <p>When your application grows beyond a single server, you need a way to distribute incoming traffic across multiple machines. That&#x27;s exactly what a load balancer does — it sits in fr...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-28</span>
+                <span class="post-read-time">10 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="cloudflare">
+            <div class="post-tags">
+                <span class="tag cloudflare">Cloudflare</span>
+            </div>
+            <h2 class="post-title"><a href="posts/cloudflare-dns.html">Cloudflare DNS Explained: Proxied vs DNS Only</a></h2>
+            <div class="post-excerpt">
+                <p>When you add a DNS record in Cloudflare, you see an orange cloud toggle. What does it do? Should you turn it on or off? This guide explains in simple terms....</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">June 17, 2026 · 4 min read</span>
+                <span class="post-read-time">3 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="cloudflare">
+            <div class="post-tags">
+                <span class="tag cloudflare">Cloudflare</span>
+            </div>
+            <h2 class="post-title"><a href="posts/cloudflare-d1-database.html">Cloudflare D1: Serverless SQLite Database at the Edge</a></h2>
+            <div class="post-excerpt">
+                <p>Cloudflare D1 is a fully managed, serverless SQLite database that runs on Cloudflare&#x27;s edge network. It gives you the simplicity and SQL familiarity of SQLite with the scale and di...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">June 26, 2026 · 11 min read</span>
+                <span class="post-read-time">9 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="cloudflare,devops">
+            <div class="post-tags">
+                <span class="tag cloudflare">Cloudflare</span><span class="tag devops">DevOps</span>
+            </div>
+            <h2 class="post-title"><a href="posts/cloudflare-cache-rules.html">Cloudflare Cache Rules &amp; Caching Strategy: Speed Up Your Site 10x</a></h2>
+            <div class="post-excerpt">
+                <p>For images, CSS, and JS that rarely change, set a long cache duration:...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">June 29, 2026</span>
+                <span class="post-read-time">7 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="cloudflare,python">
+            <div class="post-tags">
+                <span class="tag cloudflare">Cloudflare</span><span class="tag python">Python</span>
+            </div>
+            <h2 class="post-title"><a href="posts/cloudflare-api-python.html">Cloudflare API with Python: Automate DNS, Workers &amp; More</a></h2>
+            <div class="post-excerpt">
+                <p>Before writing any code, you need API credentials. Cloudflare offers two authentication methods:...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-30</span>
+                <span class="post-read-time">8 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+        </article>
+        <article class="post" data-tags="cloudflare,security">
+            <div class="post-tags">
+                <span class="tag cloudflare">Cloudflare</span><span class="tag security">Security</span>
+            </div>
+            <h2 class="post-title"><a href="posts/cloudflare-access-auth.html">Cloudflare Access: Secure Your Apps with Identity-Based Authentication</a></h2>
+            <div class="post-excerpt">
+                <p>The architecture is simpler than you might expect. Here&#x27;s the flow:...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-28</span>
+                <span class="post-read-time">9 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="vibe">
+            <div class="post-tags">
+                <span class="tag vibe">AI Coding</span>
+            </div>
+            <h2 class="post-title"><a href="posts/claude-code-guide.html">Claude Code: Complete Beginner&#x27;s Guide to AI-Powered Terminal Coding</a></h2>
+            <div class="post-excerpt">
+                <p>In this guide, we&#x27;ll walk through everything: installation, first prompts, real workflows, and the best practices that separate productive users from those who get stuck. Whether y...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">June 23, 2026 · 12 min read</span>
+                <span class="post-read-time">9 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="vibe">
+            <div class="post-tags">
+                <span class="tag vibe">AI Coding</span>
+            </div>
+            <h2 class="post-title"><a href="posts/ai-coding-tools-comparison.html">Vibe Coding: Copilot vs Cursor vs Claude Code — Which AI Tool Wins in 2026?</a></h2>
+            <div class="post-excerpt">
+                <p>AI coding tools have moved from &quot;interesting demos&quot; to &quot;essential productivity tools&quot; in record time. If you&#x27;re starting with AI-assisted development in 2026, the choice can feel o...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">June 28, 2026</span>
+                <span class="post-read-time">10 min read</span>
+                
+            </div>
+        </article>
+        </div>
     </main>
 
+    <!-- Footer -->
     <footer>
         <div class="container">
-            <p>© 2026 Hugo's Dev Notes | Built with ❤️ & AI</p>
+            <p>© 2026 Hugo Wong · Built with curiosity and Coffee</p>
             <div class="footer-links">
-                <a href="https://github.com/hugow0528" target="_blank">GitHub</a>
-                <a href="https://blog.hugow.dev/sitemap.xml">Sitemap</a>
-                <a href="https://blog.hugow.dev/robots.txt">Robots</a>
+                <a href="https://github.com/hugow0528">GitHub</a>
+                <a href="https://hugow.dev">hugow.dev</a>
+                <a href="/sitemap.xml">Sitemap</a>
             </div>
         </div>
     </footer>
 
-    <!-- Back to Top Button -->
-    <button class="back-to-top" id="backToTop" title="Back to top">↑</button>
-
     <script>
-    function filterPosts() {
-        const input = document.getElementById('searchInput');
-        const filter = input.value.toLowerCase();
-        const posts = document.getElementsByClassName('post');
-        
-        for (let i = 0; i < posts.length; i++) {
-            const tags = posts[i].getAttribute('data-tags');
-            const title = posts[i].querySelector('h2').textContent.toLowerCase();
-            const excerpt = posts[i].querySelector('.post-excerpt').textContent.toLowerCase();
-            
-            if (title.includes(filter) || excerpt.includes(filter) || tags.includes(filter)) {
-                posts[i].style.display = "";
-            } else {
-                posts[i].style.display = "none";
-            }
+        // Search functionality
+        function searchPosts() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const posts = document.querySelectorAll('.post');
+            posts.forEach(post => {
+                const title = post.querySelector('.post-title').textContent.toLowerCase();
+                const excerpt = post.querySelector('.post-excerpt').textContent.toLowerCase();
+                const tags = post.dataset.tags.toLowerCase();
+                const match = title.includes(query) || excerpt.includes(query) || tags.includes(query);
+                post.classList.toggle('hidden', !match);
+            });
         }
-    }
 
-    // Dark Mode Toggle
-    const themeToggle = document.getElementById('themeToggle');
-    themeToggle.addEventListener('click', () => {
-        document.body.classList.toggle('dark-mode');
-        themeToggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
-        localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
-    });
+        // Filter by category
+        function filterPosts(category, btn) {
+            document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+            btn.classList.add('active');
+            const posts = document.querySelectorAll('.post');
+            posts.forEach(post => {
+                if (category === 'all') {
+                    post.classList.remove('hidden');
+                } else {
+                    const tags = post.dataset.tags;
+                    post.classList.toggle('hidden', !tags.includes(category));
+                }
+            });
+        }
 
-    // Load saved theme
-    if (localStorage.getItem('theme') === 'dark') {
-        document.body.classList.add('dark-mode');
-        themeToggle.textContent = '☀️';
-    }
+        // Theme toggle
+        const themeToggle = document.getElementById('themeToggle');
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-mode');
+            themeToggle.textContent = '☀';
+        }
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            themeToggle.textContent = isLight ? '☀' : '◐';
+        });
 
-    // Back to Top Button
-    const backToTop = document.getElementById('backToTop');
-    window.addEventListener('scroll', () => {
-        backToTop.style.display = window.pageYOffset > 300 ? 'block' : 'none';
-    });
-    backToTop.addEventListener('click', () => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-
-    // Reading Progress Bar
-    window.addEventListener('scroll', () => {
-        const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
-        const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-        const scrolled = (winScroll / height) * 100;
-        document.getElementById('progressBar').style.width = scrolled + '%';
-    });
+        // Progress bar
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + "%";
+        });
     </script>
 </body>
 </html>

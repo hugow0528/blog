@@ -4,27 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DevOps Tutorials | Hugo's Dev Notes</title>
-    <meta name="description" content="Learn DevOps tools - Docker, GitHub Actions, Terraform, Git/GitHub, environment variables.">
-    <meta name="keywords" content="devops tutorial, docker, github actions, terraform, git, cicd, deployment">
+    <meta name="description" content="Docker, Terraform, CI/CD, Git workflows & monitoring">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://blog.hugow.dev/devops.html">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
     <header>
         <div class="container">
             <div class="logo">
-                <h1><a href="index.html">🚀 Hugo's Dev Notes</a></h1>
+                <h1><a href="index.html">Hugo's Dev Notes</a></h1>
                 <p class="subtitle">Cloudflare · Python · AI Coding</p>
             </div>
             <nav>
-                <a href="index.html" class="nav-btn">🏠 Home</a>
-                <a href="cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
-                <a href="python.html" class="nav-btn">🐍 Python</a>
-                <a href="vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
-                <a href="devops.html" class="nav-btn active">🐳 DevOps</a>
-                <a href="security.html" class="nav-btn">🔐 Security</a>
-                <a href="webdev.html" class="nav-btn">💻 Web Dev</a>
+                <a href="index.html" class="nav-btn">Home</a>
+                <a href="cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="python.html" class="nav-btn">Python</a>
+                <a href="vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="devops.html" class="nav-btn">DevOps</a>
+                <a href="security.html" class="nav-btn">Security</a>
+                <a href="webdev.html" class="nav-btn">Web Dev</a>
             </nav>
         </div>
     </header>
@@ -32,86 +34,375 @@
     <main class="container">
         <div class="category-hero">
             <h1>🐳 DevOps Tutorials</h1>
-            <p>Docker, GitHub Actions, Terraform, Git, CI/CD, and deployment</p>
+            <p>Docker, Terraform, CI/CD, Git workflows & monitoring</p>
         </div>
 
         <div class="posts">
-            <article class="post">
-                <div class="post-header">
-                    <span class="tag devops">DevOps</span>
-                    <h2><a href="posts/docker-basics.html">Docker Basics: Containers Explained</a></h2>
-                </div>
-                <div class="post-excerpt">
-                    <p>Learn Docker from scratch — containers, images, Dockerfiles, and multi-container apps.</p>
-                </div>
-                <div class="post-meta">
-                    <time>2026-06-23</time>
-                    <span class="read-time">7 min read</span>
-                </div>
-            </article>
 
-            <article class="post">
-                <div class="post-header">
-                    <span class="tag devops">DevOps</span>
-                    <h2><a href="posts/github-actions-cicd.html">GitHub Actions: CI/CD Pipeline</a></h2>
-                </div>
-                <div class="post-excerpt">
-                    <p>Automate testing and deployment with GitHub Actions — workflows, jobs, and runners.</p>
-                </div>
-                <div class="post-meta">
-                    <time>2026-06-23</time>
-                    <span class="read-time">6 min read</span>
-                </div>
-            </article>
-
-            <article class="post">
-                <div class="post-header">
-                    <span class="tag devops">DevOps</span>
-                    <h2><a href="posts/git-github-basics.html">Git & GitHub: Version Control</a></h2>
-                </div>
-                <div class="post-excerpt">
-                    <p>Master Git version control — init, add, commit, branch, merge, and GitHub workflows.</p>
-                </div>
-                <div class="post-meta">
-                    <time>2026-06-23</time>
-                    <span class="read-time">8 min read</span>
-                </div>
-            </article>
-
-            <article class="post">
-                <div class="post-header">
-                    <span class="tag devops">DevOps</span>
-                    <h2><a href="posts/env-vars-secrets.html">Environment Variables & Secrets</a></h2>
-                </div>
-                <div class="post-excerpt">
-                    <p>Securely manage secrets — environment variables, .env files, and encryption.</p>
-                </div>
-                <div class="post-meta">
-                    <time>2026-06-23</time>
-                    <span class="read-time">5 min read</span>
-                </div>
-            </article>
-
-            <article class="post">
-                <div class="post-header">
-                    <span class="tag devops">DevOps</span>
-                    <h2><a href="posts/terraform-basics.html">Terraform Basics: Infrastructure as Code</a></h2>
-                </div>
-                <div class="post-excerpt">
-                    <p>Provision infrastructure with Terraform — providers, resources, and state management.</p>
-                </div>
-                <div class="post-meta">
-                    <time>2026-06-23</time>
-                    <span class="read-time">7 min read</span>
-                </div>
-            </article>
+        <article class="post" data-tags="devops">
+            <div class="post-tags"><span class="tag devops">devops</span></div>
+            <h2 class="post-title"><a href="posts/terraform-workspaces.html">Terraform Workspaces: Manage Multiple Environments from One Codebase</a></h2>
+            <div class="post-excerpt"><p>One of the most common infrastructure challenges is managing separate environments — development, staging, and production — from a single Terraform codebase. You want the same conf...</p></div>
+            <div class="post-meta">
+                <span class="post-date">June 28, 2026</span>
+                <span class="post-read-time">7 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="devops">
+            <div class="post-tags"><span class="tag devops">devops</span></div>
+            <h2 class="post-title"><a href="posts/terraform-state-remote-backends.html">Terraform State & Remote Backends: Team-Friendly Infrastructure</a></h2>
+            <div class="post-excerpt"><p>This guide covers everything you need to know about state management, remote backends, locking, and making Terraform work for teams....</p></div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-25</span>
+                <span class="post-read-time">8 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="devops">
+            <div class="post-tags"><span class="tag devops">devops</span></div>
+            <h2 class="post-title"><a href="posts/terraform-modules-reusability.html">Terraform Modules & Reusable Infrastructure: Stop Copy-Pasting Code</a></h2>
+            <div class="post-excerpt"><p>Let's build a reusable S3 bucket module. Create this directory structure:...</p></div>
+            <div class="post-meta">
+                <span class="post-date">June 26, 2026 · 11 min read</span>
+                <span class="post-read-time">7 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="devops">
+            <div class="post-tags"><span class="tag devops">devops</span></div>
+            <h2 class="post-title"><a href="posts/terraform-basics.html">Terraform Basics: Infrastructure as Code for Beginners</a></h2>
+            <div class="post-excerpt"><p>In this guide, we'll go from installing Terraform to provisioning real cloud resources — all through declarative configuration files. No clicking, no guessing, no "it works on my l...</p></div>
+            <div class="post-meta">
+                <span class="post-date">June 23, 2026 · 10 min read</span>
+                <span class="post-read-time">7 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="security,devops">
+            <div class="post-tags"><span class="tag security">security</span><span class="tag devops">devops</span></div>
+            <h2 class="post-title"><a href="posts/ssh-keys-config.html">SSH Keys & ssh_config: Passwordless Login and Secure Remote Access</a></h2>
+            <div class="post-excerpt"><p>Password-based SSH login is slow and vulnerable to brute-force attacks. SSH key-based authentication is faster, more secure, and the standard way developers connect to remote serve...</p></div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-29</span>
+                <span class="post-read-time">9 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+        </article>
+        <article class="post" data-tags="devops">
+            <div class="post-tags"><span class="tag devops">devops</span></div>
+            <h2 class="post-title"><a href="posts/responsive-web-design.html">Responsive Web Design with CSS: Build Layouts That Work Everywhere</a></h2>
+            <div class="post-excerpt"><p>Over 60% of global web traffic comes from mobile devices. Google's search ranking algorithm favors mobile-friendly sites. And users expect a smooth experience whether they're on a ...</p></div>
+            <div class="post-meta">
+                <span class="post-date">June 22, 2026 · 10 min read</span>
+                <span class="post-read-time">9 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python,devops">
+            <div class="post-tags"><span class="tag python">python</span><span class="tag devops">devops</span></div>
+            <h2 class="post-title"><a href="posts/python-testing-pytest.html">Python Testing with pytest: Write Reliable Code from Day One</a></h2>
+            <div class="post-excerpt"><p>Testing isn't about proving your code works. It's about building confidence that your code keeps working when you inevitably refactor it three months from now....</p></div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-25</span>
+                <span class="post-read-time">7 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python,devops">
+            <div class="post-tags"><span class="tag python">python</span><span class="tag devops">devops</span></div>
+            <h2 class="post-title"><a href="posts/python-packaging-publishing.html">Python Packaging & Publishing: Share Your Code on PyPI</a></h2>
+            <div class="post-excerpt"><p>This guide walks you through packaging a real Python project, building distribution files, and uploading to PyPI — from zero to published....</p></div>
+            <div class="post-meta">
+                <span class="post-date">June 26, 2026 · 11 min read</span>
+                <span class="post-read-time">7 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python,devops">
+            <div class="post-tags"><span class="tag python">python</span><span class="tag devops">devops</span></div>
+            <h2 class="post-title"><a href="posts/python-logging-configuration.html">Python Logging &amp; Configuration Management: Build Production-Ready Apps</a></h2>
+            <div class="post-excerpt"><p>Python logging has 5 standard levels, from least to most severe:...</p></div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-27</span>
+                <span class="post-read-time">9 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python,devops">
+            <div class="post-tags"><span class="tag python">python</span><span class="tag devops">devops</span></div>
+            <h2 class="post-title"><a href="posts/python-debugging.html">Python Debugging: Stop Guessing, Start Finding Bugs Fast</a></h2>
+            <div class="post-excerpt"><p>This is a real technique. Before adding any debug prints, write comments explaining what each line should do, line by line:...</p></div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-30</span>
+                <span class="post-read-time">8 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+        </article>
+        <article class="post" data-tags="devops">
+            <div class="post-tags"><span class="tag devops">devops</span></div>
+            <h2 class="post-title"><a href="posts/prometheus-monitoring.html">Prometheus Monitoring: Observe Your Containers Like a Pro</a></h2>
+            <div class="post-excerpt"><p>Prometheus was created by SoundCloud in 2012 and has become the de facto standard for cloud-native monitoring. It's a core project of the Cloud Native Computing Foundation (CNCF) a...</p></div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-29</span>
+                <span class="post-read-time">10 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+        </article>
+        <article class="post" data-tags="devops">
+            <div class="post-tags"><span class="tag devops">devops</span></div>
+            <h2 class="post-title"><a href="posts/kubernetes-basics.html">Kubernetes Basics: Containers at Scale</a></h2>
+            <div class="post-excerpt"><p>Kubernetes might look intimidating at first — there's a lot of YAML and terminology. But the core concepts are simple once you see them in action. This guide takes you from zero to...</p></div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-27</span>
+                <span class="post-read-time">9 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="devops">
+            <div class="post-tags"><span class="tag devops">devops</span></div>
+            <h2 class="post-title"><a href="posts/javascript-promises-async-await.html">JavaScript Promises and Async/Await: A Complete Beginner's Guide</a></h2>
+            <div class="post-excerpt"><p>This guide takes you from callbacks to modern async/await, with clear examples you can run right in your browser's developer console....</p></div>
+            <div class="post-meta">
+                <span class="post-date">June 22, 2026 · 11 min read</span>
+                <span class="post-read-time">8 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="devops">
+            <div class="post-tags"><span class="tag devops">devops</span></div>
+            <h2 class="post-title"><a href="posts/javascript-dom-manipulation.html">JavaScript DOM Manipulation: Build Interactive Web Pages</a></h2>
+            <div class="post-excerpt"><p>The DOM is a tree-like representation of your HTML page that JavaScript can read and modify. When you click a button, type in a form, or scroll a page, JavaScript uses the DOM to m...</p></div>
+            <div class="post-meta">
+                <span class="post-date">June 24, 2026 · 11 min read</span>
+                <span class="post-read-time">8 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="devops">
+            <div class="post-tags"><span class="tag devops">devops</span></div>
+            <h2 class="post-title"><a href="posts/github-actions-cicd.html">GitHub Actions CI/CD: Automate Your Workflow</a></h2>
+            <div class="post-excerpt"><p>GitHub Actions lets you automate your development workflow directly in your repository. Run tests on every commit, build Docker images, deploy to servers — all triggered automatica...</p></div>
+            <div class="post-meta">
+                <span class="post-date">June 22, 2026 · 10 min read</span>
+                <span class="post-read-time">7 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="devops">
+            <div class="post-tags"><span class="tag devops">devops</span></div>
+            <h2 class="post-title"><a href="posts/git-tags-versioning.html">Git Tags & Semantic Versioning: Release Management Made Simple</a></h2>
+            <div class="post-excerpt"><p>Git tags are like bookmarks for specific commits. Unlike branches, which move forward as you commit, tags point forever to the exact commit you created them at. They're the standar...</p></div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-30</span>
+                <span class="post-read-time">6 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+        </article>
+        <article class="post" data-tags="devops">
+            <div class="post-tags"><span class="tag devops">devops</span></div>
+            <h2 class="post-title"><a href="posts/git-hooks-pre-commit.html">Git Hooks & Pre-Commit: Automate Your Development Workflow</a></h2>
+            <div class="post-excerpt"><p>Let's create a simple pre-commit hook that prevents committing Python files with syntax errors:...</p></div>
+            <div class="post-meta">
+                <span class="post-date">June 26, 2026 · 10 min read</span>
+                <span class="post-read-time">8 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="devops">
+            <div class="post-tags"><span class="tag devops">devops</span></div>
+            <h2 class="post-title"><a href="posts/git-github-basics.html">Git and GitHub for Beginners: Version Control Step by Step</a></h2>
+            <div class="post-excerpt"><p>You're writing code. You made a change, and now something is broken. You wish you could go back to yesterday's version. Or maybe you're working on a new feature and don't want to b...</p></div>
+            <div class="post-meta">
+                <span class="post-date">June 24, 2026 · 12 min read</span>
+                <span class="post-read-time">11 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="devops">
+            <div class="post-tags"><span class="tag devops">devops</span></div>
+            <h2 class="post-title"><a href="posts/git-branching-merge-conflicts.html">Git Branching Strategies and Merge Conflicts Explained</a></h2>
+            <div class="post-excerpt"><p>This guide covers the most popular branching models, when to use each, and a step-by-step walkthrough of resolving merge conflicts like a pro....</p></div>
+            <div class="post-meta">
+                <span class="post-date">June 24, 2026 · 8 min read</span>
+                <span class="post-read-time">7 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="devops">
+            <div class="post-tags"><span class="tag devops">devops</span></div>
+            <h2 class="post-title"><a href="posts/env-vars-secrets.html">Environment Variables and Secrets Management for Developers</a></h2>
+            <div class="post-excerpt"><p>You've probably seen this before — an API key or database password hardcoded right in the source code:...</p></div>
+            <div class="post-meta">
+                <span class="post-date">June 23, 2026 · 9 min read</span>
+                <span class="post-read-time">7 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="devops">
+            <div class="post-tags"><span class="tag devops">devops</span></div>
+            <h2 class="post-title"><a href="posts/dockerfile-best-practices.html">Dockerfile Best Practices: Build Smaller, Faster, Secure Images</a></h2>
+            <div class="post-excerpt"><p>This guide covers proven Dockerfile best practices with real before/after examples — multi-stage builds, layer caching, security hardening, and image optimization techniques used b...</p></div>
+            <div class="post-meta">
+                <span class="post-date">June 26, 2026 · 12 min read</span>
+                <span class="post-read-time">7 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="devops,security">
+            <div class="post-tags"><span class="tag devops">devops</span><span class="tag security">security</span></div>
+            <h2 class="post-title"><a href="posts/docker-volumes-data-persistence.html">Docker Volumes & Data Persistence: Don't Lose Your Data</a></h2>
+            <div class="post-excerpt"><p>Let's build a complete app stack with proper data persistence:...</p></div>
+            <div class="post-meta">
+                <span class="post-date">June 26, 2026 · 12 min read</span>
+                <span class="post-read-time">8 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="devops">
+            <div class="post-tags"><span class="tag devops">devops</span></div>
+            <h2 class="post-title"><a href="posts/docker-swarm-orchestration.html">Docker Swarm: Orchestrate Containers Without Kubernetes Complexity</a></h2>
+            <div class="post-excerpt"><p>You've learned Docker containers, Docker Compose, and Dockerfiles. Now you're ready for the next step: running your containers across multiple machines, scaling them automatically,...</p></div>
+            <div class="post-meta">
+                <span class="post-date">June 27, 2026 · 11 min read</span>
+                <span class="post-read-time">6 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="devops">
+            <div class="post-tags"><span class="tag devops">devops</span></div>
+            <h2 class="post-title"><a href="posts/docker-networking-builds.html">Docker Networking & Multi-Stage Builds</a></h2>
+            <div class="post-excerpt"><p>By default, each Docker container runs in its own isolated network namespace. This means a container can't reach other containers, your host machine, or external services — unless ...</p></div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-24</span>
+                <span class="post-read-time">7 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="devops">
+            <div class="post-tags"><span class="tag devops">devops</span></div>
+            <h2 class="post-title"><a href="posts/docker-healthchecks.html">Docker Health Checks & Container Monitoring: Know If Your Containers Are Actually Working</a></h2>
+            <div class="post-excerpt"><p>You can add a health check directly on the command line (no Dockerfile or compose needed):...</p></div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-30</span>
+                <span class="post-read-time">7 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+        </article>
+        <article class="post" data-tags="devops">
+            <div class="post-tags"><span class="tag devops">devops</span></div>
+            <h2 class="post-title"><a href="posts/docker-compose.html">Docker Compose: Multi-Container Applications</a></h2>
+            <div class="post-excerpt"><p>On most modern Docker installations, Compose is included as a Docker CLI plugin. Check your version:...</p></div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-24</span>
+                <span class="post-read-time">6 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="devops">
+            <div class="post-tags"><span class="tag devops">devops</span></div>
+            <h2 class="post-title"><a href="posts/docker-basics.html">Docker for Beginners: Containers, Images & Docker Compose</a></h2>
+            <div class="post-excerpt"><p>Docker lets you package an application and everything it needs into a lightweight container that runs the same way on your laptop, your server, or in the cloud. No more "it works o...</p></div>
+            <div class="post-meta">
+                <span class="post-date">June 21, 2026 · 9 min read</span>
+                <span class="post-read-time">7 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="cloudflare,devops">
+            <div class="post-tags"><span class="tag cloudflare">cloudflare</span><span class="tag devops">devops</span></div>
+            <h2 class="post-title"><a href="posts/cloudflare-workers-kv.html">Cloudflare Workers KV: Serverless Key-Value Database Made Easy</a></h2>
+            <div class="post-excerpt"><p>In this guide, you'll learn how to create a KV namespace, write and read data from Workers, use KV for caching, and build a real counter API. All with working code examples you can...</p></div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-30</span>
+                <span class="post-read-time">8 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+        </article>
+        <article class="post" data-tags="cloudflare,devops">
+            <div class="post-tags"><span class="tag cloudflare">cloudflare</span><span class="tag devops">devops</span></div>
+            <h2 class="post-title"><a href="posts/cloudflare-workers-cron.html">Cloudflare Workers Cron Triggers: Scheduled Tasks on the Edge</a></h2>
+            <div class="post-excerpt"><p>Learn how to schedule automated tasks with Cloudflare Workers Cron Triggers — no server to maintain, no cron daemon to manage. Build periodic API calls, data cleanup jobs, health c...</p></div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-30</span>
+                <span class="post-read-time">6 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+        </article>
+        <article class="post" data-tags="cloudflare,devops">
+            <div class="post-tags"><span class="tag cloudflare">cloudflare</span><span class="tag devops">devops</span></div>
+            <h2 class="post-title"><a href="posts/cloudflare-r2-storage.html">Cloudflare R2 Storage: Serverless Object Storage Without Egress Fees</a></h2>
+            <div class="post-excerpt"><p>Cloudflare R2 is serverless object storage that eliminates egress fees — the hidden cost that makes AWS S3 expensive when you download or serve a lot of data. If you're storing ima...</p></div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-24</span>
+                <span class="post-read-time">5 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="cloudflare,devops">
+            <div class="post-tags"><span class="tag cloudflare">cloudflare</span><span class="tag devops">devops</span></div>
+            <h2 class="post-title"><a href="posts/cloudflare-pages.html">Cloudflare Pages: Deploy Static Sites in Seconds</a></h2>
+            <div class="post-excerpt"><p>Best part? It's free for personal projects, includes automatic HTTPS, and serves your site from Cloudflare's global edge network of 300+ cities. Let's build and deploy a static sit...</p></div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-25</span>
+                <span class="post-read-time">8 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="cloudflare,devops">
+            <div class="post-tags"><span class="tag cloudflare">cloudflare</span><span class="tag devops">devops</span></div>
+            <h2 class="post-title"><a href="posts/cloudflare-load-balancing.html">Cloudflare Load Balancing: Distribute Traffic Across Multiple Servers</a></h2>
+            <div class="post-excerpt"><p>When your application grows beyond a single server, you need a way to distribute incoming traffic across multiple machines. That's exactly what a load balancer does — it sits in fr...</p></div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-28</span>
+                <span class="post-read-time">10 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="cloudflare,devops">
+            <div class="post-tags"><span class="tag cloudflare">cloudflare</span><span class="tag devops">devops</span></div>
+            <h2 class="post-title"><a href="posts/cloudflare-cache-rules.html">Cloudflare Cache Rules & Caching Strategy: Speed Up Your Site 10x</a></h2>
+            <div class="post-excerpt"><p>For images, CSS, and JS that rarely change, set a long cache duration:...</p></div>
+            <div class="post-meta">
+                <span class="post-date">June 29, 2026</span>
+                <span class="post-read-time">7 min read</span>
+                
+            </div>
+        </article>
         </div>
     </main>
 
     <footer>
         <div class="container">
-            <p>© 2026 Hugo's Dev Notes | Built with ❤️ & AI</p>
+            <p>© 2026 Hugo Wong · Built with curiosity and Coffee</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528">GitHub</a>
+                <a href="https://hugow.dev">hugow.dev</a>
+                <a href="/sitemap.xml">Sitemap</a>
+            </div>
         </div>
     </footer>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-mode');
+            themeToggle.textContent = '☀';
+        }
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            themeToggle.textContent = isLight ? '☀' : '◐';
+        });
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            const bar = document.getElementById('progressBar');
+            if (bar) bar.style.width = scrolled + "%";
+        });
+    </script>
 </body>
 </html>

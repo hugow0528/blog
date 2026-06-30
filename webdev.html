@@ -3,87 +3,146 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Web Development Tutorials | Hugo's Dev Notes</title>
-    <meta name="description" content="Learn web development - HTML, CSS, JavaScript, DOM manipulation, async programming, responsive design.">
-    <meta name="keywords" content="web development, html, css, javascript, dom, responsive design">
+    <title>Web Development | Hugo's Dev Notes</title>
+    <meta name="description" content="CSS, HTML forms, responsive design & modern web techniques">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://blog.hugow.dev/webdev.html">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
     <header>
         <div class="container">
             <div class="logo">
-                <h1><a href="index.html">🚀 Hugo's Dev Notes</a></h1>
+                <h1><a href="index.html">Hugo's Dev Notes</a></h1>
                 <p class="subtitle">Cloudflare · Python · AI Coding</p>
             </div>
             <nav>
-                <a href="index.html" class="nav-btn">🏠 Home</a>
-                <a href="cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
-                <a href="python.html" class="nav-btn">🐍 Python</a>
-                <a href="vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
-                <a href="devops.html" class="nav-btn">🐳 DevOps</a>
-                <a href="security.html" class="nav-btn">🔐 Security</a>
-                <a href="webdev.html" class="nav-btn active">💻 Web Dev</a>
+                <a href="index.html" class="nav-btn">Home</a>
+                <a href="cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="python.html" class="nav-btn">Python</a>
+                <a href="vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="devops.html" class="nav-btn">DevOps</a>
+                <a href="security.html" class="nav-btn">Security</a>
+                <a href="webdev.html" class="nav-btn">Web Dev</a>
             </nav>
         </div>
     </header>
 
     <main class="container">
         <div class="category-hero">
-            <h1>💻 Web Development Tutorials</h1>
-            <p>HTML, CSS, JavaScript, DOM, and responsive design</p>
+            <h1>💻 Web Development</h1>
+            <p>CSS, HTML forms, responsive design & modern web techniques</p>
         </div>
 
         <div class="posts">
-            <article class="post">
-                <div class="post-header">
-                    <span class="tag web">Web Dev</span>
-                    <h2><a href="posts/javascript-dom-manipulation.html">JavaScript DOM Manipulation</a></h2>
-                </div>
-                <div class="post-excerpt">
-                    <p>Interact with web pages using JavaScript — select elements, modify content, and handle events.</p>
-                </div>
-                <div class="post-meta">
-                    <time>2026-06-23</time>
-                    <span class="read-time">7 min read</span>
-                </div>
-            </article>
 
-            <article class="post">
-                <div class="post-header">
-                    <span class="tag web">Web Dev</span>
-                    <h2><a href="posts/javascript-promises-async-await.html">JavaScript Async/Await & Promises</a></h2>
-                </div>
-                <div class="post-excerpt">
-                    <p>Master asynchronous JavaScript — callbacks, promises, async/await, and error handling.</p>
-                </div>
-                <div class="post-meta">
-                    <time>2026-06-23</time>
-                    <span class="read-time">8 min read</span>
-                </div>
-            </article>
-
-            <article class="post">
-                <div class="post-header">
-                    <span class="tag web">Web Dev</span>
-                    <h2><a href="posts/responsive-web-design.html">Responsive Web Design</a></h2>
-                </div>
-                <div class="post-excerpt">
-                    <p>Build websites that work on all devices — media queries, flexbox, grid, and mobile-first design.</p>
-                </div>
-                <div class="post-meta">
-                    <time>2026-06-23</time>
-                    <span class="read-time">6 min read</span>
-                </div>
-            </article>
+        <article class="post" data-tags="security,web">
+            <div class="post-tags"><span class="tag security">security</span><span class="tag web">web</span></div>
+            <h2 class="post-title"><a href="posts/owasp-top10-web-security.html">OWASP Top 10: Web Application Security Guide for Developers</a></h2>
+            <div class="post-excerpt"><p>Every year, the Open Web Application Security Project (OWASP) publishes its Top 10 list — the most critical security risks to web applications. If you write web apps, knowing these...</p></div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-25</span>
+                <span class="post-read-time">10 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="web">
+            <div class="post-tags"><span class="tag web">web</span></div>
+            <h2 class="post-title"><a href="posts/javascript-es6-features.html">JavaScript ES6+ Modern Features Every Developer Should Know</a></h2>
+            <div class="post-excerpt"><p>JavaScript has evolved dramatically since the ES6 (ECMAScript 2015) release. Modern JavaScript is cleaner, more expressive, and less error-prone than the old way. Whether you're bu...</p></div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-24</span>
+                <span class="post-read-time">9 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="web,python">
+            <div class="post-tags"><span class="tag web">web</span><span class="tag python">python</span></div>
+            <h2 class="post-title"><a href="posts/http-rest-api-guide.html">HTTP & REST APIs: Understanding the Web's Language</a></h2>
+            <div class="post-excerpt"><p>Every time you visit a website, submit a form, or use a mobile app, HTTP is working behind the scenes. HTTP (Hypertext Transfer Protocol) is the language that powers the entire web...</p></div>
+            <div class="post-meta">
+                <span class="post-date">June 28, 2026</span>
+                <span class="post-read-time">10 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="web">
+            <div class="post-tags"><span class="tag web">web</span></div>
+            <h2 class="post-title"><a href="posts/html-forms-validation.html">HTML Forms &amp; Validation: Build Interactive Forms That Work</a></h2>
+            <div class="post-excerpt"><p>Master HTML forms — input types, validation attributes, form layout, file uploads, and JavaScript form handling. Build real-world forms with client-side and server-side validation....</p></div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-30</span>
+                <span class="post-read-time">7 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+        </article>
+        <article class="post" data-tags="web">
+            <div class="post-tags"><span class="tag web">web</span></div>
+            <h2 class="post-title"><a href="posts/css-grid-flexbox.html">CSS Grid & Flexbox: Modern Layout Guide</a></h2>
+            <div class="post-excerpt"><p>Gone are the days of using floats and clearfixes for layout. CSS Grid and Flexbox give you powerful, intuitive tools to build any layout you can imagine. This guide walks you throu...</p></div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-24</span>
+                <span class="post-read-time">7 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="web">
+            <div class="post-tags"><span class="tag web">web</span></div>
+            <h2 class="post-title"><a href="posts/css-custom-properties.html">CSS Custom Properties (Variables): Build Themes and Design Systems</a></h2>
+            <div class="post-excerpt"><p>CSS Custom Properties (commonly called "CSS variables") are user-defined values that you can set once and reuse throughout your stylesheet. They cascade like any other CSS property...</p></div>
+            <div class="post-meta">
+                <span class="post-date">June 27, 2026 · 10 min read</span>
+                <span class="post-read-time">6 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="web">
+            <div class="post-tags"><span class="tag web">web</span></div>
+            <h2 class="post-title"><a href="posts/css-animations-transitions.html">CSS Animations & Transitions: Bring Your Websites to Life</a></h2>
+            <div class="post-excerpt"><p>Ever visit a website where buttons smoothly change color when you hover, cards lift up elegantly, or a loading spinner spins perfectly? That's the power of CSS animations and trans...</p></div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-26</span>
+                <span class="post-read-time">8 min read</span>
+                
+            </div>
+        </article>
         </div>
     </main>
 
     <footer>
         <div class="container">
-            <p>© 2026 Hugo's Dev Notes | Built with ❤️ & AI</p>
+            <p>© 2026 Hugo Wong · Built with curiosity and Coffee</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528">GitHub</a>
+                <a href="https://hugow.dev">hugow.dev</a>
+                <a href="/sitemap.xml">Sitemap</a>
+            </div>
         </div>
     </footer>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-mode');
+            themeToggle.textContent = '☀';
+        }
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            themeToggle.textContent = isLight ? '☀' : '◐';
+        });
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            const bar = document.getElementById('progressBar');
+            if (bar) bar.style.width = scrolled + "%";
+        });
+    </script>
 </body>
 </html>

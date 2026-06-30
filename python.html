@@ -4,27 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Python Tutorials | Hugo's Dev Notes</title>
-    <meta name="description" content="Learn Python programming from scratch. Variables, functions, web scraping, APIs, and real projects.">
-    <meta name="keywords" content="python tutorial, python beginner, python programming, learn python">
+    <meta name="description" content="From basics to advanced — async, dataclasses, debugging & more">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://blog.hugow.dev/python.html">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
     <header>
         <div class="container">
             <div class="logo">
-                <h1><a href="index.html">🚀 Hugo's Dev Notes</a></h1>
+                <h1><a href="index.html">Hugo's Dev Notes</a></h1>
                 <p class="subtitle">Cloudflare · Python · AI Coding</p>
             </div>
             <nav>
-                <a href="index.html" class="nav-btn">🏠 Home</a>
-                <a href="cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
-                <a href="python.html" class="nav-btn active">🐍 Python</a>
-                <a href="vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
-                <a href="devops.html" class="nav-btn">🐳 DevOps</a>
-                <a href="security.html" class="nav-btn">🔐 Security</a>
-                <a href="webdev.html" class="nav-btn">💻 Web Dev</a>
+                <a href="index.html" class="nav-btn">Home</a>
+                <a href="cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="python.html" class="nav-btn">Python</a>
+                <a href="vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="devops.html" class="nav-btn">DevOps</a>
+                <a href="security.html" class="nav-btn">Security</a>
+                <a href="webdev.html" class="nav-btn">Web Dev</a>
             </nav>
         </div>
     </header>
@@ -32,170 +34,365 @@
     <main class="container">
         <div class="category-hero">
             <h1>🐍 Python Tutorials</h1>
-            <p>From zero to hero - Python programming for beginners</p>
+            <p>From basics to advanced — async, dataclasses, debugging & more</p>
         </div>
 
         <div class="posts">
-            <article class="post">
-                <div class="post-header">
-                    <span class="tag python">Python</span>
-                    <h2><a href="posts/python-first-script.html">Your First Python Script: Complete Beginner Guide</a></h2>
-                </div>
-                <div class="post-excerpt">
-                    <p>Never written Python before? This guide takes you from zero to running your first script in 15 minutes.</p>
-                </div>
-                <div class="post-meta">
-                    <time>2026-06-17</time>
-                    <span class="read-time">8 min read</span>
-                </div>
-            </article>
 
-            <article class="post">
-                <div class="post-header">
-                    <span class="tag python">Python</span>
-                    <h2><a href="posts/python-variables.html">Python Variables & Data Types</a></h2>
-                </div>
-                <div class="post-excerpt">
-                    <p>Understanding variables, strings, integers, lists, and dictionaries in Python.</p>
-                </div>
-                <div class="post-meta">
-                    <time>2026-06-17</time>
-                    <span class="read-time">7 min read</span>
-                </div>
-            </article>
-
-            <article class="post">
-                <div class="post-header">
-                    <span class="tag python">Python</span>
-                    <h2><a href="posts/python-functions.html">Python Functions: Complete Guide</a></h2>
-                </div>
-                <div class="post-excerpt">
-                    <p>Learn to write functions in Python — parameters, return values, scope, and lambda functions.</p>
-                </div>
-                <div class="post-meta">
-                    <time>2026-06-23</time>
-                    <span class="read-time">7 min read</span>
-                </div>
-            </article>
-
-            <article class="post">
-                <div class="post-header">
-                    <span class="tag python">Python</span>
-                    <h2><a href="posts/python-loops.html">Python Loops: For and While Loops</a></h2>
-                </div>
-                <div class="post-excerpt">
-                    <p>Master loops in Python — for loops, while loops, break, continue, and enumerate.</p>
-                </div>
-                <div class="post-meta">
-                    <time>2026-06-23</time>
-                    <span class="read-time">6 min read</span>
-                </div>
-            </article>
-
-            <article class="post">
-                <div class="post-header">
-                    <span class="tag python">Python</span>
-                    <h2><a href="posts/python-lists-dictionaries.html">Python Lists & Dictionaries</a></h2>
-                </div>
-                <div class="post-excerpt">
-                    <p>Work with lists, dictionaries, tuples, and sets in Python — the most used data structures.</p>
-                </div>
-                <div class="post-meta">
-                    <time>2026-06-23</time>
-                    <span class="read-time">8 min read</span>
-                </div>
-            </article>
-
-            <article class="post">
-                <div class="post-header">
-                    <span class="tag python">Python</span>
-                    <h2><a href="posts/python-error-handling.html">Python Error Handling: Try/Except</a></h2>
-                </div>
-                <div class="post-excerpt">
-                    <p>Handle errors gracefully in Python — try, except, else, finally, and custom exceptions.</p>
-                </div>
-                <div class="post-meta">
-                    <time>2026-06-23</time>
-                    <span class="read-time">6 min read</span>
-                </div>
-            </article>
-
-            <article class="post">
-                <div class="post-header">
-                    <span class="tag python">Python</span>
-                    <h2><a href="posts/python-oop-classes.html">Python OOP: Classes and Objects</a></h2>
-                </div>
-                <div class="post-excerpt">
-                    <p>Learn Object-Oriented Programming in Python — classes, objects, inheritance, and polymorphism.</p>
-                </div>
-                <div class="post-meta">
-                    <time>2026-06-23</time>
-                    <span class="read-time">9 min read</span>
-                </div>
-            </article>
-
-            <article class="post">
-                <div class="post-header">
-                    <span class="tag python">Python</span>
-                    <h2><a href="posts/python-file-operations.html">Python File Operations</a></h2>
-                </div>
-                <div class="post-excerpt">
-                    <p>Read and write files in Python — open, read, write, append, and context managers.</p>
-                </div>
-                <div class="post-meta">
-                    <time>2026-06-23</time>
-                    <span class="read-time">5 min read</span>
-                </div>
-            </article>
-
-            <article class="post">
-                <div class="post-header">
-                    <span class="tag python">Python</span>
-                    <h2><a href="posts/python-virtual-environments.html">Python Virtual Environments</a></h2>
-                </div>
-                <div class="post-excerpt">
-                    <p>Isolate your Python projects with virtual environments — venv, pip, and requirements.txt.</p>
-                </div>
-                <div class="post-meta">
-                    <time>2026-06-23</time>
-                    <span class="read-time">5 min read</span>
-                </div>
-            </article>
-
-            <article class="post">
-                <div class="post-header">
-                    <span class="tag python">Python</span>
-                    <h2><a href="posts/python-apis.html">Python APIs: Making HTTP Requests</a></h2>
-                </div>
-                <div class="post-excerpt">
-                    <p>Interact with web APIs using Python — requests, JSON, REST, and error handling.</p>
-                </div>
-                <div class="post-meta">
-                    <time>2026-06-23</time>
-                    <span class="read-time">7 min read</span>
-                </div>
-            </article>
-
-            <article class="post">
-                <div class="post-header">
-                    <span class="tag python">Python</span>
-                    <h2><a href="posts/python-web-scraping.html">Python Web Scraping</a></h2>
-                </div>
-                <div class="post-excerpt">
-                    <p>Extract data from websites with Python — BeautifulSoup, Selenium, and ethical scraping.</p>
-                </div>
-                <div class="post-meta">
-                    <time>2026-06-23</time>
-                    <span class="read-time">8 min read</span>
-                </div>
-            </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags"><span class="tag python">python</span></div>
+            <h2 class="post-title"><a href="posts/python-web-scraping.html">Python Web Scraping with BeautifulSoup: Beginner Guide</a></h2>
+            <div class="post-excerpt"><p>Web scraping lets your Python programs extract data from websites automatically. Collect product prices, monitor news articles, aggregate job listings, or gather research data — al...</p></div>
+            <div class="post-meta">
+                <span class="post-date">June 22, 2026 · 9 min read</span>
+                <span class="post-read-time">8 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags"><span class="tag python">python</span></div>
+            <h2 class="post-title"><a href="posts/python-virtual-environments.html">Python Virtual Environments and pip: Isolate Your Projects</a></h2>
+            <div class="post-excerpt"><p>If both projects share the same Python installation, installing version 2.31.0 for Project B breaks Project A. And if you install packages globally, your system Python becomes clut...</p></div>
+            <div class="post-meta">
+                <span class="post-date">June 24, 2026 · 10 min read</span>
+                <span class="post-read-time">7 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags"><span class="tag python">python</span></div>
+            <h2 class="post-title"><a href="posts/python-variables.html">Python Variables & Data Types for Beginners</a></h2>
+            <div class="post-excerpt"><p>Every program works with data. Python makes it easy — no type declarations, no complex syntax. Just create and use....</p></div>
+            <div class="post-meta">
+                <span class="post-date">June 17, 2026 · 7 min read</span>
+                <span class="post-read-time">3 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags"><span class="tag python">python</span></div>
+            <h2 class="post-title"><a href="posts/python-type-hints.html">Python Type Hints and Type Checking: Write Cleaner, Safer Code</a></h2>
+            <div class="post-excerpt"><p>mypy caught the error without running the code. That's the power of static type checking....</p></div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-24</span>
+                <span class="post-read-time">6 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python,devops">
+            <div class="post-tags"><span class="tag python">python</span><span class="tag devops">devops</span></div>
+            <h2 class="post-title"><a href="posts/python-testing-pytest.html">Python Testing with pytest: Write Reliable Code from Day One</a></h2>
+            <div class="post-excerpt"><p>Testing isn't about proving your code works. It's about building confidence that your code keeps working when you inevitably refactor it three months from now....</p></div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-25</span>
+                <span class="post-read-time">7 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags"><span class="tag python">python</span></div>
+            <h2 class="post-title"><a href="posts/python-strings-regex.html">Python String Methods & Regular Expressions: Master Text Processing</a></h2>
+            <div class="post-excerpt"><p>Strings are the lifeblood of almost every Python program. Whether you're processing user input, parsing API responses, cleaning data, or building a web scraper, you'll spend a sign...</p></div>
+            <div class="post-meta">
+                <span class="post-date">June 26, 2026 · 12 min read</span>
+                <span class="post-read-time">9 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags"><span class="tag python">python</span></div>
+            <h2 class="post-title"><a href="posts/python-regex-patterns.html">Python Regular Expressions (regex): Pattern Matching Made Easy</a></h2>
+            <div class="post-excerpt"><p>Let's build a real-world email validator. This is one of the most common use cases for regex:...</p></div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-28</span>
+                <span class="post-read-time">8 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python,devops">
+            <div class="post-tags"><span class="tag python">python</span><span class="tag devops">devops</span></div>
+            <h2 class="post-title"><a href="posts/python-packaging-publishing.html">Python Packaging & Publishing: Share Your Code on PyPI</a></h2>
+            <div class="post-excerpt"><p>This guide walks you through packaging a real Python project, building distribution files, and uploading to PyPI — from zero to published....</p></div>
+            <div class="post-meta">
+                <span class="post-date">June 26, 2026 · 11 min read</span>
+                <span class="post-read-time">7 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags"><span class="tag python">python</span></div>
+            <h2 class="post-title"><a href="posts/python-oop-classes.html">Python Classes and OOP: Object-Oriented Programming for Beginners</a></h2>
+            <div class="post-excerpt"><p>In this tutorial, we'll build from the ground up: creating your first class, understanding objects, inheritance, and real-world patterns — all with working code you can run immedia...</p></div>
+            <div class="post-meta">
+                <span class="post-date">June 23, 2026 · 11 min read</span>
+                <span class="post-read-time">8 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags"><span class="tag python">python</span></div>
+            <h2 class="post-title"><a href="posts/python-modules-packages.html">Python Modules & Packages: Organize Your Code Like a Pro</a></h2>
+            <div class="post-excerpt"><p>If your Python script has grown past 100 lines, it's probably time to organize it. Modules and packages are how Python developers split code into manageable, reusable pieces — just...</p></div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-25</span>
+                <span class="post-read-time">7 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags"><span class="tag python">python</span></div>
+            <h2 class="post-title"><a href="posts/python-loops.html">Python For Loops and While Loops: Complete Beginner Guide</a></h2>
+            <div class="post-excerpt"><p>Without loops, processing 1,000 items means 1,000 lines of code. With loops, it takes 5. Loops are used in:...</p></div>
+            <div class="post-meta">
+                <span class="post-date">June 20, 2026 · 7 min read</span>
+                <span class="post-read-time">5 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python,devops">
+            <div class="post-tags"><span class="tag python">python</span><span class="tag devops">devops</span></div>
+            <h2 class="post-title"><a href="posts/python-logging-configuration.html">Python Logging &amp; Configuration Management: Build Production-Ready Apps</a></h2>
+            <div class="post-excerpt"><p>Python logging has 5 standard levels, from least to most severe:...</p></div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-27</span>
+                <span class="post-read-time">9 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags"><span class="tag python">python</span></div>
+            <h2 class="post-title"><a href="posts/python-lists-dictionaries.html">Python Lists and Dictionaries: Master the Core Data Structures</a></h2>
+            <div class="post-excerpt"><p>In this tutorial, we'll cover everything you need to know about lists and dictionaries, with practical examples you can run immediately. By the end, you'll build a real-world proje...</p></div>
+            <div class="post-meta">
+                <span class="post-date">June 23, 2026 · 10 min read</span>
+                <span class="post-read-time">9 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags"><span class="tag python">python</span></div>
+            <h2 class="post-title"><a href="posts/python-list-comprehensions.html">Python List Comprehensions & Generator Expressions: Write Cleaner, FASTER Code</a></h2>
+            <div class="post-excerpt"><p>If you've ever written a loop just to collect results into a list, stop — there's a better way. Let's dive in....</p></div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-25</span>
+                <span class="post-read-time">8 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags"><span class="tag python">python</span></div>
+            <h2 class="post-title"><a href="posts/python-json-serialization.html">Python JSON & Data Serialization: Save, Load, and Exchange Data</a></h2>
+            <div class="post-excerpt"><p>JSON is a lightweight text format for storing and exchanging data. It uses key-value pairs, arrays, and nested structures — concepts you already know from Python dictionaries and l...</p></div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-28</span>
+                <span class="post-read-time">7 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags"><span class="tag python">python</span></div>
+            <h2 class="post-title"><a href="posts/python-iterators-itertools.html">Python Iterators Itertools</a></h2>
+            <div class="post-excerpt"><p>These terms sound similar but mean different things. Here's the quick version:...</p></div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-29</span>
+                <span class="post-read-time">12 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags"><span class="tag python">python</span></div>
+            <h2 class="post-title"><a href="posts/python-functions.html">Python Functions: Define, Call, and Master Reusable Code</a></h2>
+            <div class="post-excerpt"><p></p></div>
+            <div class="post-meta">
+                <span class="post-date">June 22, 2026 · 9 min read</span>
+                <span class="post-read-time">8 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags"><span class="tag python">python</span></div>
+            <h2 class="post-title"><a href="posts/python-fstrings-formatting.html">Python f-strings and String Formatting: Write Cleaner Code</a></h2>
+            <div class="post-excerpt"><p></p></div>
+            <div class="post-meta">
+                <span class="post-date">June 29, 2026</span>
+                <span class="post-read-time">8 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags"><span class="tag python">python</span></div>
+            <h2 class="post-title"><a href="posts/python-first-script.html">Your First Python Script: Complete Beginner Guide</a></h2>
+            <div class="post-excerpt"><p>Never written a line of code? No problem. Python is the most beginner-friendly programming language. In 15 minutes, you'll go from zero to running your own program....</p></div>
+            <div class="post-meta">
+                <span class="post-date">June 17, 2026 · 8 min read</span>
+                <span class="post-read-time">3 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags"><span class="tag python">python</span></div>
+            <h2 class="post-title"><a href="posts/python-file-operations.html">Python File Operations: Read, Write, and Manage Files</a></h2>
+            <div class="post-excerpt"><p>Almost every real Python program needs to work with files — reading configuration, logging output, processing data, or saving results. File operations are one of those fundamental ...</p></div>
+            <div class="post-meta">
+                <span class="post-date">June 21, 2026 · 11 min read</span>
+                <span class="post-read-time">7 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags"><span class="tag python">python</span></div>
+            <h2 class="post-title"><a href="posts/python-error-handling.html">Python Error Handling: try/except, Custom Exceptions & Best Practices</a></h2>
+            <div class="post-excerpt"><p>Every Python program encounters errors. A file that doesn't exist, a network request that times out, a JSON string that's malformed — if you don't handle these gracefully, your pro...</p></div>
+            <div class="post-meta">
+                <span class="post-date">June 22, 2026 · 10 min read</span>
+                <span class="post-read-time">8 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags"><span class="tag python">python</span></div>
+            <h2 class="post-title"><a href="posts/python-dict-set-operations.html">Python Dictionary & Set Operations: Merges, Comprehensions & More</a></h2>
+            <div class="post-excerpt"><p>After learning basic lists and dictionaries, the next step is mastering the operations that make these data structures truly powerful. Dictionaries let you look up data by key inst...</p></div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-29</span>
+                <span class="post-read-time">9 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags"><span class="tag python">python</span></div>
+            <h2 class="post-title"><a href="posts/python-decorators-generators.html">Python Decorators & Generators: Advanced Patterns</a></h2>
+            <div class="post-excerpt"><p>Let's start from scratch. Suppose you want to measure how long a function takes to run:...</p></div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-24</span>
+                <span class="post-read-time">8 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python,devops">
+            <div class="post-tags"><span class="tag python">python</span><span class="tag devops">devops</span></div>
+            <h2 class="post-title"><a href="posts/python-debugging.html">Python Debugging: Stop Guessing, Start Finding Bugs Fast</a></h2>
+            <div class="post-excerpt"><p>This is a real technique. Before adding any debug prints, write comments explaining what each line should do, line by line:...</p></div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-30</span>
+                <span class="post-read-time">8 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags"><span class="tag python">python</span></div>
+            <h2 class="post-title"><a href="posts/python-dataclasses.html">Python Dataclasses: Write Cleaner Classes with Less Boilerplate</a></h2>
+            <div class="post-excerpt"><p>One of the most useful features: automatically convert between dictionaries and dataclasses. This is incredibly handy when working with JSON APIs:...</p></div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-30</span>
+                <span class="post-read-time">9 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags"><span class="tag python">python</span></div>
+            <h2 class="post-title"><a href="posts/python-context-managers.html">Python Context Managers</a></h2>
+            <div class="post-excerpt"><p>Let's build a context manager that measures how long code takes to run:...</p></div>
+            <div class="post-meta">
+                <span class="post-date">June 26, 2026 · 10 min read</span>
+                <span class="post-read-time">7 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags"><span class="tag python">python</span></div>
+            <h2 class="post-title"><a href="posts/python-conditional-logic.html">Python Conditional Logic: if/elif/else — Make Decisions in Code</a></h2>
+            <div class="post-excerpt"><p>Python 3.10+ introduced structural pattern matching — Python's version of a switch statement:...</p></div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-26</span>
+                <span class="post-read-time">8 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags"><span class="tag python">python</span></div>
+            <h2 class="post-title"><a href="posts/python-async-await.html">Python Async/Await (asyncio): Do Multiple Things at Once</a></h2>
+            <div class="post-excerpt"><p>Three API calls that might take 3 seconds total in sequential code complete in roughly the time of the slowest single call. For even more URLs, the speedup is dramatic....</p></div>
+            <div class="post-meta">
+                <span class="post-date">June 28, 2026</span>
+                <span class="post-read-time">6 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags"><span class="tag python">python</span></div>
+            <h2 class="post-title"><a href="posts/python-apis.html">Python APIs: Fetch Data from the Web</a></h2>
+            <div class="post-excerpt"><p>APIs (Application Programming Interfaces) let your Python programs talk to the internet. Fetch weather data, post to Twitter, query GitHub, interact with AI models — it all starts ...</p></div>
+            <div class="post-meta">
+                <span class="post-date">June 21, 2026 · 8 min read</span>
+                <span class="post-read-time">7 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="web,python">
+            <div class="post-tags"><span class="tag web">web</span><span class="tag python">python</span></div>
+            <h2 class="post-title"><a href="posts/http-rest-api-guide.html">HTTP & REST APIs: Understanding the Web's Language</a></h2>
+            <div class="post-excerpt"><p>Every time you visit a website, submit a form, or use a mobile app, HTTP is working behind the scenes. HTTP (Hypertext Transfer Protocol) is the language that powers the entire web...</p></div>
+            <div class="post-meta">
+                <span class="post-date">June 28, 2026</span>
+                <span class="post-read-time">10 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="cloudflare,python">
+            <div class="post-tags"><span class="tag cloudflare">cloudflare</span><span class="tag python">python</span></div>
+            <h2 class="post-title"><a href="posts/cloudflare-stream.html">Cloudflare Stream: Video Upload, Transcoding & Streaming Made Easy</a></h2>
+            <div class="post-excerpt"><p>In this guide, you'll learn how to upload videos, embed players, manage uploads programmatically with Python, and set up a complete video streaming pipeline....</p></div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-27</span>
+                <span class="post-read-time">6 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="cloudflare,python">
+            <div class="post-tags"><span class="tag cloudflare">cloudflare</span><span class="tag python">python</span></div>
+            <h2 class="post-title"><a href="posts/cloudflare-api-python.html">Cloudflare API with Python: Automate DNS, Workers & More</a></h2>
+            <div class="post-excerpt"><p>Before writing any code, you need API credentials. Cloudflare offers two authentication methods:...</p></div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-30</span>
+                <span class="post-read-time">8 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+        </article>
         </div>
     </main>
 
     <footer>
         <div class="container">
-            <p>© 2026 Hugo's Dev Notes | Built with ❤️ & AI</p>
+            <p>© 2026 Hugo Wong · Built with curiosity and Coffee</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528">GitHub</a>
+                <a href="https://hugow.dev">hugow.dev</a>
+                <a href="/sitemap.xml">Sitemap</a>
+            </div>
         </div>
     </footer>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-mode');
+            themeToggle.textContent = '☀';
+        }
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            themeToggle.textContent = isLight ? '☀' : '◐';
+        });
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            const bar = document.getElementById('progressBar');
+            if (bar) bar.style.width = scrolled + "%";
+        });
+    </script>
 </body>
 </html>

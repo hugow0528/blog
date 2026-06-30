@@ -9,10 +9,24 @@
     <link rel="stylesheet" href="../style.css">
 </head>
 <body>
+    <div class="progress-bar" id="progressBar"></div>
+        <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
     <header>
         <div class="container">
-            <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
-            <p class="subtitle">Cloudflare · Python · AI Coding · DevOps</p>
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
         </div>
     </header>
 
@@ -538,5 +552,30 @@ img {
             <p>© 2026 Hugo's Dev Notes. Built with vibe coding.</p>
         </div>
     </footer>
+    <script>
+        // Theme toggle
+        const themeToggle = document.getElementById('themeToggle');
+        if (themeToggle) {{
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            if (savedTheme === 'light') {{
+                document.body.classList.add('light-mode');
+                themeToggle.textContent = '☀';
+            }}
+            themeToggle.addEventListener('click', () => {{
+                document.body.classList.toggle('light-mode');
+                const isLight = document.body.classList.contains('light-mode');
+                localStorage.setItem('theme', isLight ? 'light' : 'dark');
+                themeToggle.textContent = isLight ? '☀' : '◐';
+            }});
+        }}
+        // Progress bar
+        window.addEventListener('scroll', () => {{
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            const bar = document.getElementById('progressBar');
+            if (bar) bar.style.width = scrolled + "%";
+        }});
+    </script>
 </body>
 </html>

@@ -4,27 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cloudflare Tutorials | Hugo's Dev Notes</title>
-    <meta name="description" content="Learn Cloudflare Tunnel, DNS setup, Workers, Rules, Zero Trust, and more. Step-by-step guides with real examples.">
-    <meta name="keywords" content="cloudflare tutorial, cloudflare tunnel, DNS setup, zero trust, cloudflare workers, web hosting">
+    <meta name="description" content="Master Cloudflare Tunnel, Workers, DNS, Zero Trust & more">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://blog.hugow.dev/cloudflare.html">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
     <header>
         <div class="container">
             <div class="logo">
-                <h1><a href="index.html">🚀 Hugo's Dev Notes</a></h1>
+                <h1><a href="index.html">Hugo's Dev Notes</a></h1>
                 <p class="subtitle">Cloudflare · Python · AI Coding</p>
             </div>
             <nav>
-                <a href="index.html" class="nav-btn">🏠 Home</a>
-                <a href="cloudflare.html" class="nav-btn active">☁️ Cloudflare</a>
-                <a href="python.html" class="nav-btn">🐍 Python</a>
-                <a href="vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
-                <a href="devops.html" class="nav-btn">🐳 DevOps</a>
-                <a href="security.html" class="nav-btn">🔐 Security</a>
-                <a href="webdev.html" class="nav-btn">💻 Web Dev</a>
+                <a href="index.html" class="nav-btn">Home</a>
+                <a href="cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="python.html" class="nav-btn">Python</a>
+                <a href="vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="devops.html" class="nav-btn">DevOps</a>
+                <a href="security.html" class="nav-btn">Security</a>
+                <a href="webdev.html" class="nav-btn">Web Dev</a>
             </nav>
         </div>
     </header>
@@ -32,86 +34,195 @@
     <main class="container">
         <div class="category-hero">
             <h1>☁️ Cloudflare Tutorials</h1>
-            <p>Master Cloudflare Tunnel, DNS, Zero Trust, and web security</p>
+            <p>Master Cloudflare Tunnel, Workers, DNS, Zero Trust & more</p>
         </div>
 
         <div class="posts">
-            <article class="post">
-                <div class="post-header">
-                    <span class="tag cloudflare">Cloudflare</span>
-                    <h2><a href="posts/cloudflare-tunnel.html">How to Set Up Cloudflare Tunnel (Step by Step)</a></h2>
-                </div>
-                <div class="post-excerpt">
-                    <p>Learn how to expose your local server to the internet using Cloudflare Tunnel — no port forwarding, no public IP needed.</p>
-                </div>
-                <div class="post-meta">
-                    <time>2026-06-17</time>
-                    <span class="read-time">5 min read</span>
-                </div>
-            </article>
 
-            <article class="post">
-                <div class="post-header">
-                    <span class="tag cloudflare">Cloudflare</span>
-                    <h2><a href="posts/cloudflare-dns.html">Cloudflare DNS Setup: Complete Guide</a></h2>
-                </div>
-                <div class="post-excerpt">
-                    <p>Complete guide to managing DNS with Cloudflare — A records, CNAME, proxies, and troubleshooting.</p>
-                </div>
-                <div class="post-meta">
-                    <time>2026-06-17</time>
-                    <span class="read-time">6 min read</span>
-                </div>
-            </article>
-
-            <article class="post">
-                <div class="post-header">
-                    <span class="tag cloudflare">Cloudflare</span>
-                    <h2><a href="posts/cloudflare-workers.html">Cloudflare Workers: Serverless Functions</a></h2>
-                </div>
-                <div class="post-excerpt">
-                    <p>Deploy serverless functions globally with Cloudflare Workers — APIs, edge computing, and serverless apps.</p>
-                </div>
-                <div class="post-meta">
-                    <time>2026-06-23</time>
-                    <span class="read-time">7 min read</span>
-                </div>
-            </article>
-
-            <article class="post">
-                <div class="post-header">
-                    <span class="tag cloudflare">Cloudflare</span>
-                    <h2><a href="posts/cloudflare-rules.html">Cloudflare Rules: Advanced Traffic Filtering</a></h2>
-                </div>
-                <div class="post-excerpt">
-                    <p>Master Cloudflare Rules — WAF, rate limiting, geo-blocking, and custom filtering rules.</p>
-                </div>
-                <div class="post-meta">
-                    <time>2026-06-23</time>
-                    <span class="read-time">6 min read</span>
-                </div>
-            </article>
-
-            <article class="post">
-                <div class="post-header">
-                    <span class="tag cloudflare">Cloudflare</span>
-                    <h2><a href="posts/cloudflare-zero-trust.html">Cloudflare Zero Trust: Secure Access</a></h2>
-                </div>
-                <div class="post-excerpt">
-                    <p>Protect your apps with Cloudflare Zero Trust — identity-aware access, SSO, and secure remote access.</p>
-                </div>
-                <div class="post-meta">
-                    <time>2026-06-23</time>
-                    <span class="read-time">8 min read</span>
-                </div>
-            </article>
+        <article class="post" data-tags="cloudflare">
+            <div class="post-tags"><span class="tag cloudflare">cloudflare</span></div>
+            <h2 class="post-title"><a href="posts/cloudflare-zero-trust.html">Cloudflare Zero Trust for Beginners: Secure Your Apps Without Coding</a></h2>
+            <div class="post-excerpt"><p>In this guide, we'll walk through everything: from your first login screen to advanced device policies and data loss prevention....</p></div>
+            <div class="post-meta">
+                <span class="post-date">June 21, 2026 · 10 min read</span>
+                <span class="post-read-time">7 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="cloudflare">
+            <div class="post-tags"><span class="tag cloudflare">cloudflare</span></div>
+            <h2 class="post-title"><a href="posts/cloudflare-workers.html">Cloudflare Workers: Serverless Code at the Edge</a></h2>
+            <div class="post-excerpt"><p>Cloudflare Workers let you run JavaScript, TypeScript, or Python code on Cloudflare's global network — without managing servers. Your code runs in 300+ data centers worldwide, exec...</p></div>
+            <div class="post-meta">
+                <span class="post-date">June 22, 2026 · 10 min read</span>
+                <span class="post-read-time">10 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="cloudflare,devops">
+            <div class="post-tags"><span class="tag cloudflare">cloudflare</span><span class="tag devops">devops</span></div>
+            <h2 class="post-title"><a href="posts/cloudflare-workers-kv.html">Cloudflare Workers KV: Serverless Key-Value Database Made Easy</a></h2>
+            <div class="post-excerpt"><p>In this guide, you'll learn how to create a KV namespace, write and read data from Workers, use KV for caching, and build a real counter API. All with working code examples you can...</p></div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-30</span>
+                <span class="post-read-time">8 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+        </article>
+        <article class="post" data-tags="cloudflare,devops">
+            <div class="post-tags"><span class="tag cloudflare">cloudflare</span><span class="tag devops">devops</span></div>
+            <h2 class="post-title"><a href="posts/cloudflare-workers-cron.html">Cloudflare Workers Cron Triggers: Scheduled Tasks on the Edge</a></h2>
+            <div class="post-excerpt"><p>Learn how to schedule automated tasks with Cloudflare Workers Cron Triggers — no server to maintain, no cron daemon to manage. Build periodic API calls, data cleanup jobs, health c...</p></div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-30</span>
+                <span class="post-read-time">6 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+        </article>
+        <article class="post" data-tags="cloudflare">
+            <div class="post-tags"><span class="tag cloudflare">cloudflare</span></div>
+            <h2 class="post-title"><a href="posts/cloudflare-tunnel.html">How to Set Up Cloudflare Tunnel (Step by Step)</a></h2>
+            <div class="post-excerpt"><p>One tunnel, multiple subdomains. Each points to a different local port....</p></div>
+            <div class="post-meta">
+                <span class="post-date">June 17, 2026 · 5 min read</span>
+                <span class="post-read-time">3 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="cloudflare,python">
+            <div class="post-tags"><span class="tag cloudflare">cloudflare</span><span class="tag python">python</span></div>
+            <h2 class="post-title"><a href="posts/cloudflare-stream.html">Cloudflare Stream: Video Upload, Transcoding & Streaming Made Easy</a></h2>
+            <div class="post-excerpt"><p>In this guide, you'll learn how to upload videos, embed players, manage uploads programmatically with Python, and set up a complete video streaming pipeline....</p></div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-27</span>
+                <span class="post-read-time">6 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="cloudflare">
+            <div class="post-tags"><span class="tag cloudflare">cloudflare</span></div>
+            <h2 class="post-title"><a href="posts/cloudflare-rules.html">Cloudflare Rules: Page Rules, Transform Rules & WAF for Beginners</a></h2>
+            <div class="post-excerpt"><p>Think of it like traffic signs on a highway. A "Speed Limit 60" sign applies to all cars. But a "Trucks Turn Right" sign only applies to trucks — that's a condition-based rule....</p></div>
+            <div class="post-meta">
+                <span class="post-date">June 24, 2026 · 10 min read</span>
+                <span class="post-read-time">8 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="cloudflare,devops">
+            <div class="post-tags"><span class="tag cloudflare">cloudflare</span><span class="tag devops">devops</span></div>
+            <h2 class="post-title"><a href="posts/cloudflare-r2-storage.html">Cloudflare R2 Storage: Serverless Object Storage Without Egress Fees</a></h2>
+            <div class="post-excerpt"><p>Cloudflare R2 is serverless object storage that eliminates egress fees — the hidden cost that makes AWS S3 expensive when you download or serve a lot of data. If you're storing ima...</p></div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-24</span>
+                <span class="post-read-time">5 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="cloudflare,devops">
+            <div class="post-tags"><span class="tag cloudflare">cloudflare</span><span class="tag devops">devops</span></div>
+            <h2 class="post-title"><a href="posts/cloudflare-pages.html">Cloudflare Pages: Deploy Static Sites in Seconds</a></h2>
+            <div class="post-excerpt"><p>Best part? It's free for personal projects, includes automatic HTTPS, and serves your site from Cloudflare's global edge network of 300+ cities. Let's build and deploy a static sit...</p></div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-25</span>
+                <span class="post-read-time">8 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="cloudflare,devops">
+            <div class="post-tags"><span class="tag cloudflare">cloudflare</span><span class="tag devops">devops</span></div>
+            <h2 class="post-title"><a href="posts/cloudflare-load-balancing.html">Cloudflare Load Balancing: Distribute Traffic Across Multiple Servers</a></h2>
+            <div class="post-excerpt"><p>When your application grows beyond a single server, you need a way to distribute incoming traffic across multiple machines. That's exactly what a load balancer does — it sits in fr...</p></div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-28</span>
+                <span class="post-read-time">10 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="cloudflare">
+            <div class="post-tags"><span class="tag cloudflare">cloudflare</span></div>
+            <h2 class="post-title"><a href="posts/cloudflare-dns.html">Cloudflare DNS Explained: Proxied vs DNS Only</a></h2>
+            <div class="post-excerpt"><p>When you add a DNS record in Cloudflare, you see an orange cloud toggle. What does it do? Should you turn it on or off? This guide explains in simple terms....</p></div>
+            <div class="post-meta">
+                <span class="post-date">June 17, 2026 · 4 min read</span>
+                <span class="post-read-time">3 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="cloudflare">
+            <div class="post-tags"><span class="tag cloudflare">cloudflare</span></div>
+            <h2 class="post-title"><a href="posts/cloudflare-d1-database.html">Cloudflare D1: Serverless SQLite Database at the Edge</a></h2>
+            <div class="post-excerpt"><p>Cloudflare D1 is a fully managed, serverless SQLite database that runs on Cloudflare's edge network. It gives you the simplicity and SQL familiarity of SQLite with the scale and di...</p></div>
+            <div class="post-meta">
+                <span class="post-date">June 26, 2026 · 11 min read</span>
+                <span class="post-read-time">9 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="cloudflare,devops">
+            <div class="post-tags"><span class="tag cloudflare">cloudflare</span><span class="tag devops">devops</span></div>
+            <h2 class="post-title"><a href="posts/cloudflare-cache-rules.html">Cloudflare Cache Rules & Caching Strategy: Speed Up Your Site 10x</a></h2>
+            <div class="post-excerpt"><p>For images, CSS, and JS that rarely change, set a long cache duration:...</p></div>
+            <div class="post-meta">
+                <span class="post-date">June 29, 2026</span>
+                <span class="post-read-time">7 min read</span>
+                
+            </div>
+        </article>
+        <article class="post" data-tags="cloudflare,python">
+            <div class="post-tags"><span class="tag cloudflare">cloudflare</span><span class="tag python">python</span></div>
+            <h2 class="post-title"><a href="posts/cloudflare-api-python.html">Cloudflare API with Python: Automate DNS, Workers & More</a></h2>
+            <div class="post-excerpt"><p>Before writing any code, you need API credentials. Cloudflare offers two authentication methods:...</p></div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-30</span>
+                <span class="post-read-time">8 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+        </article>
+        <article class="post" data-tags="cloudflare,security">
+            <div class="post-tags"><span class="tag cloudflare">cloudflare</span><span class="tag security">security</span></div>
+            <h2 class="post-title"><a href="posts/cloudflare-access-auth.html">Cloudflare Access: Secure Your Apps with Identity-Based Authentication</a></h2>
+            <div class="post-excerpt"><p>The architecture is simpler than you might expect. Here's the flow:...</p></div>
+            <div class="post-meta">
+                <span class="post-date">2026-06-28</span>
+                <span class="post-read-time">9 min read</span>
+                
+            </div>
+        </article>
         </div>
     </main>
 
     <footer>
         <div class="container">
-            <p>© 2026 Hugo's Dev Notes | Built with ❤️ & AI</p>
+            <p>© 2026 Hugo Wong · Built with curiosity and Coffee</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528">GitHub</a>
+                <a href="https://hugow.dev">hugow.dev</a>
+                <a href="/sitemap.xml">Sitemap</a>
+            </div>
         </div>
     </footer>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-mode');
+            themeToggle.textContent = '☀';
+        }
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            themeToggle.textContent = isLight ? '☀' : '◐';
+        });
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            const bar = document.getElementById('progressBar');
+            if (bar) bar.style.width = scrolled + "%";
+        });
+    </script>
 </body>
 </html>

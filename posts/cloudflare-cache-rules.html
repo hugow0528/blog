@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloudflare Cache Rules & Caching Strategy: Speed Up Your Site 10x | Hugo's Dev Notes</title>
+    <meta name="description" content="Master Cloudflare Cache Rules — cache static assets, API responses, and pages. Reduce bandwidth, cut costs, and make your site blazing fast with working examples.">
+    <meta name="keywords" content="cloudflare cache rules, caching strategy, edge cache, CDN caching, bandwidth optimization, cache purge, cloudflare speed">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/cloudflare-cache-rules.html">
+    <meta property="og:title" content="Cloudflare Cache Rules & Caching Strategy: Speed Up Your Site 10x">
+    <meta property="og:description" content="Master Cloudflare Cache Rules — cache static assets, API responses, and pages with working examples.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.hugow.dev/posts/cloudflare-cache-rules.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+                <a href="../devops.html" class="nav-btn">🐳 DevOps</a>
+                <a href="../security.html" class="nav-btn">🔐 Security</a>
+                <a href="../webdev.html" class="nav-btn">💻 Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-content">
+            <h1>Cloudflare Cache Rules & Caching Strategy: Speed Up Your Site 10x</h1>
+            <span class="tag cloudflare">Cloudflare</span>
+            <span class="tag devops">DevOps</span>
+            <time>June 29, 2026</time>
+
+            <p>Cloudflare's edge network caches your content in <strong>300+ cities worldwide</strong>, serving users from the closest location. But the default caching isn't always optimal — and with <strong>Cache Rules</strong>, you can take full control. In this guide, you'll learn how to configure caching for static assets, API responses, and dynamic pages to dramatically reduce load times and bandwidth costs.</p>
+
+            <h2>How Cloudflare Caching Works</h2>
+
+            <p>Before configuring rules, understand the flow:</p>
+
+            <ol>
+                <li><strong>First request:</strong> Cloudflare checks its edge cache. If the content isn't there (a <em>cache miss</em>), it fetches from your origin server and stores a copy.</li>
+                <li><strong>Subsequent requests:</strong> If the content is cached (a <em>cache hit</em>), Cloudflare serves it directly from the edge — no origin server needed.</li>
+                <li><strong>Cache expiration:</strong> Cached content expires based on the <code>Cache-Control</code> header from your origin, or Cloudflare's default (2 hours for assets, 4 hours for HTML).</li>
+            </ol>
+
+            <blockquote>
+                <strong>Key insight:</strong> A cache hit means your origin server handles ZERO requests. For a popular site, this can mean 80-95% fewer origin requests.
+            </blockquote>
+
+            <h2>Default Cache Behavior</h2>
+
+            <p>Cloudflare caches these file types by default (when your site is <strong>proxied</strong> through Cloudflare):</p>
+
+            <pre><code># File types cached by default
+.jpg, .jpeg, .png, .gif, .svg, .webp      # Images
+.css, .js                                   # Stylesheets & scripts
+.pdf, .doc, .xls, .ppt                     # Documents
+.mp3, .mp4, .webm, .ogg                    # Media files
+.html                                       # HTML (4-hour edge TTL by default)
+</code></pre>
+
+            <p>Cloudflare respects your origin's <code>Cache-Control</code> headers. If your server sends <code>Cache-Control: no-store</code>, Cloudflare won't cache the content regardless of file type.</p>
+
+            <h2>Cache Rules: Take Full Control</h2>
+
+            <p>Cache Rules (available on Free plan) let you override default behavior with custom conditions. Navigate to <strong>Caching → Configuration → Cache Rules</strong> in the Cloudflare dashboard.</p>
+
+            <h3>Rule #1: Cache Static Assets Aggressively</h3>
+
+            <p>For images, CSS, and JS that rarely change, set a long cache duration:</p>
+
+            <pre><code># Cache Rule: Static assets for 30 days
+IF: Request is for file extension = .css, .js, .png, .jpg, .webp
+THEN: Cache Level = Maximum, Edge TTL = 30 days, Browser TTL = Respect Origin
+</code></pre>
+
+            <p>This tells Cloudflare to cache these files for 30 days at the edge, and let the browser cache them according to your origin's <code>Cache-Control</code> headers. For a site with 10,000 page views, this could save ~95% of image requests to your origin.</p>
+
+            <h3>Rule #2: Cache API Responses for Short Durations</h3>
+
+            <p>API endpoints that return semi-static data (product listings, blog posts, settings) can be cached:</p>
+
+            <pre><code># Cache Rule: Cache API responses for 5 minutes
+IF: Request URI contains "/api/products" OR "/api/blog"
+THEN: Cache Level = Maximum, Edge TTL = 5 minutes
+</code></pre>
+
+            <p>Even 5 minutes of caching for API endpoints can dramatically reduce origin load during traffic spikes.</p>
+
+            <h3>Rule #3: Don't Cache Admin Pages</h3>
+
+            <p>Some pages should NEVER be cached:</p>
+
+            <pre><code># Cache Rule: Bypass cache for admin pages
+IF: Request URI contains "/admin" OR "/dashboard" OR "/login"
+THEN: Cache Level = Bypass Cache
+</code></pre>
+
+            <h3>Rule #4: Cache HTML Pages with a Short TTL</h3>
+
+            <p>For blog posts and static pages, a moderate cache time works well:</p>
+
+            <pre><code># Cache Rule: Cache HTML pages for 1 hour
+IF: Request is for file extension = .html AND Request URI not contains "/admin"
+THEN: Cache Level = Maximum, Edge TTL = 1 hour, Respect Strong Origin ETags = On
+</code></pre>
+
+            <p><strong>Respect Strong Origin ETags</strong> means Cloudflare will revalidate with your origin using ETags before serving stale content — the best of both worlds.</p>
+
+            <h2>Cache-Control Headers: The Origin Side</h2>
+
+            <p>Cloudflare respects these headers from your origin server. Here's how to set them in different web servers:</p>
+
+            <h3>Nginx Configuration</h3>
+
+            <pre><code># nginx.conf - Cache headers for static assets
+location ~* \.(css|js|png|jpg|jpeg|gif|svg|webp|ico)$ {
+    expires 30d;
+    add_header Cache-Control "public, no-transform";
+    add_header Vary "Accept-Encoding";
+}
+
+# HTML pages - cache with revalidation
+location ~* \.html$ {
+    expires 1h;
+    add_header Cache-Control "public, must-revalidate";
+    etag on;
+}</code></pre>
+
+            <h3>Apache (.htaccess)</h3>
+
+            <pre><code># .htaccess - Cache headers
+&lt;FilesMatch "\.(css|js|png|jpg|jpeg|gif|svg|webp)$"&gt;
+    Header set Cache-Control "public, max-age=2592000, no-transform"
+    Header set Vary "Accept-Encoding"
+&lt;/FilesMatch&gt;
+
+&lt;FilesMatch "\.(html|htm)$"&gt;
+    Header set Cache-Control "public, max-age=3600, must-revalidate"
+&lt;/FilesMatch&gt;</code></pre>
+
+            <h3>Python (Flask/FastAPI)</h3>
+
+            <pre><code>from flask import Flask, make_response
+from functools import wraps
+
+app = Flask(__name__)
+
+def cached(minutes=60):
+    """Cache decorator for Flask routes"""
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            response = make_response(f(*args, **kwargs))
+            response.headers['Cache-Control'] = f'public, max-age={minutes * 60}'
+            response.headers['Vary'] = 'Accept-Encoding'
+            return response
+        return decorated_function
+    return decorator
+
+@app.route('/api/products')
+@cached(minutes=5)
+def get_products():
+    return {"products": [...]}</code></pre>
+
+            <h2>Cache Purging: Updating Stale Content</h2>
+
+            <p>When you update your site, you need to purge cached content. Cloudflare offers three purge levels:</p>
+
+            <ol>
+                <li><strong>Soft Purge:</strong> Forces revalidation with origin. Cloudflare checks if the content changed before updating the cache. <em>Recommended for most cases.</em></li>
+                <li><strong>Hard Purge:</strong> Removes the content entirely. Next request is a full cache miss. <em>Use for emergencies or when origin is down.</em></li>
+                <li><strong>Everything Purge:</strong> Clears the entire cache. <em>Use sparingly — causes a cache stampede.</em></li>
+            </ol>
+
+            <p><strong>Purge via Dashboard:</strong> Caching → Configuration → Purge Cache</p>
+
+            <p><strong>Purge via API (Python):</strong></p>
+
+            <pre><code>import requests
+
+ZONE_ID = "your-zone-id"
+API_TOKEN = "your-api-token"
+
+def purge_url(urls):
+    """Purge specific URLs from Cloudflare cache"""
+    headers = {
+        "Authorization": f"Bearer {API_TOKEN}",
+        "Content-Type": "application/json"
+    }
+    data = {"files": urls}
+    response = requests.post(
+        f"https://api.cloudflare.com/client/v4/zones/{ZONE_ID}/purge_cache",
+        headers=headers,
+        json=data
+    )
+    return response.json()
+
+# Purge specific files
+purge_url([
+    "https://blog.hugow.dev/styles/main.css",
+    "https://blog.hugow.dev/index.html"
+])</code></pre>
+
+            <p><strong>Purge via CLI (wrangler):</strong></p>
+
+            <pre><code># Purge a specific URL
+cf purge --url https://blog.hugow.dev/styles/main.css
+
+# Purge everything
+cf purge --all</code></pre>
+
+            <h2>Cache Analytics: Monitor Your Savings</h2>
+
+            <p>Track your cache performance at <strong>Analytics → Speed</strong> in the Cloudflare dashboard. Key metrics:</p>
+
+            <ul>
+                <li><strong>Cache Hit Ratio:</strong> Percentage of requests served from cache. Aim for 80%+ for content sites.</li>
+                <li><strong>Cached Bandwidth:</strong> Data served from edge vs origin. Your savings in GB.</li>
+                <li><strong>First Byte Time:</strong> Time to first byte. Caching should reduce this dramatically.</li>
+                <li><strong>Load Reduction:</strong> Percentage of requests that didn't reach your origin.</li>
+            </ul>
+
+            <pre><code># Check cache status with curl
+curl -I https://blog.hugow.dev/styles/main.css
+
+# Look for these headers:
+# cf-cache-status: HIT  (served from edge cache!)
+# cf-cache-status: MISS (fetched from origin)
+# cf-cache-status: EXPIRED (cache expired, revalidated)
+# cf-cache-status: DYNAMIC (not cached)</code></pre>
+
+            <h2>Common Caching Mistakes</h2>
+
+            <ol>
+                <li><strong>Not using the proxy (orange cloud):</strong> Caching only works when your DNS record is proxied (orange cloud ON in Cloudflare DNS).</li>
+                <li><strong>Forgetting Vary headers:</strong> If you serve different content for different user agents or languages, set <code>Vary: Accept-Encoding, Accept-Language</code> so Cloudflare caches the right variant.</li>
+                <li><strong>Caching authenticated content:</strong> Never cache pages behind login. Always bypass cache for authenticated routes.</li>
+                <li><strong>Ignoring browser cache:</strong> Cloudflare edge cache and browser cache are separate. Set <code>Cache-Control</code> headers for both.</li>
+                <li><strong>Over-purging:</strong> Purging everything on every deploy defeats the purpose. Purge only changed files.</li>
+            </ol>
+
+            <h2>Cache Rules Priority & Ordering</h2>
+
+            <p>Cache Rules are evaluated in order — <strong>first match wins</strong>. Place your most specific rules at the top:</p>
+
+            <pre><code># Rule 1 (highest priority): Bypass admin
+IF: URI contains "/admin" → Bypass Cache
+
+# Rule 2: Cache API for 5 min
+IF: URI contains "/api/" → Cache 5 min
+
+# Rule 3: Cache static assets for 30 days
+IF: Extension = .css, .js, .png... → Cache 30 days
+
+# Rule 4 (lowest priority): Cache HTML for 1 hour
+IF: Extension = .html → Cache 1 hour</code></pre>
+
+            <h2>Complete Caching Strategy Summary</h2>
+
+            <table style="width:100%;border-collapse:collapse;margin:1rem 0;">
+                <tr style="background:var(--primary);color:white;">
+                    <th style="padding:0.75rem;text-align:left;">Content Type</th>
+                    <th style="padding:0.75rem;text-align:left;">Edge TTL</th>
+                    <th style="padding:0.75rem;text-align:left;">Reason</th>
+                </tr>
+                <tr style="border-bottom:1px solid var(--border);">
+                    <td style="padding:0.75rem;">Images (.png, .jpg, .webp)</td>
+                    <td style="padding:0.75rem;">30 days</td>
+                    <td style="padding:0.75rem;">Rarely change, big savings</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--border);">
+                    <td style="padding:0.75rem;">CSS / JavaScript</td>
+                    <td style="padding:0.75rem;">30 days</td>
+                    <td style="padding:0.75rem;">Versioned filenames</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--border);">
+                    <td style="padding:0.75rem;">HTML pages</td>
+                    <td style="padding:0.75rem;">1 hour</td>
+                    <td style="padding:0.75rem;">Balance freshness & speed</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--border);">
+                    <td style="padding:0.75rem;">API responses</td>
+                    <td style="padding:0.75rem;">5 minutes</td>
+                    <td style="padding:0.75rem;">Reduce origin load</td>
+                </tr>
+                <tr>
+                    <td style="padding:0.75rem;">Admin / Authenticated</td>
+                    <td style="padding:0.75rem;">Bypass</td>
+                    <td style="padding:0.75rem;">Always fresh, security</td>
+                </tr>
+            </table>
+
+            <h2>Next Steps</h2>
+
+            <p>Combine caching with <strong>Cloudflare's Page Rules</strong> for more complex scenarios, and pair it with <strong>Cloudflare Workers</strong> for edge-side caching logic. Check out our guide on <a href="cloudflare-workers.html">Cloudflare Workers</a> to build custom caching behavior at the edge.</p>
+        </article>
+
+        <div style="text-align:center;margin:2rem 0;">
+            <a href="../index.html" style="color:var(--primary);text-decoration:none;font-size:1.1rem;">← Back to all posts</a>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Hugo's Dev Notes. Built with 🚀 and Python.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Progress bar
+        window.addEventListener('scroll', () => {
+            const bar = document.getElementById('progressBar');
+            if (bar) {
+                const scrollTop = window.scrollY;
+                const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+                bar.style.width = (scrollTop / docHeight * 100) + '%';
+            }
+        });
+        // Dark mode toggle
+        const toggle = document.getElementById('themeToggle');
+        if (toggle) {
+            const saved = localStorage.getItem('darkMode');
+            if (saved === 'true') { document.body.classList.add('dark-mode'); toggle.textContent = '☀️'; }
+            toggle.addEventListener('click', () => {
+                document.body.classList.toggle('dark-mode');
+                toggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+                localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+            });
+        }
+    </script>
+</body>
+</html>

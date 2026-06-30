@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Python Iterators & itertools: Process Data with Lazy Evaluation | Hugo's Dev Notes</title>
+        <meta name="description" content="Master Python iterators, generators, and the itertools module — lazy evaluation, infinite sequences, groupby, chain, and memory-efficient data processing. Beginner-friendly with real code examples.">
+        <meta name="keywords" content="python, iterators, generators, itertools, lazy evaluation, memory efficient, data processing, yield, chain, groupby">
+        <meta name="author" content="Hugo Wong">
+        <meta name="robots" content="index, follow">
+        <link rel="canonical" href="https://blog.hugow.dev/posts/python-iterators-itertools.html">
+        <link rel="stylesheet" href="../style.css">
+    </head>
+    <body>
+        <div class="progress-bar" id="progressBar"></div>
+        <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+
+        <header>
+            <div class="container">
+                <div class="logo">
+                    <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                    <p class="subtitle">Cloudflare · Python · AI Coding</p>
+                </div>
+                <nav>
+                    <a href="../index.html" class="nav-btn">🏠 Home</a>
+                    <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                    <a href="../python.html" class="nav-btn">🐍 Python</a>
+                    <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+                    <a href="../devops.html" class="nav-btn">🐳 DevOps</a>
+                    <a href="../security.html" class="nav-btn">🔐 Security</a>
+                    <a href="../webdev.html" class="nav-btn">💻 Web Dev</a>
+                </nav>
+            </div>
+        </header>
+
+        <main class="container">
+            <article class="post-content">
+                <span class="tag python">Python</span>
+                <h1>Python Iterators &amp; <code>itertools</code>: Process Data with Lazy Evaluation</h1>
+                <time>2026-06-29</time>
+                <span class="read-time">10 min read</span>
+
+                <p>You already know loops and list comprehensions in Python. But underneath those familiar constructs is a powerful concept called <strong>iteration</strong> — the protocol that makes <code>for</code> loops, <code>in</code> checks, and even <code>map()</code> and <code>zip()</code> work. Once you understand iterators, you unlock a whole new level of memory-efficient, lazy-evaluated programming in Python. And paired with the built-in <code>itertools</code> module, you get tools that let you process massive datasets without loading everything into memory.</p>
+
+                <h2>Iterables vs Iterators — What's the Difference?</h2>
+                <p>These terms sound similar but mean different things. Here's the quick version:</p>
+                <ul>
+                    <li><strong>Iterable</strong> — anything you can loop over. Lists, strings, dictionaries, sets, files.</li>
+                    <li><strong>Iterator</strong> — an object that remembers its position and produces the next item on demand.</li>
+                </ul>
+
+                <p>Every iterator is iterable, but not every iterable is an iterator. A list is iterable — you can loop over it — but the list itself doesn't track position. You need an iterator for that:</p>
+
+                <pre><code># A list is iterable
+numbers = [10, 20, 30, 40]
+
+# But it's not an iterator — you need iter() to get one
+it = iter(numbers)
+
+# The iterator remembers position
+print(next(it))  # 10
+print(next(it))  # 20
+print(next(it))  # 30
+print(next(it))  # 40
+print(next(it))  # StopIteration error!
+
+# Behind the scenes, a for loop does exactly this:
+# for item in numbers:  →  it = iter(numbers); while True: item = next(it)</code></pre>
+
+                <p>You can check the type of any object:</p>
+
+                <pre><code>from collections.abc import Iterable, Iterator
+
+isinstance([1, 2, 3], Iterable)   # True — you can iterate over a list
+isinstance([1, 2, 3], Iterator)   # False — a list is not an iterator
+isinstance(iter([1, 2, 3]), Iterator)  # True — iter() returns an iterator
+
+# Even a string is iterable but not an iterator
+isinstance("hello", Iterable)   # True
+isinstance("hello", Iterator)   # False</code></pre>
+
+                <h2>Creating Your Own Iterator</h2>
+                <p>To create a custom iterator, you need a class with two methods: <code>__iter__()</code> (returns the iterator itself) and <code>__next__()</code> (returns the next value or raises <code>StopIteration</code>):</p>
+
+                <pre><code>class Countdown:
+    """A countdown iterator"""
+    def __init__(self, start):
+        self.current = start
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.current <= 0:
+            raise StopIteration
+        value = self.current
+        self.current -= 1
+        return value
+
+# Use it
+for num in Countdown(5):
+    print(num, end=" ")
+# Output: 5 4 3 2 1</code></pre>
+
+                <h2>Generators — Iterators Made Simple</h2>
+                <p>Writing iterator classes with <code>__iter__</code> and <code>__next__</code> works, but Python gives you a shortcut: <strong>generators</strong>. A generator function uses <code>yield</code> instead of <code>return</code> — and each <code>yield</code> produces a value while <em>pausing</em> the function, resuming from where it left off the next time you ask for a value.</p>
+
+                <pre><code># Same countdown as a generator — 3 lines instead of 11
+def countdown(start):
+    while start > 0:
+        yield start
+        start -= 1
+
+for num in countdown(5):
+    print(num, end=" ")
+# Output: 5 4 3 2 1</code></pre>
+
+                <p>Generators are <strong>lazy</strong> — they don't compute anything until you ask for it. This is the key advantage:</p>
+
+                <pre><code># This does NOT compute 1 million Fibonacci numbers
+# It creates a generator that CAN produce them on demand
+def fibonacci():
+    a, b = 0, 1
+    while True:
+        yield a
+        a, b = b, a + b
+
+# Get just the first 10
+fib = fibonacci()
+first_10 = [next(fib) for _ in range(10)]
+print(first_10)
+# Output: [0, 1, 1, 2, 3, 5, 8, 13, 21, 34]
+
+# The generator is infinite but uses almost no memory
+# because it only holds the last two numbers</code></pre>
+
+                <blockquote>
+                    <strong>Memory impact:</strong> A list of 10 million integers uses about 80 MB of RAM. A generator producing the same numbers uses less than 1 KB. Choose generators when processing large datasets, reading huge files line by line, or chaining transformations.
+                </blockquote>
+
+                <h2>Generator Expressions</h2>
+                <p>Just like list comprehensions <code>[x*2 for x in range(10)]</code>, you can create generator expressions with parentheses:</p>
+
+                <pre><code># List comprehension — builds entire list in memory
+squares_list = [x**2 for x in range(1000000)]  # ~8 MB
+
+# Generator expression — produces values on demand
+squares_gen = (x**2 for x in range(1000000))   # ~1 KB
+
+# Both work the same in loops
+total = sum(squares_gen)  # Efficiently sums without building a list
+
+# Use generators as function arguments
+max_value = max(x**2 for x in range(1000))  # No intermediate list
+
+# Filter lazily
+even_squares = (x**2 for x in range(100) if x % 2 == 0)</code></pre>
+
+                <h2>The <code>itertools</code> Module</h2>
+                <p>The <code>itertools</code> module is Python's Swiss army knife for iteration. It provides fast, memory-efficient tools that compose beautifully. Let's go through the most useful ones.</p>
+
+                <h3><code>chain()</code> — Combine Multiple Iterables</h3>
+                <pre><code>from itertools import chain
+
+# Instead of: list1 + list2 + list3 (creates new lists)
+names_a = ["Alice", "Bob", "Charlie"]
+names_b = ["Diana", "Eve", "Frank"]
+names_c = ["Grace", "Hank"]
+
+all_names = chain(names_a, names_b, names_c)
+for name in all_names:
+    print(name)
+
+# chain.from_iterable() for nested iterables
+groups = [("Alice", "Bob"), ("Charlie", "Diana"), ("Eve",)]
+flat = chain.from_iterable(groups)
+print(list(flat))  # ['Alice', 'Bob', 'Charlie', 'Diana', 'Eve']</code></pre>
+
+                <h3><code>islice()</code> — Slice Without Loading Everything</h3>
+                <pre><code>from itertools import islice
+
+# Reading only the first 5 lines of a 1 GB file
+with open('huge_file.log', 'r') as f:
+    first_5 = islice(f, 5)
+    for line in first_5:
+        print(line.strip())
+
+# Every 3rd item starting from index 1 (skip 1, take 1, skip 2, take 1...)
+items = islice(range(20), 1, None, 3)
+print(list(items))  # [1, 4, 7, 10, 13, 16, 19]</code></pre>
+
+                <h3><code>groupby()</code> — Group Consecutive Items</h3>
+                <pre><code>from itertools import groupby
+
+# groupby() groups CONSECUTIVE identical items
+data = ["apple", "apple", "banana", "cherry", "cherry", "cherry", "date"]
+
+for key, group in groupby(data):
+    items = list(group)
+    count = len(items)
+    print(f"{key}: {count} time(s)")
+# Output:
+# apple: 2 time(s)
+# banana: 1 time(s)
+# cherry: 3 time(s)
+# date: 1 time(s)
+
+# For non-consecutive grouping, sort first!
+fruits = ["banana", "apple", "cherry", "apple", "banana", "cherry"]
+for key, group in groupby(sorted(fruits)):
+    print(f"{key}: {list(group)}")
+# banana: ['banana', 'banana']
+# apple: ['apple', 'apple']
+# cherry: ['cherry', 'cherry']
+
+# Groupby with a key function — like SQL GROUP BY
+logs = [
+    {"level": "INFO", "msg": "started"},
+    {"level": "INFO", "msg": "processing"},
+    {"level": "ERROR", "msg": "timeout"},
+    {"level": "INFO", "msg": "recovered"},
+]
+
+# Sort by level first
+sorted_logs = sorted(logs, key=lambda x: x["level"])
+for level, group in groupby(sorted_logs, key=lambda x: x["level"]):
+    entries = list(group)
+    print(f"{level}: {len(entries)} entries")
+# ERROR: 1 entries
+# INFO: 3 entries</code></pre>
+
+                <h3><code>count()</code> — Infinite Counter</h3>
+                <pre><code>from itertools import count
+
+# Infinite sequence starting at 0, incrementing by 1
+counter = count(start=100, step=5)
+print(next(counter))  # 100
+print(next(counter))  # 105
+print(next(counter))  # 110
+
+# Use with islice for a finite sequence
+numbers = list(islice(count(1), 10))
+print(numbers)  # [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+# Add auto-incrementing IDs to data
+records = [("Alice", 25), ("Bob", 30), ("Charlie", 35)]
+numbered = zip(count(1), records)
+for id, name, age in numbered:
+    print(f"#{id}: {name}, {age}")
+# #1: Alice, 25
+# #2: Bob, 30
+# #3: Charlie, 35</code></pre>
+
+                <h3><code>cycle()</code> and <code>repeat()</code></h3>
+                <pre><code>from itertools import cycle, repeat, islice
+
+# cycle() — repeat an iterable forever
+colors = cycle(["red", "green", "blue"])
+first_6 = list(islice(colors, 6))
+print(first_6)  # ['red', 'green', 'blue', 'red', 'green', 'blue']
+
+# repeat() — repeat a single value
+scores = [85, 90, 78, 92]
+defaults = zip(scores, repeat(0))  # pad with default 0
+print(list(defaults))  # [(85, 0), (90, 0), (78, 0), (92, 0)]
+
+# repeat with a count
+for i in repeat("Loading...", 3):
+    print(i)</code></pre>
+
+                <h3><code>compress()</code> — Selective Filtering</h3>
+                <pre><code>from itertools import compress
+
+# Filter data using a selector (True/False list)
+data = ["apple", "banana", "cherry", "date", "elderberry"]
+selector = [True, False, True, False, True]
+
+result = list(compress(data, selector))
+print(result)  # ['apple', 'cherry', 'elderberry']
+
+# Practical: keep only non-null values
+values = [10, None, 30, None, 50]
+mask = (v is not None for v in values)
+clean = list(compress(values, mask))
+print(clean)  # [10, 30, 50]</code></pre>
+
+                <h3><code>starmap()</code> — Apply Function to Unpacked Items</h3>
+                <pre><code>from itertools import starmap
+
+# Like map(), but unpacks each item as arguments
+def greet(name, greeting):
+    return f"{greeting}, {name}!"
+
+pairs = [("Alice", "Hi"), ("Bob", "Hello"), ("Charlie", "Hey")]
+
+# Without starmap (need a lambda to unpack):
+results = map(lambda p: greet(*p), pairs)
+
+# With starmap (cleaner):
+results = starmap(greet, pairs)
+for r in results:
+    print(r)
+# Hi, Alice!
+# Hello, Bob!
+# Hey, Charlie!</code></pre>
+
+                <h2>Real-World Example: Processing a Large CSV</h2>
+                <p>Let's put it all together. Say you have a 2 GB CSV file of server logs and need to analyze it without loading it all into memory:</p>
+
+                <pre><code>import csv
+from itertools import islice, groupby, chain
+from collections import Counter
+
+def parse_log_file(filepath, max_rows=None):
+    """Read a large CSV lazily, optionally limiting rows"""
+    with open(filepath, 'r') as f:
+        reader = csv.DictReader(f)
+        if max_rows:
+            rows = islice(reader, max_rows)
+        else:
+            rows = reader
+        yield from rows
+
+# Example: count status codes lazily
+status_counts = Counter()
+for row in parse_log_file('server_logs.csv'):
+    status_counts[row['status_code']] += 1
+
+print(status_counts.most_common(5))
+# [('200', 15234), ('301', 3201), ('404', 892), ('500', 45), ('403', 12)]
+
+# Example: group by date and count requests
+# First, create mock data for demonstration
+import io
+csv_data = """timestamp,status_code,endpoint,duration_ms
+2026-06-01,200,/api/users,45
+2026-06-01,200,/api/users,52
+2026-06-01,404,/api/posts/999,12
+2026-06-02,200,/api/users,38
+2026-06-02,500,/api/data,120
+2026-06-02,200,/api/posts,65
+2026-06-03,200,/api/users,41
+"""
+
+# Process the data
+reader = csv.DictReader(io.StringIO(csv_data))
+sorted_by_date = sorted(reader, key=lambda r: r['timestamp'])
+
+for date, group in groupby(sorted_by_date, key=lambda r: r['timestamp']):
+    logs = list(group)
+    total = len(logs)
+    errors = sum(1 for log in logs if log['status_code'].startswith('5'))
+    avg_duration = sum(float(log['duration_ms']) for log in logs) / total
+    print(f"{date}: {total} requests, {errors} errors, avg {avg_duration:.0f}ms")
+
+# Output:
+# 2026-06-01: 3 requests, 0 errors, avg 36ms
+# 2026-06-02: 3 requests, 1 errors, avg 69ms
+# 2026-06-03: 1 requests, 0 errors, avg 41ms</code></pre>
+
+                <h2>Chaining itertools for Elegant Pipelines</h2>
+                <p>The real power comes from chaining itertools functions together — building data processing pipelines that process one item at a time:</p>
+
+                <pre><code>from itertools import chain, islice, count, starmap
+
+# Pipeline: generate → filter → transform → limit
+# Process a theoretical 1 billion numbers without ever storing them all
+
+# Step 1: Generate infinite natural numbers
+numbers = count(1)
+
+# Step 2: Filter to prime candidates (odd numbers > 2)
+def is_prime(n):
+    if n < 2: return False
+    if n == 2: return True
+    if n % 2 == 0: return False
+    for i in range(3, int(n**0.5) + 1, 2):
+        if n % i == 0: return False
+    return True
+
+primes = (n for n in numbers if is_prime(n))
+
+# Step 3: Limit to first 20 primes
+first_20_primes = list(islice(primes, 20))
+print(first_20_primes)
+# [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71]
+
+# Memory usage: ~1 KB regardless of how many primes you generate!</code></pre>
+
+                <h2>When to Use What</h2>
+                <table style="width:100%; border-collapse: collapse; margin: 1.5rem 0;">
+                    <tr style="background: var(--primary); color: white;">
+                        <th style="padding: 0.75rem; text-align: left;">Pattern</th>
+                        <th style="padding: 0.75rem; text-align: left;">Use When</th>
+                        <th style="padding: 0.75rem; text-align: left;">Example</th>
+                    </tr>
+                    <tr style="border-bottom: 1px solid var(--border);">
+                        <td style="padding: 0.75rem;"><code>list()</code></td>
+                        <td style="padding: 0.75rem;">Small data, need random access</td>
+                        <td style="padding: 0.75rem;">Configuration items, user lists</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid var(--border); background: rgba(37,99,235,0.05);">
+                        <td style="padding: 0.75rem;">Generator function</td>
+                        <td style="padding: 0.75rem;">Custom logic, large data</td>
+                        <td style="padding: 0.75rem;">Fibonacci, file parsers</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid var(--border);">
+                        <td style="padding: 0.75rem;">Generator expression</td>
+                        <td style="padding: 0.75rem;">Simple filter/transform</td>
+                        <td style="padding: 0.75rem;"><code>(x*2 for x in data)</code></td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid var(--border); background: rgba(37,99,235,0.05);">
+                        <td style="padding: 0.75rem;"><code>itertools</code></td>
+                        <td style="padding: 0.75rem;">Combinatorics, chaining</td>
+                        <td style="padding: 0.75rem;"><code>chain(), groupby(), islice()</code></td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 0.75rem;">Iterator class</td>
+                        <td style="padding: 0.75rem;">Need __iter__ protocol</td>
+                        <td style="padding: 0.75rem;">Custom collections, range-like</td>
+                    </tr>
+                </table>
+
+                <h2>Common Pitfalls</h2>
+                <ul>
+                    <li><strong>Exhausted iterators</strong> — once you consume an iterator, it's done. Don't loop over the same generator twice without recreating it.</li>
+                    <li><strong>groupby on unsorted data</strong> — <code>groupby()</code> only groups <em>consecutive</em> items. Sort your data first if you need all items with the same key together.</li>
+                    <li><strong>Infinite loops</strong> — <code>count()</code>, <code>cycle()</code>, and <code>repeat()</code> (without count) are infinite. Always pair them with <code>islice()</code> or a <code>break</code>.</li>
+                    <li><strong>Debugging generators</strong> — you can't see a generator's contents. Convert to <code>list()</code> for debugging, but be careful with large data.</li>
+                </ul>
+
+                <pre><code># Pitfall: exhausted iterator
+gen = (x for x in range(5))
+print(list(gen))  # [0, 1, 2, 3, 4]
+print(list(gen))  # [] — it's empty now!
+
+# Fix: recreate or use tee()
+from itertools import tee
+gen = (x for x in range(5))
+gen1, gen2 = tee(gen)  # Two independent copies
+print(list(gen1))  # [0, 1, 2, 3, 4]
+print(list(gen2))  # [0, 1, 2, 3, 4]
+
+# Pitfall: infinite loop
+for i in count():  # Never stops!
+    print(i)
+    if i > 5: break  # Need an explicit break
+
+# Safer:
+for i in islice(count(), 6):
+    print(i)  # 0, 1, 2, 3, 4, 5 — stops after 6</code></pre>
+
+                <h2>Summary</h2>
+                <p>Iterators and generators are Python's answer to efficient data processing. By producing values lazily — one at a time, on demand — they let you work with infinite sequences, massive files, and complex pipelines without worrying about memory. The <code>itertools</code> module gives you a toolbox of composable functions that make these patterns clean and readable.</p>
+
+                <p>Next time you write a loop that builds a giant list just to filter or transform it, pause and ask: <em>"Can I do this lazily with a generator?"</em> You'll write faster, leaner code that scales gracefully.</p>
+
+            </article>
+        </main>
+
+        <footer>
+            <div class="container">
+                <p>&copy; 2026 Hugo's Dev Notes. Built with curiosity and Cloudflare.</p>
+                <div class="footer-links">
+                    <a href="../index.html">Home</a>
+                    <a href="../cloudflare.html">Cloudflare</a>
+                    <a href="../python.html">Python</a>
+                    <a href="../vibe-coding.html">AI Coding</a>
+                    <a href="../devops.html">DevOps</a>
+                    <a href="../security.html">Security</a>
+                    <a href="../webdev.html">Web Dev</a>
+                </div>
+            </div>
+        </footer>
+
+        <button class="back-to-top" id="backToTop" title="Back to top">↑</button>
+
+        <script>
+            // Progress bar
+            window.addEventListener('scroll', () => {
+                const winScroll = document.documentElement.scrollTop;
+                const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+                const scrolled = (winScroll / height) * 100;
+                document.getElementById('progressBar').style.width = scrolled + '%';
+                const btn = document.getElementById('backToTop');
+                btn.style.display = winScroll > 300 ? 'flex' : 'none';
+            });
+            document.getElementById('backToTop').addEventListener('click', () => window.scrollTo({top: 0, behavior: 'smooth'}));
+
+            // Dark mode
+            const toggle = document.getElementById('themeToggle');
+            toggle.addEventListener('click', () => {
+                document.body.classList.toggle('dark-mode');
+                toggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+                localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+            });
+            if (localStorage.getItem('theme') === 'dark') {
+                document.body.classList.add('dark-mode');
+                toggle.textContent = '☀️';
+            }
+        </script>
+    </body>
+</html>

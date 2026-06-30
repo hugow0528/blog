@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloudflare API with Python: Automate DNS, Workers & More | Hugo's Dev Notes</title>
+    <meta name="description" content="Automate Cloudflare with Python — manage DNS records, deploy Workers, configure zones, and handle everything programmatically with the Cloudflare API and cf-requests.">
+    <link rel="stylesheet" href="../style.css">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/cloudflare-api-python.html">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+                <a href="../devops.html" class="nav-btn">🐳 DevOps</a>
+                <a href="../security.html" class="nav-btn">🔐 Security</a>
+                <a href="../webdev.html" class="nav-btn">💻 Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-content">
+            <span class="tag cloudflare">Cloudflare</span>
+            <span class="tag python">Python</span>
+            <h1>Cloudflare API with Python: Automate DNS, Workers & More</h1>
+            <time>2026-06-30</time>
+            <p>You've learned to use the Cloudflare dashboard for DNS, Workers, and other services. But clicking through the web UI every time is slow and doesn't scale. Enter the <strong>Cloudflare API</strong> — a powerful REST API that lets you manage everything programmatically. Combined with Python, you can automate deployments, manage hundreds of DNS records, rotate certificates, and integrate Cloudflare into your CI/CD pipeline. In this guide, you'll learn to build real automation scripts from scratch.</p>
+
+            <h2>Getting Your API Credentials</h2>
+            <p>Before writing any code, you need API credentials. Cloudflare offers two authentication methods:</p>
+            <ol>
+                <li><strong>Global API Key</strong> — Full access to everything. Less secure, use with caution.</li>
+                <li><strong>API Token</strong> — Scoped permissions (recommended). You specify exactly which zones and permissions the token can access.</li>
+            </ol>
+            <p>For production use, always prefer API tokens. Go to <code>https://dash.cloudflare.com/profile/api-tokens</code> and create a custom token with only the permissions you need (e.g., DNS Edit, Zone Read, Workers Write).</p>
+
+            <h2>Option 1: Using requests Library (Manual)</h2>
+            <p>The Cloudflare API is a standard REST API. You can call it with Python's <code>requests</code> library. Here's the basic structure:</p>
+<pre><code>import requests
+import os
+
+# Configuration
+API_TOKEN = os.environ.get("CLOUDFLARE_API_TOKEN")
+EMAIL = os.environ.get("CLOUDFLARE_EMAIL", "your@email.com")
+
+headers = {
+    "Authorization": f"Bearer {API_TOKEN}",
+    "Content-Type": "application/json"
+}
+
+# Base URL for Cloudflare API v4
+BASE_URL = "https://api.cloudflare.com/client/v4"
+</code></pre>
+            <p>Every API call uses <code>Bearer</code> authentication with your API token. The API version is <code>v4</code>, and all endpoints are under <code>https://api.cloudflare.com/client/v4/</code>.</p>
+
+            <h2>Listing Your Zones</h2>
+            <p>Zones are the domains you've added to Cloudflare. Let's list them:</p>
+<pre><code>def list_zones():
+    """List all zones in your Cloudflare account"""
+    response = requests.get(f"{BASE_URL}/zones", headers=headers)
+    data = response.json()
+
+    if data.get("success"):
+        for zone in data["result"]:
+            print(f"  {zone['name']:30s} | Status: {zone['status']:12s} | Plan: {zone['plan']['name']}")
+    else:
+        print(f"Error: {data.get('errors', [{}])[0].get('message', 'Unknown error')}")
+
+list_zones()
+# Output:
+#   mysite.com                     | Status: active       | Plan: Free
+#   api.mysite.com                 | Status: active       | Plan: Free
+</code></pre>
+
+            <h2>Getting the Zone ID</h2>
+            <p>Most API calls need your Zone ID — a unique identifier for each domain. You can grab it like this:</p>
+<pre><code>def get_zone_id(domain):
+    """Look up the zone ID for a domain"""
+    response = requests.get(f"{BASE_URL}/zones", headers=headers, params={"name": domain})
+    data = response.json()
+
+    if data.get("success") and data["result"]:
+        return data["result"][0]["id"]
+    return None
+
+zone_id = get_zone_id("mysite.com")
+print(f"Zone ID: {zone_id}")
+</code></pre>
+
+            <h2>Managing DNS Records</h2>
+            <p>This is where automation really shines. Here's how to create, list, and delete DNS records programmatically:</p>
+
+            <h3>Create a DNS Record</h3>
+<pre><code>def create_dns_record(zone_id, record_type, name, content, ttl=1, proxied=True):
+    """Create a DNS record
+    record_type: A, AAAA, CNAME, TXT, MX, SRV, etc.
+    name: hostname (e.g., 'api', '@' for root domain)
+    content: value (e.g., IP address, target hostname)
+    ttl: Time to live (1 = automatic)
+    proxied: True = orange cloud, False = grey cloud
+    """
+    url = f"{BASE_URL}/zones/{zone_id}/dns_records"
+    payload = {
+        "type": record_type,
+        "name": name,
+        "content": content,
+        "ttl": ttl,
+        "proxied": proxied
+    }
+
+    response = requests.post(url, headers=headers, json=payload)
+    data = response.json()
+
+    if data.get("success"):
+        print(f"✅ Created {record_type} record: {name} → {content}")
+        return data["result"]
+    else:
+        print(f"❌ Error: {data['errors']}")
+        return None
+
+# Create an A record for api.mysite.com
+create_dns_record(zone_id, "A", "api", "203.0.113.50")
+
+# Create a CNAME for www
+create_dns_record(zone_id, "CNAME", "www", "mysite.com")
+
+# Create a TXT record for domain verification
+create_dns_record(zone_id, "TXT", "@", "v=spf1 include:_spf.google.com ~all", ttl=3600, proxied=False)
+</code></pre>
+
+            <h3>List DNS Records</h3>
+<pre><code>def list_dns_records(zone_id, record_type=None):
+    """List all DNS records for a zone, optionally filtered by type"""
+    url = f"{BASE_URL}/zones/{zone_id}/dns_records"
+    params = {}
+    if record_type:
+        params["type"] = record_type
+
+    response = requests.get(url, headers=headers, params=params)
+    data = response.json()
+
+    if data.get("success"):
+        for record in data["result"]:
+            proxy = "🟠" if record["proxied"] else "⚪"
+            print(f"  {proxy} {record['type']:6s} {record['name']:20s} → {record['content']}")
+    else:
+        print(f"Error: {data['errors']}")
+
+list_dns_records(zone_id)
+# Output:
+#   🟠 A      api                → 203.0.113.50
+#   🟠 CNAME  www                → mysite.com
+#   ⚪ TXT    @                  → v=spf1 include:_spf.google.com ~all
+</code></pre>
+
+            <h3>Delete a DNS Record</h3>
+<pre><code>def delete_dns_record(zone_id, record_id):
+    """Delete a DNS record by its ID"""
+    url = f"{BASE_URL}/zones/{zone_id}/dns_records/{record_id}"
+    response = requests.delete(url, headers=headers)
+    data = response.json()
+
+    if data.get("success"):
+        print(f"✅ Deleted DNS record: {record_id}")
+    else:
+        print(f"❌ Error: {data['errors']}")
+
+# Find and delete a specific record
+records = list_dns_records(zone_id)
+for record in records:
+    if record["name"] == "old-api" and record["type"] == "A":
+        delete_dns_record(zone_id, record["id"])
+        break
+</code></pre>
+
+            <h2>Real-World Script: Automated DNS Deployment</h2>
+            <p>Here's a complete script that reads DNS records from a YAML-like config and syncs them to Cloudflare — perfect for CI/CD:</p>
+<pre><code>#!/usr/bin/env python3
+"""
+dns_deploy.py - Sync DNS records from a config file to Cloudflare
+Usage: python dns_deploy.py config.yaml
+"""
+import os
+import json
+import requests
+
+API_TOKEN = os.environ["CLOUDFLARE_API_TOKEN"]
+BASE_URL = "https://api.cloudflare.com/client/v4"
+
+headers = {
+    "Authorization": f"Bearer {API_TOKEN}",
+    "Content-Type": "application/json"
+}
+
+def load_config(filepath):
+    """Load DNS config from a simple JSON file"""
+    with open(filepath, "r") as f:
+        return json.load(f)
+
+def get_existing_records(zone_id):
+    """Get all existing DNS records as a dict keyed by (type, name)"""
+    resp = requests.get(f"{BASE_URL}/zones/{zone_id}/dns_records", headers=headers)
+    records = {}
+    for r in resp.json()["result"]:
+        key = (r["type"], r["name"])
+        records[key] = r
+    return records
+
+def deploy_dns(domain, config_file):
+    """Deploy DNS records from config to Cloudflare"""
+    config = load_config(config_file)
+    target_records = config["records"]
+
+    # Find zone ID
+    resp = requests.get(f"{BASE_URL}/zones", headers=headers, params={"name": domain})
+    zone_id = resp.json()["result"][0]["id"]
+
+    existing = get_existing_records(zone_id)
+    created = 0
+    updated = 0
+    deleted = 0
+
+    # Create or update records
+    for record in target_records:
+        key = (record["type"], record["name"])
+        if key in existing:
+            old = existing[key]
+            if old["content"] != record["content"]:
+                # Update existing record
+                url = f"{BASE_URL}/zones/{zone_id}/dns_records/{old['id']}"
+                payload = {"type": record["type"], "content": record["content"],
+                          "ttl": record.get("ttl", 1), "proxied": record.get("proxied", True)}
+                requests.put(url, headers=headers, json=payload)
+                print(f"  🔄 Updated: {record['type']} {record['name']} → {record['content']}")
+                updated += 1
+        else:
+            # Create new record
+            url = f"{BASE_URL}/zones/{zone_id}/dns_records"
+            payload = {
+                "type": record["type"],
+                "name": record["name"],
+                "content": record["content"],
+                "ttl": record.get("ttl", 1),
+                "proxied": record.get("proxied", True)
+            }
+            resp = requests.post(url, headers=headers, json=payload)
+            print(f"  ✅ Created: {record['type']} {record['name']} → {record['content']}")
+            created += 1
+
+    # Delete records no longer in config
+    target_keys = {(r["type"], r["name"]) for r in target_records}
+    for key, record in existing.items():
+        if key not in target_keys:
+            requests.delete(f"{BASE_URL}/zones/{zone_id}/dns_records/{record['id']}", headers=headers)
+            print(f"  🗑️  Deleted: {record['type']} {record['name']}")
+            deleted += 1
+
+    print(f"\nDeploy complete: {created} created, {updated} updated, {deleted} deleted")
+
+if __name__ == "__main__":
+    import sys
+    deploy_dns("mysite.com", sys.argv[1])
+</code></pre>
+            <p>Example config file (<code>dns.json</code>):</p>
+<pre><code>{
+    "records": [
+        {"type": "A", "name": "api", "content": "203.0.113.50", "proxied": true},
+        {"type": "A", "name": "app", "content": "203.0.113.51", "proxied": true},
+        {"type": "CNAME", "name": "www", "content": "mysite.com", "proxied": true},
+        {"type": "TXT", "name": "@", "content": "v=spf1 include:_spf.google.com ~all", "proxied": false, "ttl": 3600},
+        {"type": "MX", "name": "@", "content": "aspmx.l.google.com", "proxied": false, "ttl": 3600}
+    ]
+}
+</code></pre>
+
+            <h2>Option 2: Using the Official Python Library</h2>
+            <p>Cloudflare provides an official Python SDK called <code>cloudflare</code>, and a popular community alternative is <code>cf-requests</code>. The official SDK wraps every API endpoint as a Python method:</p>
+<pre><code># Install: pip install cloudflare
+import cloudflare
+
+# Initialize client
+cf = cloudflare.Cloudflare(email="your@email.com", token="YOUR_API_TOKEN")
+
+# List zones
+zones = cf.zones.get(params={"per_page": 100})
+
+# List DNS records for a zone
+records = cf.zones.dns_records.get(zone_id)
+
+# Create a DNS record
+cf.zones.dns_records.post(
+    zone_id,
+    data={
+        "type": "A",
+        "name": "new-api",
+        "content": "203.0.113.100",
+        "ttl": 1,
+        "proxied": True
+    }
+)
+</code></pre>
+            <p>The SDK is great for complex scripts but adds a dependency. For simple automation, the raw <code>requests</code> approach above is often cleaner.</p>
+
+            <h2>Managing Workers with the API</h2>
+            <p>You can also deploy and manage Cloudflare Workers programmatically:</p>
+<pre><code>def deploy_worker(zone_id, worker_name, script_content):
+    """Deploy a Cloudflare Worker script"""
+    url = f"{BASE_URL}/zones/{zone_id}/workers/scripts/{worker_name}"
+
+    # Upload the worker script
+    response = requests.put(url, headers=headers, data=script_content)
+    data = response.json()
+
+    if data.get("success"):
+        print(f"✅ Deployed worker: {worker_name}")
+        return True
+    else:
+        print(f"❌ Error: {data['errors']}")
+        return False
+
+# Example: Deploy a simple redirect worker
+worker_script = """
+addEventListener("fetch", event => {
+    event.respondWith(handleRequest(event.request));
+});
+
+async function handleRequest(request) {
+    if (new URL(request.url).pathname === "/old-page") {
+        return Response.redirect("https://mysite.com/new-page", 301);
+    }
+    return fetch(request);
+}
+"""
+
+deploy_worker(zone_id, "redirects", worker_script)
+</code></pre>
+
+            <h2>Rate Limits and Best Practices</h2>
+            <p>The Cloudflare API has rate limits you need to respect:</p>
+            <ul>
+                <li><strong>Free plan:</strong> ~1200 requests/minute (varies by endpoint)</li>
+                <li><strong>Pro/Business:</strong> Higher limits, up to 12000 req/min</li>
+                <li>Always check for <code>429 Too Many Requests</code> and implement retries</li>
+                <li>Use caching — don't list all zones on every call, cache the zone ID</li>
+            </ul>
+
+            <h3>Implementing Retry Logic</h3>
+<pre><code>import time
+import random
+
+def api_request_with_retry(func, max_retries=3):
+    """Execute an API request with exponential backoff on rate limit"""
+    for attempt in range(max_retries):
+        response = func()
+        if response.status_code == 429:
+            wait = 2 ** attempt + random.uniform(0, 1)  # Exponential backoff + jitter
+            print(f"⏳ Rate limited. Retrying in {wait:.1f}s...")
+            time.sleep(wait)
+            continue
+        return response
+    raise Exception("Max retries exceeded due to rate limiting")
+
+# Usage
+def get_zones():
+    return requests.get(f"{BASE_URL}/zones", headers=headers)
+
+response = api_request_with_retry(get_zones)
+</code></pre>
+
+            <h2>Securing Your API Token</h2>
+            <p>Never hardcode your API token. Use environment variables or a <code>.env</code> file:</p>
+<pre><code># .env file (add to .gitignore!)
+CLOUDFLARE_API_TOKEN=your_token_here
+CLOUDFLARE_EMAIL=your@email.com
+
+# In your Python script
+import os
+from dotenv import load_dotenv
+
+load_dotenv()  # Install: pip install python-dotenv
+API_TOKEN = os.environ["CLOUDFLARE_API_TOKEN"]
+</code></pre>
+            <p>For CI/CD, store the token as a secret in GitHub Actions:</p>
+<pre><code># .github/workflows/dns-deploy.yml
+name: Deploy DNS
+on:
+  push:
+    paths: ["dns.json"]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy DNS records
+        run: python dns_deploy.py dns.json
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+</code></pre>
+
+            <h2>Conclusion</h2>
+            <p>The Cloudflare API transforms Cloudflare from a dashboard you click into an infrastructure platform you can script. From managing DNS records to deploying Workers, the same REST patterns apply. Start with a simple script — maybe automate your DNS for one domain — and gradually build up to full CI/CD integration.</p>
+            <p><strong>Key takeaways:</strong></p>
+            <ul>
+                <li>✅ Use API tokens, not API keys (scoped permissions are safer)</li>
+                <li>✅ Every call needs <code>Authorization: Bearer YOUR_TOKEN</code></li>
+                <li>✅ Cache zone IDs to reduce API calls</li>
+                <li>✅ Implement retry logic for rate limits</li>
+                <li>✅ Store tokens as secrets, never in code</li>
+                <li>✅ The API is RESTful — <code>requests</code> is often enough</li>
+            </ul>
+            <p>Next up: try automating your entire deployment pipeline — build, test, deploy Workers, update DNS — all from a single Python script.</p>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes. Built with passion and Python.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Reading progress bar
+        window.addEventListener('scroll', () => {
+            const winScroll = document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + '%';
+        });
+
+        // Dark mode toggle
+        const toggle = document.getElementById('themeToggle');
+        toggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            toggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+        });
+    </script>
+</body>
+</html>

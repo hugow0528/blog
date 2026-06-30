@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloudflare Load Balancing: Distribute Traffic Across Multiple Servers</title>
+    <meta name="description" content="Learn Cloudflare Load Balancing — distribute traffic across multiple servers, configure health checks, set up pools, and ensure high availability. Complete beginner guide with working examples.">
+    <meta name="keywords" content="cloudflare load balancer, cloudflare load balancing, health checks, cloudflare pool, high availability, failover, cloudflare tutorial">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+                <a href="../devops.html" class="nav-btn">🐳 DevOps</a>
+                <a href="../security.html" class="nav-btn">🔐 Security</a>
+                <a href="../webdev.html" class="nav-btn">💻 Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post">
+            <div class="post-header">
+                <span class="tag cloudflare">Cloudflare</span>
+                <span class="tag devops">DevOps</span>
+                <h1>Cloudflare Load Balancing: Distribute Traffic Across Multiple Servers</h1>
+            </div>
+
+            <div class="post-meta">
+                <time>2026-06-28</time>
+                <span class="read-time">11 min read</span>
+                <span class="post-status">New</span>
+            </div>
+
+            <div class="post-content">
+                <p>When your application grows beyond a single server, you need a way to distribute incoming traffic across multiple machines. That's exactly what a load balancer does — it sits in front of your servers and routes each request to the healthiest, most available backend. Cloudflare Load Balancing gives you this capability at the edge, without requiring you to manage dedicated load balancer hardware or software. This guide walks you through the concepts and practical setup from scratch.</p>
+
+                <h2>Why Use Cloudflare Load Balancing?</h2>
+
+                <p>Traditional load balancers (like NGINX, HAProxy, or AWS ALB) sit between the user and your servers, making routing decisions based on their own view of health. Cloudflare Load Balancing takes a different approach — it runs at the edge, meaning:</p>
+
+                <ul>
+                    <li><strong>Lower latency:</strong> Routing decisions happen at the nearest edge location, not at a single data center</li>
+                    <li><strong>Better resilience:</strong> If one region goes down, traffic automatically shifts to healthy regions worldwide</li>
+                    <li><strong>Simpler setup:</strong> No infrastructure to provision, patch, or monitor — it's all in the Cloudflare dashboard or API</li>
+                    <li><strong>Geographic awareness:</strong> Route users to the closest healthy server automatically</li>
+                </ul>
+
+                <p>Cloudflare Load Balancing is available on the Business plan and above. The free and Pro plans don't include this feature.</p>
+
+                <h2>Core Concepts: Pools, Monitors, and Load Balancers</h2>
+
+                <p>Cloudflare Load Balancing has three building blocks. Think of them as a team:</p>
+
+                <ul>
+                    <li><strong>Pool</strong> — A group of origin servers (your backends) that handle traffic</li>
+                    <li><strong>Monitor</strong> — Health checks that continuously verify your servers are responding</li>
+                    <li><strong>Load Balancer</strong> — The routing rule that decides how traffic flows between pools</li>
+                </ul>
+
+                <pre><code>User → [Cloudflare Edge] → [Load Balancer] → [Pool A: US Servers]
+                                               → [Pool B: EU Servers]
+                                                       ↑
+                                        [Monitor checks every 30s]</code></pre>
+
+                <h2>Setting Up Your First Pool</h2>
+
+                <p>A pool is simply a named group of origin servers. Each server needs an IP address, port, and weight (determines traffic share).</p>
+
+                <p><strong>In the Cloudflare Dashboard:</strong></p>
+
+                <ol>
+                    <li>Go to your domain → Load Balancing → Pools</li>
+                    <li>Click "Create Pool"</li>
+                    <li>Name it (e.g., <code>us-east-pool</code>)</li>
+                    <li>Set the load balancing method (described below)</li>
+                    <li>Add your origin servers with IP, port, and weight</li>
+                </ol>
+
+                <p><strong>Using the Cloudflare API with Python:</strong></p>
+
+                <pre><code>import requests
+
+API_TOKEN = "your_api_token_here"
+ACCOUNT_ID = "your_account_id"
+
+headers = {
+    "Authorization": f"Bearer {API_TOKEN}",
+    "Content-Type": "application/json"
+}
+
+# Create a pool
+pool_payload = {
+    "name": "us-east-pool",
+    "description": "US East Region Servers",
+    "minimum_origins": 1,
+    "load_balancing_method": "least_connections",
+    "origins": [
+        {
+            "name": "server-1",
+            "address": "203.0.113.10",
+            "port": 443,
+            "weight": 1,
+            "enabled": True
+        },
+        {
+            "name": "server-2",
+            "address": "203.0.113.11",
+            "port": 443,
+            "weight": 1,
+            "enabled": True
+        }
+    ]
+}
+
+resp = requests.post(
+    f"https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/load_balancers/pools",
+    headers=headers,
+    json=pool_payload
+)
+
+pool = resp.json()["result"]
+print(f"Pool created: {pool['id']} ({pool['name']})")
+# Save the pool ID for later use
+POOL_ID = pool["id"]</code></pre>
+
+                <h2>Load Balancing Methods</h2>
+
+                <p>Cloudflare supports several strategies for distributing traffic within a pool:</p>
+
+                <pre><code># 1. round_robin (default)
+# Cycles through servers equally: A → B → C → A → B → ...
+
+# 2. least_connections
+# Sends traffic to the server with fewest active connections
+# Best for: long-lived connections, database connections
+
+# 3. random
+# Randomly picks a server
+# Best for: stateless APIs, simple web apps
+
+# 4. least_response_time
+# Sends traffic to the fastest-responding server
+# Best for: performance-critical applications
+
+# 5. observable
+# Adaptive — combines latency and connection count
+# Best for: production workloads with varying traffic</code></pre>
+
+                <h2>Setting Up Health Monitors</h2>
+
+                <p>Monitors continuously check whether your origin servers are healthy. Without monitors, Cloudflare has no way to know if a server has crashed.</p>
+
+                <p><strong>Using the API:</strong></p>
+
+                <pre><code># Create a health monitor
+monitor_payload = {
+    "name": "https-200-check",
+    "type": "https",
+    "interval": 30,        # Check every 30 seconds
+    "timeout": 5,          # Timeout after 5 seconds
+    "retries": 3,          # Consider failed after 3 consecutive failures
+    "path": "/health",     # URL path to check
+    "expected_codes": "2xx",  # Accept any 2xx response
+    "expected_body": "OK"    # Optional: check response body
+}
+
+resp = requests.post(
+    f"https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/load_balancers/monitors",
+    headers=headers,
+    json=monitor_payload
+)
+
+monitor = resp.json()["result"]
+print(f"Monitor created: {monitor['id']}")
+MONITOR_ID = monitor["id"]</code></pre>
+
+                <p><strong>Monitor types:</strong></p>
+
+                <ul>
+                    <li><code>https</code> — Full HTTPS connection check (recommended)</li>
+                    <li><code>http</code> — HTTP connection check (less secure)</li>
+                    <li><code>tcp</code> — TCP connection check only (fastest, least detailed)</li>
+                    <li><code>ip_ping</code> — ICMP ping check</li>
+                </ul>
+
+                <p><strong>Important:</strong> Make sure your origin servers respond to the health check path. Add a simple <code>/health</code> endpoint:</p>
+
+                <pre><code># Python Flask example
+from flask import Flask
+app = Flask(__name__)
+
+@app.route("/health")
+def health_check():
+    return "OK", 200
+
+@app.route("/")
+def index():
+    return "Hello from my server!"
+
+app.run(host="0.0.0.0", port=443)</code></pre>
+
+                <pre><code># Node.js/Express example
+const express = require("express");
+const app = express();
+
+app.get("/health", (req, res) => {
+    res.status(200).send("OK");
+});
+
+app.get("/", (req, res) => {
+    res.send("Hello from my server!");
+});
+
+app.listen(443, () => console.log("Server running on port 443"));</code></pre>
+
+                <h2>Creating the Load Balancer</h2>
+
+                <p>The load balancer ties pools and monitors together and defines the routing rules:</p>
+
+                <pre><code># Create the load balancer
+lb_payload = {
+    "name": "app.example.com",
+    "ttl": 0,          # 0 = always honor health checks
+    "fallback_pool": "eu-west-pool-id",  # Used when all primary pools fail
+    "proxied": True,    # Enable Cloudflare proxy (orange cloud)
+    "steering_policy": "geo",  # Route to nearest healthy region
+    "pop_pools": [],
+    "regions_pools": [
+        {
+            "region": "us",
+            "pools": [
+                {"name": "us-east-pool", "pool_id": POOL_ID}
+            ]
+        }
+    ],
+    "monitors": [
+        {"name": "https-200-check", "monitor_id": MONITOR_ID}
+    ]
+}
+
+resp = requests.post(
+    f"https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/load_balancers",
+    headers=headers,
+    json=lb_payload
+)
+
+lb = resp.json()["result"]
+print(f"Load balancer created: {lb['id']}")</code></pre>
+
+                <h2>Steering Policies</h2>
+
+                <p>The <code>steering_policy</code> determines how Cloudflare picks a pool for each request:</p>
+
+                <pre><code># "off" — Use pool weights only, no geographic steering
+# Simplest option — just distribute by weight
+
+# "geo" — Route to the nearest healthy pool based on user location
+# Best for: global applications with regional data centers
+
+# "dynamic_latency" — Route to the pool with lowest measured latency
+# Best for: performance-first applications
+
+# "off" with weighted pools example:
+# Pool A: weight 3 (gets 75% of traffic)
+# Pool B: weight 1 (gets 25% of traffic)</code></pre>
+
+                <h2>Failover Scenarios</h2>
+
+                <p>Cloudflare Load Balancing handles failures automatically. Here's what happens:</p>
+
+                <pre><code>Scenario 1: Single server down
+  → Monitor detects failure after 3 retries
+  → Traffic shifts to remaining healthy servers in the pool
+  → User sees no disruption
+
+Scenario 2: Entire pool goes down
+  → Load balancer routes to next pool in priority order
+  → If a fallback pool is defined, it handles all traffic
+  → You get a dashboard notification
+
+Scenario 3: All pools go down
+  → Returns a 522 (Connection Timed Out) or 521 (Web Server Down)
+  → Consider setting up a maintenance page as a fallback</code></pre>
+
+                <p>You can configure <code>minimum_origins</code> on each pool to define the minimum number of servers needed before the pool is considered healthy:</p>
+
+                <pre><code>pool_payload = {
+    "name": "us-east-pool",
+    "minimum_origins": 2,  # Pool is unhealthy if fewer than 2 servers respond
+    "origins": [...]
+}</code></pre>
+
+                <h2>Advanced: Session Affinity (Sticky Sessions)</h2>
+
+                <p>Some applications need a user to always hit the same server (e.g., shopping carts, login sessions). Cloudflare supports sticky sessions via cookies:</p>
+
+                <pre><code># Add to your load balancer config
+lb_payload = {
+    ...,
+    "session_affinity": "cookie",
+    "session_affinity_ttl": 1800,       # Cookie lasts 30 minutes (in seconds)
+    "session_affinity_attributes": {
+        "samesite": "lax",
+        "secure": True,
+        "drain": 300                     # Continue honoring cookie for 5 min after creation
+    }
+}</code></pre>
+
+                <p>With sticky sessions enabled, Cloudflare sets a <code>cf_lb_wiz</code> cookie on the client. Subsequent requests with this cookie are routed to the same origin server until the cookie expires.</p>
+
+                <h2>Real-World Setup: Multi-Region Application</h2>
+
+                <p>Here's a complete setup for a production application running in two regions:</p>
+
+                <pre><code>import requests
+
+ACCOUNT_ID = "your_account_id"
+headers = {
+    "Authorization": "Bearer your_api_token",
+    "Content-Type": "application/json"
+}
+
+base_url = f"https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/load_balancers"
+
+# 1. Create US pool
+us_pool = requests.post(f"{base_url}/pools", headers=headers, json={
+    "name": "us-pool",
+    "minimum_origins": 2,
+    "load_balancing_method": "least_connections",
+    "origins": [
+        {"name": "us-1", "address": "203.0.113.10", "port": 443, "weight": 1, "enabled": True},
+        {"name": "us-2", "address": "203.0.113.11", "port": 443, "weight": 1, "enabled": True},
+        {"name": "us-3", "address": "203.0.113.12", "port": 443, "weight": 1, "enabled": True}
+    ]
+}).json()["result"]
+
+# 2. Create EU pool
+eu_pool = requests.post(f"{base_url}/pools", headers=headers, json={
+    "name": "eu-pool",
+    "minimum_origins": 1,
+    "load_balancing_method": "least_connections",
+    "origins": [
+        {"name": "eu-1", "address": "198.51.100.10", "port": 443, "weight": 1, "enabled": True},
+        {"name": "eu-2", "address": "198.51.100.11", "port": 443, "weight": 1, "enabled": True}
+    ]
+}).json()["result"]
+
+# 3. Create health monitor
+monitor = requests.post(f"{base_url}/monitors", headers=headers, json={
+    "name": "app-health-check",
+    "type": "https",
+    "interval": 15,
+    "timeout": 5,
+    "retries": 2,
+    "path": "/health",
+    "expected_codes": "200-299"
+}).json()["result"]
+
+# 4. Create load balancer with geo steering
+lb = requests.post(f"{base_url}", headers=headers, json={
+    "name": "app.example.com",
+    "ttl": 0,
+    "proxied": True,
+    "fallback_pool": eu_pool["id"],
+    "steering_policy": "geo",
+    "regions_pools": [
+        {"region": "us", "pools": [{"pool_id": us_pool["id"]}]},
+        {"region": "eu", "pools": [{"pool_id": eu_pool["id"]}]},
+        {"region": "af", "pools": [{"pool_id": eu_pool["id"]}]},
+        {"region": "oc", "pools": [{"pool_id": us_pool["id"]}]}
+    ],
+    "monitors": [{"monitor_id": monitor["id"]}]
+}).json()["result"]
+
+print(f"✅ Load balancer ready: {lb['name']}")
+print(f"   US Pool: {us_pool['name']} ({len(us_pool['origins'])} servers)")
+print(f"   EU Pool: {eu_pool['name']} ({len(eu_pool['origins'])} servers)")
+print(f"   Monitor: {monitor['name']} (every {monitor['interval']}s)")</code></pre>
+
+                <h2>Monitoring &amp; Analytics</h2>
+
+                <p>Cloudflare provides built-in analytics for your load balancer:</p>
+
+                <pre><code># Query load balancer analytics via API
+import requests
+
+# Get pool analytics
+resp = requests.get(
+    f"{base_url}/analytics",
+    headers=headers,
+    params={
+        "since": "2026-06-27T00:00:00Z",
+        "until": "2026-06-28T00:00:00Z"
+    }
+)
+
+analytics = resp.json()["result"]
+for pool in analytics["pools"]:
+    print(f"Pool: {pool['pool_id']}")
+    print(f"  Total requests: {pool['total_request_count']}")
+    print(f"  Success rate: {pool['success']['count']}")
+    print(f"  Failures: {pool['failures']['count']}\n")</code></pre>
+
+                <p>In the dashboard, you'll also see:</p>
+
+                <ul>
+                    <li>Real-time request distribution across pools</li>
+                    <li>Health check status for each origin server</li>
+                    <li>Error rates by region and pool</li>
+                    <li>Latency metrics per pool</li>
+                </ul>
+
+                <h2>Best Practices</h2>
+
+                <pre><code>1. Always define a fallback pool — your last line of defense
+2. Set minimum_origins so a pool with 1 server isn't considered healthy
+3. Use HTTPS monitors — they verify the full connection, not just TCP
+4. Keep health check paths lightweight — /health should respond in &lt;100ms
+5. Use "off" TTL to ensure health checks are always honored
+6. Monitor error rates — don't just rely on health checks
+7. Test failover — periodically take down a server to verify switching works
+8. Use geo steering for global apps, least_response_time for speed
+9. Enable sticky sessions only when your app actually needs them
+10. Log load balancer decisions for debugging routing issues</code></pre>
+
+                <h2>Common Issues &amp; Solutions</h2>
+
+                <pre><code>Problem: "No healthy servers in the pool"
+→ Check your origin server IPs are correct
+→ Verify the server responds on the expected port
+→ Confirm the server isn't blocking Cloudflare IPs
+
+Problem: Health checks failing intermittently
+→ Increase the timeout (5s might be too low for slow responses)
+→ Add more retries (3 is a good default)
+→ Check your server logs for slow responses on /health
+
+Problem: Traffic not splitting as expected
+→ Verify pool weights are configured correctly
+→ Check steering_policy matches your intent
+→ Review the dashboard analytics for actual distribution
+
+Problem: 522 errors appearing
+→ This means Cloudflare can't connect to any origin
+→ Check all pools and fallback pools are reachable
+→ Verify firewall rules allow Cloudflare IP ranges</code></pre>
+
+                <h2>Next Steps</h2>
+
+                <p>Now that you understand Cloudflare Load Balancing, check out these related tutorials:</p>
+
+                <ul>
+                    <li><a href="cloudflare-zero-trust.html">Cloudflare Zero Trust: Secure Your Applications</a> — Add authentication to your load-balanced apps</li>
+                    <li><a href="cloudflare-dns.html">Cloudflare DNS Setup: Complete Guide</a> — Point your domain to the load balancer</li>
+                    <li><a href="docker-compose.html">Docker Compose: Multi-Container Applications</a> — Deploy multiple backend servers with Docker</li>
+                </ul>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes · Built with ☕ and curiosity</p>
+        </div>
+    </footer>
+
+    <script>
+        // Reading Progress Bar
+        window.onscroll = function() {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById("progressBar").style.width = scrolled + "%";
+        };
+        // Dark Mode Toggle
+        const toggle = document.getElementById("themeToggle");
+        if (localStorage.getItem("darkMode") === "true") {
+            document.body.classList.add("dark-mode");
+            toggle.textContent = "☀️";
+        }
+        toggle.addEventListener("click", () => {
+            document.body.classList.toggle("dark-mode");
+            localStorage.setItem("darkMode", document.body.classList.contains("dark-mode"));
+            toggle.textContent = document.body.classList.contains("dark-mode") ? "☀️" : "🌙";
+        });
+    </script>
+</body>
+</html>

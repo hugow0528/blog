@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Prometheus Monitoring: Observe Your Containers Like a Pro | Hugo's Dev Notes</title>
+        <meta name="description" content="Learn Prometheus monitoring for Docker and Kubernetes — install, configure targets, write PromQL queries, create alerts, and build Grafana dashboards. Beginner-friendly with working examples.">
+        <meta name="keywords" content="prometheus, monitoring, observability, docker, kubernetes, metrics, promql, grafana, alerts, devops">
+        <meta name="author" content="Hugo Wong">
+        <meta name="robots" content="index, follow">
+        <link rel="canonical" href="https://blog.hugow.dev/posts/prometheus-monitoring.html">
+        <link rel="stylesheet" href="../style.css">
+    </head>
+    <body>
+        <div class="progress-bar" id="progressBar"></div>
+        <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+
+        <header>
+            <div class="container">
+                <div class="logo">
+                    <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                    <p class="subtitle">Cloudflare · Python · AI Coding</p>
+                </div>
+                <nav>
+                    <a href="../index.html" class="nav-btn">🏠 Home</a>
+                    <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                    <a href="../python.html" class="nav-btn">🐍 Python</a>
+                    <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+                    <a href="../devops.html" class="nav-btn">🐳 DevOps</a>
+                    <a href="../security.html" class="nav-btn">🔐 Security</a>
+                    <a href="../webdev.html" class="nav-btn">💻 Web Dev</a>
+                </nav>
+            </div>
+        </header>
+
+        <main class="container">
+            <article class="post-content">
+                <span class="tag devops">DevOps</span>
+                <h1>Prometheus Monitoring: Observe Your Containers Like a Pro</h1>
+                <time>2026-06-29</time>
+                <span class="read-time">12 min read</span>
+
+                <p>If you're running Docker containers, Kubernetes clusters, or any production services, you've probably asked yourself: <em>"Is everything actually okay right now?"</em> Prometheus answers that question with numbers. It's an open-source monitoring and alerting toolkit that scrapes metrics from your applications, stores them in a time-series database, and lets you query, visualize, and alert on them.</p>
+
+                <p>Prometheus was created by SoundCloud in 2012 and has become the de facto standard for cloud-native monitoring. It's a core project of the Cloud Native Computing Foundation (CNCF) alongside Kubernetes and Terraform. In this guide, you'll install Prometheus, monitor a Docker container, write PromQL queries, and set up alerts — all with working examples.</p>
+
+                <h2>Why Prometheus?</h2>
+                <p>Before Prometheus, monitoring typically meant installing agents on every server, configuring complex rules, and hoping your dashboard didn't crash. Prometheus flips this model with a <strong>pull-based architecture</strong>: instead of your apps pushing data somewhere, Prometheus comes to your apps and <em>scrapes</em> metrics on a regular schedule.</p>
+
+                <p>Key advantages:</p>
+                <ul>
+                    <li><strong>Pull-based scraping</strong> — no agents needed on target services</li>
+                    <li><strong>Multi-dimensional data model</strong> — every metric has labels (key-value pairs) for powerful filtering</li>
+                    <li><strong>PromQL</strong> — a purpose-built query language for time-series data</li>
+                    <li><strong>Built-in alerting</strong> — Alertmanager handles routing, grouping, and silencing</li>
+                    <li><strong>Grafana integration</strong> — beautiful dashboards with zero configuration</li>
+                    <li><strong>Service discovery</strong> — auto-detect targets in Docker, Kubernetes, AWS, etc.</li>
+                </ul>
+
+                <blockquote>
+                    <strong>Quick note:</strong> Prometheus is great for metrics (numbers over time). For logs, consider Loki. For traces, consider Jaeger. Together they form the "PLG" stack (Prometheus + Loki + Grafana).
+                </blockquote>
+
+                <h2>Install Prometheus in Docker</h2>
+                <p>Let's start with the simplest possible setup. Create a <code>prometheus.yml</code> configuration file:</p>
+
+                <pre><code># prometheus.yml
+global:
+  scrape_interval: 15s   # How often to scrape targets
+  evaluation_interval: 15s  # How often to evaluate alert rules
+
+scrape_configs:
+  # Prometheus monitors itself by default
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]</code></pre>
+
+                <p>Now run Prometheus with a single Docker command:</p>
+
+                <pre><code># Create a directory for Prometheus data
+mkdir -p ~/prometheus/data
+
+# Run Prometheus container
+docker run -d \
+  --name prometheus \
+  -p 9090:9090 \
+  -v $(pwd)/prometheus.yml:/etc/prometheus/prometheus.yml \
+  -v ~/prometheus/data:/prometheus \
+  prom/prometheus:latest
+
+# Check it's running
+curl http://localhost:9090/-/healthy
+# Should print: "Prometheus Server is Healthy."</code></pre>
+
+                <p>Open <code>http://localhost:9090</code> in your browser. You'll see the Prometheus web UI with a query bar at the top. Try typing <code>up</code> and hitting Enter — you should see Prometheus reporting itself as <code>1</code> (up).</p>
+
+                <h2>Monitoring a Docker Container</h2>
+                <p>Most apps don't expose Prometheus metrics by default. You have two options: modify your app to export metrics, or use a <strong>node exporter</strong> to collect system-level metrics. Let's add a Prometheus node exporter to monitor the host system:</p>
+
+                <pre><code># Run Node Exporter (collects CPU, memory, disk, network metrics)
+docker run -d \
+  --name node-exporter \
+  -p 9100:9100 \
+  -v "/proc:/host/proc:ro" \
+  -v "/sys:/host/sys:ro" \
+  -v "/:/rootfs:ro" \
+  prom/node-exporter:latest \
+  --path.procfs=/host/proc \
+  --path.sysfs=/host/sys \
+  --collector.filesystem.mount-points-exclude="^/(sys|proc|dev|host|etc)($$|/)"</code></pre>
+
+                <p>Now update your <code>prometheus.yml</code> to scrape the node exporter:</p>
+
+                <pre><code># prometheus.yml
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: "node"
+    static_configs:
+      - targets: ["localhost:9100"]</code></pre>
+
+                <p>Restart Prometheus to pick up the new config:</p>
+
+                <pre><code>docker restart prometheus</code></pre>
+
+                <p>Wait 15 seconds, then visit <code>http://localhost:9090/targets</code>. You should see both "prometheus" and "node" jobs with status "UP".</p>
+
+                <h2>Writing PromQL Queries</h2>
+                <p>PromQL (Prometheus Query Language) is how you extract insights from your metrics. Let's learn by example — paste these into the query bar at <code>http://localhost:9090/graph</code>:</p>
+
+                <h3>Basic Metrics</h3>
+                <pre><code># CPU usage percentage (1-minute average)
+100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[1m])) * 100)
+
+# Memory usage percentage
+(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100
+
+# Disk usage by mount point
+(1 - (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"})) * 100
+
+# Network receive rate (bytes/sec, last 5 minutes)
+rate(node_network_receive_bytes_total{device="eth0"}[5m])</code></pre>
+
+                <p>Let's break down the CPU query. <code>node_cpu_seconds_total</code> is a metric that counts seconds spent in different CPU modes (idle, user, system, etc.). The <code>rate()</code> function calculates the per-second rate of increase over the time window <code>[1m]</code>. We negate it and multiply by 100 to get a percentage.</p>
+
+                <h3>Rate and Increase Functions</h3>
+                <p>Two PromQL functions appear in almost every query:</p>
+
+                <pre><code># rate() — per-second average rate of increase
+rate(http_requests_total{job="webapp"}[5m])
+
+# increase() — total increase over a time window
+increase(http_requests_total{job="webapp"}[1h])
+
+# Example: requests per minute for the last hour
+sum(rate(http_requests_total[5m])) * 60</code></pre>
+
+                <blockquote>
+                    <strong>Important:</strong> <code>rate()</code> and <code>increase()</code> only work on <strong>counter</strong> metrics (metrics that only go up). For <strong>gauge</strong> metrics (values that go up and down), just reference the metric name directly.
+                </blockquote>
+
+                <h3>Aggregation Functions</h3>
+                <p>When you have multiple targets, aggregation functions combine their values:</p>
+
+                <pre><code># Sum all request rates across all instances
+sum(rate(http_requests_total[5m]))
+
+# Average memory across all servers
+avg(node_memory_MemAvailable_bytes)
+
+# Count of up servers
+count(up == 1)
+
+# Total CPU cores across all instances
+count(count(node_cpu_seconds_total) by (instance, cpu))</code></pre>
+
+                <h2>Exporting Metrics from a Python App</h2>
+                <p>Let's make a Python web application that exports Prometheus metrics. Install the official client library:</p>
+
+                <pre><code># Install the Prometheus client
+pip install prometheus-client flask</code></pre>
+
+                <p>Here's a Flask app with custom metrics:</p>
+
+                <pre><code># app.py
+from flask import Flask, request
+from prometheus_client import Counter, Histogram, generate_latest, REGISTRY
+from prometheus_client import CollectorRegistry
+import time
+import random
+
+app = Flask(__name__)
+
+# Define custom metrics
+REQUEST_COUNT = Counter(
+    'http_requests_total',
+    'Total HTTP requests',
+    ['method', 'endpoint', 'status']
+)
+
+REQUEST_DURATION = Histogram(
+    'http_request_duration_seconds',
+    'HTTP request latency',
+    ['method', 'endpoint'],
+    buckets=(0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0)
+)
+
+@app.route('/')
+def index():
+    # Simulate some work
+    time.sleep(random.uniform(0.01, 0.1))
+    REQUEST_COUNT.labels(method='GET', endpoint='/', status='200').inc()
+    return "Hello from Prometheus-monitored app!\n"
+
+@app.route('/health')
+def health():
+    REQUEST_COUNT.labels(method='GET', endpoint='/health', status='200').inc()
+    return "OK\n"
+
+@app.route('/metrics')
+def metrics():
+    """Expose metrics in Prometheus format"""
+    return generate_latest(), 200, {'Content-Type': 'text/plain; charset=utf-8'}
+
+if __name__ == '__main__':
+    # Register default collectors (process CPU, memory, etc.)
+    from prometheus_client import start_http_server
+    start_http_server(8000)  # Default metrics endpoint
+    app.run(host='0.0.0.0', port=5000)</code></pre>
+
+                <p>Add this app to your Prometheus config:</p>
+
+                <pre><code># prometheus.yml — add to scrape_configs
+  - job_name: "python_app"
+    static_configs:
+      - targets: ["localhost:8000"]</code></pre>
+
+                <p>Now you can query your app's custom metrics in PromQL:</p>
+
+                <pre><code># Request rate per minute
+sum(rate(http_requests_total[5m])) * 60
+
+# P99 latency
+histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m]))
+
+# Error rate (if you tracked 5xx errors)
+sum(rate(http_requests_total{status=~"5.."}[5m]))
+/
+sum(rate(http_requests_total[5m])) * 100</code></pre>
+
+                <h2>Setting Up Alerts</h2>
+                <p>Prometheus can evaluate alert rules and send notifications via Alertmanager. Create an <code>alerts.yml</code> file:</p>
+
+                <pre><code># alerts.yml
+groups:
+  - name: system_alerts
+    rules:
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "CPU usage is above 80% for 5 minutes (current value: {{ $value }}%)"
+
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 90
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High memory usage on {{ $labels.instance }}"
+          description: "Memory usage is above 90% for 5 minutes (current value: {{ $value }}%)"
+
+      - alert: DiskSpaceRunningLow
+        expr: (1 - (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"})) * 100 > 85
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Disk space running low on {{ $labels.instance }}"
+          description: "Root disk usage is above 85% (current value: {{ $value }}%)"
+
+      - alert: TargetDown
+        expr: up == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Target {{ $labels.job }} is down"
+          description: "{{ $labels.instance }} of job {{ $labels.job }} has been down for 2 minutes."</code></pre>
+
+                <p>Update <code>prometheus.yml</code> to load these rules:</p>
+
+                <pre><code># Add to prometheus.yml (top level, same indent as scrape_configs)
+rule_files:
+  - "alerts.yml"</code></pre>
+
+                <p>Restart Prometheus and visit <code>http://localhost:9090/alerts</code> to see your active alert rules. Any alerts that fire will transition from "Inactive" to "Pending" (waiting for the "for" duration) to "Firing".</p>
+
+                <h2>Docker Compose Setup</h2>
+                <p>For a clean, reproducible setup, put everything in a <code>docker-compose.yml</code>:</p>
+
+                <pre><code># docker-compose.yml
+version: "3.8"
+
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./alerts.yml:/etc/prometheus/alerts.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=30d'
+      - '--storage.tsdb.path=/prometheus'
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+
+volumes:
+  prometheus_data:</code></pre>
+
+                <pre><code># Start everything
+docker compose up -d
+
+# Check all targets are up
+curl http://localhost:9090/api/v1/targets | python3 -m json.tool</code></pre>
+
+                <h2>Quick Grafana Setup</h2>
+                <p>Grafana turns Prometheus data into beautiful dashboards. Add it to your compose file or run it separately:</p>
+
+                <pre><code># Run Grafana
+docker run -d \
+  --name grafana \
+  -p 3000:3000 \
+  -v ~/grafana/data:/var/lib/grafana \
+  grafana/grafana:latest
+
+# Default login: admin / admin
+# Visit http://localhost:3000</code></pre>
+
+                <p>After logging in, add Prometheus as a data source:</p>
+                <ol>
+                    <li>Go to <strong>Configuration → Data Sources → Add data source → Prometheus</strong></li>
+                    <li>Set URL to <code>http://prometheus:9090</code> (if running in Docker Compose) or <code>http://localhost:9090</code></li>
+                    <li>Click <strong>Save &amp; Test</strong> — you should see "Data source is working"</li>
+                </ol>
+
+                <p>Import pre-built dashboards from the Grafana website. Popular ones:</p>
+                <ul>
+                    <li><strong>Node Exporter Full</strong> — Dashboard ID <code>1860</code> — comprehensive server monitoring</li>
+                    <li><strong>Prometheus Monitoring</strong> — Dashboard ID <code>3662</code> — Prometheus self-monitoring</li>
+                    <li><strong>Docker Container Metrics</strong> — Dashboard ID <code>893</code> — container resource usage</li>
+                </ul>
+
+                <pre><code># Import dashboard via API
+curl -X POST http://admin:admin@localhost:3000/api/dashboards/import \
+  -H "Content-Type: application/json" \
+  -d '{"dashboard":{"id":null,"title":"Node Exporter Full","uid":"linux-nodexporter-full"},"options":{"overwrite":true},"inputs":[{"name":"DS_PROMETHEUS","type":"datasource","pluginId":"prometheus","value":"Prometheus"}]}'</code></pre>
+
+                <h2>Common PromQL Patterns</h2>
+                <p>Save these for your reference — they cover 80% of monitoring needs:</p>
+
+                <pre><code># Error rate (percentage of 5xx responses)
+sum(rate(http_requests_total{status=~"5.."}[5m]))
+/
+sum(rate(http_requests_total[5m])) * 100
+
+# 95th percentile latency
+histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))
+
+# Uptime of a service (how long it's been up)
+time() - node_boot_time_seconds
+
+# Bytes sent per second (human-readable)
+rate(node_network_transmit_bytes_total[5m]) / 1024 / 1024
+
+# Top 5 endpoints by request rate
+topk(5, sum by(endpoint) (rate(http_requests_total[5m])))
+
+# CPU per core usage
+100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
+
+# Memory available in MB
+node_memory_MemAvailable_bytes / 1024 / 1024</code></pre>
+
+                <h2>Best Practices</h2>
+                <ul>
+                    <li><strong>Name metrics carefully</strong> — use <code>_total</code> suffix for counters, <code>_seconds</code> for durations, <code>_bytes</code> for sizes</li>
+                    <li><strong>Label wisely</strong> — avoid high-cardinality labels (like user IDs or request IDs). Stick to method, endpoint, status, job, instance.</li>
+                    <li><strong>Set retention policies</strong> — Prometheus stores data locally. Set <code>--storage.tsdb.retention.time=30d</code> or <code>--storage.tsdb.retention.size=50GB</code></li>
+                    <li><strong>Use recording rules</strong> — for complex queries used frequently, pre-compute them as recording rules to reduce query latency</li>
+                    <li><strong>Alert on symptoms, not causes</strong> — alert on "high error rate" not "disk is 90% full"</li>
+                    <li><strong>Test your alerts in staging first</strong> — false alerts cause alert fatigue, which causes real alerts to be ignored</li>
+                </ul>
+
+                <h2>Next Steps</h2>
+                <p>You've now got Prometheus scraping metrics from your system and a Python app, with alerts configured and Grafana dashboards ready. Here are logical next steps:</p>
+                <ul>
+                    <li>Explore <strong>Alertmanager</strong> for email, Slack, or PagerDuty notifications</li>
+                    <li>Add <strong>Pushgateway</strong> for short-lived batch jobs that can't be scraped</li>
+                    <li>Set up <strong>Prometheus Operator</strong> for Kubernetes-native monitoring</li>
+                    <li>Combine with <strong>Loki</strong> for log aggregation and <strong>Jaeger</strong> for distributed tracing</li>
+                </ul>
+
+                <p>Prometheus feels like overkill for a single server. It absolutely is — until you add a second server, then a third, and suddenly you're juggling SSH sessions and hoping nothing is silently broken. Monitoring isn't just about knowing when things break; it's about understanding how your systems behave over time, catching trends before they become outages, and having the data to prove whether your last deployment made things better or worse. Start small, add what you need, and let the metrics tell you where to focus.</p>
+
+            </article>
+        </main>
+
+        <footer>
+            <div class="container">
+                <p>&copy; 2026 Hugo's Dev Notes. Built with curiosity and Cloudflare.</p>
+                <div class="footer-links">
+                    <a href="../index.html">Home</a>
+                    <a href="../cloudflare.html">Cloudflare</a>
+                    <a href="../python.html">Python</a>
+                    <a href="../vibe-coding.html">AI Coding</a>
+                    <a href="../devops.html">DevOps</a>
+                    <a href="../security.html">Security</a>
+                    <a href="../webdev.html">Web Dev</a>
+                </div>
+            </div>
+        </footer>
+
+        <button class="back-to-top" id="backToTop" title="Back to top">↑</button>
+
+        <script>
+            // Progress bar
+            window.addEventListener('scroll', () => {
+                const winScroll = document.documentElement.scrollTop;
+                const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+                const scrolled = (winScroll / height) * 100;
+                document.getElementById('progressBar').style.width = scrolled + '%';
+                const btn = document.getElementById('backToTop');
+                btn.style.display = winScroll > 300 ? 'flex' : 'none';
+            });
+            document.getElementById('backToTop').addEventListener('click', () => window.scrollTo({top: 0, behavior: 'smooth'}));
+
+            // Dark mode
+            const toggle = document.getElementById('themeToggle');
+            toggle.addEventListener('click', () => {
+                document.body.classList.toggle('dark-mode');
+                toggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+                localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+            });
+            if (localStorage.getItem('theme') === 'dark') {
+                document.body.classList.add('dark-mode');
+                toggle.textContent = '☀️';
+            }
+        </script>
+    </body>
+</html>

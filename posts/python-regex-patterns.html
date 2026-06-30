@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Regular Expressions (regex): Pattern Matching Made Easy | Hugo's Dev Notes</title>
+    <meta name="description" content="Master Python regular expressions — match patterns, extract data, validate input, search and replace strings. Beginner-friendly guide with working examples.">
+    <meta name="keywords" content="python regex, regular expressions, pattern matching, re module, string validation, text processing">
+    <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-regex-patterns.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+                <a href="../devops.html" class="nav-btn">🐳 DevOps</a>
+                <a href="../security.html" class="nav-btn">🔐 Security</a>
+                <a href="../webdev.html" class="nav-btn">💻 Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-content">
+            <span class="tag python">Python</span>
+            <h1>Python Regular Expressions (regex): Pattern Matching Made Easy</h1>
+            <time>2026-06-28</time>
+            <span class="read-time">10 min read</span>
+
+            <p>Regular expressions (regex) are a powerful way to search, match, and manipulate text using patterns. In Python, the <code>re</code> module gives you everything you need to work with regex — from simple string searches to complex data extraction. If you've ever needed to validate an email, find phone numbers in a text, or extract URLs from a document, regex is the tool for the job.</p>
+
+            <h2>Why Learn Regex?</h2>
+            <p>Regex might look intimidating at first — <code>\d{3}-\d{4}-\d{4}</code> — but it's actually just a compact language for describing text patterns. Once you learn the basics, you'll find it incredibly useful for:</p>
+            <ul>
+                <li><strong>Input validation</strong> — emails, phone numbers, passwords</li>
+                <li><strong>Data extraction</strong> — pull specific information from unstructured text</li>
+                <li><strong>Text transformation</strong> — find-and-replace with pattern matching</li>
+                <li><strong>Log analysis</strong> — parse server logs, error messages, and metrics</li>
+            </ul>
+
+            <h2>Getting Started with the <code>re</code> Module</h2>
+            <p>Python's <code>re</code> module is built-in — no installation needed. Here's the most basic example:</p>
+            <pre><code>import re
+
+# Search for a pattern in text
+text = "My email is alice@example.com and my phone is 555-0199"
+
+# Find all email addresses
+emails = re.findall(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b', text)
+print(emails)  # ['alice@example.com']
+
+# Find all phone numbers
+phones = re.findall(r'\d{3}-\d{4}', text)
+print(phones)  # ['555-0199']</code></pre>
+
+            <h2>Basic Regex Patterns You Need to Know</h2>
+            <h3>Character Classes</h3>
+            <p>Character classes match specific types of characters:</p>
+            <pre><code>import re
+
+text = "Room 204, building A, floor 3"
+
+# \d matches any digit (0-9)
+digits = re.findall(r'\d+', text)
+print(digits)  # ['204', '3']
+
+# \w matches any word character (a-z, A-Z, 0-9, _)
+words = re.findall(r'\w+', text)
+print(words)  # ['Room', '204', 'building', 'A', 'floor', '3']
+
+# \s matches any whitespace
+has_space = re.search(r'\s', text)
+print(bool(has_space))  # True
+
+# ^ matches start, $ matches end
+starts_with_R = re.search(r'^Room', text)
+print(bool(starts_with_R))  # True
+
+ends_with_R = re.search(r'Room$', text)
+print(bool(ends_with_R))  # False</code></pre>
+
+            <h3>Quantifiers</h3>
+            <p>Quantifiers control how many times a pattern repeats:</p>
+            <pre><code>import re
+
+# + means "one or more"
+# * means "zero or more"
+# ? means "zero or one"
+# {n} means "exactly n"
+# {n,m} means "between n and m"
+
+# Match a year (exactly 4 digits)
+years = re.findall(r'\d{4}', "Born in 1990, moved to 2025")
+print(years)  # ['1990', '2025']
+
+# Match US zip codes (5 digits or 5+4 digits)
+zips = re.findall(r'\d{5}(?:-\d{4})?', "Zip: 90210 or 10001-1234")
+print(zips)  # ['90210', '10001-1234']
+
+# Match 3-letter words
+short = re.findall(r'\b[a-z]{3}\b', "I saw the cat and the dog run")
+print(short)  # ['the', 'cat', 'the', 'dog']</code></pre>
+
+            <h2>Practical Example: Email Validation</h2>
+            <p>Let's build a real-world email validator. This is one of the most common use cases for regex:</p>
+            <pre><code>import re
+
+def validate_email(email: str) -> bool:
+    """Validate an email address using regex."""
+    # Pattern: word chars + symbols, @, domain, dot, 2+ letter TLD
+    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    return bool(re.match(pattern, email))
+
+# Test cases
+test_emails = [
+    "user@example.com",      # Valid
+    "first.last@company.org",  # Valid
+    "user+tag@gmail.com",    # Valid
+    "invalid@",              # Invalid - no domain
+    "@missing.com",          # Invalid - no local part
+    "no-at-sign.com",        # Invalid - missing @
+    "user@.com",             # Invalid - dot right after @
+]
+
+for email in test_emails:
+    status = "✅" if validate_email(email) else "❌"
+    print(f"{status} {email}")
+
+# Output:
+# ✅ user@example.com
+# ✅ first.last@company.org
+# ✅ user+tag@gmail.com
+# ❌ invalid@
+# ❌ @missing.com
+# ❌ no-at-sign.com
+# ❌ user@.com</code></pre>
+
+            <h2>The Five Essential <code>re</code> Functions</h2>
+            <p>Here's a quick reference for the most commonly used functions:</p>
+            <ol>
+                <li><strong><code>re.search()</code></strong> — Find the first match anywhere in the string</li>
+                <li><strong><code>re.match()</code></strong> — Match only at the beginning of the string</li>
+                <li><strong><code>re.findall()</code></strong> — Return all non-overlapping matches as a list</li>
+                <li><strong><code>re.finditer()</code></strong> — Return an iterator of match objects</li>
+                <li><strong><code>re.sub()</code></strong> — Replace all matches with a replacement string</li>
+            </ol>
+
+            <h3>Understanding <code>re.search()</code> vs <code>re.match()</code></h3>
+            <pre><code>import re
+
+text = "The price is $49.99 USD"
+
+# search() finds match anywhere
+result_search = re.search(r'\$\d+\.\d+', text)
+print(result_search.group())  # $49.99
+
+# match() only checks at the beginning
+result_match = re.match(r'\$\d+\.\d+', text)
+print(result_match)  # None (text doesn't START with a price)
+
+# To match at the beginning, anchor with ^
+result_anchored = re.match(r'^The', text)
+print(result_anchored.group())  # The</code></pre>
+
+            <h3>Using <code>re.sub()</code> for Text Replacement</h3>
+            <pre><code>import re
+
+# Remove all numbers from text
+text = "I have 3 cats and 7 dogs in my house 123"
+cleaned = re.sub(r'\d+', '', text)
+print(cleaned)  # "I have  cats and  dogs in my house "
+
+# Replace phone numbers with a placeholder
+text = "Call 555-1234 or email support"
+anonymized = re.sub(r'\d{3}-\d{4}', '[PHONE]', text)
+print(anonymized)  # "Call [PHONE] or email support"
+
+# Convert CamelCase to snake_case
+text = "myVariableName"
+snake = re.sub(r'([A-Z])', r'_\1', text).lower()
+snake = snake.lstrip('_')  # Remove leading underscore
+print(snake)  # "my_variable_name"</code></pre>
+
+            <h2>Capturing Groups for Data Extraction</h2>
+            <p>Groups (parentheses) let you capture parts of a match. This is incredibly powerful for extracting structured data from text:</p>
+            <pre><code>import re
+
+# Extract name and age from a sentence
+text = "John is 30 years old, and Jane is 25"
+
+# (pattern1), (pattern2) creates two groups
+pattern = r'(\w+) is (\d+) years old'
+matches = re.findall(pattern, text)
+
+for name, age in matches:
+    print(f"Name: {name}, Age: {int(age)}")
+
+# Output:
+# Name: John, Age: 30
+# Name: Jane, Age: 25
+
+# Extract URLs with groups
+text = "Visit https://example.com or http://test.org/path"
+urls = re.findall(r'(https?://[^\s]+)', text)
+print(urls)  # ['https://example.com', 'http://test.org/path']</code></pre>
+
+            <h2>Real-World Project: Log File Parser</h2>
+            <p>Let's put it all together with a practical project — parsing a web server log:</p>
+            <pre><code>import re
+from collections import Counter
+from datetime import datetime
+
+# Sample Apache/Nginx log line
+log_line = '192.168.1.100 - - [28/Jun/2026:14:23:45 +0000] "GET /api/users HTTP/1.1" 200 1234'
+
+# Pattern to capture key parts of a log entry
+log_pattern = re.compile(
+    r'(?P<ip>\d+\.\d+\.\d+\.\d+)\s+'       # IP address
+    r'(?P<ident>\S+)\s+'                      # Ident field
+    r'(?P<user>\S+)\s+'                       # User field
+    r'\[(?P<time>[^\]]+)\]\s+'               # Timestamp
+    r'"(?P<method>\w+)\s+'                    # HTTP method
+    r'(?P<path>\S+)\s+'                       # Request path
+    r'(?P<protocol>[^"]+)"\s+'               # Protocol
+    r'(?P<status>\d{3})\s+'                   # Status code
+    r'(?P<size>\d+)'                          # Response size
+)
+
+match = log_pattern.search(log_line)
+if match:
+    data = match.groupdict()
+    print(f"IP: {data['ip']}")
+    print(f"Time: {data['time']}")
+    print(f"Method: {data['method']}")
+    print(f"Path: {data['path']}")
+    print(f"Status: {data['status']}")
+    print(f"Size: {data['size']} bytes")
+
+# Parse multiple log lines and find most common status codes
+log_entries = [
+    '192.168.1.100 - - [28/Jun/2026:14:23:45 +0000] "GET /api/users HTTP/1.1" 200 1234',
+    '192.168.1.101 - - [28/Jun/2026:14:23:46 +0000] "POST /api/login HTTP/1.1" 401 89',
+    '192.168.1.102 - - [28/Jun/2026:14:23:47 +0000] "GET /images/logo.png HTTP/1.1" 304 0',
+    '192.168.1.100 - - [28/Jun/2026:14:23:48 +0000] "GET /api/users HTTP/1.1" 200 1234',
+    '192.168.1.103 - - [28/Jun/2026:14:23:49 +0000] "DELETE /api/users/5 HTTP/1.1" 403 56',
+]
+
+status_codes = Counter()
+for entry in log_entries:
+    match = log_pattern.search(entry)
+    if match:
+        status_codes[match.group('status')] += 1
+
+print("\nStatus Code Summary:")
+for code, count in status_codes.most_common():
+    print(f"  {code}: {count} requests")
+
+# Output:
+# Status Code Summary:
+#   200: 2 requests
+#   401: 1 requests
+#   304: 1 requests
+#   403: 1 requests</code></pre>
+
+            <h2>Performance Tips</h2>
+            <p>Regex can be slow if not used carefully. Here are tips for production code:</p>
+            <ul>
+                <li><strong>Compile patterns</strong> — If you use the same pattern multiple times, compile it once with <code>re.compile()</code> to avoid recompiling on each use</li>
+                <li><strong>Use raw strings</strong> — Always use <code>r'pattern'</code> (raw strings) so Python doesn't interpret backslashes</li>
+                <li><strong>Be specific</strong> — <code>re.findall(r'\d+', text)</code> is faster than <code>re.findall(r'.*', text)</code> because the engine can skip non-digit characters</li>
+                <li><strong>Avoid backtracking</strong> — Patterns like <code>(a+)+b</code> can cause catastrophic backtracking. Keep patterns simple</li>
+                <li><strong>Consider alternatives</strong> — For simple tasks, built-in string methods (<code>str.find()</code>, <code>str.split()</code>) are often faster than regex</li>
+            </ul>
+            <pre><code>import re
+
+# ✅ Good: compile once, reuse many times
+email_pattern = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+
+emails = ["user@test.com", "invalid", "another@domain.org"]
+for email in emails:
+    if email_pattern.match(email):
+        print(f"Valid: {email}")
+
+# ✅ Good: use raw strings
+pattern = r'\d{4}-\d{2}-\d{2}'  # Clear, no escape confusion
+
+# ❌ Bad: pattern without raw string, needs double backslashes
+pattern_bad = '\\d{4}-\\d{2}-\\d{2}'  # Hard to read</code></pre>
+
+            <h2>Summary & Cheat Sheet</h2>
+            <p>Here's a quick reference of common regex patterns:</p>
+            <pre><code># Common Python regex patterns
+EMAIL    = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+URL      = r'https?://[^\s]+'
+PHONE    = r'\d{3}[-.]?\d{3}[-.]?\d{4}'
+DATE     = r'\d{4}-\d{2}-\d{2}'          # 2026-06-28
+IP_ADDR  = r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}'
+HEX      = r'#?[0-9a-fA-F]{6}'           # #FF5733 or FF5733
+SSN      = r'\d{3}-\d{2}-\d{4}'          # 123-45-6789
+
+# Quick function reference
+re.search(pattern, text)    # First match (returns Match or None)
+re.match(pattern, text)     # Match at start only
+re.findall(pattern, text)   # All matches (returns list)
+re.finditer(pattern, text)  # Iterator of match objects
+re.sub(pattern, repl, text) # Replace matches
+re.split(pattern, text)     # Split text on pattern
+re.compile(pattern)         # Compile for reuse</code></pre>
+
+            <p>Regex is one of those tools that seems hard at first but becomes second nature with practice. Start with simple patterns, build up to more complex ones, and always test your regex against edge cases. The <code>re</code> module documentation and online regex testers are your best friends when learning.</p>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Hugo's Dev Notes. Built with ❤️ and Python.</p>
+            <div class="footer-links">
+                <a href="../index.html">Home</a>
+                <a href="../cloudflare.html">Cloudflare</a>
+                <a href="../python.html">Python</a>
+                <a href="../sitemap.xml">Sitemap</a>
+            </div>
+        </div>
+    </footer>
+
+    <button class="back-to-top" id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+    <script>
+        // Reading progress bar
+        window.onscroll = function() {
+            let winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            let height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            let scrolled = (winScroll / height) * 100;
+            document.getElementById("progressBar").style.width = scrolled + "%";
+            let btn = document.getElementById("backToTop");
+            btn.style.display = winScroll > 300 ? "block" : "none";
+        };
+
+        // Dark mode toggle
+        const toggle = document.getElementById("themeToggle");
+        toggle.addEventListener("click", () => {
+            document.body.classList.toggle("dark-mode");
+            toggle.textContent = document.body.classList.contains("dark-mode") ? "☀️" : "🌙";
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloudflare Access: Secure Your Apps with Identity-Based Authentication | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn Cloudflare Access — protect your apps, dashboards, and internal tools with identity-based authentication. Setup SSO, email, and One-Time Pins with working examples.">
+    <meta name="keywords" content="cloudflare access, sso, saml, okta, github auth, zero trust, authentication, security, identity">
+    <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/cloudflare-access-auth.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+                <a href="../devops.html" class="nav-btn">🐳 DevOps</a>
+                <a href="../security.html" class="nav-btn">🔐 Security</a>
+                <a href="../webdev.html" class="nav-btn">💻 Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-content">
+            <span class="tag cloudflare">Cloudflare</span>
+            <span class="tag security">Security</span>
+            <h1>Cloudflare Access: Secure Your Apps with Identity-Based Authentication</h1>
+            <time>2026-06-28</time>
+            <span class="read-time">11 min read</span>
+
+            <p>Cloudflare Access replaces traditional VPNs with a modern, identity-based approach to application security. Instead of trusting users based on their network location (which is unreliable in the age of remote work), Access trusts users based on <em>who they are</em> and <em>what they're authorized to do</em>. It sits between your users and your applications, requiring authentication before anyone can reach your internal tools, admin panels, or APIs.</p>
+
+            <h2>How Cloudflare Access Works</h2>
+            <p>The architecture is simpler than you might expect. Here's the flow:</p>
+            <ol>
+                <li>User navigates to your protected application (e.g., <code>admin.example.com</code>)</li>
+                <li>Cloudflare intercepts the request at the edge</li>
+                <li>Cloudflare checks if the user has a valid session token (Cf-Access-Jwt-Claim)</li>
+                <li>If not authenticated, the user is redirected to a login page hosted by Cloudflare</li>
+                <li>User authenticates via your chosen identity provider (email, Google, GitHub, Okta, etc.)</li>
+                <li>Cloudflare issues a JWT (JSON Web Token) and forwards the request with auth headers</li>
+                <li>Your app sees the authenticated user via the <code>Cf-Access-Jwt-Assertion</code> header</li>
+            </ol>
+
+            <blockquote>
+                <strong>Key concept:</strong> Cloudflare Access runs entirely on Cloudflare's edge network. No agents to install, no servers to manage, no certificates to maintain. Your application doesn't need to know about authentication at all.
+            </blockquote>
+
+            <h2>Setting Up Your First Access Application</h2>
+            <p>Let's walk through protecting a web application step by step. You'll need a Cloudflare account with Access enabled (free for up to 50 users).</p>
+
+            <h3>Step 1: Configure DNS</h3>
+            <p>Your application's domain must be proxied through Cloudflare (orange cloud enabled):</p>
+            <pre><code># In your Cloudflare dashboard, ensure your DNS record looks like:
+# Type: CNAME
+# Name: admin
+# Target: your-server-ip or your-hostname.com
+# Proxy status: Proxied (orange cloud ON)
+
+# Verify with DNS
+dig admin.example.com +short
+# Should return a Cloudflare IP (e.g., 104.x.x.x)</code></pre>
+
+            <h3>Step 2: Add an Application in the Dashboard</h3>
+            <p>Navigate to <strong>Zero Trust → Access → Applications → Add an Application</strong>:</p>
+            <ul>
+                <li><strong>Application name:</strong> Internal Admin Panel</li>
+                <li><strong>Domain:</strong> <code>admin.example.com</code></li>
+                <li><strong>Public URL:</strong> Leave blank (this is an internal app)</li>
+                <li><strong>Session duration:</strong> 24 hours (adjust based on your security needs)</li>
+            </ul>
+
+            <h3>Step 3: Configure an Identity Provider</h3>
+            <p>Before you can set up policies, you need an identity provider. Let's use Google as an example:</p>
+            <ul>
+                <li>Go to <strong>Zero Trust → Access → Settings → Identity Providers</strong></li>
+                <li>Click <strong>Add Identity Provider → Google Workspace</strong></li>
+                <li>Follow the OAuth 2.0 setup instructions (Google gives you Client ID and Client Secret)</li>
+                <li>Paste the credentials into Cloudflare</li>
+            </ul>
+
+            <p>You can also use other providers:</p>
+            <ul>
+                <li><strong>One-Time PIN</strong> — no setup needed, users get a code via email</li>
+                <li><strong>GitHub</strong> — authenticate with GitHub OAuth</li>
+                <li><strong>Okta / Azure AD / SAML</strong> — enterprise SSO integration</li>
+                <li><strong>LDAP</strong> — connect to your existing directory</li>
+            </ul>
+
+            <h3>Step 4: Create a Policy</h3>
+            <p>Policies define <em>who</em> gets access. Here are common policy types:</p>
+
+            <h4>Email Policy (Simplest)</h4>
+            <pre><code># Allow anyone with a specific email domain
+# Policy name: Company Employees
+# Effect: Allow
+# Condition: Email → Email ends with → @company.com</code></pre>
+
+            <h4>Group Policy (Team-Based)</h4>
+            <pre><code># Allow members of a specific group (e.g., from Okta or GitHub)
+# Policy name: Dev Team Access
+# Effect: Allow
+# Condition: Groups → Group is one of → dev-team</code></pre>
+
+            <h4>IP Policy (Network-Based Fallback)</h4>
+            <pre><code># Allow access from specific IPs (e.g., office network)
+# Policy name: Office Network
+# Effect: Allow
+# Condition: IP address → IP address is one of → 203.0.113.0/24</code></pre>
+
+            <h2>Using the Cloudflare API for Access Setup</h2>
+            <p>You can manage Access applications programmatically using the Cloudflare API. This is especially useful for Infrastructure-as-Code workflows:</p>
+            <pre><code>import requests
+import json
+
+CF_ACCOUNT_ID = "your_account_id"
+CF_API_TOKEN = "your_api_token"
+
+headers = {
+    "Authorization": f"Bearer {CF_API_TOKEN}",
+    "Content-Type": "application/json"
+}
+
+# Create a new Access Application
+app_data = {
+    "name": "Internal Dashboard",
+    "domain": "dashboard.example.com",
+    "type": "self_hosted",
+    "session_duration": "24h"
+}
+
+response = requests.post(
+    f"https://api.cloudflare.com/client/v4/accounts/{CF_ACCOUNT_ID}/access/apps",
+    headers=headers,
+    json=app_data
+)
+
+app = response.json()
+if app["success"]:
+    print(f"✅ Created app: {app['result']['id']}")
+    print(f"   Domain: {app['result']['domain']}")
+else:
+    print(f"❌ Error: {app['errors']}")
+
+# Create a policy for the application
+policy_data = {
+    "name": "Email Domain Policy",
+    "preference": "order",
+    "decision": "allow",
+    "include": {
+        "email": [
+            {"email": "name@company.com", "email_status": "verified"}
+        ]
+    }
+}
+
+response = requests.post(
+    f"https://api.cloudflare.com/client/v4/accounts/{CF_ACCOUNT_ID}/access/apps/{app['result']['id']}/policies",
+    headers=headers,
+    json=policy_data
+)
+
+if response.json()["success"]:
+    print("✅ Policy created successfully")</code></pre>
+
+            <h2>Reading Access JWT Tokens in Your Application</h2>
+            <p>When a user passes Cloudflare Access authentication, Cloudflare adds JWT headers to every request. Your application can read these to know who the user is:</p>
+            <pre><code>import re
+import jwt  # pip install pyjwt
+from flask import Flask, request, jsonify
+
+app = Flask(__name__)
+
+# Base64-encoded public key from Cloudflare dashboard
+# (Zero Trust → Access → Service Auth → Public Key)
+PEM_KEY = """-----BEGIN CERTIFICATE-----
+MIICIjANBgkqhkiG9w0BAQE...
+-----END CERTIFICATE-----"""
+
+def decode_access_token():
+    """Decode the Cloudflare Access JWT from request headers."""
+    token = request.headers.get("Cf-Access-Jwt-Assertion")
+    if not token:
+        return None
+
+    try:
+        decoded = jwt.decode(
+            token,
+            PEM_KEY,
+            algorithms=["RS256"],
+            options={"verify_exp": False}  # Cloudflare handles expiration
+        )
+        return decoded
+    except Exception as e:
+        print(f"JWT decode error: {e}")
+        return None
+
+@app.route("/api/dashboard")
+def dashboard():
+    """Protected endpoint that requires Cloudflare Access authentication."""
+    claims = decode_access_token()
+
+    if not claims:
+        return jsonify({"error": "Authentication required"}), 401
+
+    return jsonify({
+        "message": "Welcome!",
+        "email": claims.get("email"),
+        "groups": claims.get("https://cloudflare.com/access/groups", []),
+        "expiry": claims.get("exp")
+    })
+
+@app.route("/api/admin")
+def admin():
+    """Protected endpoint with role-based access control."""
+    claims = decode_access_token()
+
+    if not claims:
+        return jsonify({"error": "Authentication required"}), 401
+
+    # Check for admin group membership
+    groups = claims.get("https://cloudflare.com/access/groups", [])
+    if "admin" not in groups:
+        return jsonify({"error": "Admin access required"}), 403
+
+    return jsonify({"message": "Admin dashboard", "user": claims.get("email")})
+
+if __name__ == "__main__":
+    app.run(port=8080)</code></pre>
+
+            <h2>Service-to-Service Authentication</h2>
+            <p>When a script or service needs to access a protected application (e.g., CI/CD pipelines, monitoring tools), use Service Tokens instead of human authentication:</p>
+            <pre><code>import requests
+
+# 1. Get a service token (configured in Cloudflare dashboard)
+# Zero Trust → Access → Service Auth → Create Service Token
+
+SERVICE_TOKEN_ID = "your_service_token_id"
+SERVICE_TOKEN_SECRET = "your_service_token_secret"
+CF_ACCOUNT_ID = "your_account_id"
+
+# 2. Exchange the service token for a session cookie
+response = requests.post(
+    f"https://{CF_ACCOUNT_ID}.cloudflareaccess.com/cdn-cgi/access/login",
+    json={
+        "service_token": SERVICE_TOKEN_SECRET
+    }
+)
+
+cookies = response.cookies
+
+# 3. Use the cookies to access the protected application
+app_response = requests.get(
+    "https://admin.example.com/api/health",
+    cookies=cookies
+)
+
+print(f"Status: {app_response.status_code}")
+print(f"Response: {app_response.text}")</code></pre>
+
+            <h2>Command-Line Access with <code>cloudflared</code></h2>
+            <p>For developers who work with CLI tools, the <code>cloudflared</code> browser login allows you to authenticate from the command line:</p>
+            <pre><code># Install cloudflared (Linux)
+curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o cloudflared
+chmod +x cloudflared
+sudo mv cloudflared /usr/local/bin
+
+# Browse-login to authenticate (opens browser)
+cloudflared access browse admin.example.com
+
+# After authentication, use the token for CLI access
+cloudflared access token admin.example.com
+
+# Use with curl by adding the JWT header
+TOKEN=$(cloudflared access token admin.example.com)
+curl -H "Cf-Access-Jwt-Assertion: $TOKEN" https://admin.example.com/api/users
+
+# Proxy tunnel through cloudflared for direct access
+cloudflared access ssh --hostname admin.example.com</code></pre>
+
+            <h2>Security Best Practices</h2>
+            <p>Getting Access right means thinking about more than just authentication. Here are critical best practices:</p>
+
+            <h3>1. Use the Principle of Least Privilege</h3>
+            <pre><code># ❌ Bad: One policy that gives everyone access
+# Policy: Everyone → Allow → All company email
+
+# ✅ Good: Separate policies per role
+# Policy: Devs → Allow → dev@company.com
+# Policy: Admins → Allow → admin@company.com
+# Policy: Everyone → Deny (catch-all)</code></pre>
+
+            <h3>2. Set Reasonable Session Durations</h3>
+            <ul>
+                <li><strong>High-security apps</strong> (financial data, PII): 1–4 hours</li>
+                <li><strong>Internal tools</strong> (dashboards, wikis): 8–24 hours</li>
+                <li><strong>Public-facing apps</strong> (documentation): 7 days</li>
+            </ul>
+
+            <h3>3. Enable MFA Where Possible</h3>
+            <pre><code># In your policy conditions, add MFA requirement:
+# Condition → MFA → Require MFA
+
+# This forces users to verify with an authenticator app,
+# SMS, or hardware token — even after email/SAML login.</code></pre>
+
+            <h3>4. Audit and Review Policies Regularly</h3>
+            <pre><code># Use the Cloudflare API to list all policies and review
+import requests
+
+headers = {"Authorization": f"Bearer {API_TOKEN}"}
+
+# List all access applications
+apps = requests.get(
+    f"https://api.cloudflare.com/client/v4/accounts/{CF_ACCOUNT_ID}/access/apps",
+    headers=headers
+).json()
+
+for app in apps.get("result", []):
+    print(f"App: {app['name']}")
+    print(f"  Domain: {app['domain']}")
+    print(f"  Created: {app.get('created_at', 'N/A')}")
+
+    # List policies for this app
+    policies = requests.get(
+        f"https://api.cloudflare.com/client/v4/accounts/{CF_ACCOUNT_ID}/access/apps/{app['id']}/policies",
+        headers=headers
+    ).json()
+
+    for policy in policies.get("result", []):
+        print(f"  → Policy: {policy['name']} ({policy['decision']})")</code></pre>
+
+            <h3>5. Monitor Access Logs</h3>
+            <p>Cloudflare logs every authentication attempt. Use these logs for:</p>
+            <ul>
+                <li>Detecting failed login attempts (possible brute force)</li>
+                <li>Auditing who accessed what and when</li>
+                <li>Investigating security incidents</li>
+            </ul>
+            <pre><code># Query Access logs via the Cloudflare API
+response = requests.get(
+    f"https://api.cloudflare.com/client/v4/accounts/{CF_ACCOUNT_ID}/access/logs",
+    headers=headers,
+    params={
+        "limit": 50,
+        "filter": '{"event_type": ["authentication_failed"]}'
+    }
+)
+
+for log in response.json().get("result", []):
+    print(f"Failed auth: {log.get('email')} at {log.get('timestamp')}")</code></pre>
+
+            <h2>Cloudflare Access vs Traditional VPN</h2>
+            <p>Here's why Access is often a better choice:</p>
+            <table style="width:100%; border-collapse: collapse; margin: 1rem 0;">
+                <tr style="background: var(--bg);">
+                    <th style="padding: 0.75rem; border: 1px solid var(--border); text-align: left;">Feature</th>
+                    <th style="padding: 0.75rem; border: 1px solid var(--border); text-align: left;">VPN</th>
+                    <th style="padding: 0.75rem; border: 1px solid var(--border); text-align: left;">Cloudflare Access</th>
+                </tr>
+                <tr>
+                    <td style="padding: 0.75rem; border: 1px solid var(--border);">Setup</td>
+                    <td style="padding: 0.75rem; border: 1px solid var(--border);">Complex — servers, tunnels, certificates</td>
+                    <td style="padding: 0.75rem; border: 1px solid var(--border);">Dashboard configuration only</td>
+                </tr>
+                <tr>
+                    <td style="padding: 0.75rem; border: 1px solid var(--border);">Granularity</td>
+                    <td style="padding: 0.75rem; border: 1px solid var(--border);">Network-wide (all or nothing)</td>
+                    <td style="padding: 0.75rem; border: 1px solid var(--border);">Per-app, per-user, per-group</td>
+                </tr>
+                <tr>
+                    <td style="padding: 0.75rem; border: 1px solid var(--border);">Performance</td>
+                    <td style="padding: 0.75rem; border: 1px solid var(--border);">Tunnels all traffic (slow)</td>
+                    <td style="padding: 0.75rem; border: 1px solid var(--border);">Only authenticates, doesn't tunnel</td>
+                </tr>
+                <tr>
+                    <td style="padding: 0.75rem; border: 1px solid var(--border);">Free tier</td>
+                    <td style="padding: 0.75rem; border: 1px solid var(--border);">Usually requires paid service</td>
+                    <td style="padding: 0.75rem; border: 1px solid var(--border);">Up to 50 users free</td>
+                </tr>
+            </table>
+
+            <h2>Summary</h2>
+            <p>Cloudflare Access gives you enterprise-grade application security without the complexity of VPNs or custom auth systems. The key takeaways:</p>
+            <ul>
+                <li><strong>No infrastructure</strong> — Access runs on Cloudflare's edge, no servers or agents needed</li>
+                <li><strong>Flexible identity providers</strong> — email, Google, GitHub, Okta, SAML, or any combination</li>
+                <li><strong>Fine-grained policies</strong> — control access by email, group, IP, or MFA requirement</li>
+                <li><strong>JWT integration</strong> — your apps receive structured auth data via standard headers</li>
+                <li><strong>Service tokens</strong> — machine-to-machine auth for CI/CD and automation</li>
+            </ul>
+            <p>Start with a simple email policy on one app, then gradually expand to more providers and more granular policies. The free tier (50 users) is generous enough to get started and prove the value.</p>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Hugo's Dev Notes. Built with ❤️ and Python.</p>
+            <div class="footer-links">
+                <a href="../index.html">Home</a>
+                <a href="../cloudflare.html">Cloudflare</a>
+                <a href="../python.html">Python</a>
+                <a href="../sitemap.xml">Sitemap</a>
+            </div>
+        </div>
+    </footer>
+
+    <button class="back-to-top" id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+    <script>
+        // Reading progress bar
+        window.onscroll = function() {
+            let winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            let height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            let scrolled = (winScroll / height) * 100;
+            document.getElementById("progressBar").style.width = scrolled + "%";
+            let btn = document.getElementById("backToTop");
+            btn.style.display = winScroll > 300 ? "block" : "none";
+        };
+
+        // Dark mode toggle
+        const toggle = document.getElementById("themeToggle");
+        toggle.addEventListener("click", () => {
+            document.body.classList.toggle("dark-mode");
+            toggle.textContent = document.body.classList.contains("dark-mode") ? "☀️" : "🌙";
+        });
+    </script>
+</body>
+</html>

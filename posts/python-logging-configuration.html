@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Logging & Configuration Management: Production-Ready Apps</title>
+    <meta name="description" content="Master Python logging and configuration — the logging module, log levels, handlers, formatters, rotating files, and 12-factor config management. Production-ready patterns.">
+    <meta name="keywords" content="python logging, python config, production logging, log rotation, 12-factor config, python dotenv">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../../python.html" class="nav-btn active">🐍 Python</a>
+                <a href="../../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+                <a href="../../devops.html" class="nav-btn">🐳 DevOps</a>
+                <a href="../../security.html" class="nav-btn">🔐 Security</a>
+                <a href="../../webdev.html" class="nav-btn">💻 Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post">
+            <h1>Python Logging &amp; Configuration Management: Build Production-Ready Apps</h1>
+            <div class="post-meta">
+                <span class="tag python">Python</span>
+                <span class="tag devops">DevOps</span>
+                <time>2026-06-27</time>
+                <span class="read-time">11 min read</span>
+            </div>
+
+            <p><code>print()</code> is great for learning. It's terrible for production. When your application runs on a server processing thousands of requests, you need <strong>structured logging</strong> and <strong>proper configuration</strong> to understand what's happening, debug issues, and keep things running smoothly.</p>
+
+            <p>This guide covers Python's built-in <code>logging</code> module (which is more powerful than you think), log rotation, configuration management following the 12-factor app methodology, and practical patterns you can use in any project.</p>
+
+            <h2>Why Not Just Use print()?</h2>
+
+            <p>Let's be honest about why <code>print()</code> fails in production:</p>
+
+            <ul>
+                <li><strong>No severity levels</strong> — is it an error, a warning, or just informational?</li>
+                <li><strong>No timestamps</strong> — when did this happen?</li>
+                <li><strong>No structure</strong> — can't filter or search programmatically</li>
+                <li><strong>Blocks output</strong> — print writes to stdout, which can slow down your app</li>
+                <li><strong>No file output</strong> — logs disappear when the process restarts</li>
+                <li><strong>No log rotation</strong> — one big log file until your disk fills up</li>
+            </ul>
+
+            <p>Python's built-in <code>logging</code> module solves all of these problems. And the best part? It's in the standard library — no <code>pip install</code> needed.</p>
+
+            <h2>Part 1: The Logging Module Basics</h2>
+
+            <h3>Log Levels</h3>
+
+            <p>Python logging has 5 standard levels, from least to most severe:</p>
+
+            <pre><code>import logging
+
+# Log levels (with numeric values)
+# DEBUG    = 10   — Detailed diagnostic info
+# INFO     = 20   — Normal operation messages
+# WARNING  = 30   — Something unexpected happened
+# ERROR    = 40   — Something failed but the app keeps running
+# CRITICAL = 50   — The app might crash or stop working
+
+logger = logging.getLogger("myapp")
+logger.setLevel(logging.DEBUG)
+
+logger.debug("Loading configuration file")
+logger.info("Server started on port 8080")
+logger.warning("Config file not found, using defaults")
+logger.error("Failed to connect to database")
+logger.critical("System running out of disk space")</code></pre>
+
+            <h3>Basic Configuration with basicConfig()</h3>
+
+            <p>The quickest way to get logging working:</p>
+
+            <pre><code>import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+
+logger = logging.getLogger("myapp")
+logger.info("Application started")
+# Output: 2026-06-27 10:30:00 [INFO] myapp: Application started</code></pre>
+
+            <h3>Understanding the Format String</h3>
+
+            <p>These are the most useful format specifiers:</p>
+
+            <pre><code># Common format pattern
+'%(asctime)s [%(levelname)s] %(name)s (%(filename)s:%(lineno)d): %(message)s'
+
+# asctime  — human-readable timestamp
+# levelname — DEBUG, INFO, WARNING, ERROR, CRITICAL
+# name    — logger name (great for filtering)
+# filename — which .py file the log came from
+# lineno  — line number in the file
+# message — the actual log message
+# exc_info — include traceback when present</code></pre>
+
+            <h2>Part 2: Handlers and Formatters</h2>
+
+            <p>Handlers control <em>where</em> logs go. Formatters control <em>how</em> they look. You can have multiple handlers with different formatters — that's the power of the logging system.</p>
+
+            <pre><code>import logging
+
+def setup_logger(name: str) -> logging.Logger:
+    """Create a logger that writes to both console and file."""
+    logger = logging.getLogger(name)
+    logger.setLevel(logging.DEBUG)
+
+    # Prevent duplicate handlers on repeated calls
+    if logger.handlers:
+        return logger
+
+    # Shared formatter
+    fmt = logging.Formatter(
+        '%(asctime)s [%(levelname)s] %(name)s: %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+
+    # Console handler — shows INFO and above
+    console = logging.StreamHandler()
+    console.setLevel(logging.INFO)
+    console.setFormatter(fmt)
+    logger.addHandler(console)
+
+    # File handler — captures everything including DEBUG
+    file_handler = logging.FileHandler("app.log", encoding="utf-8")
+    file_handler.setLevel(logging.DEBUG)
+    file_handler.setFormatter(fmt)
+    logger.addHandler(file_handler)
+
+    # Error-only file handler
+    error_fmt = logging.Formatter(
+        '=== ERROR ===\n%(asctime)s | %(name)s | %(levelname)s\n%(message)s\n'
+        '%(filename)s:%(lineno)d\n'
+        '%(exc_info)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+    error_handler = logging.FileHandler("errors.log", encoding="utf-8")
+    error_handler.setLevel(logging.ERROR)
+    error_handler.setFormatter(error_fmt)
+    logger.addHandler(error_handler)
+
+    return logger
+
+# Usage
+logger = setup_logger("myapp")
+logger.debug("This goes to app.log only")
+logger.info("This goes to console + app.log")
+logger.error("This goes everywhere + errors.log", exc_info=True)</code></pre>
+
+            <h2>Part 3: Log Rotation — Don't Fill Your Disk</h2>
+
+            <p>Without rotation, your log files grow forever. Python provides <code>RotatingFileHandler</code> and <code>TimedRotatingFileHandler</code>:</p>
+
+            <pre><code>from logging.handlers import RotatingFileHandler, TimedRotatingFileHandler
+
+logger = logging.getLogger("myapp")
+
+# Rotate by SIZE — max 5MB per file, keep 3 backups
+size_handler = RotatingFileHandler(
+    "app.log",
+    maxBytes=5 * 1024 * 1024,  # 5 MB
+    backupCount=3,              # Keep app.log.1, .2, .3
+    encoding="utf-8"
+)
+logger.addHandler(size_handler)
+
+# Rotate by TIME — new file every midnight
+time_handler = TimedRotatingFileHandler(
+    "daily_app.log",
+    when="midnight",             # Rotate at midnight
+    interval=1,                 # Every 1 period
+    backupCount=30,             # Keep 30 days of logs
+    encoding="utf-8"
+)
+logger.addHandler(time_handler)</code></pre>
+
+            <h2>Part 4: JSON Logging for Structured Data</h2>
+
+            <p>In production environments (especially with log aggregators like Datadog, ELK, or Cloudflare Workers), JSON logs are the standard. Here's how to create a JSON formatter:</p>
+
+            <pre><code>import json
+import logging
+import traceback
+
+class JsonFormatter(logging.Formatter):
+    """Format log records as JSON for easy parsing."""
+
+    def format(self, record: logging.LogRecord) -> str:
+        log_data = {
+            "timestamp": self.formatTime(record),
+            "level": record.levelname,
+            "logger": record.name,
+            "message": record.getMessage(),
+            "module": record.module,
+            "function": record.funcName,
+            "line": record.lineno,
+        }
+
+        # Add exception info if present
+        if record.exc_info:
+            log_data["exception"] = traceback.format_exception(*record.exc_info)
+
+        # Add any extra fields passed in
+        if hasattr(record, "user_id"):
+            log_data["user_id"] = record.user_id
+        if hasattr(record, "request_id"):
+            log_data["request_id"] = record.request_id
+
+        return json.dumps(log_data)
+
+# Usage
+logger = logging.getLogger("myapp")
+handler = logging.StreamHandler()
+handler.setFormatter(JsonFormatter())
+logger.addHandler(handler)
+logger.setLevel(logging.INFO)
+
+logger.info("User logged in", extra={"user_id": "12345"})
+# Output: {"timestamp": "2026-06-27 10:30:00", "level": "INFO",
+#          "logger": "myapp", "message": "User logged in",
+#          "module": "app", "function": "login", "line": 42,
+#          "user_id": "12345"}
+
+# With an exception
+try:
+    1 / 0
+except ZeroDivisionError:
+    logger.error("Calculation failed", exc_info=True)</code></pre>
+
+            <h2>Part 5: Configuration Management</h2>
+
+            <p>Hardcoding values like database URLs, API keys, and server ports is a recipe for deployment failures. The <strong>12-factor app</strong> methodology says: <em>store config in the environment</em>.</p>
+
+            <h3>Method 1: Environment Variables (Recommended)</h3>
+
+            <pre><code>import os
+from pathlib import Path
+
+class Settings:
+    """Application settings loaded from environment variables."""
+
+    # Server
+    HOST: str = os.getenv("APP_HOST", "0.0.0.0")
+    PORT: int = int(os.getenv("APP_PORT", "8000"))
+    DEBUG: bool = os.getenv("APP_DEBUG", "false").lower() == "true"
+
+    # Database
+    DB_HOST: str = os.getenv("DB_HOST", "localhost")
+    DB_PORT: int = int(os.getenv("DB_PORT", "5432"))
+    DB_NAME: str = os.getenv("DB_NAME", "myapp")
+    DB_USER: str = os.getenv("DB_USER", "postgres")
+    DB_PASSWORD: str = os.getenv("DB_PASSWORD", "")
+
+    @property
+    def database_url(self) -> str:
+        return f"postgresql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+
+    # API Keys
+    CLOUDFLARE_TOKEN: str = os.getenv("CLOUDFLARE_API_TOKEN", "")
+    SECRET_KEY: str = os.getenv("SECRET_KEY", "change-me-in-production!")
+
+    def validate(self) -> bool:
+        """Check required settings are present."""
+        if not self.SECRET_KEY or self.SECRET_KEY == "change-me-in-production!":
+            raise ValueError("SECRET_KEY must be set in production")
+        return True
+
+# Usage
+settings = Settings()
+settings.validate()
+print(f"Database: {settings.database_url}")
+print(f"Server: {settings.HOST}:{settings.PORT}")</code></pre>
+
+            <h3>Method 2: .env Files with python-dotenv</h3>
+
+            <p>For local development, use a <code>.env</code> file. <strong>Never commit this to Git.</strong></p>
+
+            <pre><code># .env (NEVER commit to Git!)
+APP_DEBUG=true
+APP_PORT=8000
+DB_HOST=localhost
+DB_PASSWORD=mysecret123
+CLOUDFLARE_API_TOKEN=eyJh...
+SECRET_KEY=dev-key-not-for-production
+
+# .gitignore
+# Add this line:
+# .env</code></pre>
+
+            <pre><code># pip install python-dotenv
+from dotenv import load_dotenv
+
+# Load from .env file (only in development)
+load_dotenv()  # Reads .env from current directory
+
+# Now os.getenv() uses values from .env as fallbacks
+import os
+db_password = os.getenv("DB_PASSWORD")  # Gets value from .env</code></pre>
+
+            <h3>Method 3: YAML Configuration Files</h3>
+
+            <p>For complex configurations (like microservices), YAML files work well:</p>
+
+            <pre><code># config/production.yaml
+server:
+  host: 0.0.0.0
+  port: 8000
+  workers: 4
+
+database:
+  host: db.production.internal
+  port: 5432
+  name: myapp_prod
+  pool_size: 20
+
+logging:
+  level: INFO
+  format: json
+  file: /var/log/myapp/app.log
+  max_size_mb: 100
+  backup_count: 7
+
+cache:
+  redis_url: redis://cache.internal:6379/0
+  ttl_seconds: 300</code></pre>
+
+            <pre><code># pip install pyyaml
+import yaml
+from pathlib import Path
+
+def load_config(env: str = "development") -> dict:
+    """Load configuration from YAML files."""
+    config_path = Path(f"config/{env}.yaml")
+
+    if not config_path.exists():
+        raise FileNotFoundError(f"Config not found: {config_path}")
+
+    with open(config_path) as f:
+        config = yaml.safe_load(f)
+
+    return config
+
+# Usage
+config = load_config("production")
+print(config["server"]["host"])   # 0.0.0.0
+print(config["database"]["host"])  # db.production.internal</code></pre>
+
+            <h2>Part 6: Putting It All Together — A Real Project</h2>
+
+            <p>Here's a complete example combining logging and configuration in a Flask app:</p>
+
+            <pre><code># project/app.py
+import os
+import logging
+from logging.handlers import RotatingFileHandler
+from flask import Flask
+
+def create_app() -> Flask:
+    app = Flask(__name__)
+
+    # Configuration from environment
+    app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev-key")
+    app.config["DEBUG"] = os.getenv("APP_DEBUG", "false").lower() == "true"
+    app.config["DATABASE_URL"] = os.getenv(
+        "DATABASE_URL",
+        "postgresql://localhost:5432/myapp"
+    )
+
+    # Setup logging
+    setup_logging(app)
+
+    # Register routes
+    @app.route("/")
+    def index():
+        app.logger.info("Home page accessed")
+        return "Hello, World!"
+
+    @app.route("/api/data")
+    def get_data():
+        try:
+            result = fetch_data()
+            app.logger.info("Data fetched successfully")
+            return result
+        except Exception as e:
+            app.logger.error("Failed to fetch data", exc_info=True)
+            return {"error": "Service unavailable"}, 503
+
+    return app
+
+def setup_logging(app: Flask) -> None:
+    """Configure application logging."""
+    if app.config["DEBUG"]:
+        level = logging.DEBUG
+    else:
+        level = logging.INFO
+
+    app.logger.setLevel(level)
+
+    # Console handler
+    console = logging.StreamHandler()
+    console.setLevel(level)
+    console.setFormatter(logging.Formatter(
+        '%(asctime)s [%(levelname)s] %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    ))
+    app.logger.addHandler(console)
+
+    # File handler (production only)
+    if not app.config["DEBUG"]:
+        file_handler = RotatingFileHandler(
+            "app.log", maxBytes=10*1024*1024, backupCount=5
+        )
+        file_handler.setLevel(logging.WARNING)
+        file_handler.setFormatter(logging.Formatter(
+            '%(asctime)s [%(levelname)s] %(name)s: %(message)s'
+        ))
+        app.logger.addHandler(file_handler)
+
+    # Log startup
+    app.logger.info(f"App starting in {'DEBUG' if app.config['DEBUG'] else 'PRODUCTION'} mode")
+
+if __name__ == "__main__":
+    app = create_app()
+    app.run(host="0.0.0.0", port=8000)</code></pre>
+
+            <h2>Part 7: Common Logging Anti-Patterns</h2>
+
+            <p>Avoid these mistakes:</p>
+
+            <pre><code># ❌ BAD: Creating a new logger everywhere
+logger = logging.getLogger(__name__)
+# ... somewhere else
+logger2 = logging.getLogger(__name__)  # Same logger, but confusing
+
+# ✅ GOOD: Use __name__ consistently, import the logger
+# In logging.py
+import logging
+logger = logging.getLogger(__name__)
+
+# In other_file.py
+from logging import getLogger
+logger = getLogger(__name__)  # Gets child logger automatically
+
+# ❌ BAD: Logging sensitive data
+logger.info(f"User password is: {password}")
+
+# ✅ GOOD: Never log secrets
+logger.info(f"User {user_id} authenticated successfully")
+
+# ❌ BAD: Using print in production code
+print("Error connecting to database")
+
+# ✅ GOOD: Use proper log levels
+logger.error("Failed to connect to database: %s", str(e))
+
+# ❌ BAD: String concatenation (evaluates even if log level is too low)
+logger.debug("User " + user.id + " loaded " + str(data))
+
+# ✅ GOOD: Lazy evaluation with % formatting
+logger.debug("User %s loaded %d items", user.id, len(data))</code></pre>
+
+            <h2>Summary</h2>
+
+            <p>Logging and configuration are foundational skills that separate hobby code from production systems:</p>
+
+            <ul>
+                <li><strong>Use the built-in <code>logging</code> module</strong> — it's more powerful than you think and requires no dependencies.</li>
+                <li><strong>Set proper log levels</strong> — DEBUG for development, INFO/WARNING for production.</li>
+                <li><strong>Use multiple handlers</strong> — console for real-time monitoring, files for history, error logs for incident response.</li>
+                <li><strong>Implement log rotation</strong> — either by size (RotatingFileHandler) or time (TimedRotatingFileHandler).</li>
+                <li><strong>Use JSON logging in production</strong> — structured logs are essential for log aggregation tools.</li>
+                <li><strong>Store config in environment variables</strong> — follow the 12-factor methodology.</li>
+                <li><strong>Use .env files for local development</strong> — never commit secrets to Git.</li>
+                <li><strong>Validate your configuration at startup</strong> — fail fast with clear error messages.</li>
+            </ul>
+
+            <p>With these patterns, your Python applications will be observable, configurable, and production-ready from day one.</p>
+
+            <div style="margin-top: 40px; padding: 20px; background: #f5f5f5; border-radius: 8px;">
+                <p><strong>Next up:</strong> Learn about <a href="cloudflare-stream.html">Cloudflare Stream for video hosting</a> — upload and stream videos without managing infrastructure.</p>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes. Built with ☁️ Cloudflare & 💻 plain HTML.</p>
+        </div>
+    </footer>
+
+    <script>
+        window.onscroll = function() {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById("progressBar").style.width = scrolled + "%";
+        };
+        const toggle = document.getElementById("themeToggle");
+        toggle.addEventListener("click", () => {
+            document.body.classList.toggle("dark-mode");
+            toggle.textContent = document.body.classList.contains("dark-mode") ? "☀️" : "🌙";
+            localStorage.setItem("theme", document.body.classList.contains("dark-mode") ? "dark" : "light");
+        });
+        if (localStorage.getItem("theme") === "dark") {
+            document.body.classList.add("dark-mode");
+            toggle.textContent = "☀️";
+        }
+    </script>
+</body>
+</html>

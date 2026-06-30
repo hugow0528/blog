@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloudflare Stream: Video Upload, Transcoding & Streaming Made Easy</title>
+    <meta name="description" content="Learn Cloudflare Stream — upload, transcode, and stream video with automatic quality optimization, DRM, and analytics. Complete guide with Python examples.">
+    <meta name="keywords" content="cloudflare stream, video streaming, video transcoding, python video upload, cloud video hosting">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../../cloudflare.html" class="nav-btn active">☁️ Cloudflare</a>
+                <a href="../../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+                <a href="../../devops.html" class="nav-btn">🐳 DevOps</a>
+                <a href="../../security.html" class="nav-btn">🔐 Security</a>
+                <a href="../../webdev.html" class="nav-btn">💻 Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post">
+            <h1>Cloudflare Stream: Video Upload, Transcoding & Streaming Made Easy</h1>
+            <div class="post-meta">
+                <span class="tag cloudflare">Cloudflare</span>
+                <span class="tag python">Python</span>
+                <time>2026-06-27</time>
+                <span class="read-time">10 min read</span>
+            </div>
+
+            <p>Video hosting is hard. You need storage, transcoding pipelines, CDN delivery, adaptive bitrate streaming, and analytics. <strong>Cloudflare Stream</strong> handles all of that — upload a video file and get back a ready-to-play streaming URL with automatic quality optimization, thumbnails, and DRM support.</p>
+
+            <p>In this guide, you'll learn how to upload videos, embed players, manage uploads programmatically with Python, and set up a complete video streaming pipeline.</p>
+
+            <h2>What Is Cloudflare Stream?</h2>
+
+            <p>Cloudflare Stream is a fully managed video service that sits on top of Cloudflare's global network. When you upload a video, Stream:</p>
+
+            <ul>
+                <li><strong>Transcodes</strong> it into multiple resolutions (480p, 720p, 1080p)</li>
+                <li><strong>Generates</strong> thumbnails and poster images automatically</li>
+                <li><strong>Delivers</strong> via HTTP Live Streaming (HLS) from 300+ edge locations</li>
+                <li><strong>Provides</strong> an embeddable HTML5 player with built-in controls</li>
+                <li><strong>Tracks</strong> viewership analytics — when, where, and for how long</li>
+            </ul>
+
+            <p>Think of it as the "Cloudflare Pages for video" — you upload, and Stream handles the rest.</p>
+
+            <h2>Pricing Overview</h2>
+
+            <p>Stream uses a pay-per-minute model:</p>
+
+            <ul>
+                <li><strong>$0.006 per stored minute</strong> (storage)</li>
+                <li><strong>$0.02 per streaming minute</strong> (viewing)</li>
+            </ul>
+
+            <p>For 1,000 viewers watching a 10-minute video, that's roughly <strong>$200 for viewing</strong> and <strong>$0.06 for storage</strong>. Compare that to self-hosting with S3 + transcoding infrastructure, and the math gets compelling fast.</p>
+
+            <h2>Step 1: Upload Your First Video</h2>
+
+            <p>You can upload via the Cloudflare dashboard or programmatically. Let's start with the dashboard:</p>
+
+            <ol>
+                <li>Go to <code>dash.cloudflare.com</code> → Stream → Video Uploads</li>
+                <li>Click "Upload Video" and select your file</li>
+                <li>Wait for transcoding (usually seconds for short videos)</li>
+                <li>Copy the <strong>Video UUID</strong> — you'll need this for embedding</li>
+            </ol>
+
+            <h2>Step 2: Embed the Video Player</h2>
+
+            <p>Cloudflare provides a drop-in player. Add this to any HTML page:</p>
+
+            <pre><code>&lt;!-- Basic embed --&gt;
+&lt;video id="my-video" controls&gt;
+    &lt;source src="https://stream.video.cloudflare.com/YOUR_UUID.m3u8" type="application/x-mpegURL"&gt;
+    Your browser doesn't support video.
+&lt;/video&gt;
+
+&lt;!-- Using the official Stream player --&gt;
+&lt;script src="https://embed.cloudflarestream.com/YOUR_UUID"&gt;
+&lt;/script&gt;
+
+&lt;!-- With custom dimensions --&gt;
+&lt;div class="stream-player" style="max-width: 640px;"&gt;
+    &lt;script src="https://embed.cloudflarestream.com/YOUR_UUID"&gt;
+    &lt;/script&gt;
+&lt;/div&gt;</code></pre>
+
+            <h2>Step 3: Upload Videos with Python</h2>
+
+            <p>The manual dashboard works for a few videos, but what about building a video platform? Cloudflare Stream has an API, and we can drive it entirely from Python.</p>
+
+            <p><strong>Install the SDK:</strong></p>
+
+            <pre><code>pip install cloudflare</code></pre>
+
+            <p><strong>Upload a video programmatically:</strong></p>
+
+            <pre><code>import os
+from cloudflare import Cloudflare
+
+# Initialize with API token (has Stream permissions)
+cf = Cloudflare.from_tokens(os.environ["CLOUDFLARE_API_TOKEN"])
+
+# Upload from a file path
+response = cf.stream.videos.post(
+    file=open("my_video.mp4", "rb"),
+    metadata={"title": "My First Stream", "tags": ["tutorial", "python"]}
+)
+
+video_id = response.result.uuid
+print(f"✅ Video uploaded! UUID: {video_id}")
+print(f"🎬 Embed URL: https://cloudflarestream.com/{video_id}/iframe")
+print(f"📊 Thumbnail: https://cloudflarestream.com/{video_id}/thumbnail.jpg")
+print(f"🔗 Direct HLS: https://cloudflarestream.com/{video_id}/manifest/video.m3u8")
+
+# Check upload progress
+status = cf.stream.videos.get(video_id)
+print(f"Status: {status.result.status}")
+print(f"Duration: {status.result.duration}s")</code></pre>
+
+            <h2>Step 4: Create a Custom Upload Page</h2>
+
+            <p>Let's build a simple Flask app where users can upload videos through a web form:</p>
+
+            <pre><code># pip install flask cloudflare
+from flask import Flask, request, jsonify, render_template_string
+from cloudflare import Cloudflare
+import os
+
+app = Flask(__name__)
+cf = Cloudflare.from_tokens(os.environ["CLOUDFLARE_API_TOKEN"])
+
+UPLOAD_HTML = '''
+&lt;html&gt;
+&lt;head&gt;&lt;title&gt;Upload Video&lt;/title&gt;
+    &lt;style&gt;
+        body { font-family: system-ui; max-width: 600px; margin: 40px auto; padding: 0 20px; }
+        input[type="file"] { margin: 10px 0; }
+        button { background: #f38020; color: white; border: none; padding: 10px 20px;
+                 border-radius: 4px; cursor: pointer; font-size: 16px; }
+        .result { margin-top: 20px; padding: 15px; background: #f5f5f5; border-radius: 8px; }
+    &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;h1&gt;🎥 Upload to Cloudflare Stream&lt;/h1&gt;
+    &lt;form method="post" enctype="multipart/form-data"&gt;
+        &lt;input type="file" name="video" accept="video/*" required&gt;
+        &lt;br&gt;
+        &lt;input type="text" name="title" placeholder="Video title" required&gt;
+        &lt;br&gt;&lt;br&gt;
+        &lt;button type="submit"&gt;Upload Video&lt;/button&gt;
+    &lt;/form&gt;
+    {% if video_id %}
+    &lt;div class="result"&gt;
+        &lt;p&gt;✅ Uploaded! UUID: {{ video_id }}&lt;/p&gt;
+        &lt;video controls width="100%"&gt;
+            &lt;source src="https://cloudflarestream.com/{{ video_id }}/manifest/video.m3u8"
+                    type="application/x-mpegURL"&gt;
+        &lt;/video&gt;
+        &lt;p&gt;&lt;a href="/play/{{ video_id }}"&gt;Open player page&lt;/a&gt;&lt;/p&gt;
+    &lt;/div&gt;
+    {% endif %}
+&lt;/body&gt;
+&lt;/html&gt;
+'''
+
+@app.route("/", methods=["GET", "POST"])
+def upload():
+    if request.method == "POST":
+        video_file = request.files["video"]
+        title = request.form["title"]
+
+        response = cf.stream.videos.post(
+            file=video_file.read(),
+            metadata={"title": title}
+        )
+
+        return render_template_string(
+            UPLOAD_HTML, video_id=response.result.uuid
+        )
+
+    return render_template_string(UPLOAD_HTML, video_id=None)
+
+@app.route("/play/&lt;video_id&gt;")
+def play(video_id):
+    return f'''
+    &lt;html&gt;
+    &lt;head&gt;&lt;title&gt;Watch&lt;/title&gt;&lt;/head&gt;
+    &lt;body style="max-width:800px;margin:40px auto"&gt;
+        &lt;h1&gt;Playing video&lt;/h1&gt;
+        &lt;div style="position:relative;padding-bottom:56.25%"&gt;
+            &lt;iframe src="https://cloudflarestream.com/{video_id}/iframe"
+                    style="position:absolute;width:100%;height:100%;border:0"&gt;
+            &lt;/iframe&gt;
+        &lt;/div&gt;
+        &lt;p&gt;&lt;a href="/"&gt;← Upload another&lt;/a&gt;&lt;/p&gt;
+    &lt;/body&gt;
+    &lt;/html&gt;
+    '''
+
+if __name__ == "__main__":
+    app.run(debug=True)</code></pre>
+
+            <h2>Step 5: Manage Videos via API</h2>
+
+            <p>Stream's API lets you list, update, and delete videos:</p>
+
+            <pre><code># List all videos
+videos = cf.stream.videos.get()
+for v in videos.result:
+    print(f"  {v.uuid} - {v.metadata.get('title', 'Untitled')} - {v.duration}s")
+
+# Update video metadata
+cf.stream.videos.patch(
+    video_id,
+    metadata={"title": "Updated Title", "description": "A longer description"}
+)
+
+# Delete a video
+cf.stream.videos.delete(video_id)
+print(f"🗑️ Deleted {video_id}")</code></pre>
+
+            <h2>Step 6: Streaming Analytics</h2>
+
+            <p>Cloudflare provides viewership data so you know what's being watched:</p>
+
+            <pre><code>from datetime import datetime, timedelta
+
+# Get viewership for the last 7 days
+end_time = datetime.utcnow()
+start_time = end_time - timedelta(days=7)
+
+analytics = cf.stream.analytics.get(
+    video_id=video_id,
+    filter=f"first_timestamp_gte:{start_time.isoformat()}"
+)
+
+total_views = analytics.result.viewership
+print(f"📊 Total viewers: {total_views}")
+print(f"📈 Total minutes watched: {analytics.result.minutes}")
+
+# Get per-minute viewership curve
+for point in analytics.result.minutes:
+    print(f"  {point['timestamp']}: {point['value']} viewers")</code></pre>
+
+            <h2>Direct Upload: Let Users Upload Without Your Server</h2>
+
+            <p>For large-scale apps, you can let the client upload directly to Cloudflare, bypassing your server entirely. This saves bandwidth and reduces server costs:</p>
+
+            <pre><code># Step 1: Create a direct upload token on your server
+token_response = cf.stream.direct_upload.post(
+    filename="user_video.mp4",
+    metadata={"title": "User Upload", "uploaded_by": "user123"}
+)
+
+upload_url = token_response.result.url
+upload_id = token_response.result.upload_id
+print(f"Direct upload URL: {upload_url}")
+
+# Step 2: Client uploads directly via curl or fetch
+# curl -X PUT "{upload_url}" --data-binary @user_video.mp4</code></pre>
+
+            <h2>Security & Access Control</h2>
+
+            <p>By default, any user with the video URL can watch it. To protect content, use signed URLs:</p>
+
+            <pre><code># Generate a token that expires in 1 hour
+import time
+import hashlib
+import hmac
+import base64
+
+def generate_signed_url(video_id, secret_key, expires_in=3600):
+    """Generate a time-limited signed URL for a video."""
+    expiry = int(time.time()) + expires_in
+    path = f"/{video_id}/manifest/video.m3u8"
+
+    signature = hmac.new(
+        secret_key.encode(),
+        f"{path}:{expiry}".encode(),
+        hashlib.sha256
+    ).hexdigest()
+
+    return (
+        f"https://cloudflarestream.com{path}"
+        f"?expiry={expiry}&amp;signature={signature}"
+    )
+
+# Usage
+url = generate_signed_url(video_id, "your-secret-key")
+print(f"Protected URL: {url}")</code></pre>
+
+            <h2>Complete Project Structure</h2>
+
+            <p>Here's how you might organize a full video streaming project:</p>
+
+            <pre><code>video-platform/
+├── app.py              # Flask main application
+├── templates/
+│   ├── index.html      # Upload page
+│   ├── watch.html      # Video player page
+│   └── list.html       # Video gallery
+├── stream_client.py    # Cloudflare Stream API wrapper
+├── requirements.txt    # flask, cloudflare, python-dotenv
+└── .env               # CLOUDFLARE_API_TOKEN=your-token-here</code></pre>
+
+            <h2>Summary</h2>
+
+            <p>Cloudflare Stream removes the complexity from video hosting. Key takeaways:</p>
+
+            <ul>
+                <li>Upload a video → get a streaming URL. No infrastructure to manage.</li>
+                <li>Automatic transcoding into multiple quality levels.</li>
+                <li>Delivered from 300+ edge locations worldwide.</li>
+                <li>Python SDK makes programmatic uploads straightforward.</li>
+                <li>Direct upload feature lets clients upload without your server.</li>
+                <li>Built-in analytics tell you exactly how your content performs.</li>
+                <li>Pay only for what you store and what gets watched.</li>
+            </ul>
+
+            <p>Whether you're building a course platform, a social video app, or just need to share presentations, Cloudflare Stream handles the heavy lifting so you can focus on your product.</p>
+
+            <div style="margin-top: 40px; padding: 20px; background: #f5f5f5; border-radius: 8px;">
+                <p><strong>Next up:</strong> Learn about <a href="python-logging-configuration.html">Python Logging & Configuration Management</a> — essential skills for production applications.</p>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes. Built with ☁️ Cloudflare & 💻 plain HTML.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Reading progress bar
+        window.onscroll = function() {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById("progressBar").style.width = scrolled + "%";
+        };
+
+        // Dark mode toggle
+        const toggle = document.getElementById("themeToggle");
+        toggle.addEventListener("click", () => {
+            document.body.classList.toggle("dark-mode");
+            toggle.textContent = document.body.classList.contains("dark-mode") ? "☀️" : "🌙";
+            localStorage.setItem("theme", document.body.classList.contains("dark-mode") ? "dark" : "light");
+        });
+        if (localStorage.getItem("theme") === "dark") {
+            document.body.classList.add("dark-mode");
+            toggle.textContent = "☀️";
+        }
+    </script>
+</body>
+</html>

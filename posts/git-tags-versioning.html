@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Git Tags & Semantic Versioning: Release Management Made Simple | Hugo's Dev Notes</title>
+    <meta name="description" content="Master Git tags and semantic versioning — create releases, tag versions, build changelogs, and manage production deployments with confidence.">
+    <link rel="stylesheet" href="../style.css">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/git-tags-versioning.html">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+                <a href="../devops.html" class="nav-btn">🐳 DevOps</a>
+                <a href="../security.html" class="nav-btn">🔐 Security</a>
+                <a href="../webdev.html" class="nav-btn">💻 Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-content">
+            <span class="tag devops">DevOps</span>
+            <h1>Git Tags & Semantic Versioning: Release Management Made Simple</h1>
+            <time>2026-06-30</time>
+            <p>You've learned Git basics and branching strategies. Now it's time to mark your progress with <strong>Git tags</strong> — the way you create immutable release points in your project history. Combined with <strong>semantic versioning</strong>, tags become the backbone of professional software releases. Whether you're deploying a Python package, releasing a web app, or shipping a CLI tool, tags are how you say "this is version 1.0" to the world.</p>
+
+            <h2>What Are Git Tags?</h2>
+            <p>Git tags are like bookmarks for specific commits. Unlike branches, which move forward as you commit, tags point forever to the exact commit you created them at. They're the standard way to mark releases, milestones, and production-ready snapshots.</p>
+            <p>There are two types of tags in Git:</p>
+            <ul>
+                <li><strong>Lightweight tags</strong> — Simple pointers to a commit. Think of them as a named branch that never moves.</li>
+                <li><strong>Annotated tags</strong> — Full Git objects with a message, author, date, and optional GPG signature. Always use these for releases.</li>
+            </ul>
+
+            <h2>Creating Tags</h2>
+            <p>Let's start with the basics. First, make sure you're on the commit you want to tag:</p>
+<pre><code># List recent commits to find the one you want to tag
+git log --oneline -10
+
+# Create an annotated tag (recommended for releases)
+git tag -a v1.0.0 -m "Release version 1.0.0: Initial stable release"
+
+# Create a lightweight tag (for quick, informal marks)
+git tag v1.0.0-beta
+</code></pre>
+            <p>Always prefix release tags with <code>v</code> (e.g., <code>v1.0.0</code>). This is a universal convention — PyPI, npm, Docker Hub, and GitHub all expect it.</p>
+
+            <h2>Viewing and Managing Tags</h2>
+<pre><code># List all tags
+git tag
+
+# List tags matching a pattern
+git tag --list "v1.*"
+
+# Show details of an annotated tag
+git show v1.0.0
+
+# Describe the most recent tag for current commit
+git describe --tags
+# Output: v1.0.0-3-ga1b2c3d (3 commits after v1.0.0)
+</code></pre>
+
+            <h2>Semantic Versioning (SemVer)</h2>
+            <p>Semantic versioning is a simple scheme for version numbers that everyone understands. Your version is always <strong>MAJOR.MINOR.PATCH</strong>:</p>
+            <ul>
+                <li><strong>MAJOR</strong> (1.0.0 → 2.0.0): Breaking changes. APIs changed, old code won't work.</li>
+                <li><strong>MINOR</strong> (1.0.0 → 1.1.0): New features, backwards-compatible.</li>
+                <li><strong>PATCH</strong> (1.0.0 → 1.0.1): Bug fixes only, backwards-compatible.</li>
+            </ul>
+
+            <h3>Real-World Examples</h3>
+<pre><code># Bug fix in error handling
+git tag -a v1.0.1 -m "Fix: Handle empty response from API"
+
+# Add new feature: user authentication
+git tag -a v1.1.0 -m "Feat: Add user authentication module"
+
+# Breaking change: rename all API endpoints
+git tag -a v2.0.0 -m "BREAKING: Rename /api/v1/ to /api/v2/ endpoints"
+</code></pre>
+
+            <h3>Pre-release and Build Metadata</h3>
+<pre><code># Alpha release (early testing)
+git tag -a v2.0.0-alpha.1 -m "Alpha: New API v2 endpoints"
+
+# Beta release (feature complete, testing)
+git tag -a v2.0.0-beta.1 -m "Beta: Stable API v2, ready for testing"
+
+# Release candidate (almost ready)
+git tag -a v2.0.0-rc.1 -m "RC1: Final round of fixes before v2.0.0"
+</code></pre>
+
+            <h2>Pushing Tags to GitHub</h2>
+            <p>Tags don't push automatically with <code>git push</code>. You need to push them explicitly:</p>
+<pre><code># Push a single tag
+git push origin v1.0.0
+
+# Push all tags at once
+git push origin --tags
+
+# Delete a tag from remote (if you made a mistake)
+git push origin --delete v1.0.0-rc.1
+# Then delete locally
+git tag -d v1.0.0-rc.1
+</code></pre>
+
+            <h2>Creating Releases from Tags on GitHub</h2>
+            <p>Once your tag is on GitHub, you can create a release — which adds release notes, changelogs, and downloadable assets. You can do this through the GitHub web UI or the API:</p>
+<pre><code># Using curl to create a GitHub release via API
+curl -X POST https://api.github.com/repos/hugow0528/myapp/releases \
+  -H "Authorization: token $GITHUB_TOKEN" \
+  -H "Accept: application/vnd.github+json" \
+  -d '{
+    "tag_name": "v1.0.0",
+    "name": "Release v1.0.0",
+    "body": "### What's New\n- Initial stable release\n- User authentication\n- REST API endpoints\n\n### Bug Fixes\n- Fixed login timeout issue",
+    "draft": false,
+    "prerelease": false
+  }'
+</code></pre>
+
+            <h2>Automating Tags with Python</h2>
+            <p>You can automate version tagging in your Python projects. Here's a script that bumps your version number:</p>
+<pre><code>#!/usr/bin/env python3
+"""bump_version.py - Automated version bumping for your projects"""
+import re
+import subprocess
+
+VERSION_FILE = "VERSION.txt"
+
+def read_version():
+    """Read the current version from VERSION.txt"""
+    with open(VERSION_FILE, "r") as f:
+        return f.read().strip()
+
+def write_version(version):
+    """Write the new version to VERSION.txt"""
+    with open(VERSION_FILE, "w") as f:
+        f.write(version)
+
+def bump_version(bump_type="patch"):
+    """Bump version: major, minor, or patch"""
+    version = read_version()
+    parts = version.lstrip("v").split(".")
+    major, minor, patch = int(parts[0]), int(parts[1]), int(parts[2])
+
+    if bump_type == "major":
+        major += 1
+        minor = 0
+        patch = 0
+    elif bump_type == "minor":
+        minor += 1
+        patch = 0
+    elif bump_type == "patch":
+        patch += 1
+
+    new_version = f"v{major}.{minor}.{patch}"
+    write_version(new_version)
+    print(f"Bumped {version} → {new_version}")
+    return new_version
+
+def create_tag(version):
+    """Create an annotated Git tag"""
+    subprocess.run(["git", "tag", "-a", version, "-m", f"Release {version}"])
+    print(f"Created tag: {version}")
+
+def push_tag(version):
+    """Push the tag to remote"""
+    subprocess.run(["git", "push", "origin", version])
+    print(f"Pushed tag: {version}")
+
+if __name__ == "__main__":
+    import sys
+    bump_type = sys.argv[1] if len(sys.argv) > 1 else "patch"
+    version = bump_version(bump_type)
+    create_tag(version)
+    push_tag(version)
+</code></pre>
+            <p>Usage:</p>
+<pre><code># Bump patch version (1.0.0 → 1.0.1)
+python bump_version.py patch
+
+# Bump minor version (1.0.1 → 1.1.0)
+python bump_version.py minor
+
+# Bump major version (1.1.0 → 2.0.0)
+python bump_version.py major
+</code></pre>
+
+            <h2>Auto-Tagging with GitHub Actions</h2>
+            <p>Connect your versioning to CI/CD with a GitHub Actions workflow that auto-tags releases:</p>
+<pre><code># .github/workflows/release.yml
+name: Release on Merge
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read version
+        run: echo "VERSION=$(cat VERSION.txt)" >> $GITHUB_ENV
+
+      - name: Check if tag exists
+        id: check-tag
+        run: |
+          if git ls-remote --tags origin | grep -q "refs/tags/${VERSION}"; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create release
+        if: steps.check-tag.outputs.exists == 'false'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.VERSION }}
+          name: Release ${{ env.VERSION }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+</code></pre>
+            <p>This workflow automatically creates a GitHub release whenever you push to <code>main</code> with a new version in <code>VERSION.txt</code>.</p>
+
+            <h2>Tagging Checklist for Production Releases</h2>
+            <p>Before you push that tag, run through this checklist:</p>
+            <ol>
+                <li>✅ All tests pass — run your full test suite</li>
+                <li>✅ Version number updated in your code (<code>VERSION.txt</code>, <code>pyproject.toml</code>, etc.)</li>
+                <li>✅ Changelog updated with what changed</li>
+                <li>✅ No debugging code or <code>print()</code> statements left</li>
+                <li>✅ Dependencies locked (<code>requirements.txt</code> or <code>pip freeze</code>)</li>
+                <li>✅ Annotated tag created with clear release message</li>
+                <li>✅ Tag pushed to remote repository</li>
+                <li>✅ GitHub release notes written</li>
+            </ol>
+
+            <h2>Conclusion</h2>
+            <p>Git tags and semantic versioning might seem simple, but they're the foundation of professional software releases. Every library you <code>pip install</code>, every Docker image you <code>docker pull</code>, every GitHub release — they all use this exact same pattern. Master tags now, and you'll save yourself from versioning confusion later.</p>
+            <p><strong>Quick reference:</strong></p>
+<pre><code># Your daily tag workflow
+git tag -a v1.1.0 -m "Add new features"    # Create
+git tag --list                              # List
+git push origin --tags                      # Push
+git describe --tags                         # Check current
+</code></pre>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes. Built with passion and Python.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Reading progress bar
+        window.addEventListener('scroll', () => {
+            const winScroll = document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + '%';
+        });
+
+        // Dark mode toggle
+        const toggle = document.getElementById('themeToggle');
+        toggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            toggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+        });
+    </script>
+</body>
+</html>

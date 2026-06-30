@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Terraform Workspaces & State Strategies — Manage Multiple Environments | Hugo's Dev Notes</title>
-    <meta name="description" content="Master Terraform workspaces for managing dev, staging, and production environments from one codebase. Learn state strategies, best practices, and real examples.">
-    <meta name="keywords" content="terraform workspaces, terraform state, infrastructure as code, multi-environment, devops, terraform best practices">
-    <meta name="author" content="Hugo Wong">
+    <title>Terraform Workspaces: Manage Multiple Environments | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn Terraform workspaces — manage dev, staging, and production environments from a single codebase. Switch states, override variables, and organize infrastructure cleanly.">
+    <meta name="keywords" content="terraform workspaces, terraform environments, dev staging prod, terraform state, infrastructure as code">
     <link rel="stylesheet" href="../style.css">
 </head>
 <body>
@@ -16,359 +15,317 @@
     <header>
         <div class="container">
             <div class="logo">
-                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <h1><a href="../../index.html">🚀 Hugo's Dev Notes</a></h1>
                 <p class="subtitle">Cloudflare · Python · AI Coding</p>
             </div>
             <nav>
-                <a href="../index.html" class="nav-btn">🏠 Home</a>
-                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
-                <a href="../python.html" class="nav-btn">🐍 Python</a>
-                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
-                <a href="../devops.html" class="nav-btn">🐳 DevOps</a>
-                <a href="../security.html" class="nav-btn">🔐 Security</a>
-                <a href="../webdev.html" class="nav-btn">💻 Web Dev</a>
+                <a href="../../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../../devops.html" class="nav-btn">🐳 DevOps</a>
+                <a href="../../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+                <a href="../../security.html" class="nav-btn">🔐 Security</a>
+                <a href="../../webdev.html" class="nav-btn">💻 Web Dev</a>
             </nav>
         </div>
     </header>
 
     <main class="container">
-        <article class="post-detail">
-            <header class="post-detail-header">
-                <div class="tags">
-                    <span class="tag devops">DevOps</span>
-                    <span class="tag">Terraform</span>
-                    <span class="tag">Infrastructure</span>
-                </div>
-                <h1>Terraform Workspaces & State Strategies: Manage Multiple Environments</h1>
-                <div class="post-meta">
-                    <time>2026-06-27</time>
-                    <span class="read-time">11 min read</span>
-                </div>
-            </header>
+        <article class="post-content">
+            <span class="tag devops">DevOps</span>
+            <h1>Terraform Workspaces: Manage Multiple Environments from One Codebase</h1>
+            <time>June 28, 2026</time>
 
-            <div class="post-content">
-                <p class="lead">Stop duplicating Terraform code for every environment. Learn how to use Terraform workspaces and smart state management strategies to handle dev, staging, and production from a single, maintainable codebase.</p>
+            <p>One of the most common infrastructure challenges is managing separate environments — development, staging, and production — from a single Terraform codebase. You want the same configuration, but different servers, different databases, and different settings for each environment.</p>
 
-                <h2>Why You Need Workspaces</h2>
-                <p>Early on, every Terraform user hits the same problem: you have identical infrastructure that needs to exist in three places — development, staging, and production. The naive approach is to copy-paste your <code>main.tf</code> three times into separate folders. This quickly becomes a maintenance nightmare.</p>
-                <p>Terraform workspaces solve this by letting you maintain <strong>one</strong> codebase while creating <strong>separate</strong> state files for each environment. Think of workspaces as parallel universes for your infrastructure — same code, different reality.</p>
+            <p>Terraform <strong>workspaces</strong> solve this elegantly. They let you maintain separate state files for each environment while sharing the same configuration code. No more duplicating your Terraform files across directories or getting confused about which environment you're deploying to.</p>
 
-                <h2>Workspace Basics</h2>
-                <p>Every Terraform project starts with a default workspace. Let's create and switch between environments:</p>
+            <h2>The Problem: Multiple Environments, One Codebase</h2>
 
-                <pre><code># List current workspaces
+            <p>Without workspaces, teams often use one of these messy approaches:</p>
+
+            <ul>
+                <li><strong>Copy directories:</strong> <code>terraform/dev/</code>, <code>terraform/staging/</code>, <code>terraform/prod/</code> — leads to drift and duplication</li>
+                <li><strong>Manual state file management:</strong> <code>terraform state push/pull</code> — error-prone and slow</li>
+                <li><strong>One big state file:</strong> all environments in one state — changes to dev might accidentally affect prod</li>
+            </ul>
+
+            <p>Workspaces give you a clean, built-in solution. Each workspace has its own state file but shares the same configuration. Switching between environments is a single command.</p>
+
+            <h2>Creating and Switching Workspaces</h2>
+
+            <p>Every Terraform project starts with a <code>default</code> workspace. Let's create workspaces for our environments:</p>
+
+            <pre><code># List all workspaces (you'll see 'default')
 $ terraform workspace list
+
   default
 
 # Create a dev workspace
 $ terraform workspace new dev
 Created and switched to workspace "dev"!
 
-# List again — notice the * marking the active workspace
-$ terraform workspace list
-  default
-* dev
-
-# Create staging too
+# Create staging and production
 $ terraform workspace new staging
-Created and switched to workspace "staging"!
+$ terraform workspace new prod
 
-# Switch back to dev
+# List all workspaces
+$ terraform workspace list
+
+  default
+  dev
+* staging
+  prod
+
+# Switch to a workspace
 $ terraform workspace select dev
 Switched to workspace "dev".</code></pre>
 
-                <h2>Using Workspace Name in Configuration</h2>
-                <p>The power of workspaces comes from referencing the workspace name inside your Terraform code. Use the <code>terraform.workspace</code> built-in variable to conditionally change resources:</p>
+            <p>The asterisk (*) shows which workspace is currently active. Any <code>terraform plan</code> or <code>terraform apply</code> you run will operate on that workspace's state.</p>
 
-                <pre><code>resource "aws_instance" "web" {
+            <h2>Environment-Specific Variables</h2>
+
+            <p>Workspaces truly shine when combined with <code>terraform.tfvars</code> files. Terraform automatically loads files named <code>terraform.&lt;workspace&gt;.tfvars</code> based on the current workspace.</p>
+
+            <p>Here's a practical project structure:</p>
+
+            <pre><code>terraform/
+├── main.tf              # Shared resources
+├── variables.tf         # Variable definitions
+├── terraform.tfvars     # Default values
+├── terraform.dev.tfvars  # Dev overrides
+├── terraform.staging.tfvars # Staging overrides
+└── terraform.prod.tfvars  # Production overrides</code></pre>
+
+            <p><strong>variables.tf</strong> — define your variables:</p>
+
+            <pre><code>variable "environment" {
+  description = "Deployment environment"
+  type        = string
+}
+
+variable "instance_type" {
+  description = "EC2 instance type"
+  type        = string
+  default     = "t3.micro"
+}
+
+variable "db_password" {
+  description = "Database password"
+  type        = string
+  sensitive   = true
+}</code></pre>
+
+            <p><strong>terraform.dev.tfvars</strong>:</p>
+
+            <pre><code>environment   = "dev"
+instance_type = "t3.micro"
+db_password   = "dev-password-not-secret"</code></pre>
+
+            <p><strong>terraform.prod.tfvars</strong>:</p>
+
+            <pre><code>environment   = "prod"
+instance_type = "t3.xlarge"
+db_password   = "managed-by-aws-secrets-manager"</code></pre>
+
+            <p>Now when you switch workspaces, the correct configuration loads automatically:</p>
+
+            <pre><code># Apply to dev
+$ terraform workspace select dev
+$ terraform apply
+
+# Apply to production
+$ terraform workspace select prod
+$ terraform apply</code></pre>
+
+            <h2>Using workspace.name in Your Configuration</h2>
+
+            <p>The <code>terraform.workspace</code> built-in variable gives you the current workspace name. Use it to dynamically set resource names, tags, and other environment-specific values:</p>
+
+            <pre><code>resource "aws_instance" "web" {
   ami           = var.ami_id
-  instance_type = terraform.workspace == "production" ? "t3.large" : "t3.micro"
+  instance_type = var.instance_type
 
   tags = {
-    Name        = "web-${terraform.workspace}"
+    Name        = "${var.environment}-web-server"
     Environment = terraform.workspace
     ManagedBy   = "terraform"
   }
 }
 
 resource "aws_db_instance" "main" {
-  identifier     = "myapp-${terraform.workspace}"
-  engine         = "mysql"
-  instance_class = terraform.workspace == "production" ? "db.r5.large" : "db.t3.micro"
+  identifier = "${terraform.workspace}-main-db"
 
-  # Production gets a larger allocated storage
-  allocated_storage = terraform.workspace == "production" ? 100 : 20
+  engine         = "mysql"
+  engine_version = "8.0"
+  instance_class = var.instance_type
+  username       = "admin"
+  password       = var.db_password
 
   tags = {
     Environment = terraform.workspace
   }
 }</code></pre>
 
-                <p>Now a single codebase provisions <strong>t3.micro</strong> instances in dev/staging and <strong>t3.large</strong> in production. The database follows the same pattern. One <code>terraform apply</code> command behaves differently depending on your active workspace.</p>
+            <p>Each workspace creates resources with its own naming. The dev workspace creates <code>dev-web-server</code> and <code>dev-main-db</code>, while prod creates <code>prod-web-server</code> and <code>prod-main-db</code>. Zero duplication in your code.</p>
 
-                <h2>Workspace Variables in a Separate File</h2>
-                <p>For more complex differences, use variable files named after each workspace. Terraform automatically loads <code>terraform.tfvars</code> and <code>&lt;workspace&gt;.auto.tfvars</code>:</p>
+            <h2>Conditional Configuration with Workspaces</h2>
 
-                <pre><code># dev.auto.tfvars
-instance_count = 1
-environment    = "dev"
-db_password    = "dev-password-not-secure"
-enable_monitoring = false
+            <p>Some resources should only exist in certain environments. Use conditional expressions to control creation:</p>
 
-# staging.auto.tfvars
-instance_count = 2
-environment    = "staging"
-db_password    = "staging-password"
-enable_monitoring = true
+            <pre><code># Only create monitoring in staging and prod
+resource "aws_cloudwatch_metric_alarm" "cpu" {
+  count = terraform.workspace != "dev" ? 1 : 0
 
-# production.auto.tfvars
-instance_count = 4
-environment    = "production"
-db_password    = "PRODUCTION-PASSWORD-GOES-TO-VAULT"
-enable_monitoring = true</code></pre>
+  alarm_name          = "${terraform.workspace}-high-cpu"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "2"
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/EC2"
+  period              = "120"
+  statistic           = "Average"
+  threshold           = "80"
+  alarm_description   = "CPU utilization above 80%"
+}
 
-                <p>Terraform reads the auto-named file based on your active workspace — no manual switching needed. When you run <code>terraform workspace select production</code>, Terraform automatically picks up <code>production.auto.tfvars</code>.</p>
+# Production gets extra security groups
+resource "aws_security_group" "waf" {
+  count = terraform.workspace == "prod" ? 1 : 0
 
-                <h2>State File Separation</h2>
-                <p>Each workspace maintains its own state. With local backend, Terraform stores these under <code>terraform.tfstate.d/&lt;workspace&gt;/</code>:</p>
+  name        = "waf-protection"
+  description = "WAF integration for production"
+  vpc_id      = var.vpc_id
+}</code></pre>
 
-                <pre><code>project/
-├── main.tf
-├── variables.tf
-├── dev.auto.tfvars
-├── staging.auto.tfvars
-├── production.auto.tfvars
-├── terraform.tfstate          ← default workspace state
-└── terraform.tfstate.d/
-    ├── dev/
-    │   └── terraform.tfstate  ← dev workspace state
-    ├── staging/
-    │   └── terraform.tfstate  ← staging workspace state
-    └── production/
-        └── terraform.tfstate  ← production workspace state</code></pre>
+            <p>The <code>count</code> parameter with a ternary expression means the resource is created only when the condition is true. No dev alarms, no production-only resources in staging.</p>
 
-                <h2>Remote State with Workspaces</h2>
-                <p>In a team setting, use a remote backend. S3 automatically isolates workspace state using prefixes:</p>
+            <h2>Workspaces with Remote State</h2>
 
-                <pre><code>terraform {
+            <p>When using a remote backend (S3, GCS, Terraform Cloud), workspaces are stored in separate paths automatically:</p>
+
+            <pre><code>terraform {
   backend "s3" {
     bucket         = "my-terraform-state"
     key            = "infrastructure/terraform.tfstate"
     region         = "us-east-1"
-    dynamodb_table = "terraform-locks"
-    encrypt        = true
+    dynamodb_table = "terraform-lock"
+    workspace_dir  = "envs"
   }
 }</code></pre>
 
-                <p>The resulting S3 structure looks like:</p>
+            <p>Terraform stores states like this in S3:</p>
 
-                <pre><code>s3://my-terraform-state/
-├── infrastructure/terraform.tfstate          ← default
-└── env/
-    ├── dev/
-    │   └── terraform.tfstate
-    ├── staging/
-    │   └── terraform.tfstate
-    └── production/
-        └── terraform.tfstate</code></pre>
+            <ul>
+                <li><code>infrastructure/terraform.tfstate</code> — default workspace</li>
+                <li><code>infrastructure/envs/dev/terraform.tfstate</code> — dev workspace</li>
+                <li><code>infrastructure/envs/staging/terraform.tfstate</code> — staging workspace</li>
+                <li><code>infrastructure/envs/prod/terraform.tfstate</code> — prod workspace</li>
+            </ul>
 
-                <h2>Workspace vs Directory Structure</h2>
-                <p>Two teams, two philosophies. Here's the trade-off:</p>
+            <p>State locking via DynamoDB still works per-workspace, so two people can safely deploy to dev and staging at the same time without conflicts.</p>
 
-                <h3>Option A: Workspaces (single directory)</h3>
-                <pre><code>infrastructure/
-├── main.tf              ← shared config
-├── dev.auto.tfvars      ← dev overrides
-├── production.auto.tfvars ← production overrides
-└── terraform.tfstate.d/  ← separate states</code></pre>
-                <p><strong>Pros:</strong> Single source of truth, easy to keep environments in sync, less duplication.<br>
-                <strong>Cons:</strong> Harder to restrict access per environment, workspace switching is a manual step.</p>
+            <h2>Importing Existing Resources</h2>
 
-                <h3>Option B: Directory Structure (separate folders)</h3>
-                <pre><code>infrastructure/
-├── modules/
-│   └── vpc/             ← shared modules
-├── dev/
-│   ├── main.tf
-│   └── variables.tf
-├── staging/
-│   ├── main.tf
-│   └── variables.tf
-└── production/
-    ├── main.tf
-    └── variables.tf</code></pre>
-                <p><strong>Pros:</strong> Clear separation, easy to apply different permissions, works naturally with CI/CD.<br>
-                <strong>Cons:</strong> Code duplication unless heavily modularized, harder to ensure environments match.</p>
+            <p>Already have resources running? Import them into a workspace:</p>
 
-                <p><strong>My recommendation:</strong> Use workspaces for small teams and simple infrastructure. Use directory structure for teams that need fine-grained access control or when environments diverge significantly.</p>
+            <pre><code># Select the workspace
+$ terraform workspace select dev
 
-                <h2>Complete Working Example</h2>
-                <p>Here's a full, working configuration you can adapt:</p>
+# Initialize
+$ terraform init
 
-                <pre><code># main.tf
-terraform {
-  required_version = ">= 1.5"
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
-    }
-  }
-  backend "s3" {
-    bucket         = "my-terraform-state"
-    key            = "webapp/terraform.tfstate"
-    region         = "us-east-1"
-    dynamodb_table = "terraform-locks"
-    encrypt        = true
-  }
-}
+# Import an existing EC2 instance
+$ terraform import aws_instance.web i-0abc123def456
 
-provider "aws" {
-  region = var.aws_region
-}
+# Import a database
+$ terraform import aws_db_instance.main dev-main-db
 
-variable "aws_region" {
-  default = "us-east-1"
-}
+# Verify the import
+$ terraform plan
 
-variable "instance_count" {
-  default = 1
-}
+No changes. Your infrastructure matches the configuration.</code></pre>
 
-variable "environment" {
-  default = "dev"
-}
+            <p>Each workspace can import its own set of resources. The dev workspace imports dev resources, the prod workspace imports prod resources. Everything stays separated.</p>
 
-# Auto-scaling group with workspace-aware sizing
-resource "aws_autoscaling_group" "web" {
-  name                = "web-${terraform.workspace}"
-  desired_capacity    = var.instance_count
-  min_size            = terraform.workspace == "production" ? 2 : 1
-  max_size            = terraform.workspace == "production" ? 10 : 3
+            <h2>Workspace Workflow for Teams</h2>
 
-  launch_template {
-    id      = aws_launch_template.web.id
-    version = "$Latest"
-  }
+            <p>Here's a recommended team workflow:</p>
 
-  vpc_zone_identifier = aws_subnet.private[*].id
+            <ol>
+                <li><strong>Develop locally:</strong> Use the <code>default</code> workspace on your machine for testing</li>
+                <li><strong>Push to dev:</strong> <code>terraform workspace select dev && terraform apply</code></li>
+                <li><strong>Test:</strong> Run integration tests against the dev environment</li>
+                <li><strong>Approve:</strong> Promote changes through a PR/ci pipeline</li>
+                <li><strong>Deploy to staging:</strong> <code>terraform workspace select staging && terraform apply</code></li>
+                <li><strong>Deploy to prod:</strong> <code>terraform workspace select prod && terraform apply</code> (with approval gates)</li>
+            </ol>
 
-  tag {
-    key                 = "Environment"
-    value               = terraform.workspace
-    propagate_at_launch = true
-  }
-}
+            <h2>Workspaces vs Separate Directories</h2>
 
-resource "aws_launch_template" "web" {
-  name_prefix   = "web-"
-  image_id      = var.ami_id
-  instance_type = terraform.workspace == "production" ? "t3.large" : "t3.micro"
+            <p>When should you use workspaces vs separate directories?</p>
 
-  tag_specifications {
-    resource_type = "instance"
-    tags = {
-      Environment = terraform.workspace
-    }
-  }
-}</code></pre>
+            <table style="width:100%; border-collapse: collapse; margin: 1rem 0;">
+                <tr style="background: var(--primary); color: white;">
+                    <th style="padding: 0.75rem; text-align: left; border: 1px solid var(--border);">Use Workspaces When...</th>
+                    <th style="padding: 0.75rem; text-align: left; border: 1px solid var(--border);">Use Directories When...</th>
+                </tr>
+                <tr>
+                    <td style="padding: 0.75rem; border: 1px solid var(--border);">Environments share most config</td>
+                    <td style="padding: 0.75rem; border: 1px solid var(--border);">Environments have very different resources</td>
+                </tr>
+                <tr>
+                    <td style="padding: 0.75rem; border: 1px solid var(--border);">You want to avoid code duplication</td>
+                    <td style="padding: 0.75rem; border: 1px solid var(--border);">Teams need independent version control</td>
+                </tr>
+                <tr>
+                    <td style="padding: 0.75rem; border: 1px solid var(--border);">Differences are mainly variable values</td>
+                    <td style="padding: 0.75rem; border: 1px solid var(--border);">Each environment has unique architectures</td>
+                </tr>
+                <tr>
+                    <td style="padding: 0.75rem; border: 1px solid var(--border);">Small to medium infrastructure</td>
+                    <td style="padding: 0.75rem; border: 1px solid var(--border);">Large, complex infrastructure per env</td>
+                </tr>
+            </table>
 
-                <h2>Workspace Gotchas</h2>
-                <p>Here are the traps that catch everyone:</p>
+            <blockquote>
+                <p><strong>Rule of thumb:</strong> If your environments differ only in instance sizes, passwords, and resource counts — use workspaces. If they have entirely different resource sets, consider directories or Terraform modules.</p>
+            </blockquote>
 
-                <h3>1. Forgetting Which Workspace You're On</h3>
-                <p>Always check your workspace before running <code>apply</code>. Accidentally applying production config to dev (or vice versa) is the most common mistake.</p>
-                <pre><code># Add this to your prompt or alias:
-alias tf="terraform workspace show && terraform"</code></pre>
+            <h2>Common Pitfalls</h2>
 
-                <h3>2. Workspace Name in Resource Names</h3>
-                <p>Always include <code>terraform.workspace</code> in resource identifiers (names, labels, identifiers). Two workspaces with the same config will collide otherwise.</p>
+            <ul>
+                <li><strong>Forgetting to check your workspace:</strong> Always run <code>terraform workspace show</code> before <code>terraform apply</code>. Nobody wants to accidentally destroy production.</li>
+                <li><strong>State drift between workspaces:</strong> If you change a resource in dev, remember to update staging and prod configs too. Workspaces share code, not state changes.</li>
+                <li><strong>Default workspace pollution:</strong> Use the default workspace only for local testing. Never apply to it in CI/CD.</li>
+                <li><strong>Provider configs:</strong> Each workspace uses the same provider configuration. If environments use different AWS regions or accounts, you'll need provider aliases or workarounds.</li>
+            </ul>
 
-                <h3>3. Shared Resources Between Environments</h3>
-                <p>If dev needs to access production's DNS zone, you'll need Terraform's <code>data</code> sources for remote state. Workspaces don't share state automatically — each workspace is completely isolated.</p>
+            <h2>Summary</h2>
 
-                <pre><code># Read another workspace's state
-data "terraform_remote_state" "production" {
-  backend = "s3"
-  config = {
-    bucket = "my-terraform-state"
-    key    = "networking/terraform.tfstate"
-    region = "us-east-1"
-  }
-}
+            <p>Terraform workspaces give you a clean way to manage multiple environments from a single codebase. Key takeaways:</p>
 
-resource "aws_route53_record" "dev_endpoint" {
-  zone_id = data.terraform_remote_state.production.outputs.dns_zone_id
-  name    = "dev.example.com"
-  type    = "A"
-  ttl     = 300
-  records = [aws_instance.dev.public_ip]
-}</code></pre>
+            <ol>
+                <li><code>terraform workspace new &lt;name&gt;</code> — create an environment workspace</li>
+                <li><code>terraform workspace select &lt;name&gt;</code> — switch environments</li>
+                <li><code>terraform.&lt;workspace&gt;.tfvars</code> — auto-loaded environment variables</li>
+                <li><code>terraform.workspace</code> — use in configs for dynamic naming and conditionals</li>
+                <li>Remote backends store workspace states in separate paths automatically</li>
+                <li>Workspaces are ideal when environments differ mainly in variable values</li>
+            </ol>
 
-                <h2>CI/CD Integration</h2>
-                <p>Integrate workspaces into your pipeline by selecting the workspace at the start of each job:</p>
+            <p>With workspaces, your infrastructure code stays DRY, your environments stay isolated, and your team stays confident about which environment they're deploying to.</p>
 
-                <pre><code># GitHub Actions example
-name: Terraform Deploy
-on:
-  push:
-    branches: [main]
-
-jobs:
-  deploy-dev:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
-      - run: terraform init
-      - run: terraform workspace select dev || terraform workspace new dev
-      - run: terraform plan -out=dev.tfplan
-      - run: terraform apply dev.tfplan
-
-  deploy-production:
-    needs: deploy-dev
-    runs-on: ubuntu-latest
-    environment: production
-    steps:
-      - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
-      - run: terraform init
-      - run: terraform workspace select production || terraform workspace new production
-      - run: terraform plan -out=prod.tfplan
-      - run: terraform apply -auto-approve prod.tfplan</code></pre>
-
-                <h2>Best Practices Summary</h2>
-                <ul>
-                    <li><strong>Name workspaces consistently:</strong> dev, staging, production — no surprises.</li>
-                    <li><strong>Always include workspace in resource names:</strong> prevents naming collisions.</li>
-                    <li><strong>Use auto.tfvars per workspace:</strong> Terraform picks them up automatically.</li>
-                    <li><strong>Use remote state with locking:</strong> S3 + DynamoDB is the gold standard.</li>
-                    <li><strong>Never use the default workspace in production:</strong> always be explicit.</li>
-                    <li><strong>Document workspace setup:</strong> new team members should know how to get started.</li>
-                </ul>
-
-                <h2>Next Steps</h2>
-                <p>Workspaces handle the "same code, different environments" pattern beautifully. When your infrastructure grows beyond what one configuration can manage, look into <strong>Terraform modules</strong> (covered in our modules guide) and <strong>Terragrunt</strong> for DRY multi-environment management.</p>
-
-                <p>For the full infrastructure journey, check our <a href="terraform-basics.html">Terraform Basics</a> and <a href="terraform-modules-reusability.html">Terraform Modules</a> guides.</p>
-            </div>
+            <p style="margin-top: 2rem;"><a href="../../devops.html" class="btn-primary">← Back to DevOps Tutorials</a></p>
         </article>
     </main>
 
     <footer>
         <div class="container">
             <p>© 2026 Hugo's Dev Notes | Built with ❤️ & AI</p>
-            <div class="footer-links">
-                <a href="https://github.com/hugow0528" target="_blank">GitHub</a>
-                <a href="../sitemap.xml">Sitemap</a>
-            </div>
         </div>
     </footer>
 
-    <button class="back-to-top" id="backToTop" title="Back to top">↑</button>
-
     <script>
-    // Dark Mode Toggle
     const themeToggle = document.getElementById('themeToggle');
     themeToggle.addEventListener('click', () => {
         document.body.classList.toggle('dark-mode');
@@ -379,17 +336,6 @@ jobs:
         document.body.classList.add('dark-mode');
         themeToggle.textContent = '☀️';
     }
-
-    // Back to Top
-    const backToTop = document.getElementById('backToTop');
-    window.addEventListener('scroll', () => {
-        backToTop.style.display = window.pageYOffset > 300 ? 'block' : 'none';
-    });
-    backToTop.addEventListener('click', () => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-
-    // Reading Progress Bar
     window.addEventListener('scroll', () => {
         const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
         const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;

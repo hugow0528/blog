@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python f-strings and String Formatting: Write Cleaner Code | Hugo's Dev Notes</title>
+    <meta name="description" content="Master Python f-strings and string formatting — format strings, numbers, dates, and build dynamic output. From % formatting to f-strings with practical examples.">
+    <meta name="keywords" content="python f-strings, string formatting, format method, python strings, string interpolation, python beginner">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-fstrings-formatting.html">
+    <meta property="og:title" content="Python f-strings and String Formatting: Write Cleaner Code">
+    <meta property="og:description" content="Master Python f-strings and string formatting with practical examples for beginners.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.hugow.dev/posts/python-fstrings-formatting.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+                <a href="../devops.html" class="nav-btn">🐳 DevOps</a>
+                <a href="../security.html" class="nav-btn">🔐 Security</a>
+                <a href="../webdev.html" class="nav-btn">💻 Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-content">
+            <h1>Python f-strings and String Formatting: Write Cleaner Code</h1>
+            <span class="tag python">Python</span>
+            <time>June 29, 2026</time>
+
+            <p>String formatting is one of the most common things you'll do in Python — building output messages, generating reports, creating SQL queries, and more. Python offers <strong>four ways</strong> to format strings, from the old-school <code>%</code> operator to the modern, powerful <strong>f-strings</strong>. This guide walks you through all of them, with practical examples you can run today.</p>
+
+            <h2>Method 1: The % Operator (Old School)</h2>
+
+            <p>The <code>%</code> operator was inherited from C's <code>printf</code>. You'll see it in older code:</p>
+
+            <pre><code>name = "Hugo"
+age = 28
+
+# %s for strings, %d for integers, %f for floats
+print("Hello, %s! You are %d years old." % (name, age))
+# Output: Hello, Hugo! You are 28 years old.
+
+# Format floats: %.2f means 2 decimal places
+price = 19.995
+print("Price: $%.2f" % price)
+# Output: Price: $20.00</code></pre>
+
+            <p><strong>When to use it:</strong> Legacy codebases. Use f-strings for anything new.</p>
+
+            <h2>Method 2: str.format() (Mid Era)</h2>
+
+            <p>The <code>.format()</code> method, introduced in Python 2.6, replaced <code>%</code> as the recommended approach:</p>
+
+            <pre><code>name = "Hugo"
+age = 28
+
+# Positional arguments
+print("Hello, {}! You are {} years old.".format(name, age))
+
+# Numbered arguments (reorder easily)
+print("{1} is {0} years old.".format(age, name))
+# Output: Hugo is 28 years old.
+
+# Named arguments (more readable)
+print("Hello, {name}! You are {age} years old.".format(
+    name="Hugo",
+    age=28
+))
+
+# Format specifiers inside {}
+print("Price: ${:.2f}".format(19.995))  # $20.00
+print("Binary: {:b}".format(42))          # 101010
+print("Hex: {:x}".format(255))           # ff
+print("Percent: {:.1%}".format(0.855))   # 85.5%</code></pre>
+
+            <p><strong>Format width and alignment:</strong></p>
+
+            <pre><code># Left-align in 20 characters
+print("{:<20} | {}".format("Name", "Hugo"))
+# Output: Name               | Hugo
+
+# Right-align in 20 characters  
+print("{:>20} | {}".format("Name", "Hugo"))
+# Output:               Name | Hugo
+
+# Center in 20 characters
+print("{:^20} | {}".format("Name", "Hugo"))
+# Output:      Name        | Hugo
+
+# Pad with zeros (useful for IDs)
+print("ID: {:05d}".format(42))
+# Output: ID: 00042</code></pre>
+
+            <h2>Method 3: f-strings (The Modern Way)</h2>
+
+            <p>Introduced in <strong>Python 3.6</strong>, f-strings are the recommended approach. They're <em>faster</em>, <em>cleaner</em>, and support <strong>inline expressions</strong>:</p>
+
+            <pre><code>name = "Hugo"
+age = 28
+
+# Basic f-string
+print(f"Hello, {name}! You are {age} years old.")
+# Output: Hello, Hugo! You are 28 years old.
+
+# Inline expressions
+print(f"Next year, {name} will be {age + 1}.")
+# Output: Next year, Hugo will be 29.
+
+# Function calls inside f-strings
+name = "hugo"
+print(f"Hello, {name.title()}!")
+# Output: Hello, Hugo!</code></pre>
+
+            <h3>Fancy Formatting with f-strings</h3>
+
+            <pre><code># Numbers with thousands separators
+population = 8000000000
+print(f"Earth population: {population:,}")
+# Output: Earth population: 8,000,000,000
+
+# Percentage formatting
+score = 0.9235
+print(f"Accuracy: {score:.1%}")
+# Output: Accuracy: 92.3%
+
+# Fixed decimal places
+pi = 3.14159265
+print(f"Pi = {pi:.4f}")
+# Output: Pi = 3.1416
+
+# Pad strings
+word = "Hi"
+print(f"|{word:>10}|")
+# Output: |        Hi|
+
+# Binary, hex, octal
+n = 42
+print(f"Decimal: {n}, Binary: {n:b}, Hex: {n:x}, Octal: {n:o}")
+# Output: Decimal: 42, Binary: 101010, Hex: 2a, Octal: 52
+
+# Positive/negative sign always shown
+temp = -5
+print(f"Temperature: {temp:+.1f}°C")
+# Output: Temperature: -5.0°C
+
+# Scientific notation
+avogadro = 6.022e23
+print(f"Avogadro's number: {avogadro:.3e}")
+# Output: Avogadro's number: 6.022e+23</code></pre>
+
+            <h3>f-strings with Dictionaries and Objects</h3>
+
+            <pre><code># Accessing dictionary keys
+user = {"name": "Hugo", "role": "admin", "active": True}
+print(f"User: {user['name']}, Role: {user['role']}")
+# Output: User: Hugo, Role: admin
+
+# Safe dictionary access (avoid KeyError)
+settings = {"theme": "dark"}
+print(f"Theme: {settings.get('theme', 'light')}")
+print(f"Mode: {settings.get('mode', 'auto')}")
+# Output: Theme: dark
+# Output: Mode: auto</code></pre>
+
+            <h3>Multi-line f-strings</h3>
+
+            <pre><code>items = [{"name": "Laptop", "price": 999.99},
+         {"name": "Mouse", "price": 29.99},
+         {"name": "Keyboard", "price": 79.95}]
+
+report = f"""
+═══════════════════════════════════
+           ORDER RECEIPT
+═══════════════════════════════════
+"""
+
+for item in items:
+    report += f"  {item['name']:<15} ${item['price']:>8.2f}\n"
+
+total = sum(item['price'] for item in items)
+report += f"  ────────────────────────────\n"
+report += f"  {'TOTAL':<15} ${total:>8.2f}\n"
+report += "═══════════════════════════════════"
+
+print(report)</code></pre>
+
+            <p>Output:</p>
+
+            <pre><code>  Laptop          $  999.99
+  Mouse            $   29.99
+  Keyboard         $   79.95
+  ────────────────────────────
+  TOTAL            $ 1109.93</code></pre>
+
+            <h3>Debug f-strings (Python 3.8+)</h3>
+
+            <p>Python 3.8 added the <code>=</code> specifier for <strong>automatic debugging</strong> — it prints both the expression and its result:</p>
+
+            <pre><code>x = 10
+y = 20
+print(f"{x = }, {y = }")
+# Output: x = 10, y = 20
+
+print(f"{x + y = }")
+# Output: x + y = 30
+
+# Combine with formatting
+pi = 3.14159
+print(f"{pi = :.2f}")
+# Output: pi = 3.14
+
+# Great for logging
+items = [1, 2, 3, 4, 5]
+print(f"{items = }")
+print(f"{len(items) = }")
+# Output: items = [1, 2, 3, 4, 5]
+# Output: len(items) = 5</code></pre>
+
+            <h2>Method 4: string.Template (Safe for User Input)</h2>
+
+            <p>When formatting strings with <strong>untrusted user input</strong>, use <code>string.Template</code> to avoid injection attacks:</p>
+
+            <pre><code>from string import Template
+
+# Safe template - no code execution possible
+template = Template("Hello, $name! Your score is $score.")
+result = template.safe_substitute(name="Hugo", score=95)
+print(result)
+# Output: Hello, Hugo! Your score is 95.
+
+# Missing values stay as placeholders (no error!)
+result = template.safe_substitute(name="Hugo")
+print(result)
+# Output: Hello, Hugo! Your score is $score.</code></pre>
+
+            <h2>Real-World Examples</h2>
+
+            <h3>Example 1: Log Formatter</h3>
+
+            <pre><code>from datetime import datetime
+
+def log(message, level="INFO"):
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print(f"[{timestamp}] [{level:<5}] {message}")
+
+log("Server started on port 8080")
+log("Connection timeout", level="ERROR")
+log("Cache hit ratio: 87.3%", level="WARN")
+
+# Output:
+# [2026-06-29 10:15:23] [INFO ] Server started on port 8080
+# [2026-06-29 10:15:24] [ERROR] Connection timeout
+# [2026-06-29 10:15:25] [WARN ] Cache hit ratio: 87.3%</code></pre>
+
+            <h3>Example 2: CSV Generator</h3>
+
+            <pre><code>def generate_csv(headers, rows):
+    """Generate a CSV string from headers and rows"""
+    output = ",".join(headers) + "\n"
+    for row in rows:
+        output += ",".join(str(cell) for cell in row) + "\n"
+    return output
+
+headers = ["Name", "Age", "City"]
+rows = [
+    ["Hugo", 28, "Singapore"],
+    ["Alice", 32, "London"],
+    ["Bob", 25, "Tokyo"],
+]
+
+print(generate_csv(headers, rows))
+# Output:
+# Name,Age,City
+# Hugo,28,Singapore
+# Alice,32,London
+# Bob,25,Tokyo</code></pre>
+
+            <h3>Example 3: Progress Bar</h3>
+
+            <pre><code>def progress_bar(current, total, width=30):
+    """Create a text progress bar"""
+    percent = current / total
+    filled = int(width * percent)
+    bar = "█" * filled + "░" * (width - filled)
+    print(f"\rProgress: [{bar}] {percent:.1%}", end="")
+
+# Simulate progress
+import time
+for i in range(101):
+    progress_bar(i, 100)
+    time.sleep(0.05)</code></pre>
+
+            <h3>Example 4: Formatted Table</h3>
+
+            <pre><code>data = [
+    {"name": "Hugo", "score": 92.5, "grade": "A"},
+    {"name": "Alice", "score": 87.3, "grade": "B+"},
+    {"name": "Bob", "score": 74.8, "grade": "C"},
+    {"name": "Charlie", "score": 95.1, "grade": "A+"},
+]
+
+# Build table
+header = f"{'Name':<12} {'Score':>8} {'Grade':>6}"
+separator = "-" * len(header)
+
+print(header)
+print(separator)
+for row in data:
+    print(f"{row['name']:<12} {row['score']:>8.1f} {row['grade']:>6}")
+
+# Output:
+# Name          Score  Grade
+# ---------------------------
+# Hugo           92.5      A
+# Alice          87.3     B+
+# Bob            74.8      C
+# Charlie        95.1     A+</code></pre>
+
+            <h2>Comparison: Which Method to Use?</h2>
+
+            <table style="width:100%;border-collapse:collapse;margin:1rem 0;">
+                <tr style="background:var(--primary);color:white;">
+                    <th style="padding:0.75rem;text-align:left;">Method</th>
+                    <th style="padding:0.75rem;text-align:left;">Speed</th>
+                    <th style="padding:0.75rem;text-align:left;">Readability</th>
+                    <th style="padding:0.75rem;text-align:left;">Use When</th>
+                </tr>
+                <tr style="border-bottom:1px solid var(--border);">
+                    <td style="padding:0.75rem;"><code>%</code> operator</td>
+                    <td style="padding:0.75rem;">Medium</td>
+                    <td style="padding:0.75rem;">Poor</td>
+                    <td style="padding:0.75rem;">Legacy code only</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--border);">
+                    <td style="padding:0.75rem;"><code>.format()</code></td>
+                    <td style="padding:0.75rem;">Medium</td>
+                    <td style="padding:0.75rem;">Good</td>
+                    <td style="padding:0.75rem;">Python &lt; 3.6 compatibility</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--border);">
+                    <td style="padding:0.75rem;"><strong>f-strings</strong></td>
+                    <td style="padding:0.75rem;"><strong>Fastest</strong></td>
+                    <td style="padding:0.75rem;"><strong>Best</strong></td>
+                    <td style="padding:0.75rem;"><strong>Default choice</strong></td>
+                </tr>
+                <tr>
+                    <td style="padding:0.75rem;"><code>Template</code></td>
+                    <td style="padding:0.75rem;">Slow</td>
+                    <td style="padding:0.75rem;">OK</td>
+                    <td style="padding:0.75rem;">Untrusted input</td>
+                </tr>
+            </table>
+
+            <h2>f-strings Performance Bonus</h2>
+
+            <p>f-strings aren't just prettier — they're <strong>significantly faster</strong> because they're evaluated at compile time:</p>
+
+            <pre><code>import timeit
+
+name = "Hugo"
+count = 1000000
+
+# f-string (fastest)
+print(timeit.timeit(f"f'Hello, {name}!'", globals=globals(), number=count))
+# ~0.05 seconds
+
+# .format() (slower)
+print(timeit.timeit("'Hello, {}!'.format(name)", globals=globals(), number=count))
+# ~0.12 seconds
+
+# % operator (slowest for strings)
+print(timeit.timeit("'Hello, %s!' % name", globals=globals(), number=count))
+# ~0.15 seconds</code></pre>
+
+            <p><strong>f-strings are ~2x faster</strong> than <code>.format()</code> and ~3x faster than <code>%</code>. For tight loops or high-frequency logging, this matters.</p>
+
+            <h2>Common Pitfalls</h2>
+
+            <ol>
+                <li><strong>Don't use <code>{}</code> inside f-strings for literal braces:</strong> Use <code>{{</code> and <code>}}</code> to escape them.
+                <pre><code># Wrong - raises SyntaxError
+# print(f"The price is ${{100}}")
+
+# Right - use double braces
+print(f"The price is ${{100}}")
+# Output: The price is $100</code></pre>
+                </li>
+                <li><strong>Don't use backslashes inside f-string expressions:</strong>
+                <pre><code># Wrong - SyntaxError
+# print(f"New line: {\"hello\nworld\"}")
+
+# Right - assign to a variable first
+text = "hello\nworld"
+print(f"New line: {text}")</code></pre>
+                </li>
+                <li><strong>Lazy evaluation:</strong> f-strings evaluate expressions at creation time, not at use.
+                <pre><code>from time import time
+t = time()
+msg = f"Timestamp: {t}"
+time.sleep(2)
+print(msg)  # Still shows the original timestamp!
+# Output: Timestamp: 1234567890.123456</code></pre>
+                </li>
+            </ol>
+
+            <h2>Quick Reference Cheat Sheet</h2>
+
+            <pre><code># Number formatting
+f"{value:d}"       # Decimal integer
+f"{value:f}"       # Fixed-point float
+f"{value:.2f}"     # 2 decimal places
+f"{value:e}"       # Scientific notation
+f"{value:%}"       # Percentage
+f"{value:,}"       # Thousands separator
+f"{value:x}"       # Hexadecimal
+f"{value:b}"       # Binary
+
+# Alignment & padding
+f"{'text':>10}"    # Right-align, width 10
+f"{'text':<10}"    # Left-align, width 10
+f"{'text':^10}"    # Center, width 10
+f"{value:010}"     # Zero-pad to 10 digits
+
+# Sign formatting
+f"{value:+d}"      # Always show sign (+ or -)
+f"{value: d}"      # Space for positive numbers
+
+# Debug (Python 3.8+)
+f"{variable = }"   # Prints variable = value</code></pre>
+
+            <h2>Next Steps</h2>
+
+            <p>Now that you've mastered string formatting, explore our guides on <a href="python-file-operations.html">Python File Operations</a> to write formatted output to files, or <a href="python-json-serialization.html">Python JSON & Data Serialization</a> to handle structured data output.</p>
+        </article>
+
+        <div style="text-align:center;margin:2rem 0;">
+            <a href="../index.html" style="color:var(--primary);text-decoration:none;font-size:1.1rem;">← Back to all posts</a>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Hugo's Dev Notes. Built with 🚀 and Python.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Progress bar
+        window.addEventListener('scroll', () => {
+            const bar = document.getElementById('progressBar');
+            if (bar) {
+                const scrollTop = window.scrollY;
+                const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+                bar.style.width = (scrollTop / docHeight * 100) + '%';
+            }
+        });
+        // Dark mode toggle
+        const toggle = document.getElementById('themeToggle');
+        if (toggle) {
+            const saved = localStorage.getItem('darkMode');
+            if (saved === 'true') { document.body.classList.add('dark-mode'); toggle.textContent = '☀️'; }
+            toggle.addEventListener('click', () => {
+                document.body.classList.toggle('dark-mode');
+                toggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+                localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+            });
+        }
+    </script>
+</body>
+</html>

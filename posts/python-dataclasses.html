@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Dataclasses: Cleaner Classes with Less Code | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn Python dataclasses — reduce boilerplate, add type hints, customize defaults, and convert dicts to objects. Practical examples from basic to advanced.">
+    <link rel="stylesheet" href="../style.css">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-dataclasses.html">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+                <a href="../devops.html" class="nav-btn">🐳 DevOps</a>
+                <a href="../security.html" class="nav-btn">🔐 Security</a>
+                <a href="../webdev.html" class="nav-btn">💻 Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-content">
+            <span class="tag python">Python</span>
+            <h1>Python Dataclasses: Write Cleaner Classes with Less Boilerplate</h1>
+            <time>2026-06-30</time>
+
+            <p>If you've written Python classes before, you've probably found yourself typing the same <code>__init__</code> method over and over. You define the attributes in <code>__init__</code>, assign them one by one, and then wish there was a shorter way. Python 3.7 introduced <strong>dataclasses</strong> — a decorator that generates all that boilerplate automatically. In this guide, you'll learn how dataclasses work, when to use them, and the advanced features that make them incredibly powerful.</p>
+
+            <h2>The Problem: Boilerplate Classes</h2>
+            <p>Here's a typical Python class for storing user data:</p>
+<pre><code>class User:
+    def __init__(self, name: str, email: str, age: int, active: bool = True):
+        self.name = name
+        self.email = email
+        self.age = age
+        self.active = active
+
+    def __repr__(self):
+        return f"User(name={self.name!r}, email={self.email!r}, age={self.age}, active={self.active})"
+
+    def __eq__(self, other):
+        if not isinstance(other, User):
+            return False
+        return (self.name == other.name and self.email == other.email
+                and self.age == other.age and self.active == other.active)
+
+user = User("Alice", "alice@example.com", 30)
+print(user)
+# User(name='Alice', email='alice@example.com', age=30, active=True)</code></pre>
+
+            <p>That's 15 lines just to hold some data. And if you add one more field, you need to update <code>__init__</code>, <code>__repr__</code>, and <code>__eq__</code>. It's repetitive and error-prone.</p>
+
+            <h2>The Solution: <code>@dataclass</code></h2>
+            <p>With dataclasses, the same class takes 4 lines:</p>
+<pre><code>from dataclasses import dataclass
+
+@dataclass
+class User:
+    name: str
+    email: str
+    age: int
+    active: bool = True
+
+user = User("Alice", "alice@example.com", 30)
+print(user)
+# User(name='Alice', email='alice@example.com', age=30, active=True)
+
+# Equality works automatically
+user2 = User("Alice", "alice@example.com", 30)
+print(user == user2)  # True</code></pre>
+
+            <p>That's it. The <code>@dataclass</code> decorator automatically generates <code>__init__</code>, <code>__repr__</code>, <code>__eq__</code>, and more. Python reads the type annotations and knows exactly what to do.</p>
+
+            <h2>How <code>@dataclass</code> Generates Methods</h2>
+            <p>By default, the decorator generates:</p>
+            <ul>
+                <li><strong><code>__init__</code></strong>: Takes all fields as parameters, assigns them to <code>self</code></li>
+                <li><strong><code>__repr__</code></strong>: Returns a readable string like <code>User(name='Alice', ...)</code></li>
+                <li><strong><code>__eq__</code></strong>: Compares all fields for equality</li>
+            </ul>
+
+            <p>You can control this with decorator parameters:</p>
+<pre><code>from dataclasses import dataclass
+
+# Generate __init__, __repr__, __eq__ (default)
+@dataclass
+class Basic:
+    x: int
+
+# Also generate comparison methods (<, >, <=, >=)
+@dataclass(order=True)
+class Comparable:
+    value: int
+
+# Don't generate __eq__ (useful when you need custom equality)
+@dataclass(eq=False)
+class NoEquality:
+    x: int
+
+# Don't generate __repr__ (useful for classes with secret data)
+@dataclass(repr=False)
+class SecretData:
+    api_key: str
+    name: str</code></pre>
+
+            <h2>Default Values and Mutable Defaults</h2>
+            <p>Fields with default values must come <em>after</em> fields without defaults (just like function parameters):</p>
+<pre><code>@dataclass
+class Product:
+    name: str
+    price: float
+    category: str = "general"       # Must come after non-default fields
+    in_stock: bool = True
+    tags: list = None               # Use None for mutable defaults!
+
+    def __post_init__(self):
+        if self.tags is None:
+            self.tags = []          # Initialize mutable defaults here
+
+# Usage
+product = Product("Laptop", 999.99)
+print(product)
+# Product(name='Laptop', price=999.99, category='general', in_stock=True, tags=[])
+
+product.tags.append("electronics")
+print(product.tags)  # ['electronics']
+
+# Create another product — tags list is NOT shared!
+product2 = Product("Phone", 699.99)
+print(product2.tags)  # []</code></pre>
+
+            <blockquote>
+                <strong>Golden rule:</strong> Never use mutable objects (lists, dicts, sets) as default values directly. Use <code>None</code> and initialize in <code>__post_init__</code>, or use <code>field(default_factory=...)</code> (see below).
+            </blockquote>
+
+            <h2>Using <code>field()</code> for Advanced Defaults</h2>
+            <p>The <code>field()</code> function lets you customize how each field behaves:</p>
+<pre><code>from dataclasses import dataclass, field
+from datetime import datetime
+
+@dataclass
+class BlogPost:
+    title: str
+    content: str
+    author: str = "Anonymous"
+    tags: list = field(default_factory=list)
+    created_at: datetime = field(default_factory=datetime.now)
+    view_count: int = field(default=0)
+    is_published: bool = field(default=False)
+
+post = BlogPost("My First Post", "Hello world!")
+print(post)
+# BlogPost(title='My First Post', content='Hello world!',
+#           author='Anonymous', tags=[], created_at=datetime.datetime(...),
+#           view_count=0, is_published=False)
+
+# Each post gets its own list — no shared state!
+post.tags.append("python")
+post2 = BlogPost("Another Post", "More content")
+print(post2.tags)  # []
+
+# Each post gets its own timestamp
+import time
+time.sleep(1)
+post3 = BlogPost("Third Post", "Even more")
+print(post.created_at != post3.created_at)  # True</code></pre>
+
+            <p><code>default_factory</code> is a function that gets called to create the default value each time. This is the recommended pattern for mutable defaults.</p>
+
+            <h2>Field Options: Exclude, Init, and More</h2>
+            <p>You can customize individual fields with options in <code>field()</code>:</p>
+<pre><code>@dataclass
+class APIResponse:
+    url: str
+    status_code: int
+    data: dict
+    response_time: float = field(default=0, init=False)
+    debug_info: str = field(default="", repr=False)
+
+    def log_request(self, elapsed):
+        self.response_time = elapsed
+
+# init=False: field is NOT in __init__ parameters
+resp = APIResponse("https://api.example.com", 200, {"key": "value"})
+# No response_time parameter needed
+
+resp.log_request(0.25)
+print(resp)
+# APIResponse(url='https://api.example.com', status_code=200,
+#              data={'key': 'value'}, response_time=0.25)
+# Note: debug_info is not shown (repr=False)</code></pre>
+
+            <table style="width:100%; border-collapse: collapse; margin: 1rem 0;">
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <th style="text-align: left; padding: 0.5rem;">Option</th>
+                    <th style="text-align: left; padding: 0.5rem;">Effect</th>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 0.5rem;"><code>default</code></td>
+                    <td style="padding: 0.5rem;">Static default value</td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 0.5rem;"><code>default_factory</code></td>
+                    <td style="padding: 0.5rem;">Callable for dynamic defaults</td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 0.5rem;"><code>init=False</code></td>
+                    <td style="padding: 0.5rem;">Exclude from <code>__init__</code> parameters</td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 0.5rem;"><code>repr=False</code></td>
+                    <td style="padding: 0.5rem;">Exclude from <code>__repr__</code> output</td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 0.5rem;"><code>compare=False</code></td>
+                    <td style="padding: 0.5rem;">Exclude from equality/comparison</td>
+                </tr>
+                <tr>
+                    <td style="padding: 0.5rem;"><code>hash=True</code></td>
+                    <td style="padding: 0.5rem;">Include in <code>__hash__</code></td>
+                </tr>
+            </table>
+
+            <h2>Converting Between Dicts and Dataclasses</h2>
+            <p>One of the most useful features: automatically convert between dictionaries and dataclasses. This is incredibly handy when working with JSON APIs:</p>
+<pre><code>from dataclasses import dataclass, asdict, astuple
+
+@dataclass
+class User:
+    name: str
+    email: str
+    age: int
+    active: bool = True
+
+# Create instance
+user = User("Alice", "alice@example.com", 30)
+
+# Convert to dictionary
+user_dict = asdict(user)
+print(user_dict)
+# {'name': 'Alice', 'email': 'alice@example.com', 'age': 30, 'active': True}
+
+# Convert to tuple
+user_tuple = astuple(user)
+print(user_tuple)
+# ('Alice', 'alice@example.com', 30, True)
+
+# Convert dict back to dataclass
+json_data = {"name": "Bob", "email": "bob@example.com", "age": 25, "active": False}
+user2 = User(**json_data)
+print(user2)
+# User(name='Bob', email='bob@example.com', age=25, active=False)</code></pre>
+
+            <p>Combine this with <code>json</code> for a clean API response pattern:</p>
+<pre><code>import json
+from dataclasses import dataclass, asdict
+
+@dataclass
+class Post:
+    id: int
+    title: str
+    body: str
+
+# Simulate API response
+post = Post(1, "Hello", "World")
+
+# Serialize to JSON for API response
+json_output = json.dumps(asdict(post))
+print(json_output)
+# {"id": 1, "title": "Hello", "body": "World"}
+
+# Parse JSON back from API
+incoming = json.loads(json_output)
+restored = Post(**incoming)
+print(restored)  # Post(id=1, title='Hello', body='World')</code></pre>
+
+            <h2>Nested Dataclasses</h2>
+            <p>Dataclasses nest naturally. The <code>asdict()</code> function handles nested structures automatically:</p>
+<pre><code>@dataclass
+class Address:
+    street: str
+    city: str
+    country: str
+
+@dataclass
+class Person:
+    name: str
+    email: str
+    address: Address
+    hobbies: list = field(default_factory=list)
+
+address = Address("123 Main St", "San Francisco", "US")
+person = Person("Alice", "alice@example.com", address)
+person.hobbies.append("coding")
+
+# Nested dict conversion works automatically
+person_dict = asdict(person)
+print(person_dict)
+# {
+#   'name': 'Alice',
+#   'email': 'alice@example.com',
+#   'address': {
+#     'street': '123 Main St',
+#     'city': 'San Francisco',
+#     'country': 'US'
+#   },
+#   'hobbies': ['coding']
+# }</code></pre>
+
+            <h2>Using <code>__post_init__</code> for Validation</h2>
+            <p>After <code>__init__</code> runs, <code>__post_init__</code> is called. Use it for validation, computed fields, or side effects:</p>
+<pre><code>@dataclass
+class Email:
+    address: str
+    verified: bool = False
+
+    def __post_init__(self):
+        # Validate the email format
+        if "@" not in self.address:
+            raise ValueError(f"Invalid email: {self.address}")
+
+        # Normalize to lowercase
+        self.address = self.address.lower()
+
+# Works fine
+email = Email("Alice@Example.COM")
+print(email.address)  # alice@example.com
+
+# Raises ValueError
+try:
+    bad_email = Email("not-an-email")
+except ValueError as e:
+    print(e)  # Invalid email: not-an-email</code></pre>
+
+            <h2>Freezing Dataclasses (Immutable Objects)</h2>
+            <p>Set <code>frozen=True</code> to make your dataclass immutable — like a tuple or a <code>namedtuple</code>, but with type hints and better repr:</p>
+<pre><code>@dataclass(frozen=True)
+class Color:
+    red: int
+    green: int
+    blue: int
+
+color = Color(255, 128, 0)  # Orange
+print(color)  # Color(red=255, green=128, blue=0)
+
+# Can't modify after creation!
+try:
+    color.red = 100
+except Exception as e:
+    print(e)  # FrozenInstanceError: cannot assign to field 'red'
+
+# Use replace() to create a modified copy
+new_color = replace(color, red=100)
+print(new_color)  # Color(red=100, green=128, blue=0)
+print(color)      # Color(red=255, green=128, blue=0) — original unchanged</code></pre>
+
+            <p>Frozen dataclasses are hashable, meaning you can use them as dictionary keys or set elements:</p>
+<pre><code>from dataclasses import dataclass
+
+@dataclass(frozen=True)
+class Point:
+    x: int
+    y: int
+
+# Use as dictionary keys
+grid = {
+    Point(0, 0): "start",
+    Point(1, 0): "right",
+    Point(0, 1): "up",
+}
+
+print(grid[Point(0, 0)])  # "start"
+
+# Use in sets (no duplicates)
+points = {Point(0, 0), Point(1, 1), Point(0, 0)}
+print(len(points))  # 2 — duplicate removed</code></pre>
+
+            <h2>When to Use Dataclasses vs Regular Classes</h2>
+            <p><strong>Use dataclasses when:</strong></p>
+            <ul>
+                <li>Your class primarily stores data (not behavior)</li>
+                <li>You need <code>__init__</code>, <code>__repr__</code>, and <code>__eq__</code></li>
+                <li>You're converting between dicts/JSON and objects</li>
+                <li>You want type hints with less code</li>
+            </ul>
+
+            <p><strong>Use regular classes when:</strong></p>
+            <ul>
+                <li>You need complex logic in <code>__init__</code></li>
+                <li>You need property setters or descriptors</li>
+                <li>You're implementing inheritance with behavior</li>
+                <li>You need to customize <code>__new__</code> or metaclasses</li>
+            </ul>
+
+            <h2>Real-World Example: API Client with Dataclasses</h2>
+            <p>Here's how dataclasses shine in a real project — a simple API client:</p>
+<pre><code>from dataclasses import dataclass, field, asdict
+from datetime import datetime
+import json
+
+@dataclass
+class GitHubRepo:
+    name: str
+    owner: str
+    stars: int
+    language: str
+    created_at: str
+    topics: list = field(default_factory=list)
+
+@dataclass
+class RepoSearchResult:
+    repos: list
+    total_count: int
+    searched_at: datetime = field(default_factory=datetime.now)
+
+# Simulate API response data
+api_data = [
+    {"name": "fastapi", "owner": "tiangolo", "stars": 73000, "language": "Python",
+     "created_at": "2018-12-06", "topics": ["api", "python", "rest"]},
+    {"name": "requests", "owner": "psf", "stars": 52000, "language": "Python",
+     "created_at": "2011-02-13", "topics": ["http", "python"]},
+]
+
+# Convert to dataclasses
+repos = [GitHubRepo(**repo) for repo in api_data]
+
+# Create search result
+result = RepoSearchResult(repos=repos, total_count=2)
+
+# Work with the data naturally
+for repo in result.repos:
+    print(f"{repo.owner}/{repo.name}: {repo.stars} stars ({repo.language})")
+    # tiangolo/fastapi: 73000 stars (Python)
+    # psf/requests: 52000 stars (Python)
+
+# Export to JSON
+print(json.dumps(asdict(result), indent=2))</code></pre>
+
+            <h2>Summary</h2>
+            <p>Python dataclasses are one of the best quality-of-life improvements in recent Python versions. They eliminate boilerplate, enforce type hints, and make your code shorter and more readable. Key takeaways:</p>
+            <ul>
+                <li>Use <code>@dataclass</code> instead of writing <code>__init__</code> by hand</li>
+                <li>Use <code>field(default_factory=...)</code> for mutable defaults</li>
+                <li>Use <code>asdict()</code> and <code>astuple()</code> to convert to/from dicts</li>
+                <li>Use <code>frozen=True</code> for immutable data objects</li>
+                <li>Use <code>__post_init__</code> for validation and computed fields</li>
+            </ul>
+
+            <p>After using dataclasses, you'll find yourself reaching for them every time you need to define a simple class. It's a small feature that makes a big difference in code quality.</p>
+
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes | Built with ❤️ & AI</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528" target="_blank">GitHub</a>
+                <a href="https://blog.hugow.dev/sitemap.xml">Sitemap</a>
+            </div>
+        </div>
+    </footer>
+
+    <button class="back-to-top" id="backToTop" title="Back to top">↑</button>
+
+    <script>
+    const themeToggle = document.getElementById('themeToggle');
+    themeToggle.addEventListener('click', () => {
+        document.body.classList.toggle('dark-mode');
+        themeToggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+        localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+    });
+    if (localStorage.getItem('theme') === 'dark') {
+        document.body.classList.add('dark-mode');
+        themeToggle.textContent = '☀️';
+    }
+    const backToTop = document.getElementById('backToTop');
+    window.addEventListener('scroll', () => {
+        backToTop.style.display = window.pageYOffset > 300 ? 'block' : 'none';
+        const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+        const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        const scrolled = (winScroll / height) * 100;
+        document.getElementById('progressBar').style.width = scrolled + '%';
+    });
+    backToTop.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+    </script>
+</body>
+</html>

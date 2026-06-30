@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Dictionary & Set Operations: Merges, Comprehensions & More | Hugo's Dev Notes</title>
+    <meta name="description" content="Master Python dictionaries and sets — merging, comprehensions, set operations (union, intersection, difference), and real-world data manipulation examples.">
+    <link rel="stylesheet" href="../style.css">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-dict-set-operations.html">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+                <a href="../devops.html" class="nav-btn">🐳 DevOps</a>
+                <a href="../security.html" class="nav-btn">🔐 Security</a>
+                <a href="../webdev.html" class="nav-btn">💻 Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-content">
+            <span class="tag python">Python</span>
+            <h1>Python Dictionary & Set Operations: Merges, Comprehensions & More</h1>
+            <time>2026-06-29</time>
+            <p>After learning basic lists and dictionaries, the next step is mastering the operations that make these data structures truly powerful. Dictionaries let you look up data by key instead of index. Sets let you do fast membership tests and mathematical set operations. In this guide, you'll learn practical dictionary merging, set math, comprehensions, and real-world data processing patterns — all with code you can copy and run today.</p>
+
+            <h2>Why Dictionaries and Sets Matter</h2>
+            <p>Most Python projects involve processing data — whether it's JSON from an API, configuration settings, or user records. Dictionaries (hash maps) and sets (unique collections) are the backbone of data manipulation in Python. Knowing how to merge, filter, transform, and compare them efficiently will make your code cleaner and faster.</p>
+            <p>Let's start with dictionaries, then move to sets, and finally combine both for practical examples.</p>
+
+            <h2>Dictionary Merging Techniques</h2>
+            <p>You'll often need to combine two or more dictionaries. Python offers several approaches, each with different behavior for duplicate keys.</p>
+
+            <h3>Method 1: The <code>{**d1, **d2}</code> Unpacking (Python 3.5+)</h3>
+            <p>The most Pythonic way to merge dictionaries uses the double-asterisk unpacking operator. Later dictionaries override earlier ones for duplicate keys:</p>
+<pre><code># Base configuration
+base_config = {
+    "host": "localhost",
+    "port": 8080,
+    "debug": True,
+    "timeout": 30
+}
+
+# Override with user settings
+user_config = {
+    "port": 9090,
+    "debug": False,
+    "log_level": "info"
+}
+
+# Merge: user_config wins for duplicates
+final_config = {**base_config, **user_config}
+print(final_config)
+# {'host': 'localhost', 'port': 9090, 'debug': False, 'timeout': 30, 'log_level': 'info'}
+</code></pre>
+            <p>This pattern is everywhere — configuration management, API responses, form data processing. The key thing to remember: <strong>rightmost dictionary wins</strong> when keys collide.</p>
+
+            <h3>Method 2: <code>dict.update()</code> for In-Place Merging</h3>
+            <p>If you want to modify a dictionary directly instead of creating a new one:</p>
+<pre><code>settings = {"theme": "light", "language": "en"}
+settings.update({"theme": "dark", "fontSize": 14})
+print(settings)
+# {'theme': 'dark', 'language': 'en', 'fontSize': 14}
+</code></pre>
+            <p>Use <code>update()</code> when you want to mutate the original dictionary. Use unpacking when you want a new merged dictionary.</p>
+
+            <h3>Method 3: <code>|</code> Operator (Python 3.9+)</h3>
+            <p>Python 3.9 introduced the pipe operator for dictionary merging — the cleanest syntax of all:</p>
+<pre><code>a = {"name": "Alice", "role": "admin"}
+b = {"role": "editor", "active": True}
+
+merged = a | b  # b wins for 'role'
+print(merged)
+# {'name': 'Alice', 'role': 'editor', 'active': True}
+
+# In-place merge with |=
+a |= {"active": True}
+print(a)
+# {'name': 'Alice', 'role': 'admin', 'active': True}
+</code></pre>
+            <p>This is the recommended approach if you're using Python 3.9 or newer. It's readable, fast, and explicit.</p>
+
+            <h2>Dictionary Comprehensions</h2>
+            <p>Just like list comprehensions, dictionary comprehensions let you build dictionaries in a single expression. They're perfect for transforming data:</p>
+
+            <h3>Inverting a Dictionary</h3>
+<pre><code># Original: name → age
+ages = {"Alice": 30, "Bob": 25, "Charlie": 35}
+
+# Invert: age → name
+name_by_age = {age: name for name, age in ages.items()}
+print(name_by_age)
+# {30: 'Alice', 25: 'Bob', 35: 'Charlie'}
+</code></pre>
+
+            <h3>Filtering Dictionary Entries</h3>
+<pre><code>scores = {"Alice": 92, "Bob": 65, "Charlie": 78, "Diana": 88, "Eve": 55}
+
+# Only passing students (score >= 70)
+passing = {name: score for name, score in scores.items() if score >= 70}
+print(passing)
+# {'Alice': 92, 'Charlie': 78, 'Diana': 88}
+
+# Grade categories
+graded = {name: "Pass" if score >= 70 else "Fail"
+          for name, score in scores.items()}
+print(graded)
+# {'Alice': 'Pass', 'Bob': 'Fail', 'Charlie': 'Pass', 'Diana': 'Pass', 'Eve': 'Fail'}
+</code></pre>
+
+            <h3>Building a Lookup Dictionary</h3>
+<pre><code>products = [
+    {"id": 1, "name": "Laptop", "price": 999},
+    {"id": 2, "name": "Phone", "price": 699},
+    {"id": 3, "name": "Tablet", "price": 449},
+]
+
+# Create a lookup by ID for fast access
+product_lookup = {p["id"]: p for p in products}
+print(product_lookup[2])
+# {'id': 2, 'name': 'Phone', 'price': 699}
+</code></pre>
+            <p>This is a common pattern when working with API data — convert a list of objects into a dictionary keyed by ID for O(1) lookups instead of O(n) list scanning.</p>
+
+            <h2>Useful Dictionary Methods</h2>
+            <p>Beyond basic <code>get()</code> and <code>items()</code>, these methods come in handy:</p>
+<pre><code># .get() with a default value — avoids KeyError
+config = {"port": 8080}
+timeout = config.get("timeout", 30)  # Returns 30, not KeyError
+
+# .setdefault() — set only if key doesn't exist
+tags = {}
+tags.setdefault("category", []).append("Python")
+tags.setdefault("category", []).append("Tutorial")
+print(tags)
+# {'category': ['Python', 'Tutorial']}
+
+# .pop() — remove and return a value
+removed = tags.pop("category")
+print(removed)  # ['Python', 'Tutorial']
+print(tags)     # {}
+
+# Counting with .get()
+words = ["apple", "banana", "apple", "cherry", "banana", "apple"]
+word_count = {}
+for word in words:
+    word_count[word] = word_count.get(word, 0) + 1
+print(word_count)
+# {'apple': 3, 'banana': 2, 'cherry': 1}
+</code></pre>
+
+            <h2>Introduction to Python Sets</h2>
+            <p>Sets are unordered collections of unique elements. They're perfect for membership testing, removing duplicates, and performing mathematical set operations:</p>
+<pre><code># Creating sets
+fruits = {"apple", "banana", "cherry"}
+tropical = {"banana", "mango", "papaya"}
+
+# Remove duplicates from a list
+numbers = [1, 2, 2, 3, 3, 3, 4]
+unique = list(set(numbers))
+print(unique)  # [1, 2, 3, 4]
+
+# Fast membership testing
+if "apple" in fruits:
+    print("Apple is in the set!")
+</code></pre>
+            <p>Set membership testing is O(1) on average — much faster than checking a list, which is O(n). This matters when you have thousands of items.</p>
+
+            <h2>Set Operations: The Math of Python Sets</h2>
+            <p>Sets support mathematical set operations that are incredibly useful for data analysis:</p>
+<pre><code># Two sets of users
+active_users = {"Alice", "Bob", "Charlie", "Diana"}
+premium_users = {"Bob", "Diana", "Eve", "Frank"}
+
+# Union (|) — all users in either set
+all_premium_eligible = active_users | premium_users
+print(all_premium_eligible)
+# {'Alice', 'Bob', 'Charlie', 'Diana', 'Eve', 'Frank'}
+
+# Intersection (&) — users in BOTH sets
+active_premium = active_users & premium_users
+print(active_premium)
+# {'Bob', 'Diana'}
+
+# Difference (-) — active but NOT premium
+active_only = active_users - premium_users
+print(active_only)
+# {'Alice', 'Charlie'}
+
+# Symmetric difference (^) — in one set but not both
+exclusive = active_users ^ premium_users
+print(exclusive)
+# {'Alice', 'Charlie', 'Eve', 'Frank'}
+
+# Subset and superset checks
+print({"Bob", "Diana"}.issubset(active_premium))   # True
+print(active_users.issuperset({"Alice", "Bob"}))    # True
+</code></pre>
+            <p>These operations have real-world applications: finding users who churned, comparing database records, deduplicating API responses, and more.</p>
+
+            <h2>Set Comprehensions</h2>
+            <p>Just like list and dict comprehensions, set comprehensions let you build sets concisely:</p>
+<pre><code># Get unique first letters
+words = ["apple", "banana", "apricot", "blueberry", "avocado"]
+first_letters = {word[0] for word in words}
+print(first_letters)  # {'a', 'b'}
+
+# Unique even numbers
+numbers = range(20)
+evens = {n for n in numbers if n % 2 == 0}
+print(evens)  # {0, 2, 4, 6, 8, 10, 12, 14, 16, 18}
+</code></pre>
+
+            <h2>Real-World Example: Processing User Data</h2>
+            <p>Let's put everything together. Imagine you have user data from two different sources and need to merge, deduplicate, and filter it:</p>
+<pre><code># Data from Source A
+source_a = [
+    {"id": 1, "name": "Alice", "email": "alice@mail.com", "tags": ["admin", "active"]},
+    {"id": 2, "name": "Bob", "email": "bob@mail.com", "tags": ["user", "active"]},
+    {"id": 3, "name": "Charlie", "email": "charlie@mail.com", "tags": ["user"]},
+]
+
+# Data from Source B (some overlapping users with updates)
+source_b = [
+    {"id": 2, "name": "Bob Smith", "email": "bob.smith@mail.com", "tags": ["user", "premium"]},
+    {"id": 4, "name": "Diana", "email": "diana@mail.com", "tags": ["admin", "premium"]},
+]
+
+# Step 1: Merge into a single lookup (source_b overrides source_a)
+all_users = {}
+for user in source_a + source_b:
+    all_users[user["id"]] = user
+
+print("Merged users:", len(all_users))  # 4
+
+# Step 2: Collect all unique tags across users
+all_tags = set()
+for user in all_users.values():
+    all_tags.update(user["tags"])
+print("All tags:", all_tags)
+# {'admin', 'active', 'user', 'premium'}
+
+# Step 3: Find users with specific tag combinations
+admin_set = {uid for uid, u in all_users.items() if "admin" in u["tags"]}
+premium_set = {uid for uid, u in all_users.items() if "premium" in u["tags"]}
+
+admin_premium = admin_set & premium_set
+print("Admin + Premium users:", admin_premium)  # {4}
+
+# Step 4: Create a tag-to-users index
+tag_index = {}
+for uid, user in all_users.items():
+    for tag in user["tags"]:
+        tag_index.setdefault(tag, []).append(uid)
+
+print("Tag index:", tag_index)
+# {'admin': [1, 4], 'active': [1, 2], 'user': [2], 'premium': [2, 4]}
+</code></pre>
+            <p>This pattern — merge, index, filter — appears in nearly every data processing task. Once you're comfortable with dictionary and set operations, you'll find yourself using them constantly.</p>
+
+            <h2>When to Use frozenset</h2>
+            <p>A <code>frozenset</code> is an immutable set. You can't add or remove elements, but you <em>can</em> use it as a dictionary key or put it inside another set:</p>
+<pre><code># Regular sets can't be dict keys (they're mutable)
+# TypeError: unhashable type: 'set'
+# my_dict[{1, 2}] = "hello"
+
+# Frozensets can be keys!
+my_dict = {
+    frozenset({"Python", "Django"}): "Backend",
+    frozenset({"JavaScript", "React"}): "Frontend",
+}
+print(my_dict[frozenset({"Python", "Django"})])  # Backend
+
+# Useful for caching based on a set of parameters
+def get_config(*required_modules):
+    cache = {}
+    key = frozenset(required_modules)
+    if key not in cache:
+        cache[key] = f"Loaded: {', '.join(sorted(required_modules))}"
+    return cache[key]
+
+print(get_config("auth", "database", "logging"))
+# Loaded: auth, database, logging
+</code></pre>
+
+            <h2>Summary Cheat Sheet</h2>
+<pre><code># Dictionary operations
+merged = {**d1, **d2}       # Python 3.5+
+merged = d1 | d2             # Python 3.9+
+value = d.get(key, default)  # Safe access
+d.setdefault(key, []).append(x)  # Accumulate
+
+# Set operations
+union = s1 | s2              # All elements
+intersection = s1 & s2        # Common elements
+difference = s1 - s2          # In s1 but not s2
+sym_diff = s1 ^ s2           # In one, not both
+s.issubset(s2)               # Is s contained in s2?
+
+# Comprehensions
+{key: val for key, val in items if condition}  # Dict
+{expr for item in iterable if condition}        # Set
+</code></pre>
+
+            <h2>What to Practice Next</h2>
+            <p>Try these exercises to solidify your understanding:</p>
+            <ul>
+                <li>Write a function that merges an arbitrary number of dictionaries, with later ones overriding earlier ones.</li>
+                <li>Given two lists of user IDs, find who left, who joined, and who stayed using set operations.</li>
+                <li>Build a word frequency counter from a paragraph of text using dictionary comprehension.</li>
+                <li>Create a tag-based filtering system — filter products by any combination of tags using sets.</li>
+            </ul>
+            <p>Mastering dictionary and set operations is one of the highest-ROI skills in Python. They'll make your data processing code shorter, faster, and easier to read.</p>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes | Built with ❤️ & AI</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528" target="_blank">GitHub</a>
+                <a href="https://blog.hugow.dev/sitemap.xml">Sitemap</a>
+                <a href="../index.html">Back to Home</a>
+            </div>
+        </div>
+    </footer>
+
+    <button class="back-to-top" id="backToTop" title="Back to top">↑</button>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            themeToggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+            localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+        });
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark-mode');
+            themeToggle.textContent = '☀️';
+        }
+        const backToTop = document.getElementById('backToTop');
+        window.addEventListener('scroll', () => {
+            backToTop.style.display = window.pageYOffset > 300 ? 'block' : 'none';
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + '%';
+        });
+        backToTop.addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    </script>
+</body>
+</html>

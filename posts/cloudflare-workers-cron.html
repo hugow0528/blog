@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloudflare Workers Cron Triggers: Scheduled Tasks on the Edge | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn Cloudflare Workers Cron Triggers — schedule tasks to run on the Cloudflare edge. Build periodic API calls, data cleanup, health checks, and automated workflows. Working examples with wrangler.toml and Python integration.">
+    <meta name="keywords" content="cloudflare workers cron, scheduled tasks, cloudflare scheduler, serverless cron, edge computing, wrangler, automation">
+    <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/cloudflare-workers-cron.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+                <a href="../devops.html" class="nav-btn">🐳 DevOps</a>
+                <a href="../security.html" class="nav-btn">🔐 Security</a>
+                <a href="../webdev.html" class="nav-btn">💻 Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post">
+            <h1>Cloudflare Workers Cron Triggers: Scheduled Tasks on the Edge</h1>
+            <div class="post-meta">
+                <time>2026-06-30</time>
+                <span class="read-time">10 min read</span>
+                <span class="tag cloudflare">Cloudflare</span>
+                <span class="tag devops">DevOps</span>
+            </div>
+
+            <div class="post-excerpt">
+                <p>Learn how to schedule automated tasks with Cloudflare Workers Cron Triggers — no server to maintain, no cron daemon to manage. Build periodic API calls, data cleanup jobs, health checks, and automated workflows that run on the global edge.</p>
+            </div>
+
+            <h2>What Are Cron Triggers?</h2>
+            <p>Cloudflare Workers Cron Triggers let you schedule your Workers to run on a timetable — just like the cron scheduler on Linux, but running on Cloudflare's global network. Instead of maintaining a server just to run scheduled tasks, your code executes on the edge with zero infrastructure overhead.</p>
+            <p>Cron Triggers are part of the Cloudflare Workers platform and work with any Worker script. You define when the task should run, and Cloudflare invokes your Worker at those times. The Worker receives a special <code>ScheduledEvent</code> instead of an HTTP request.</p>
+
+            <h2>When to Use Cron Triggers</h2>
+            <p>Before spinning up a separate server or Lambda function for scheduled tasks, consider Workers Cron Triggers for these scenarios:</p>
+            <ul>
+                <li><strong>Periodic API polling</strong> — check external services, sync data, or fetch updates</li>
+                <li><strong>Data cleanup</strong> — expire old records in Workers KV or D1</li>
+                <li><strong>Health monitoring</strong> — ping endpoints and send alerts</li>
+                <li><strong>Report generation</strong> — aggregate data and send daily summaries</li>
+                <li><strong>Cache warming</strong> — pre-fetch and cache frequently accessed content</li>
+                <li><strong>Webhook dispatching</strong> — send scheduled notifications to Discord, Slack, or email</li>
+            </ul>
+
+            <h2>Setting Up Your First Cron Worker</h2>
+            <p>Let's build a Worker that runs every 15 minutes to check a service's health and log the result.</p>
+
+            <h3>Step 1: Create the Project</h3>
+            <p>Initialize a new Worker project using Wrangler:</p>
+            <pre><code>npx wrangler init health-checker
+cd health-checker</code></pre>
+
+            <h3>Step 2: Write the Worker Code</h3>
+            <p>Edit <code>src/index.js</code> to handle both HTTP requests and scheduled events:</p>
+            <pre><code>export default {
+  // Handle scheduled (cron) invocations
+  async scheduled(event, env, ctx) {
+    console.log(`Cron triggered at: ${new Date().toISOString()}`);
+    console.log(`Cron pattern: ${event.cron}`);
+
+    // Health check your service
+    const url = "https://api.example.com/health";
+    const response = await fetch(url);
+    const status = response.status;
+
+    // Store the result in KV for history
+    const timestamp = new Date().toISOString();
+    await env.HEALTH_LOG.put(timestamp, JSON.stringify({
+      status,
+      timestamp,
+      uptime: status === 200
+    }));
+
+    // Alert if down
+    if (status !== 200) {
+      await fetch("https://discord.com/api/webhooks/YOUR_WEBHOOK", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content: `⚠️ Service DOWN! Status: ${status}`
+        })
+      });
+    }
+  },
+
+  // Handle regular HTTP requests (optional)
+  async fetch(request, env) {
+    const url = new URL(request.url);
+    if (url.pathname === "/status") {
+      // Return the last health check result
+      const keys = await env.HEALTH_LOG.list({ limit: 1 });
+      const lastCheck = keys.keys[0]?.value;
+      return new Response(JSON.stringify(lastCheck), {
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+    return new Response("Health Checker Worker", { status: 200 });
+  }
+};</code></pre>
+
+            <h3>Step 3: Configure wrangler.toml</h3>
+            <p>Add the cron trigger and KV namespace to your <code>wrangler.toml</code>:</p>
+            <pre><code>[triggers]
+crons = ["*/15 * * * *"]
+
+[[kv_namespaces]]
+binding = "HEALTH_LOG"
+id = "your-kv-namespace-id"
+preview_id = "your-preview-kv-id"</code></pre>
+            <p>The cron expression <code>*/15 * * * *</code> means "every 15 minutes." You can also use human-readable formats like:</p>
+            <ul>
+                <li><code>0 0 * * *</code> — every day at midnight UTC</li>
+                <li><code>0 9 * * 1</code> — every Monday at 9 AM UTC</li>
+                <li><code>*/5 * * * *</code> — every 5 minutes (min: every minute, max: every minute)</li>
+            </ul>
+
+            <h3>Step 4: Deploy</h3>
+            <pre><code>npx wrangler deploy</code></pre>
+            <p>That's it! Your cron job is now running on Cloudflare's edge, every 15 minutes, without you managing a single server.</p>
+
+            <h2>Understanding ScheduledEvent</h2>
+            <p>When a cron trigger fires, your Worker receives a <code>ScheduledEvent</code> with these properties:</p>
+            <pre><code>// event structure
+{
+  cron: "*/15 * * * *",      // the cron expression
+  scheduledTime: 1234567890  // Unix timestamp of scheduled run
+}</code></pre>
+            <p>Unlike HTTP requests, scheduled events:</p>
+            <ul>
+                <li>Have no <code>request</code> object</li>
+                <li>Cannot return HTTP responses</li>
+                <li>Run for up to 15 minutes (Workers execution limit)</li>
+                <li>Have a budget of 500 minutes per account per month (free tier)</li>
+            </ul>
+
+            <h2>Real-World Example: Daily Data Report</h2>
+            <p>Let's build a more practical Worker that generates a daily summary report:</p>
+            <pre><code>export default {
+  async scheduled(event, env, ctx) {
+    // Only run on the daily cron (not on preview/manual triggers)
+    if (event.cron !== "0 6 * * *") return;
+
+    // Fetch yesterday's data from D1
+    const { results } = await env.DB.prepare(
+      "SELECT date, COUNT(*) as visits, AVG(response_time) as avg_time \
+       FROM analytics \
+       WHERE date = date('now', '-1 day') \
+       GROUP BY date"
+    ).all();
+
+    // Build a summary
+    const report = results.map(r =>
+      `📊 ${r.date}: ${r.visits} visits, avg ${r.avg_time}ms`
+    ).join("\n");
+
+    // Send to Slack/Discord
+    await fetch("https://hooks.slack.com/services/YOUR/WEBHOOK", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        text: `Daily Analytics Report:\n${report || "No data today"}`
+      })
+    });
+
+    // Also store in KV for the dashboard
+    await env.REPORTS.put(
+      new Date().toISOString().slice(0, 10),
+      JSON.stringify({ results, generated_at: new Date().toISOString() })
+    );
+  }
+};</code></pre>
+
+            <h2>Integrating with Python Backends</h2>
+            <p>If you have a Python backend, your Cron Worker can trigger scheduled jobs:</p>
+            <pre><code>export default {
+  async scheduled(event, env, ctx) {
+    // Trigger a Python microservice
+    await fetch(`${env.API_URL}/api/daily-tasks`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${env.API_TOKEN}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        triggered_at: new Date().toISOString(),
+        cron: event.cron
+      })
+    });
+  }
+};</code></pre>
+            <p>Your Python Flask/FastAPI endpoint then handles the actual work:</p>
+            <pre><code># Python FastAPI endpoint
+from fastapi import FastAPI, Header
+
+app = FastAPI()
+
+@app.post("/api/daily-tasks")
+async def daily_tasks(authorization: str = Header(None)):
+    if authorization != f"Bearer {os.environ['API_TOKEN']}":
+        raise HTTPException(403)
+    
+    # Run your scheduled Python tasks
+    cleanup_expired_records()
+    send_daily_digests()
+    update_leaderboard()
+    
+    return {"status": "ok"}</code></pre>
+
+            <h2>Error Handling Best Practices</h2>
+            <p>Cron workers can fail silently. Always add proper error handling:</p>
+            <pre><code>export default {
+  async scheduled(event, env, ctx) {
+    try {
+      await doTheThing(env);
+    } catch (error) {
+      console.error(`Cron job failed: ${error.message}`);
+      
+      // Log to KV for debugging
+      await env.ERRORS.put(
+        new Date().toISOString(),
+        JSON.stringify({
+          error: error.message,
+          stack: error.stack,
+          cron: event.cron,
+          timestamp: Date.now()
+        })
+      );
+
+      // Send alert
+      await sendAlert(`Cron failed: ${error.message}`);
+    }
+  }
+};</code></pre>
+
+            <h2>Testing Cron Triggers Locally</h2>
+            <p>You can simulate cron triggers during local development:</p>
+            <pre><code># Start the dev server
+npx wrangler dev
+
+# In another terminal, trigger the scheduled handler
+npx wrangler trigger:scheduled "*/15 * * * *"</code></pre>
+
+            <h2>Cost & Limits</h2>
+            <table>
+                <tr>
+                    <th>Plan</th>
+                    <th>Cron Execution</th>
+                    <th>Min Interval</th>
+                </tr>
+                <tr>
+                    <td>Free</td>
+                    <td>500 minutes/month</td>
+                    <td>1 minute</td>
+                </tr>
+                <tr>
+                    <td>Pro</td>
+                    <td>Included in plan</td>
+                    <td>1 minute</td>
+                </tr>
+            </table>
+            <p>Quick math: a task running every 15 minutes uses ~288 minutes per month (4× daily × 30 days × 15 min / 15 min). A daily task uses only ~1-2 minutes per month.</p>
+
+            <h2>Summary</h2>
+            <p>Cloudflare Workers Cron Triggers give you serverless scheduling without managing infrastructure. Key takeaways:</p>
+            <ol>
+                <li>Define cron schedules in <code>wrangler.toml</code> under <code>[triggers]</code></li>
+                <li>Handle the <code>scheduled()</code> method in your Worker</li>
+                <li>Use KV, D1, or external APIs to store results</li>
+                <li>Add error handling and alerting for reliability</li>
+                <li>Test locally with <code>wrangler trigger:scheduled</code></li>
+            </ol>
+            <p>Next time you need a scheduled task, skip the EC2 instance and spin up a cron Worker instead. Deploy in minutes, not hours.</p>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes · Built with ☁️ Cloudflare Workers</p>
+        </div>
+    </footer>
+
+    <script>
+        // Progress bar
+        window.addEventListener('scroll', () => {
+            const winScroll = document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + '%';
+        });
+
+        // Dark mode toggle
+        const toggle = document.getElementById('themeToggle');
+        if (localStorage.getItem('dark-mode') === 'true') {
+            document.body.classList.add('dark-mode');
+            toggle.textContent = '☀️';
+        }
+        toggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+            toggle.textContent = isDark ? '☀️' : '🌙';
+            localStorage.setItem('dark-mode', isDark);
+        });
+    </script>
+</body>
+</html>

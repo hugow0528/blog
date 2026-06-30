@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML Forms & Validation: Build Interactive Forms That Work | Hugo's Dev Notes</title>
+    <meta name="description" content="Master HTML forms — input types, validation attributes, form layout, file uploads, and JavaScript form handling. Build real-world forms with client-side and server-side validation. Beginner-friendly with working examples.">
+    <meta name="keywords" content="html forms, form validation, html5 inputs, form layout, client-side validation, javascript forms, file upload">
+    <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/html-forms-validation.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+                <a href="../devops.html" class="nav-btn">🐳 DevOps</a>
+                <a href="../security.html" class="nav-btn">🔐 Security</a>
+                <a href="../webdev.html" class="nav-btn">💻 Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post">
+            <h1>HTML Forms &amp; Validation: Build Interactive Forms That Work</h1>
+            <div class="post-meta">
+                <time>2026-06-30</time>
+                <span class="read-time">11 min read</span>
+                <span class="tag web">Web Dev</span>
+            </div>
+
+            <div class="post-excerpt">
+                <p>Master HTML forms — input types, validation attributes, form layout, file uploads, and JavaScript form handling. Build real-world forms with client-side and server-side validation. From basic signup forms to advanced multi-step forms.</p>
+            </div>
+
+            <h2>Why Forms Matter</h2>
+            <p>Forms are how users interact with your website. Whether it's a login page, a contact form, a checkout flow, or a search bar — forms are the bridge between your visitors and your application. Building good forms means fewer errors, happier users, and more conversions.</p>
+            <p>HTML5 made form validation dramatically easier. You can validate input before it ever reaches your server, saving bandwidth and improving the user experience. Let's learn how.</p>
+
+            <h2>Basic Form Structure</h2>
+            <p>Every form starts with the <code>&lt;form&gt;</code> element. Here's the skeleton:</p>
+            <pre><code>&lt;form action="/submit" method="POST"&gt;
+  &lt;label for="name"&gt;Your Name:&lt;/label&gt;
+  &lt;input type="text" id="name" name="name" required&gt;
+
+  &lt;label for="email"&gt;Email:&lt;/label&gt;
+  &lt;input type="email" id="email" name="email" required&gt;
+
+  &lt;button type="submit"&gt;Submit&lt;/button&gt;
+&lt;/form&gt;</code></pre>
+
+            <p>Key attributes explained:</p>
+            <ul>
+                <li><code>action</code> — where to send the form data (URL path)</li>
+                <li><code>method</code> — HTTP method: <code>GET</code> (appends to URL) or <code>POST</code> (sends in body)</li>
+                <li><code>name</code> — the key sent with the form data (required!)</li>
+                <li><code>for</code> on label — connects label to input for accessibility</li>
+                <li><code>required</code> — prevents submission if the field is empty</li>
+            </ul>
+
+            <h2>Essential Input Types</h2>
+            <p>HTML5 gives you specialized input types that provide built-in validation and better mobile keyboards:</p>
+            <pre><code>&lt;!-- Text and identity --&gt;
+&lt;input type="text" name="username" placeholder="john_doe"&gt;
+&lt;input type="email" name="email" placeholder="john@example.com"&gt;
+&lt;input type="tel" name="phone" placeholder="+1-555-0123"&gt;
+&lt;input type="url" name="website" placeholder="https://example.com"&gt;
+
+&lt;!-- Numbers and range --&gt;
+&lt;input type="number" name="age" min="18" max="120"&gt;
+&lt;input type="range" name="volume" min="0" max="100" value="50"&gt;
+
+&lt;!-- Date and time --&gt;
+&lt;input type="date" name="birthday"&gt;
+&lt;input type="time" name="start_time"&gt;
+&lt;input type="datetime-local" name="meeting"&gt;
+
+&lt;!-- Password and search --&gt;
+&lt;input type="password" name="password" minlength="8"&gt;
+&lt;input type="search" name="query"&gt;
+
+&lt;!-- Selection --&gt;
+&lt;input type="checkbox" name="agree"&gt; I agree to the terms
+&lt;input type="radio" name="gender" value="M"&gt; Male
+&lt;input type="radio" name="gender" value="F"&gt; Female
+&lt;input type="file" name="avatar" accept="image/*"&gt;&lt;/form&gt;</code></pre>
+
+            <p>Each input type validates automatically on the browser side. For example, <code>type="email"</code> checks that the value contains an @ symbol and a domain. <code>type="number"</code> ensures only numeric input. <code>type="date"</code> shows a date picker on mobile devices.</p>
+
+            <h2>Built-in Validation Attributes</h2>
+            <p>Beyond the <code>required</code> attribute, HTML5 provides these validation tools:</p>
+            <pre><code>&lt;!-- Length constraints --&gt;
+&lt;input type="text" name="username" minlength="3" maxlength="20"&gt;
+
+&lt;!-- Number constraints --&gt;
+&lt;input type="number" name="quantity" min="1" max="100" step="5"&gt;
+
+&lt;!-- Pattern matching (regex) --&gt;
+&lt;input type="text" name="zip" pattern="[0-9]{5}" 
+       title="Enter a 5-digit US ZIP code"&gt;
+
+&lt;!-- Custom required message --&gt;
+&lt;input type="email" name="email" required 
+       placeholder="Enter your email"&gt;</code></pre>
+
+            <p>The <code>pattern</code> attribute uses JavaScript regex syntax. The <code>title</code> attribute shows a helpful message when validation fails.</p>
+
+            <h2>Building a Real Signup Form</h2>
+            <p>Let's put it all together into a complete signup form:</p>
+            <pre><code>&lt;form action="/api/signup" method="POST" class="signup-form"&gt;
+  &lt;h2>Create Account&lt;/h2&gt;
+
+  &lt;fieldset&gt;
+    &lt;legend&gt;Personal Information&lt;/legend&gt;
+
+    &lt;div class="form-group"&gt;
+      &lt;label for="name"&gt;Full Name&lt;/label&gt;
+      &lt;input type="text" id="name" name="name" 
+             required minlength="2" maxlength="100"&gt;
+    &lt;/div&gt;
+
+    &lt;div class="form-group"&gt;
+      &lt;label for="email"&gt;Email&lt;/label&gt;
+      &lt;input type="email" id="email" name="email" required&gt;
+    &lt;/div&gt;
+  &lt;/fieldset&gt;
+
+  &lt;fieldset&gt;
+    &lt;legend&gt;Account Details&lt;/legend&gt;
+
+    &lt;div class="form-group"&gt;
+      &lt;label for="password"&gt;Password&lt;/label&gt;
+      &lt;input type="password" id="password" name="password" 
+             required minlength="8" 
+             pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}"
+             title="At least 8 chars, 1 number, 1 uppercase, 1 lowercase"&gt;
+    &lt;/div&gt;
+
+    &lt;div class="form-group"&gt;
+      &lt;label for="confirm"&gt;Confirm Password&lt;/label&gt;
+      &lt;input type="password" id="confirm" name="confirm" required&gt;
+    &lt;/div&gt;
+  &lt;/fieldset&gt;
+
+  &lt;div class="form-group"&gt;
+    &lt;label&gt;
+      &lt;input type="checkbox" name="newsletter"&gt;
+      Send me updates
+    &lt;/label&gt;
+  &lt;/div&gt;
+
+  &lt;div class="form-group"&gt;
+    &lt;label&gt;
+      &lt;input type="checkbox" name="terms" required&gt;
+      I agree to the &lt;a href="/terms"&gt;Terms of Service&lt;/a&gt;
+    &lt;/label&gt;
+  &lt;/div&gt;
+
+  &lt;button type="submit"&gt;Create Account&lt;/button&gt;
+  &lt;p&gt;Already have an account? &lt;a href="/login"&gt;Log in&lt;/a&gt;&lt;/p&gt;
+&lt;/form&gt;</code></pre>
+
+            <h2>Styling Forms with CSS</h2>
+            <p>Forms look terrible without CSS. Here's a minimal set of styles:</p>
+            <pre><code>.signup-form {
+  max-width: 480px;
+  margin: 2rem auto;
+  padding: 2rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+}
+
+input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+/* Validation styling */
+input:invalid:not(:placeholder-shown) {
+  border-color: #ef4444;
+}
+
+input:valid:not(:placeholder-shown) {
+  border-color: #22c55e;
+}
+
+button[type="submit"] {
+  width: 100%;
+  padding: 0.75rem;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button[type="submit"]:hover {
+  background: #1d4ed8;
+}</code></pre>
+
+            <h2>JavaScript Form Handling</h2>
+            <p>HTML validation is great, but JavaScript gives you full control over the submission process:</p>
+            <pre><code>&lt;script&gt;
+const form = document.querySelector('.signup-form');
+const password = document.querySelector('#password');
+const confirm = document.querySelector('#confirm');
+
+// Real-time password match check
+confirm.addEventListener('input', () => {
+  if (confirm.value !== password.value) {
+    confirm.setCustomValidity('Passwords do not match');
+  } else {
+    confirm.setCustomValidity('');
+  }
+});
+
+// Intercept form submission
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();  // Stop default form submission
+
+  // Check if form is valid
+  if (!form.checkValidity()) {
+    form.reportValidity();  // Show HTML5 validation messages
+    return;
+  }
+
+  // Collect form data
+  const formData = new FormData(form);
+  const data = Object.fromEntries(formData.entries());
+
+  try {
+    const response = await fetch('/api/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+
+    if (response.ok) {
+      // Success — redirect or show message
+      window.location.href = '/dashboard';
+    } else {
+      const error = await response.json();
+      showError(error.message);
+    }
+  } catch (err) {
+    showError('Network error. Please try again.');
+  }
+});
+
+function showError(message) {
+  // Show error in a toast or alert
+  const div = document.createElement('div');
+  div.className = 'error-message';
+  div.textContent = message;
+  form.prepend(div);
+  setTimeout(() => div.remove(), 5000);
+}
+&lt;/script&gt;</code></pre>
+
+            <h2>File Upload Forms</h2>
+            <p>Handling file uploads requires special attention:</p>
+            <pre><code>&lt;form id="upload-form" enctype="multipart/form-data"&gt;
+  &lt;label for="avatar"&gt;Profile Photo&lt;/label&gt;
+  &lt;input type="file" id="avatar" name="avatar" 
+         accept="image/png,image/jpeg,image/webp"
+         required&gt;
+  
+  &lt;!-- Preview the selected image --&gt;
+  &lt;img id="preview" alt="Preview" style="max-width:200px;display:none"&gt;
+  
+  &lt;button type="submit"&gt;Upload&lt;/button&gt;
+&lt;/form&gt;
+
+&lt;script&gt;
+const fileInput = document.querySelector('#avatar');
+const preview = document.querySelector('#preview');
+
+fileInput.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File too large. Max 5MB.');
+      fileInput.value = '';
+      return;
+    }
+    // Show preview
+    preview.src = URL.createObjectURL(file);
+    preview.style.display = 'block';
+  }
+});
+
+document.querySelector('#upload-form')
+  .addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    
+    const response = await fetch('/api/upload', {
+      method: 'POST',
+      body: formData  // FormData handles encoding automatically
+    });
+    
+    const result = await response.json();
+    console.log('Uploaded:', result.url);
+  });
+&lt;/script&gt;</code></pre>
+
+            <h2>Server-Side Validation (Python Example)</h2>
+            <p>Never trust client-side validation alone. Always validate on the server:</p>
+            <pre><code># Python FastAPI backend
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, EmailStr, Field
+import re
+
+app = FastAPI()
+
+class SignupRequest(BaseModel):
+    name: str = Field(..., min_length=2, max_length=100)
+    email: EmailStr
+    password: str = Field(..., min_length=8)
+    newsletter: bool = False
+
+    @validator('password')
+    def password_strength(cls, v):
+        if not re.search(r'\d', v):
+            raise ValueError('Password needs a number')
+        if not re.search(r'[A-Z]', v):
+            raise ValueError('Password needs uppercase')
+        if not re.search(r'[a-z]', v):
+            raise ValueError('Password needs lowercase')
+        return v
+
+@app.post("/api/signup")
+async def signup(data: SignupRequest):
+    # Check if email exists in database
+    # Hash the password
+    # Create the user record
+    return {"status": "created", "email": data.email}</code></pre>
+
+            <h2>Accessibility Best Practices</h2>
+            <p>Forms must be accessible to everyone:</p>
+            <ul>
+                <li><strong>Always use labels</strong> — connect with <code>for</code> and <code>id</code></li>
+                <li><strong>Use fieldsets and legends</strong> to group related inputs</li>
+                <li><strong>Provide error messages</strong> with <code>aria-describedby</code></li>
+                <li><strong>Use proper input types</strong> for better screen reader support</li>
+                <li><strong>Ensure keyboard navigation</strong> — tabindex follows DOM order</li>
+                <li><strong>Add sufficient color contrast</strong> for error states</li>
+            </ul>
+
+            <h2>Summary</h2>
+            <p>HTML forms are powerful tools when used correctly. Key takeaways:</p>
+            <ol>
+                <li>Use HTML5 input types for built-in validation and better UX</li>
+                <li>Apply <code>required</code>, <code>minlength</code>, <code>pattern</code> attributes</li>
+                <li>Style validation states with <code>:valid</code> and <code>:invalid</code> pseudo-classes</li>
+                <li>Use JavaScript for custom validation (like password matching)</li>
+                <li>Always validate on the server — client validation is UX, not security</li>
+                <li>Make forms accessible with proper labels and error messages</li>
+            </ol>
+            <p>Forms are the lifeblood of web interaction. Build them well, and your users will thank you.</p>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes · Built with ☁️ Cloudflare Workers</p>
+        </div>
+    </footer>
+
+    <script>
+        // Progress bar
+        window.addEventListener('scroll', () => {
+            const winScroll = document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + '%';
+        });
+
+        // Dark mode toggle
+        const toggle = document.getElementById('themeToggle');
+        if (localStorage.getItem('dark-mode') === 'true') {
+            document.body.classList.add('dark-mode');
+            toggle.textContent = '☀️';
+        }
+        toggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+            toggle.textContent = isDark ? '☀️' : '🌙';
+            localStorage.setItem('dark-mode', isDark);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python JSON & Data Serialization: Save, Load, and Exchange Data</title>
+    <meta name="description" content="Master Python JSON handling — parse, serialize, save to files, handle nested data, work with APIs, and convert between Python types and JSON. Practical examples for beginners.">
+    <meta name="keywords" content="python json, json load, json dump, json loads, json dumps, python data serialization, python tutorial, api data">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+                <a href="../devops.html" class="nav-btn">🐳 DevOps</a>
+                <a href="../security.html" class="nav-btn">🔐 Security</a>
+                <a href="../webdev.html" class="nav-btn">💻 Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post">
+            <div class="post-header">
+                <span class="tag python">Python</span>
+                <h1>Python JSON & Data Serialization: Save, Load, and Exchange Data</h1>
+            </div>
+
+            <div class="post-meta">
+                <time>2026-06-28</time>
+                <span class="read-time">11 min read</span>
+                <span class="post-status">New</span>
+            </div>
+
+            <div class="post-content">
+                <p>JSON (JavaScript Object Notation) is the universal language of data on the web. APIs return JSON, configuration files use JSON, and your Python programs often need to save or load structured data. Python's built-in <code>json</code> module makes this effortless. This tutorial covers everything from basic serialization to real-world API integration.</p>
+
+                <h2>What Is JSON?</h2>
+
+                <p>JSON is a lightweight text format for storing and exchanging data. It uses key-value pairs, arrays, and nested structures — concepts you already know from Python dictionaries and lists.</p>
+
+                <pre><code># JSON looks like this (in a file or string):
+{
+    "name": "Alice",
+    "age": 30,
+    "hobbies": ["coding", "hiking"],
+    "address": {
+        "city": "Seattle",
+        "zip": "98101"
+    }
+}
+
+# Python equivalent (dictionary):
+data = {
+    "name": "Alice",
+    "age": 30,
+    "hobbies": ["coding", "hiking"],
+    "address": {
+        "city": "Seattle",
+        "zip": "98101"
+    }
+}</code></pre>
+
+                <p>The mapping is straightforward: JSON objects become Python dicts, JSON arrays become Python lists, JSON strings/numbers/booleans become Python str/int/float/bool, and <code>null</code> becomes <code>None</code>.</p>
+
+                <h2>The Four Core Functions</h2>
+
+                <p>The <code>json</code> module provides four functions. Think of them as two pairs: <strong>strings</strong> (loads/dumps) and <strong>files</strong> (load/dump).</p>
+
+                <h3>json.dumps() — Python Object to String</h3>
+
+                <p><code>dumps</code> = "dump string". Converts a Python object into a JSON-formatted string:</p>
+
+                <pre><code>import json
+
+# Python dict → JSON string
+user = {
+    "name": "Alice",
+    "age": 30,
+    "active": True
+}
+
+json_string = json.dumps(user)
+print(json_string)
+# Output: {"name": "Alice", "age": 30, "active": true}
+
+# Pretty-print with indent for readability
+pretty = json.dumps(user, indent=2)
+print(pretty)
+# Output:
+# {
+#   "name": "Alice",
+#   "age": 30,
+#   "active": true
+# }</code></pre>
+
+                <p>Common arguments for <code>dumps</code>:</p>
+
+                <pre><code># Sort keys alphabetically (great for consistent output)
+json.dumps(data, sort_keys=True)
+
+# Pretty-print with custom indentation
+json.dumps(data, indent=4)
+
+# Ensure non-ASCII characters are preserved (not escaped)
+json.dumps(data, ensure_ascii=False)
+
+# Use a specific separator for compact output
+json.dumps(data, separators=(',', ':'))</code></pre>
+
+                <h3>json.loads() — JSON String to Python Object</h3>
+
+                <p><code>loads</code> = "load string". Parses a JSON string back into a Python object:</p>
+
+                <pre><code>import json
+
+json_string = '{"name": "Alice", "age": 30, "active": true}'
+
+# JSON string → Python dict
+user = json.loads(json_string)
+
+print(user["name"])      # Alice
+print(user["age"])       # 30
+print(type(user["age"])) # &lt;class 'int'&gt; — not a string!</code></pre>
+
+                <p>This is especially useful when you receive JSON from an API or read it from a file as text.</p>
+
+                <h3>json.dump() — Python Object to File</h3>
+
+                <p><code>dump</code> = "dump to file". Writes a Python object directly to a file:</p>
+
+                <pre><code>import json
+
+users = [
+    {"name": "Alice", "age": 30, "role": "admin"},
+    {"name": "Bob", "age": 25, "role": "user"},
+    {"name": "Carol", "age": 35, "role": "user"}
+]
+
+# Write to file (creates or overwrites)
+with open("users.json", "w") as f:
+    json.dump(users, f, indent=2)
+
+# The file "users.json" now contains nicely formatted JSON
+print("File saved! ✓")</code></pre>
+
+                <h3>json.load() — File to Python Object</h3>
+
+                <p><code>load</code> = "load from file". Reads and parses a JSON file:</p>
+
+                <pre><code>import json
+
+# Read from file
+with open("users.json", "r") as f:
+    users = json.load(f)
+
+print(users[0]["name"])  # Alice
+print(len(users))        # 3
+
+# Find all users with the "admin" role
+admins = [u for u in users if u["role"] == "admin"]
+print(admins)
+# Output: [{'name': 'Alice', 'age': 30, 'role': 'admin'}]</code></pre>
+
+                <h2>Complete Type Conversion Reference</h2>
+
+                <p>Understanding the type mapping prevents surprises when working with JSON data:</p>
+
+                <pre><code># Python → JSON          JSON → Python
+# dict              →      object    →   dict
+# list, tuple       →      array     →   list
+# str               →      string    →   str
+# int               →      number    →   int
+# float             →      number    →   float
+# True              →      true      →   True
+# False             →      false     →   False
+# None              →      null      →   None</code></pre>
+
+                <p><strong>Important notes:</strong> Tuples become lists (JSON has no tuple type). Sets are not supported and will raise a <code>TypeError</code>. You'll need to convert them first.</p>
+
+                <pre><code>import json
+
+# Sets need to be converted to lists first
+tags = {"python", "json", "tutorial"}
+json.dumps({"tags": list(tags)})  # Works!
+
+# Dates aren't natively supported — convert to string
+from datetime import datetime
+now = datetime.now()
+json.dumps({"created": now.isoformat()})  # "2026-06-28T10:30:00.123456"</code></pre>
+
+                <h2>Handling Errors Gracefully</h2>
+
+                <p>JSON data might be malformed, missing keys, or have unexpected types. Always handle these cases:</p>
+
+                <pre><code>import json
+
+# Handle invalid JSON
+bad_data = '{"name": "Alice", age: 30}'  # Missing quotes around "age"
+
+try:
+    user = json.loads(bad_data)
+except json.JSONDecodeError as e:
+    print(f"Invalid JSON: {e}")
+    # Output: Invalid JSON: Expecting property name enclosed in double quotes
+
+# Handle missing keys safely
+user = {"name": "Alice"}
+age = user.get("age", 0)  # Returns 0 if "age" doesn't exist
+
+# Handle nested data safely
+user = {"name": "Alice", "address": {"city": "Seattle"}}
+zip_code = user.get("address", {}).get("zip", "Unknown")
+# Returns "Unknown" — no KeyError!</code></pre>
+
+                <h2>Real-World Project: JSON Configuration Manager</h2>
+
+                <p>Let's build a practical utility that manages application settings in a JSON file. This pattern is used in countless real projects:</p>
+
+                <pre><code>import json
+import os
+
+CONFIG_FILE = "app_config.json"
+DEFAULT_CONFIG = {
+    "app_name": "MyApp",
+    "version": "1.0.0",
+    "debug": False,
+    "database": {
+        "host": "localhost",
+        "port": 5432,
+        "name": "mydb"
+    },
+    "features": {
+        "notifications": True,
+        "dark_mode": True,
+        "analytics": False
+    }
+}
+
+def load_config():
+    """Load config from file, or create default if missing."""
+    if os.path.exists(CONFIG_FILE):
+        with open(CONFIG_FILE, "r") as f:
+            config = json.load(f)
+        print(f"Config loaded from {CONFIG_FILE}")
+        return config
+    else:
+        config = DEFAULT_CONFIG.copy()
+        save_config(config)
+        print(f"Default config created at {CONFIG_FILE}")
+        return config
+
+def save_config(config):
+    """Save config to file with pretty formatting."""
+    with open(CONFIG_FILE, "w") as f:
+        json.dump(config, f, indent=2)
+    print(f"Config saved to {CONFIG_FILE}")
+
+def update_config(config, section, key, value):
+    """Update a nested config value like config.database.host"""
+    if section in config:
+        config[section][key] = value
+        save_config(config)
+        print(f"Updated {section}.{key} = {value}")
+    else:
+        print(f"Section '{section}' not found")
+
+# ---- Use it ----
+config = load_config()
+print(config["database"]["host"])  # localhost
+
+update_config(config, "database", "host", "db.production.com")
+update_config(config, "features", "analytics", True)
+update_config(config, "database", "port", 3306)
+
+# Final config file contains:
+# {
+#   "app_name": "MyApp",
+#   "database": {
+#     "host": "db.production.com",
+#     "port": 3306,
+#     "name": "mydb"
+#   },
+#   ...
+# }</code></pre>
+
+                <h2>Real-World Project: Fetch &amp; Save API Data</h2>
+
+                <p>Combine JSON with the <code>requests</code> library to fetch and store API data. This is one of the most common patterns in Python development:</p>
+
+                <pre><code>import json
+import requests
+
+# Fetch data from a public API
+response = requests.get(
+    "https://jsonplaceholder.typicode.com/posts?_limit=5"
+)
+
+# Check for errors
+if response.status_code == 200:
+    posts = response.json()  # Built-in JSON parsing!
+    
+    # Save to local file for offline use
+    with open("posts_cache.json", "w") as f:
+        json.dump(posts, f, indent=2)
+    print(f"Cached {len(posts)} posts ✓")
+    
+    # Process the data
+    for post in posts:
+        print(f"#{post['id']} — {post['title'][:40]}...")
+else:
+    print(f"API error: {response.status_code}")
+
+# Later — load cached data instead of hitting the API
+with open("posts_cache.json", "r") as f:
+    posts = json.load(f)
+
+# Search for posts containing "lorem"
+lorem_posts = [p for p in posts if "lorem" in p["body"].lower()]
+print(f"Found {len(lorem_posts)} posts with 'lorem'")</code></pre>
+
+                <h2>Custom JSON Encoding with a Converter Class</h2>
+
+                <p>When you need to serialize objects that aren't natively JSON-compatible (like <code>datetime</code>, sets, or custom classes), extend <code>json.JSONEncoder</code>:</p>
+
+                <pre><code>import json
+from datetime import datetime, date
+
+class CustomEncoder(json.JSONEncoder):
+    """Custom JSON encoder for unsupported types."""
+    
+    def default(self, obj):
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        if isinstance(obj, date):
+            return obj.isoformat()
+        if isinstance(obj, set):
+            return list(obj)
+        if isinstance(obj, bytes):
+            return obj.decode("utf-8")
+        return super().default(obj)
+
+# Use the custom encoder
+data = {
+    "created": datetime.now(),
+    "tags": {"python", "json", "tutorial"},
+    "raw": b"binary data"
+}
+
+output = json.dumps(data, cls=CustomEncoder, indent=2)
+print(output)
+# {
+#   "created": "2026-06-28T10:30:00.123456",
+#   "tags": ["json", "python", "tutorial"],
+#   "raw": "binary data"
+# }</code></pre>
+
+                <h2>Best Practices Summary</h2>
+
+                <pre><code>1. Use json.load()/dump() for files — simpler than read/write + loads/dumps
+2. Always use indent=2 for human-readable config files
+3. Use sort_keys=True for consistent output (great for diffing)
+4. Wrap json.loads() in try/except JSONDecodeError for safety
+5. Use dict.get() with defaults to avoid KeyError on missing keys
+6. Convert unsupported types (datetime, set) before serialization
+7. Never trust external JSON — validate structure before processing
+8. Cache API responses as JSON files to avoid repeated network calls
+9. Use requests.json() instead of json.loads(response.text) when possible</code></pre>
+
+                <h2>Next Steps</h2>
+
+                <p>Now that you understand JSON in Python, check out these related tutorials:</p>
+
+                <ul>
+                    <li><a href="python-apis.html">Python &amp; APIs: Fetch Data from the Web</a> — Combine JSON with HTTP requests</li>
+                    <li><a href="python-file-operations.html">Python File Operations: Read, Write, and Manage Files</a> — File handling fundamentals</li>
+                    <li><a href="python-error-handling.html">Python Error Handling: try/except</a> — Handle JSON parsing errors gracefully</li>
+                </ul>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes · Built with ☕ and curiosity</p>
+        </div>
+    </footer>
+
+    <script>
+        // Reading Progress Bar
+        window.onscroll = function() {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById("progressBar").style.width = scrolled + "%";
+        };
+        // Dark Mode Toggle
+        const toggle = document.getElementById("themeToggle");
+        if (localStorage.getItem("darkMode") === "true") {
+            document.body.classList.add("dark-mode");
+            toggle.textContent = "☀️";
+        }
+        toggle.addEventListener("click", () => {
+            document.body.classList.toggle("dark-mode");
+            localStorage.setItem("darkMode", document.body.classList.contains("dark-mode"));
+            toggle.textContent = document.body.classList.contains("dark-mode") ? "☀️" : "🌙";
+        });
+    </script>
+</body>
+</html>

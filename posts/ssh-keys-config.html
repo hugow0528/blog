@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSH Keys & ssh_config: Passwordless Login and Secure Remote Access | Hugo's Dev Notes</title>
+    <meta name="description" content="Set up SSH key-based authentication for passwordless login. Configure ssh_config for aliases, port forwarding, and multiple servers. Practical guide with working examples.">
+    <link rel="stylesheet" href="../style.css">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/ssh-keys-config.html">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../devops.html" class="nav-btn">🐳 DevOps</a>
+                <a href="../security.html" class="nav-btn">🔐 Security</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-content">
+            <span class="tag security">Security</span>
+            <span class="tag devops">DevOps</span>
+            <h1>SSH Keys & ssh_config: Passwordless Login and Secure Remote Access</h1>
+            <time>2026-06-29</time>
+            <p>Password-based SSH login is slow and vulnerable to brute-force attacks. SSH key-based authentication is faster, more secure, and the standard way developers connect to remote servers. In this guide, you'll learn how to generate SSH keys, set up passwordless login, configure ssh_config with aliases for easy access, and harden your SSH setup for production use. Everything is explained with real commands you can run right now.</p>
+
+            <h2>Why SSH Keys Are Better Than Passwords</h2>
+            <p>SSH keys use asymmetric cryptography — a public key (shared with servers) and a private key (kept secret on your machine). When you connect, the server challenges your private key to prove you own it. No password is sent over the network.</p>
+            <p>The benefits are clear:</p>
+            <ul>
+                <li><strong>Security:</strong> Private keys are 2048-4096 bits long. Brute-forcing an SSH key is computationally impossible with current technology.</li>
+                <li><strong>Convenience:</strong> No typing passwords — just <code>ssh myserver</code>.</li>
+                <li><strong>Automation:</strong> Scripts, CI/CD pipelines, and deployment tools need key-based auth.</li>
+                <li><strong>Granular control:</strong> You can restrict keys to specific commands, users, or source IPs.</li>
+            </ul>
+            <p>Let's walk through the complete setup.</p>
+
+            <h2>Step 1: Generate Your SSH Key Pair</h2>
+            <p>Open your terminal and run:</p>
+<pre><code>ssh-keygen -t ed25519 -C "your_email@example.com"
+</code></pre>
+            <p>This generates an Ed25519 key pair — the modern recommended algorithm. It's faster and more secure than RSA. When prompted:</p>
+            <ul>
+                <li><strong>File location:</strong> Press Enter to accept the default (<code>~/.ssh/id_ed25519</code>).</li>
+                <li><strong>Passphrase:</strong> Enter a strong passphrase. This encrypts your private key at rest — if someone steals your key file, they still need the passphrase.</li>
+            </ul>
+            <p>After running the command, you'll have two files:</p>
+<pre><code>~/.ssh/id_ed25519        # Private key — NEVER share this
+~/.ssh/id_ed25519.pub    # Public key — you add this to servers
+</code></pre>
+
+            <h3>Which Algorithm Should You Use?</h3>
+            <p>Here's the current recommendation as of 2026:</p>
+            <ul>
+                <li><code>ed25519</code> — Best choice. Fast, secure, short keys.</li>
+                <li><code>rsa</code> (4096-bit) — Good for compatibility with very old systems. Use only if ed25519 isn't supported.</li>
+                <li><code>ecdsa</code> — Generally avoided due to patent concerns and limited adoption.</li>
+            </ul>
+
+            <h2>Step 2: Copy Your Public Key to the Server</h2>
+            <p>The easiest way is using <code>ssh-copy-id</code>:</p>
+<pre><code>ssh-copy-id -i ~/.ssh/id_ed25519.pub user@server.example.com
+</code></pre>
+            <p>This appends your public key to <code>~/.ssh/authorized_keys</code> on the server. You'll be asked for your password one last time.</p>
+
+            <h3>Manual Method (if ssh-copy-id isn't available)</h3>
+            <p>If you're on Windows or <code>ssh-copy-id</code> isn't installed:</p>
+<pre><code># On your local machine, print the public key
+cat ~/.ssh/id_ed25519.pub
+# Copy the output (it starts with ssh-ed25519 AAAA...)
+
+# SSH into the server with password, then:
+mkdir -p ~/.ssh
+chmod 700 ~/.ssh
+echo "ssh-ed25519 AAAA... your_email@example.com" >> ~/.ssh/authorized_keys
+chmod 600 ~/.ssh/authorized_keys
+</code></pre>
+            <p>Test it:</p>
+<pre><code>ssh user@server.example.com
+# You should log in without a password prompt!
+</code></pre>
+            <p>If you set a passphrase, you'll still be prompted for that. Read on to eliminate even that.</p>
+
+            <h2>Step 3: Set Up ssh-agent for Passphrase Management</h2>
+            <p>If your key has a passphrase, typing it every time defeats the convenience of SSH keys. <code>ssh-agent</code> solves this by caching your decrypted key in memory:</p>
+
+            <h3>On Linux (with systemd, most modern distros)</h3>
+<pre><code># The agent usually starts automatically. Check:
+echo $SSH_AUTH_SOCK
+
+# Add your key (you type the passphrase once):
+ssh-add ~/.ssh/id_ed25519
+
+# Verify it's loaded:
+ssh-add -l
+</code></pre>
+
+            <h3>On macOS</h3>
+<pre><code># macOS uses a keychain integration. Add your key once:
+ssh-add --apple-use-keychain ~/.ssh/id_ed25519
+
+# It will auto-load from now on.
+</code></pre>
+
+            <h3>On Windows (Git Bash / WSL)</h3>
+<pre><code># Pageant is part of PuTTY and acts as an SSH agent
+# Or in WSL/Git Bash:
+eval "$(ssh-agent -s)"
+ssh-add ~/.ssh/id_ed25519
+</code></pre>
+
+            <h2>Step 4: Configure ssh_config for Easy Access</h2>
+            <p>This is where SSH becomes genuinely powerful. The <code>~/.ssh/config</code> file lets you define shortcuts, set defaults, and manage multiple servers effortlessly.</p>
+            <p>Here's a practical example:</p>
+<pre><code># ~/.ssh/config
+
+# Default settings for all connections
+Host *
+    AddKeysToAgent yes
+    UseKeychain yes              # macOS only
+    IdentityFile ~/.ssh/id_ed25519
+    ServerAliveInterval 60       # Send keepalive every 60 seconds
+    ServerAliveCountMax 3        # Disconnect after 3 missed keepalives
+    StrictHostKeyChecking ask    # Warn about unknown hosts
+    VisualHostKey yes            # Show host key fingerprint
+
+# Production server
+Host prod
+    HostName 203.0.113.10
+    User deploy
+    Port 22
+    IdentityFile ~/.ssh/id_ed25519
+
+# Staging server
+Host staging
+    HostName 203.0.113.20
+    User deploy
+    Port 2222
+
+# Database server (different key)
+Host db-server
+    HostName db.example.com
+    User dbadmin
+    IdentityFile ~/.ssh/db_key
+    Port 22
+
+# GitHub (uses a specific key)
+Host github.com
+    AddKeysToAgent yes
+    IdentitiesOnly yes
+    IdentityFile ~/.ssh/github_key
+
+# Development VM
+Host dev
+    HostName 192.168.1.100
+    User hugo
+    ForwardAgent yes
+
+# Jump host (connect through a bastion server)
+Host internal-server
+    HostName 10.0.0.50
+    User admin
+    ProxyJump bastion
+
+Host bastion
+    HostName 203.0.113.1
+    User jumpuser
+</code></pre>
+            <p>After saving this file, use the aliases:</p>
+<pre><code>ssh prod          # Connects to deploy@203.0.113.10
+ssh staging       # Connects to deploy@203.0.113.20:2222
+ssh db-server     # Connects to dbadmin@db.example.com with db_key
+scp file.txt prod:/var/www/  # Copy files using the alias
+</code></pre>
+            <p>No need to remember IPs, usernames, or ports — everything is in your config file.</p>
+
+            <h2>Step 5: Security Hardening</h2>
+            <p>Now that your SSH is set up, let's make it more secure.</p>
+
+            <h3>On the Server: Harden sshd_config</h3>
+            <p>Edit <code>/etc/ssh/sshd_config</code> on the server:</p>
+<pre><code># Disable password authentication entirely (only keys allowed)
+PasswordAuthentication no
+
+# Disable root login via SSH
+PermitRootLogin no
+
+# Use only strong key algorithms
+PubkeyAcceptedAlgorithms ssh-ed25519,rsa-sha2-512,rsa-sha2-256
+
+# Limit who can log in (allowlist approach)
+AllowUsers deploy admin hugo
+
+# Change default port (reduces automated scanning noise)
+Port 2222
+
+# Limit authentication attempts
+MaxAuthTries 3
+
+# Set connection timeout
+LoginGraceTime 30
+
+# Disable unused features
+X11Forwarding no
+PermitEmptyPasswords no
+ChallengeResponseAuthentication no
+
+# After editing, restart the service:
+sudo systemctl restart sshd
+</code></pre>
+            <p><strong>Important:</strong> Before disabling password authentication, verify that key-based login works. Open a new terminal and test your SSH connection — don't lock yourself out!</p>
+
+            <h3>File Permissions Matter</h3>
+            <p>SSH is strict about file permissions. Wrong permissions can cause "Permission denied" errors even with correct keys:</p>
+<pre><code># On your local machine
+chmod 700 ~/.ssh                    # Directory
+chmod 600 ~/.ssh/id_ed25519         # Private key
+chmod 644 ~/.ssh/id_ed25519.pub     # Public key
+chmod 600 ~/.ssh/config             # Config file
+
+# On the server
+chmod 700 ~/.ssh
+chmod 600 ~/.ssh/authorized_keys
+</code></pre>
+
+            <h3>Use sshd's allow/deny lists</h3>
+<pre><code># Restrict access by source IP in sshd_config
+# Only allow connections from specific networks
+ListenAddress 203.0.113.10
+
+# Or use firewall rules:
+sudo ufw allow from 203.0.113.0/24 to any port 2222
+sudo ufw deny 22  # Block old default port
+</code></pre>
+
+            <h2>Step 6: Useful SSH Commands and Tricks</h2>
+            <p>Now that your SSH setup is solid, here are practical commands that save time:</p>
+
+            <h3>File Transfer with SCP and SFTP</h3>
+<pre><code># Copy file to server
+scp myfile.txt prod:/home/deploy/
+
+# Copy entire directory (recursive)
+scp -r ./website/ staging:/var/www/
+
+# Copy from server to local
+scp prod:/var/log/app.log ./
+
+# Using a custom port
+scp -P 2222 myfile.txt staging:/tmp/
+
+# SFTP for interactive file management
+sftp prod
+# Inside sftp: get, put, ls, cd, mkdir, rm
+</code></pre>
+
+            <h3>SSH Tunneling for Port Forwarding</h3>
+<pre><code># Local port forwarding — access a remote database locally
+ssh -L 5432:localhost:5432 prod
+# Now connect to localhost:5432 on your machine → it routes to prod's PostgreSQL
+
+# Remote port forwarding — expose a local service
+ssh -R 8080:localhost:3000 prod
+# Now prod:8080 routes to your local:3000 (useful for tunneling local dev)
+
+# Dynamic port forwarding (SOCKS proxy)
+ssh -D 1080 prod
+# Configure your browser to use SOCKS proxy at localhost:1080
+# All traffic routes through the server
+</code></pre>
+
+            <h3>Agent Forwarding</h3>
+<pre><code># If you need to SSH from server A to server B using your local keys:
+ssh -A staging
+# Then from staging:
+ssh prod  # Uses your forwarded agent, no need to copy keys to staging
+
+# Or set ForwardAgent yes in your ssh_config (see above)
+</code></pre>
+            <p><strong>Warning:</strong> Agent forwarding means anyone on the intermediate server could potentially use your keys. Only use <code>ForwardAgent</code> on servers you trust.</p>
+
+            <h3>SSH Multiplexing (Faster Connections)</h3>
+<pre><code># Add to ~/.ssh/config:
+Host *
+    ControlMaster auto
+    ControlPath ~/.ssh/sockets/%r@%h-%p
+    ControlPersist 10m
+
+# First SSH connection opens a master socket
+# Subsequent connections reuse it — instant login!
+mkdir -p ~/.ssh/sockets
+</code></pre>
+
+            <h2>Managing Multiple Keys for Different Services</h2>
+            <p>You'll likely need separate keys for GitHub, your servers, Docker Hub, etc. Here's the recommended approach:</p>
+<pre><code># Generate separate keys
+ssh-keygen -t ed25519 -f ~/.ssh/github_key -C "github"
+ssh-keygen -t ed25519 -f ~/.ssh/work_key -C "work"
+ssh-keygen -t ed25519 -f ~/.ssh/personal_key -C "personal"
+
+# Configure ~/.ssh/config:
+Host github.com
+    IdentityFile ~/.ssh/github_key
+    IdentitiesOnly yes
+
+Host work-*
+    IdentityFile ~/.ssh/work_key
+
+Host personal-*
+    IdentityFile ~/.ssh/personal_key
+</code></pre>
+            <p>The <code>IdentitiesOnly yes</code> directive tells SSH to use ONLY the specified key for that host, preventing it from trying all keys and getting rejected.</p>
+
+            <h2>Troubleshooting Common Issues</h2>
+            <p>SSH problems are common. Here's how to debug them:</p>
+<pre><code># Run SSH with verbose output (up to -vvv for maximum detail)
+ssh -v user@server
+
+# Common errors and fixes:
+
+# "Permission denied (publickey)"
+# → Check that your public key is in authorized_keys
+# → Verify file permissions (600 for authorized_keys)
+# → Run ssh -vvv to see which key is being tried
+
+# "Host key verification failed"
+# → The server's key changed. Check if it's legitimate, then:
+ssh-keygen -R old.server.com
+
+# "Connection timed out"
+# → Check firewall rules on the server
+# → Verify the port is correct
+# → Try ping server.example.com
+
+# "Too many authentication failures"
+# → Too many keys in ssh-agent. Remove unnecessary ones:
+ssh-add -D  # Clear all keys
+ssh-add ~/.ssh/id_ed25519  # Add only the one you need
+</code></pre>
+
+            <h2>Summary</h2>
+            <p>SSH key-based authentication is the foundation of secure remote server management. You've learned to:</p>
+            <ol>
+                <li>Generate Ed25519 keys with <code>ssh-keygen</code></li>
+                <li>Copy public keys to servers with <code>ssh-copy-id</code></li>
+                <li>Manage passphrases with <code>ssh-agent</code></li>
+                <li>Configure <code>~/.ssh/config</code> with aliases and defaults</li>
+                <li>Harden server SSH with <code>sshd_config</code></li>
+                <li>Use port forwarding, agent forwarding, and multiplexing</li>
+                <li>Manage multiple keys for different services</li>
+                <li>Debug connection issues with <code>ssh -vvv</code></li>
+            </ol>
+            <p>With this setup, connecting to your servers is as simple as <code>ssh prod</code> — no passwords, no remembering IPs, and significantly more secure than before. The time invested in setting this up pays off every single day.</p>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes | Built with ❤️ & AI</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528" target="_blank">GitHub</a>
+                <a href="https://blog.hugow.dev/sitemap.xml">Sitemap</a>
+                <a href="../index.html">Back to Home</a>
+            </div>
+        </div>
+    </footer>
+
+    <button class="back-to-top" id="backToTop" title="Back to top">↑</button>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            themeToggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+            localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+        });
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark-mode');
+            themeToggle.textContent = '☀️';
+        }
+        const backToTop = document.getElementById('backToTop');
+        window.addEventListener('scroll', () => {
+            backToTop.style.display = window.pageYOffset > 300 ? 'block' : 'none';
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + '%';
+        });
+        backToTop.addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    </script>
+</body>
+</html>

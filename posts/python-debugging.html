@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Debugging: Master pdb, print(), and Modern Debugging Tools | Hugo's Dev Notes</title>
+    <meta name="description" content="Stop guessing why your code fails. Learn Python debugging from print() statements to pdb breakpoints, logging tricks, and VS Code debugging. Practical examples you can use today.">
+    <link rel="stylesheet" href="../style.css">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-debugging.html">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+                <a href="../devops.html" class="nav-btn">🐳 DevOps</a>
+                <a href="../security.html" class="nav-btn">🔐 Security</a>
+                <a href="../webdev.html" class="nav-btn">💻 Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-content">
+            <span class="tag python">Python</span>
+            <span class="tag devops">DevOps</span>
+            <h1>Python Debugging: Stop Guessing, Start Finding Bugs Fast</h1>
+            <time>2026-06-30</time>
+
+            <p>Every programmer spends more time debugging than writing new code. It's not a sign of bad code — it's just how software development works. The trick is finding bugs <em>fast</em> instead of staring at code for hours wondering why something doesn't work. In this guide, you'll learn five debugging techniques ranging from the simplest <code>print()</code> to powerful interactive debuggers, so you can fix problems quickly and move on.</p>
+
+            <h2>Level 1: Strategic <code>print()</code> Statements</h2>
+            <p>Before reaching for complex tools, <code>print()</code> is often the fastest way to understand what's happening. The key is being <strong>strategic</strong> — don't just print values, print enough context to diagnose the problem immediately.</p>
+
+            <h3>Good vs Bad Print Debugging</h3>
+<pre><code># ❌ Bad: No context
+print(x)
+print(y)
+
+# ✅ Good: Context-rich prints with labels
+print(f"[DEBUG] Processing user {user_id}: name={name!r}, age={age}")
+print(f"[DEBUG] API response: status={response.status_code}, length={len(data)}")</code></pre>
+            <p>Notice the <code>[DEBUG]</code> prefix (makes grep easy later), the <code>!r</code> format specifier (shows repr, including quotes for strings), and variable names in the output. When you're scanning through output, you need to know <em>what</em> each line is without going back to the source code.</p>
+
+            <h3>The "Rubber Duck" Print Technique</h3>
+            <p>This is a real technique. Before adding any debug prints, write comments explaining what each line should do, line by line:</p>
+<pre><code>def calculate_discount(price, member, items):
+    # Start with base price
+    total = price
+    # If member, apply 10% discount
+    if member:
+        total *= 0.9
+    # If buying 3+ items, add 5% bulk discount on top
+    if items >= 3:
+        total *= 0.95
+    # Round to 2 decimal places
+    return round(total, 2)
+
+# Bug: order matters! Member discount applied before bulk
+# should be: total = price * (1 - member_discount - bulk_discount)</code></pre>
+            <p>Writing the comments forces you to think through the logic — and often you'll spot the bug before you even add a single print statement.</p>
+
+            <h2>Level 2: Using <code>breakpoint()</code> (Python 3.7+)</h2>
+            <p>Python 3.7 added a built-in <code>breakpoint()</code> function. Drop it anywhere in your code and Python will pause execution at that line, giving you an interactive debugger (pdb) session:</p>
+<pre><code>def process_orders(orders):
+    results = []
+    for order in orders:
+        # Pause here to inspect order
+        breakpoint()
+        total = sum(item["price"] for item in order["items"])
+        results.append({"order_id": order["id"], "total": total})
+    return results
+
+# Run normally:
+# python my_script.py
+# When it hits breakpoint(), you'll see:
+# &gt; /path/to/my_script.py(14)process_orders()
+# (Pdb) </code></pre>
+
+            <h3>Essential pdb Commands</h3>
+            <p>Once you're in the debugger, here are the commands you'll use 90% of the time:</p>
+            <ul>
+                <li><strong><code>next</code></strong> (or <code>n</code>) — Execute the current line and move to the next line <em>in the same function</em></li>
+                <li><strong><code>step</code></strong> (or <code>s</code>) — Step <em>into</em> function calls</li>
+                <li><strong><code>continue</code></strong> (or <code>c</code>) — Keep running until the next breakpoint</li>
+                <li><strong><code>up</code></strong> (or <code>u</code>) / <strong><code>down</code></strong> (or <code>d</code>) — Move up/down the call stack</li>
+                <li><strong><code>list</code></strong> (or <code>l</code>) — Show surrounding source code</li>
+                <li><strong><code>pp variable</code></strong> — Pretty-print a variable</li>
+                <li><strong><code>where</code></strong> (or <code>w</code>) — Show the full call stack</li>
+                <li><strong><code>quit</code></strong> (or <code>q</code>) — Exit the debugger</li>
+            </ul>
+
+            <h3>Debugging Walkthrough</h3>
+<pre><code>def find_max(numbers):
+    max_val = numbers[0]
+    for num in numbers:
+        breakpoint()
+        if num > max_val:
+            max_val = num
+    return max_val
+
+# Run: python script.py
+# (Pdb) n              # next line
+# (Pdb) pp num         # pretty print current num: 5
+# (Pdb) pp max_val     # current max: 3
+# (Pdb) pp num > max_val  # evaluate expression: True
+# (Pdb) c              # continue to next breakpoint
+# (Pdb) q              # quit</code></pre>
+            <p>The beauty of pdb is that you can evaluate <em>any Python expression</em> in the current context. If <code>num</code> and <code>max_val</code> are in scope, you can type <code>num > max_val</code> and get the result immediately — no need to guess.</p>
+
+            <h2>Level 3: Conditional Breakpoints</h2>
+            <p>You often want to pause only under specific conditions. Instead of stopping on every loop iteration, set a condition:</p>
+<pre><code>def find_errors(records):
+    errors = []
+    for i, record in enumerate(records):
+        # Stop only when record fails validation
+        breakpoint()  # In pdb: condition i == 42  OR
+        # Use eval condition directly:
+        if record.get("status") == "failed":
+            breakpoint()
+        errors.append(record)
+    return errors</code></pre>
+            <p>When you're at the breakpoint in pdb, you can set a persistent condition:</p>
+<pre><code># In the pdb prompt:
+(Pdb) condition 1 i == 42   # Only stop at breakpoint #1 when i==42
+(Pdb) ignore 1               # Skip breakpoint #1 once
+(Pdb) list breakpoints       # See all breakpoints</code></pre>
+
+            <h2>Level 4: Using <code>logging</code> for Production Debugging</h2>
+            <p>You can't leave <code>print()</code> statements in production code. That's where the <code>logging</code> module shines:</p>
+<pre><code>import logging
+
+# Configure logging once at startup
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S"
+)
+
+logger = logging.getLogger(__name__)
+
+def connect_to_database(url):
+    logger.debug("Attempting connection to: %s", url)  # Detailed info
+    try:
+        conn = database.connect(url)
+        logger.info("Connected to database successfully")
+        return conn
+    except ConnectionError as e:
+        logger.error("Connection failed: %s", e, exc_info=True)
+        raise
+    finally:
+        logger.debug("Connection attempt completed")</code></pre>
+
+            <h3>Logging Levels — When to Use Each</h3>
+            <ul>
+                <li><strong>DEBUG</strong> — Detailed info for diagnosing problems (variable values, loop iterations)</li>
+                <li><strong>INFO</strong> — Confirmation that things are working as expected (connections, completions)</li>
+                <li><strong>WARNING</strong> — Something unexpected happened but the app continues (deprecated feature used, retry attempt)</li>
+                <li><strong>ERROR</strong> — A serious problem (function failed, API returned 500)</li>
+                <li><strong>CRITICAL</strong> — The application may be unable to continue (database lost, config missing)</li>
+            </ul>
+
+            <h3>Production Logging Config</h3>
+            <p>In production, you typically want less verbose output and JSON format for log aggregation tools:</p>
+<pre><code>import logging
+import json
+import os
+
+class JsonFormatter(logging.Formatter):
+    def format(self, record):
+        return json.dumps({
+            "timestamp": self.formatTime(record),
+            "level": record.levelname,
+            "logger": record.name,
+            "message": record.getMessage(),
+            "module": record.module,
+            "line": record.lineno
+        })
+
+# Production config
+handler = logging.StreamHandler()
+handler.setFormatter(JsonFormatter())
+logging.getLogger().addHandler(handler)
+logging.getLogger().setLevel(os.environ.get("LOG_LEVEL", "WARNING"))</code></pre>
+            <p>Now your logs appear as structured JSON that tools like Prometheus, Grafana, or ELK can easily parse and visualize.</p>
+
+            <h2>Level 5: Post-Mortem Debugging with Tracebacks</h2>
+            <p>When your program crashes, Python gives you a traceback. Most beginners just read the last line — but the <strong>entire traceback</strong> tells a story. Read it <em>bottom-up</em> to find the root cause:</p>
+<pre><code>Traceback (most recent call last):
+  File "app.py", line 25, in &lt;module&gt;
+    process_data(data)
+  File "app.py", line 15, in process_data
+    result = calculate_average(numbers)
+  File "app.py", line 8, in calculate_average
+    return sum(numbers) / len(numbers)
+ZeroDivisionError: division by zero</code></pre>
+            <p>The error is at line 8: dividing by zero because <code>numbers</code> is an empty list. But the <em>real</em> bug is at line 15 in <code>process_data</code> — why did it pass an empty list? That's where the fix belongs.</p>
+
+            <h3>Auto-Debug with <code>python -m pdb</code></h3>
+            <p>When your script crashes, you can drop into pdb <em>at the point of the crash</em>:</p>
+<pre><code># Run your script and auto-enter pdb on crash:
+$ python -m pdb my_script.py
+(Pdb) c                    # Continue running
+# When crash happens:
+&gt; my_script.py(8)calculate_average()
+    return sum(numbers) / len(numbers)
+(Pdb) pp numbers           # [] — empty list!
+(Pdb) up                   # Go up the stack to see where numbers came from</code></pre>
+
+            <h2>Bonus: VS Code Debugging</h2>
+            <p>If you use VS Code, you get a visual debugger for free:</p>
+            <ol>
+                <li>Click the Debug icon (or press <code>Ctrl+Shift+D</code>)</li>
+                <li>Create a <code>.vscode/launch.json</code> file</li>
+                <li>Set breakpoints by clicking to the left of line numbers</li>
+                <li>Press <code>F5</code> to start debugging</li>
+            </ol>
+<pre><code>// .vscode/launch.json
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Current File",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal"
+        }
+    ]
+}</code></pre>
+            <p>VS Code lets you hover over variables to see values, add watches for complex expressions, and set conditional breakpoints with a UI — everything pdb offers but visually. For beginners, this is often the most accessible entry point to proper debugging.</p>
+
+            <h2>Debugging Checklist</h2>
+            <p>When you encounter a bug, work through this checklist instead of randomly trying things:</p>
+            <ol>
+                <li><strong>Read the error message completely</strong> — especially the full traceback, not just the last line</li>
+                <li><strong>Reproduce it consistently</strong> — if you can't reproduce it, you can't fix it</li>
+                <li><strong>Isolate the problem</strong> — reduce the code to the smallest example that still triggers the bug</li>
+                <li><strong>Check your assumptions</strong> — "this variable should be a list" — is it really? <code>print(type(x))</code></li>
+                <li><strong>Use a debugger</strong> — set a breakpoint and step through the code</li>
+                <li><strong>Google the error</strong> — but read the full context, not just the first result</li>
+            </ol>
+
+            <h2>Conclusion</h2>
+            <p>Debugging is a skill that improves with practice. Start with strategic <code>print()</code> statements, graduate to <code>breakpoint()</code> and pdb, and adopt <code>logging</code> for production code. Each level gives you more power and precision. The goal isn't to avoid bugs — it's to find them quickly so you can fix them and move on.</p>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes | Built with ❤️ &amp; AI</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528" target="_blank">GitHub</a>
+                <a href="https://blog.hugow.dev/sitemap.xml">Sitemap</a>
+            </div>
+        </div>
+    </footer>
+
+    <button class="back-to-top" id="backToTop" title="Back to top">↑</button>
+
+    <script>
+    const themeToggle = document.getElementById('themeToggle');
+    themeToggle.addEventListener('click', () => {
+        document.body.classList.toggle('dark-mode');
+        themeToggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+    });
+    if (localStorage.getItem('theme') === 'dark') {
+        document.body.classList.add('dark-mode');
+        themeToggle.textContent = '☀️';
+    }
+    const backToTop = document.getElementById('backToTop');
+    window.addEventListener('scroll', () => {
+        backToTop.style.display = window.pageYOffset > 300 ? 'block' : 'none';
+        const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+        const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        const scrolled = (winScroll / height) * 100;
+        document.getElementById('progressBar').style.width = scrolled + '%';
+    });
+    backToTop.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+    </script>
+</body>
+</html>

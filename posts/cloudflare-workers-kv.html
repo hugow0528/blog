@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloudflare Workers KV: Serverless Key-Value Database Guide | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn Cloudflare Workers KV — a globally distributed key-value store. Store data, cache responses, build APIs, and manage namespaces with practical examples.">
+    <link rel="stylesheet" href="../style.css">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/cloudflare-workers-kv.html">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+                <a href="../devops.html" class="nav-btn">🐳 DevOps</a>
+                <a href="../security.html" class="nav-btn">🔐 Security</a>
+                <a href="../webdev.html" class="nav-btn">💻 Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-content">
+            <span class="tag cloudflare">Cloudflare</span>
+            <span class="tag devops">DevOps</span>
+            <h1>Cloudflare Workers KV: Serverless Key-Value Database Made Easy</h1>
+            <time>2026-06-30</time>
+
+            <p>If you've built a Cloudflare Worker before, you know it runs at the edge — fast, but <strong>stateless</strong>. Every request starts fresh, and nothing persists between calls. That's where <strong>Workers KV</strong> comes in. It's a globally distributed, key-value datastore built into Cloudflare's edge network. Think of it like Redis, but you don't manage any servers, and your data is replicated to 300+ cities automatically.</p>
+
+            <p>In this guide, you'll learn how to create a KV namespace, write and read data from Workers, use KV for caching, and build a real counter API. All with working code examples you can deploy today.</p>
+
+            <h2>What Is Workers KV?</h2>
+            <p>Workers KV is a <strong>key-value store</strong> — the simplest form of database. You store data by giving it a unique key, and retrieve it by looking up that key. Unlike a SQL database with tables and rows, KV is just pairs of <code>key → value</code>.</p>
+
+            <p>Key characteristics:</p>
+            <ul>
+                <li><strong>Key:</strong> A UTF-8 string (max 512 bytes), like <code>"user:123:profile"</code></li>
+                <li><strong>Value:</strong> Up to 25 MB of text, binary, or JSON data</li>
+                <li><strong>Namespace:</strong> A logical container for your keys (like a database)</li>
+                <li><strong>Geared toward:</strong> Caching, config storage, simple APIs, counters</li>
+            </ul>
+
+            <p>Each Worker belongs to an account and can access one or more <strong>KV namespaces</strong>. You create namespaces from the dashboard or CLI, then bind them to your Worker.</p>
+
+            <h2>Creating Your First KV Namespace</h2>
+            <p>You can create a namespace using the <code>wrangler</code> CLI. First, make sure you have wrangler installed:</p>
+<pre><code># Install wrangler (Cloudflare's CLI tool)
+npm install -g wrangler
+
+# Create a new namespace
+wrangler kv:namespace create "MY_COUNTERS" --preview
+
+# Output: {"id": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6", "preview_id": "q7r8s9t0u1v2w3x4y5z6..."}</code></pre>
+
+            <p>Then bind it in your <code>wrangler.toml</code>:</p>
+<pre><code># wrangler.toml
+name = "my-counter-worker"
+main = "src/index.js"
+compatibility_date = "2026-06-01"
+
+kv_namespaces = [
+  { binding = "COUNTERS", id = "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6" }
+]</code></pre>
+
+            <p>The <code>binding</code> name (<code>COUNTERS</code>) is what you'll use inside your Worker code. The <code>id</code> links it to the actual namespace on Cloudflare's infrastructure.</p>
+
+            <h2>Writing and Reading Data</h2>
+            <p>Workers KV has three core operations: <code>get</code>, <code>put</code>, and <code>delete</code>. Here's the basic Worker that uses all three:</p>
+<pre><code>// src/index.js
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+    const key = url.searchParams.get('key');
+    const value = url.searchParams.get('value');
+    const action = url.searchParams.get('action') || 'get';
+
+    if (action === 'get') {
+      const data = await env.COUNTERS.get(key);
+      return new Response(
+        JSON.stringify({ key, value: data }),
+        { headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    if (action === 'put') {
+      await env.COUNTERS.put(key, value);
+      return new Response(
+        JSON.stringify({ message: `Stored "${key}" = "${value}"` }),
+        { headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    if (action === 'delete') {
+      await env.COUNTERS.delete(key);
+      return new Response(
+        JSON.stringify({ message: `Deleted key "${key}"` }),
+        { headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    return new Response("Use ?action=get|put|delete", { status: 400 });
+  }
+};</code></pre>
+
+            <p>Deploy it with <code>wrangler deploy</code>, then test from your terminal:</p>
+<pre><code># Store a value
+curl "https://my-counter-worker.youraccount.workers.dev?key=username&action=put&value=hugo"
+
+# Retrieve it
+curl "https://my-counter-worker.youraccount.workers.dev?key=username&action=get"
+# Response: {"key":"username","value":"hugo"}
+
+# Delete it
+curl "https://my-counter-worker.youraccount.workers.dev?key=username&action=delete"</code></pre>
+
+            <h2>Building a Simple Counter</h2>
+            <p>One of the most common KV use cases is counting. Let's build a page view counter that persists between requests:</p>
+<pre><code>// src/counter.js
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+
+    if (request.method === "GET") {
+      // Read current count
+      const count = parseInt(await env.COUNTERS.get("visits") || "0");
+      return new Response(
+        JSON.stringify({ visits: count }),
+        { headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    if (request.method === "POST") {
+      // Increment count (read → compute → write)
+      const current = parseInt(await env.COUNTERS.get("visits") || "0");
+      const newCount = current + 1;
+      await env.COUNTERS.put("visits", String(newCount));
+      return new Response(
+        JSON.stringify({ visits: newCount }),
+        { headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    return new Response("Use GET to read, POST to increment", { status: 405 });
+  }
+};</code></pre>
+
+            <p>Test the counter:</p>
+<pre><code># Read current count
+curl https://my-counter-worker.youraccount.workers.dev
+# Response: {"visits":0}
+
+# Increment
+curl -X POST https://my-counter-worker.youraccount.workers.dev
+# Response: {"visits":1}
+
+# Increment again
+curl -X POST https://my-counter-worker.youraccount.workers.dev
+# Response: {"visits":2}</code></pre>
+
+            <h2>Using KV for Response Caching</h2>
+            <p>Here's a practical pattern: cache expensive API responses in KV so you don't hit the upstream API on every request:</p>
+<pre><code>// src/cached-api.js
+const CACHE_TTL = 300; // 5 minutes
+
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+    const cacheKey = `cached:${url.pathname}${url.search}`;
+
+    // Step 1: Check cache
+    const cached = await env.COUNTERS.get(cacheKey, { type: "json", cacheTtl: CACHE_TTL });
+    if (cached) {
+      return new Response(JSON.stringify(cached), {
+        headers: { "Content-Type": "application/json", "X-Cache": "HIT" }
+      });
+    }
+
+    // Step 2: Fetch from upstream API
+    const upstream = await fetch("https://api.example.com/data");
+    const data = await upstream.json();
+
+    // Step 3: Store in KV cache
+    await env.COUNTERS.put(cacheKey, JSON.stringify(data), { expirationTtl: CACHE_TTL });
+
+    return new Response(JSON.stringify(data), {
+      headers: { "Content-Type": "application/json", "X-Cache": "MISS" }
+    });
+  }
+};</code></pre>
+
+            <p>Notice the <code>cacheTtl: 300</code> option on <code>get()</code> — this tells Cloudflare's edge to cache the value for 5 minutes <em>before</em> it even reaches your Worker code. This is called an <strong>edge cache</strong> and is extremely fast. The <code>expirationTtl</code> on <code>put()</code> sets the absolute expiry in the KV store itself.</p>
+
+            <h2>Batch Operations with <code>getMany</code> and <code>putMany</code></h2>
+            <p>Workers KV supports batch operations for efficiency. Instead of making 10 separate API calls, do one:</p>
+<pre><code>// Fetch multiple keys at once
+const results = await env.COUNTERS.getMany(["user:1:name", "user:1:email", "user:1:role"]);
+// results = ["Alice", "alice@example.com", "admin"]
+
+// Store multiple keys at once
+const batch = await env.COUNTERS.putMany([
+  { key: "user:1:name", value: "Alice" },
+  { key: "user:1:email", value: "alice@example.com" },
+  { key: "user:1:role", value: "admin" }
+]);</code></pre>
+
+            <h2>Listing Keys</h2>
+            <p>Unlike databases, KV doesn't have full-text search. But you <em>can</em> list keys with prefix matching and cursor-based pagination:</p>
+<pre><code>// List all keys with prefix "user:1:"
+const { keys, list_complete } = await env.COUNTERS.list({ prefix: "user:1:" });
+
+console.log(keys);
+// [
+//   { name: "user:1:name", expiration: null },
+//   { name: "user:1:email", expiration: null },
+//   { name: "user:1:role", expiration: null }
+// ]
+
+// If list_complete is false, use the cursor to get the next page
+if (!list_complete) {
+  const { keys: moreKeys, cursor } = await env.COUNTERS.list({
+    prefix: "user:1:",
+    cursor: nextCursor
+  });
+}</code></pre>
+
+            <p>The <code>prefix</code> parameter lets you organize keys using colon-separated paths, similar to how Redis and HashiCorp Consul do it. For example: <code>"site:blog:posts:123"</code> groups all blog post data under the <code>"site:blog:posts:"</code> prefix.</p>
+
+            <h2>Setting Expiration on Keys</h2>
+            <p>Keys can auto-expire. Use <code>expirationTtl</code> (time-to-live in seconds) or <code>expiration</code> (absolute Unix timestamp):</p>
+<pre><code>// Expire in 1 hour (3600 seconds)
+await env.COUNTERS.put("session:abc123", JSON.stringify({ user: "hugo" }), {
+  expirationTtl: 3600
+});
+
+// Expire at a specific time
+await env.COUNTERS.put("promo:summer2026", "20% off", {
+  expiration: Math.floor(Date.now() / 1000) + 86400 // 24 hours from now
+});</code></pre>
+
+            <p>Perfect for session tokens, rate-limit counters, or temporary promo codes.</p>
+
+            <h2>Python API: Managing KV with curl and Python</h2>
+            <p>You can also manage Workers KV through the Cloudflare API. Here's a Python script that stores and retrieves data:</p>
+<pre><code>import requests
+import os
+
+CLOUDFLARE_API_TOKEN = os.environ["CLOUDFLARE_API_TOKEN"]
+ACCOUNT_ID = os.environ["CLOUDFLARE_ACCOUNT_ID"]
+NAMESPACE_ID = os.environ["KV_NAMESPACE_ID"]
+
+headers = {
+    "Authorization": f"Bearer {CLOUDFLARE_API_TOKEN}",
+    "Content-Type": "application/json"
+}
+
+# Write a value
+def kv_put(key, value):
+    url = f"https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/storage/kv/namespaces/{NAMESPACE_ID}/values/{key}"
+    resp = requests.put(url, headers=headers, data=value)
+    print(f"PUT {key}: {resp.status_code}")
+    return resp.ok
+
+# Read a value
+def kv_get(key):
+    url = f"https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/storage/kv/namespaces/{NAMESPACE_ID}/values/{key}"
+    resp = requests.get(url, headers=headers)
+    print(f"GET {key}: {resp.text}")
+    return resp.text
+
+# Delete a value
+def kv_delete(key):
+    url = f"https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/storage/kv/namespaces/{NAMESPACE_ID}/values/{key}"
+    resp = requests.delete(url, headers=headers)
+    print(f"DELETE {key}: {resp.status_code}")
+    return resp.ok
+
+# Usage
+kv_put("config:theme", '"dark"')
+kv_get("config:theme")  # Returns: "dark"
+kv_delete("config:theme")</code></pre>
+
+            <h2>Common Patterns and Best Practices</h2>
+            <h3>1. Use Meaningful Key Structures</h3>
+            <p>Organize keys with prefixes so you can list and manage them later:</p>
+<pre><code>// Good key patterns
+"config:site:theme"          // Site configuration
+"session:abc123:user"        // User session
+"cache:api:users:42"         // Cached API response
+"counter:page:homepage"      // Page view counter</code></pre>
+
+            <h3>2. Store JSON, Not Plain Text</h3>
+            <p>Even simple data benefits from JSON serialization — it handles nulls, types, and nested structures:</p>
+<pre><code>// Instead of storing "Alice,25,admin"
+await env.COUNTERS.put("user:42", JSON.stringify({
+  name: "Alice",
+  age: 25,
+  role: "admin"
+}));
+
+// Read it back as JSON
+const user = JSON.parse(await env.COUNTERS.get("user:42"));
+console.log(user.name); // "Alice"</code></pre>
+
+            <h3>3. Handle Missing Keys Gracefully</h3>
+            <p><code>get()</code> returns <code>null</code> when a key doesn't exist — always check:</p>
+<pre><code>const data = await env.COUNTERS.get("some-key");
+if (data === null) {
+  // Key doesn't exist — return default or generate new data
+  return new Response("Not found", { status: 404 });
+}</code></pre>
+
+            <h3>4. Know the Limits</h3>
+            <ul>
+                <li><strong>Write rate:</strong> ~100 writes per second per namespace</li>
+                <li><strong>Read rate:</strong> ~10,000 reads per second per namespace</li>
+                <li><strong>Max value size:</strong> 25 MB</li>
+                <li><strong>Max key length:</strong> 512 bytes</li>
+                <li><strong>Consistency:</strong> Eventually consistent (10-second window)</li>
+            </ul>
+
+            <h2>When to Use Workers KV (and When Not To)</h2>
+            <p><strong>Use KV for:</strong></p>
+            <ul>
+                <li>Configuration values that change infrequently</li>
+                <li>Caching API responses or computed data</li>
+                <li>Simple counters (page views, rate limits)</li>
+                <li>Session or token storage with expiration</li>
+                <li>Feature flags and A/B test settings</li>
+            </ul>
+
+            <p><strong>Don't use KV for:</strong></p>
+            <ul>
+                <li>Relational data with joins (use D1 database instead)</li>
+                <li>High-frequency counters needing exact accuracy (use Hyperdrive + D1)</li>
+                <li>Large file storage (use R2 instead)</li>
+                <li>Data that requires strong consistency immediately</li>
+            </ul>
+
+            <h2>Summary</h2>
+            <p>Workers KV gives you a simple, globally distributed datastore that pairs perfectly with Cloudflare Workers. With just <code>get</code>, <code>put</code>, and <code>delete</code>, you can build cached APIs, counters, configuration stores, and session managers. Combined with the free tier (100,000 reads/day and 1,000 writes/day), it's one of the easiest ways to add persistence to serverless edge functions.</p>
+
+            <p>Next steps: check out Cloudflare D1 for SQL databases at the edge, or R2 for storing files and media.</p>
+
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes | Built with ❤️ & AI</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528" target="_blank">GitHub</a>
+                <a href="https://blog.hugow.dev/sitemap.xml">Sitemap</a>
+            </div>
+        </div>
+    </footer>
+
+    <button class="back-to-top" id="backToTop" title="Back to top">↑</button>
+
+    <script>
+    const themeToggle = document.getElementById('themeToggle');
+    themeToggle.addEventListener('click', () => {
+        document.body.classList.toggle('dark-mode');
+        themeToggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+        localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+    });
+    if (localStorage.getItem('theme') === 'dark') {
+        document.body.classList.add('dark-mode');
+        themeToggle.textContent = '☀️';
+    }
+    const backToTop = document.getElementById('backToTop');
+    window.addEventListener('scroll', () => {
+        backToTop.style.display = window.pageYOffset > 300 ? 'block' : 'none';
+        const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+        const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        const scrolled = (winScroll / height) * 100;
+        document.getElementById('progressBar').style.width = scrolled + '%';
+    });
+    backToTop.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+    </script>
+</body>
+</html>

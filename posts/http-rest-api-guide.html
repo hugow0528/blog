@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTTP & REST APIs: Understanding the Web's Language | Hugo's Dev Notes</title>
+    <meta name="description" content="Master HTTP methods, status codes, headers, REST API design, and practical API consumption. Beginner-friendly guide with curl, Python, and JavaScript examples.">
+    <meta name="keywords" content="HTTP, REST API, status codes, API design, web development, curl, Python requests, fetch">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+                <a href="../devops.html" class="nav-btn">🐳 DevOps</a>
+                <a href="../security.html" class="nav-btn">🔐 Security</a>
+                <a href="../webdev.html" class="nav-btn">💻 Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+
+        <article class="post-content">
+            <span class="tag web">Web Dev</span>
+            <span class="tag python">Python</span>
+            <h1>HTTP & REST APIs: Understanding the Web's Language</h1>
+            <div class="post-meta">
+                <time>June 28, 2026</time>
+                <span class="read-time">12 min read</span>
+            </div>
+
+            <p>Every time you visit a website, submit a form, or use a mobile app, HTTP is working behind the scenes. HTTP (Hypertext Transfer Protocol) is the language that powers the entire web. Understanding it is essential for any developer, whether you're building websites, APIs, or debugging network problems.</p>
+
+            <p>This guide covers everything from basic HTTP methods to building and consuming REST APIs, with practical examples in Python and JavaScript that you can run today.</p>
+
+            <h2>What Is HTTP?</h2>
+
+            <p>HTTP is a request-response protocol. A client (like your browser or a Python script) sends a <strong>request</strong> to a server, and the server sends back a <strong>response</strong>. That's it — but the details matter.</p>
+
+            <p>Every HTTP request has four main parts:</p>
+
+            <ul>
+                <li><strong>Method</strong> — What action to perform (GET, POST, PUT, DELETE)</li>
+                <li><strong>URL/Path</strong> — Which resource to act on</li>
+                <li><strong>Headers</strong> — Metadata about the request (content type, authentication, etc.)</li>
+                <li><strong>Body</strong> — Optional data sent to the server</li>
+            </ul>
+
+            <p>Every HTTP response has three main parts:</p>
+
+            <ul>
+                <li><strong>Status code</strong> — What happened (200 = success, 404 = not found)</li>
+                <li><strong>Headers</strong> — Metadata about the response</li>
+                <li><strong>Body</strong> — The actual data (HTML, JSON, an image, etc.)</li>
+            </ul>
+
+            <h2>HTTP Methods (Verbs)</h2>
+
+            <p>HTTP methods define <em>what</em> you want to do with a resource. Think of them like database operations:</p>
+
+            <div class="code-block">
+                <pre><code># GET — Read data (like SELECT)
+GET /api/users/42
+
+# POST — Create new data (like INSERT)
+POST /api/users
+Body: {"name": "Hugo", "email": "hugo@example.com"}
+
+# PUT — Replace existing data entirely (like UPDATE full record)
+PUT /api/users/42
+Body: {"name": "Hugo", "email": "hugo@newdomain.com"}
+
+# PATCH — Partially update data (like UPDATE specific columns)
+PATCH /api/users/42
+Body: {"email": "hugo@newdomain.com"}
+
+# DELETE — Remove data (like DELETE)
+DELETE /api/users/42</code></pre>
+            </div>
+
+            <p><strong>Memory trick:</strong> Think of CRUD — Create (POST), Read (GET), Update (PUT/PATCH), Delete (DELETE).</p>
+
+            <h2>HTTP Status Codes</h2>
+
+            <p>Status codes tell you what happened. They fall into five categories:</p>
+
+            <div class="code-block">
+                <pre><code>1xx — Informational  (100 Continue, 101 Switching Protocols)
+2xx — Success         (200 OK, 201 Created, 204 No Content)
+3xx — Redirection     (301 Moved Permanently, 302 Found, 304 Not Modified)
+4xx — Client Error    (400 Bad Request, 401 Unauthorized, 403 Forbidden,
+                       404 Not Found, 405 Method Not Allowed, 429 Too Many Requests)
+5xx — Server Error    (500 Internal Server Error, 502 Bad Gateway,
+                       503 Service Unavailable)</code></pre>
+            </div>
+
+            <p>The most important ones to memorize:</p>
+
+            <ul>
+                <li><strong>200</strong> — Everything worked</li>
+                <li><strong>201</strong> — New resource created</li>
+                <li><strong>304</strong> — Use your cached copy (browser optimization)</li>
+                <li><strong>401</strong> — You're not logged in (Authentication)</li>
+                <li><strong>403</strong> — You're logged in but can't do that (Authorization)</li>
+                <li><strong>404</strong> — Resource doesn't exist</li>
+                <li><strong>422</strong> — Your data format is wrong (common in API validation)</li>
+                <li><strong>429</strong> — You're making requests too fast (rate limited)</li>
+                <li><strong>500</strong> — Server crashed, not your fault</li>
+            </ul>
+
+            <h2>HTTP Headers: The Metadata</h2>
+
+            <p>Headers carry important information that isn't the actual content. Here are the most common ones:</p>
+
+            <div class="code-block">
+                <pre><code># Common request headers
+Accept: application/json           # "I want JSON back"
+Content-Type: application/json     # "I'm sending JSON"
+Authorization: Bearer abc123token  # "Here's my API key"
+User-Agent: Mozilla/5.0            # "Here's what browser/tool I'm using"
+X-Request-ID: unique-id            # "Track this specific request"
+
+# Common response headers
+Content-Type: application/json     # "Here's your JSON"
+Cache-Control: max-age=3600        # "Cache this for 1 hour"
+Set-Cookie: session=abc123         # "Save this cookie"
+X-RateLimit-Remaining: 49          # "You have 49 requests left"
+Content-Length: 2048               # "The body is 2048 bytes"</code></pre>
+            </div>
+
+            <h2>Making API Requests with curl</h2>
+
+            <p><code>curl</code> is a command-line tool for making HTTP requests. It's pre-installed on most computers and is the universal debugging tool for APIs.</p>
+
+            <div class="code-block">
+                <pre><code># GET request — fetch data
+curl https://jsonplaceholder.typicode.com/posts/1
+
+# GET with custom headers
+curl -H "Accept: application/json" \
+     -H "Authorization: Bearer your-token" \
+     https://api.example.com/users
+
+# POST request — send JSON data
+curl -X POST https://jsonplaceholder.typicode.com/posts \
+     -H "Content-Type: application/json" \
+     -d '{"title": "Hello", "body": "World", "userId": 1}'
+
+# PUT request — update data
+curl -X PUT https://jsonplaceholder.typicode.com/posts/1 \
+     -H "Content-Type: application/json" \
+     -d '{"title": "Updated Title", "body": "New body text"}'
+
+# DELETE request — remove data
+curl -X DELETE https://jsonplaceholder.typicode.com/posts/1
+
+# Save response to a file
+curl -o response.json https://jsonplaceholder.typicode.com/posts</code></pre>
+            </div>
+
+            <p>Key curl flags: <code>-X</code> sets the method, <code>-H</code> adds headers, <code>-d</code> sends data, <code>-o</code> saves output, and <code>-v</code> shows verbose details including all headers.</p>
+
+            <h2>Consuming APIs in Python with requests</h2>
+
+            <p>The <code>requests</code> library is the most popular way to make HTTP calls in Python. Install it with <code>pip install requests</code>.</p>
+
+            <div class="code-block">
+                <pre><code>import requests
+
+# GET request
+response = requests.get("https://jsonplaceholder.typicode.com/posts/1")
+print(response.status_code)  # 200
+print(response.json())       # Parse JSON response as dict
+# {'userId': 1, 'id': 1, 'title': '...', 'body': '...'}
+
+# POST request — create new resource
+data = {"title": "My Post", "body": "Hello World!", "userId": 1}
+response = requests.post(
+    "https://jsonplaceholder.typicode.com/posts",
+    json=data,              # Automatically sets Content-Type and serializes
+    timeout=10              # Don't wait forever
+)
+print(response.status_code) # 201 Created
+print(response.json())      # Returns the created post with an 'id'
+
+# Handling errors
+response = requests.get("https://jsonplaceholder.typicode.com/posts/999999")
+if response.status_code == 404:
+    print("Resource not found!")
+elif response.status_code != 200:
+    print(f"Unexpected error: {response.status_code}")
+else:
+    print(response.json())
+
+# Raise an exception on any error (recommended)
+try:
+    response = requests.get(
+        "https://jsonplaceholder.typicode.com/posts/1",
+        timeout=5
+    )
+    response.raise_for_status()  # Raises HTTPError if status >= 400
+    print(response.json())
+except requests.exceptions.Timeout:
+    print("Request timed out!")
+except requests.exceptions.ConnectionError:
+    print("Check your internet connection!")
+except requests.exceptions.HTTPError as e:
+    print(f"HTTP error: {e}")</code></pre>
+            </div>
+
+            <h2>Working with API Authentication</h2>
+
+            <p>Most real APIs require authentication. Here are the most common patterns:</p>
+
+            <div class="code-block">
+                <pre><code>import requests
+
+# 1. API Key in header
+response = requests.get(
+    "https://api.example.com/data",
+    headers={"X-API-Key": "your-secret-key"}
+)
+
+# 2. Bearer Token (OAuth / JWT)
+response = requests.get(
+    "https://api.example.com/protected",
+    headers={"Authorization": "Bearer eyJhbGciOi..."}
+)
+
+# 3. Basic Auth (username/password encoded)
+response = requests.get(
+    "https://api.example.com/data",
+    auth=("username", "password")
+)
+
+# 4. Session-based (cookies)
+session = requests.Session()
+session.post("https://api.example.com/login", json={"user": "me", "pass": "***"})
+response = session.get("https://api.example.com/profile")  # Cookie sent automatically</code></pre>
+            </div>
+
+            <h2>Fetch API in JavaScript</h2>
+
+            <p>Browsers have a built-in <code>fetch</code> API for making HTTP requests. No libraries needed.</p>
+
+            <div class="code-block">
+                <pre><code>// GET request
+fetch('https://jsonplaceholder.typicode.com/posts/1')
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => console.log(data))
+    .catch(error => console.error('Request failed:', error));
+
+// GET with async/await (cleaner syntax)
+async function getPost(id) {
+    const response = await fetch(`https://jsonplaceholder.typicode.com/posts/${id}`);
+    if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    return await response.json();
+}
+
+// POST request
+async function createPost(title, body) {
+    const response = await fetch('https://jsonplaceholder.typicode.com/posts', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ title, body, userId: 1 }),
+    });
+    return await response.json();
+}
+
+// Using AbortController to cancel requests
+const controller = new AbortController();
+const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+try {
+    const response = await fetch('https://api.example.com/data', {
+        signal: controller.signal,
+    });
+} catch (error) {
+    if (error.name === 'AbortError') {
+        console.log('Request was cancelled');
+    }
+}
+clearTimeout(timeoutId);</code></pre>
+            </div>
+
+            <h2>REST API Design Principles</h2>
+
+            <p>When you build APIs, REST (Representational State Transfer) provides conventions that make APIs predictable and easy to use. Key principles:</p>
+
+            <ul>
+                <li><strong>Use nouns for resources</strong>, not verbs. <code>/api/users</code>, not <code>/api/getUsers</code></li>
+                <li><strong>Use HTTP methods for actions</strong>. GET to read, POST to create, PUT to update, DELETE to remove</li>
+                <li><strong>Nest resources to show relationships</strong>. <code>/api/users/42/posts</code> for user 42's posts</li>
+                <li><strong>Use proper status codes</strong>. 200 for success, 201 for created, 404 for not found, etc.</li>
+                <li><strong>Return JSON</strong> as your default format</li>
+                <li><strong>Support pagination</strong>. Don't return 10,000 records at once</li>
+                <li><strong>Be consistent</strong>. Use the same patterns throughout your API</li>
+            </ul>
+
+            <h2>Practical Project: Building a Simple REST API</h2>
+
+            <p>Let's build a mini API using Flask that follows REST conventions:</p>
+
+            <div class="code-block">
+                <pre><code># pip install flask
+
+from flask import Flask, request, jsonify
+
+app = Flask(__name__)
+
+# In-memory "database"
+tasks = [
+    {"id": 1, "title": "Learn HTTP", "done": True},
+    {"id": 2, "title": "Build REST API", "done": False},
+]
+next_id = 3
+
+@app.route('/api/tasks', methods=['GET'])
+def get_tasks():
+    """GET /api/tasks — Return all tasks"""
+    return jsonify(tasks), 200
+
+@app.route('/api/tasks/<int:task_id>', methods=['GET'])
+def get_task(task_id):
+    """GET /api/tasks/1 — Return a specific task"""
+    task = next((t for t in tasks if t["id"] == task_id), None)
+    if task is None:
+        return jsonify({"error": "Task not found"}), 404
+    return jsonify(task), 200
+
+@app.route('/api/tasks', methods=['POST'])
+def create_task():
+    """POST /api/tasks — Create a new task"""
+    global next_id
+    data = request.get_json()
+
+    if not data or "title" not in data:
+        return jsonify({"error": "Title is required"}), 400
+
+    task = {
+        "id": next_id,
+        "title": data["title"],
+        "done": False,
+    }
+    tasks.append(task)
+    next_id += 1
+    return jsonify(task), 201
+
+@app.route('/api/tasks/<int:task_id>', methods=['PUT'])
+def update_task(task_id):
+    """PUT /api/tasks/1 — Update a task"""
+    task = next((t for t in tasks if t["id"] == task_id), None)
+    if task is None:
+        return jsonify({"error": "Task not found"}), 404
+
+    data = request.get_json()
+    if "title" in data:
+        task["title"] = data["title"]
+    if "done" in data:
+        task["done"] = data["done"]
+
+    return jsonify(task), 200
+
+@app.route('/api/tasks/<int:task_id>', methods=['DELETE'])
+def delete_task(task_id):
+    """DELETE /api/tasks/1 — Remove a task"""
+    global tasks
+    task = next((t for t in tasks if t["id"] == task_id), None)
+    if task is None:
+        return jsonify({"error": "Task not found"}), 404
+
+    tasks = [t for t in tasks if t["id"] != task_id]
+    return jsonify({"message": "Task deleted"}), 200
+
+if __name__ == '__main__':
+    app.run(debug=True, port=5000)</code></pre>
+            </div>
+
+            <p>Run it with <code>python app.py</code>, then test it:</p>
+
+            <div class="code-block">
+                <pre><code># Test your API with curl
+curl http://localhost:5000/api/tasks
+# [{"id": 1, "title": "Learn HTTP", "done": true}, ...]
+
+curl http://localhost:5000/api/tasks/1
+# {"id": 1, "title": "Learn HTTP", "done": true}
+
+curl -X POST http://localhost:5000/api/tasks \
+     -H "Content-Type: application/json" \
+     -d '{"title": "New task"}'
+# {"id": 3, "title": "New task", "done": false}  (201 Created)
+
+curl -X PUT http://localhost:5000/api/tasks/1 \
+     -H "Content-Type: application/json" \
+     -d '{"done": true}'
+# {"id": 1, "title": "Learn HTTP", "done": true}
+
+curl -X DELETE http://localhost:5000/api/tasks/1
+# {"message": "Task deleted"}</code></pre>
+            </div>
+
+            <h2>API Best Practices</h2>
+
+            <p>Whether you're building or consuming APIs, follow these practices:</p>
+
+            <ul>
+                <li><strong>Always set timeouts</strong> — never wait forever for a response</li>
+                <li><strong>Handle errors gracefully</strong> — network calls fail; your code should survive</li>
+                <li><strong>Use HTTPS everywhere</strong> — never send credentials over plain HTTP</li>
+                <li><strong>Don't hardcode API keys</strong> — use environment variables</li>
+                <li><strong>Respect rate limits</strong> — check <code>X-RateLimit</code> headers and back off</li>
+                <li><strong>Cache responses</strong> — use <code>Cache-Control</code> headers to avoid redundant requests</li>
+                <li><strong>Validate input</strong> — check that required fields exist and have correct types</li>
+                <li><strong>Version your APIs</strong> — use <code>/api/v1/users</code> so you can make breaking changes later</li>
+            </ul>
+
+            <h2>Summary</h2>
+
+            <p>HTTP is the foundation of web communication. The key concepts to remember:</p>
+
+            <ul>
+                <li><strong>Methods</strong> (GET, POST, PUT, DELETE) define the action</li>
+                <li><strong>Status codes</strong> (200, 404, 500) tell you the result</li>
+                <li><strong>Headers</strong> carry metadata (authentication, content type, caching)</li>
+                <li><strong>REST</strong> conventions make APIs predictable and intuitive</li>
+                <li><strong>curl</strong> is your best debugging tool</li>
+                <li><strong>requests</strong> (Python) and <strong>fetch</strong> (JavaScript) make API calls simple</li>
+            </ul>
+
+            <p>Understanding HTTP deeply will make you a better developer — you'll debug faster, build better APIs, and understand the tools and frameworks you use. The next time you see a 404 or a 500, you'll know exactly what happened.</p>
+
+        </article>
+
+        <div class="post-navigation">
+            <a href="python-json-serialization.html" class="nav-link prev">← Python JSON Serialization</a>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes. Built with ☕ and Cloudflare.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Reading progress bar
+        window.addEventListener('scroll', () => {
+            const winScroll = document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            const bar = document.getElementById('progressBar');
+            if (bar) bar.style.width = scrolled + '%';
+        });
+
+        // Dark mode toggle
+        const toggle = document.getElementById('themeToggle');
+        if (toggle) {
+            const saved = localStorage.getItem('darkMode');
+            if (saved === 'true') {
+                document.body.classList.add('dark-mode');
+                toggle.textContent = '☀️';
+            }
+            toggle.addEventListener('click', () => {
+                document.body.classList.toggle('dark-mode');
+                localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+                toggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+            });
+        }
+    </script>
+</body>
+</html>

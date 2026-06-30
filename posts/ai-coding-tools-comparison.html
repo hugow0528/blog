@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vibe Coding: Copilot vs Cursor vs Claude Code - Which AI Tool Wins in 2026? | Hugo's Dev Notes</title>
+    <meta name="description" content="Comprehensive comparison of AI coding tools — GitHub Copilot, Cursor, and Claude Code. Features, pricing, strengths, weaknesses, and which tool fits your workflow in 2026.">
+    <meta name="keywords" content="vibe coding, AI coding, GitHub Copilot, Cursor, Claude Code, AI tools comparison, developer tools 2026">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+                <a href="../devops.html" class="nav-btn">🐳 DevOps</a>
+                <a href="../security.html" class="nav-btn">🔐 Security</a>
+                <a href="../webdev.html" class="nav-btn">💻 Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+
+        <article class="post-content">
+            <span class="tag vibe">AI Coding</span>
+            <h1>Vibe Coding: Copilot vs Cursor vs Claude Code — Which AI Tool Wins in 2026?</h1>
+            <div class="post-meta">
+                <time>June 28, 2026</time>
+                <span class="read-time">14 min read</span>
+            </div>
+
+            <p>AI coding tools have moved from "interesting demos" to "essential productivity tools" in record time. If you're starting with AI-assisted development in 2026, the choice can feel overwhelming: GitHub Copilot, Cursor, or Claude Code? Each tool has a different philosophy, feature set, and price.</p>
+
+            <p>This guide gives you a detailed, practical comparison of the three leading AI coding tools. I'll cover what each one does, where it shines, where it struggles, and how to pick the right one for your workflow. No fluff — just facts and hands-on insights.</p>
+
+            <h2>The Three Contenders</h2>
+
+            <p>Let's start with a quick overview of each tool:</p>
+
+            <ul>
+                <li><strong>GitHub Copilot</strong> — The veteran. Inline code completions powered by GitHub and OpenAI, integrated into VS Code and many other editors.</li>
+                <li><strong>Cursor</strong> — The editor replacement. A full code editor (forked from VS Code) built around AI with deep context awareness and file editing.</li>
+                <li><strong>Claude Code</strong> — The terminal agent. Runs in your terminal and can read, edit, test, and run code across your entire project autonomously.</li>
+            </ul>
+
+            <h2>GitHub Copilot</h2>
+
+            <h3>What It Is</h3>
+
+            <p>GitHub Copilot started as a simple autocomplete tool — type a few characters and it suggests the rest. It has evolved into a full AI assistant with chat, inline suggestions, Copilot Edits (multi-file changes), and Copilot Agent (task execution). It works inside your existing editor (VS Code, JetBrains, Neovim, and more), so there's no new tool to learn.</p>
+
+            <h3>Key Features</h3>
+
+            <ul>
+                <li><strong>Inline completions</strong> — Ghost text suggestions as you type, powered by your current file and open files</li>
+                <li><strong>Chat sidebar</strong> — Ask questions, explain code, generate code snippets</li>
+                <li><strong>Copilot Edits</strong> — Natural language instructions to make multi-file changes</li>
+                <li><strong>Copilot Agent</strong> — Plan and execute multi-step tasks (write code, run tests, fix errors)</li>
+                <li><strong>GitHub ecosystem integration</strong> — PR summaries, issue triage, repository context</li>
+                <li><strong>Multi-editor support</strong> — VS Code, JetBrains, Neovim, Visual Studio, Xcode</li>
+            </ul>
+
+            <h3>Best For</h3>
+
+            <ul>
+                <li>Developers who love their current editor and don't want to switch</li>
+                <li>GitHub users who want PR summaries and repository insights</li>
+                <li>Teams already using GitHub (enterprise pricing, org-wide controls)</li>
+                <li>People who want AI as a "co-pilot" — suggestions you accept or reject</li>
+            </ul>
+
+            <h3>Limitations</h3>
+
+            <ul>
+                <li>Context window is limited — it primarily sees your current file and a few open files</li>
+                <li>Agent capabilities are still maturing compared to dedicated agents</li>
+                <li>Cannot run commands or manage files outside the editor</li>
+                <li>$10/month for individuals, $19/month for business</li>
+            </ul>
+
+            <h3>Quick Start</h3>
+
+            <div class="code-block">
+                <pre><code># Install in VS Code:
+# 1. Open Extensions (Ctrl+Shift+X)
+# 2. Search "GitHub Copilot"
+# 3. Click Install, sign in with GitHub
+
+# Use inline completions (just start typing):
+def get_user(user_id):
+    # Start typing and Copilot suggests the rest
+    db.query("SELECT * FROM users WHERE id = ?", user_id)
+
+# Use chat (Ctrl+Shift+I in VS Code):
+# "Explain this function"
+# "Convert this to async/await"
+# "Write tests for this module"</code></pre>
+            </div>
+
+            <h2>Cursor</h2>
+
+            <h3>What It Is</h3>
+
+            <p>Cursor is a code editor built from the ground up around AI. It's forked from VS Code, so you get all VS Code extensions and settings, but with AI baked into every interaction. You can chat with your codebase, ask it to edit files, generate entire features, and it understands your project's structure deeply.</p>
+
+            <h3>Key Features</h3>
+
+            <ul>
+                <li><strong>Composer mode</strong> — Multi-file editing powered by AI with full project context</li>
+                <li><strong>Codebase indexing</strong> — Reads and indexes your entire project for accurate answers</li>
+                <li><strong>Chat with files</strong> — @mention specific files to include in context</li>
+                <li><strong>Diff view</strong> — See proposed changes before accepting them</li>
+                <li><strong>Terminal integration</strong> — Run commands, see errors, ask for fixes</li>
+                <li><strong>Apply to multiple files</strong> — Make consistent changes across your project</li>
+                <li><strong>Rules (.cursorrules)</strong> — Project-level instructions for consistent AI behavior</li>
+            </ul>
+
+            <h3>Best For</h3>
+
+            <ul>
+                <li>Developers who want a full AI-native editing experience</li>
+                <li>Small to medium projects where codebase context matters</li>
+                <li>Building features from scratch with AI guidance</li>
+                <li>People comfortable learning a new tool for the productivity gain</li>
+            </ul>
+
+            <h3>Limitations</h3>
+
+            <ul>
+                <li>You need to switch editors (although it's very VS Code-like)</li>
+                <li>Large projects may take time to index</li>
+                <li>$20/month Pro plan (free tier has limited usage)</li>
+                <li>Less mature team/collaboration features</li>
+            </ul>
+
+            <h3>Quick Start</h3>
+
+            <div class="code-block">
+                <pre><code># 1. Download from cursor.sh
+# 2. Open your project
+# 3. Press Ctrl+I to open inline AI
+# 4. Or Ctrl+L for the chat panel
+
+# Cursor rules example (.cursorrules):
+# Put this file in your project root
+---
+rules:
+- "Always use type hints in Python"
+- "Write docstrings for public functions"
+- "Follow PEP 8 formatting"
+- "Prefer list comprehensions over loops when possible"
+- "Use requests library for HTTP calls"
+---
+
+# Chat example with file context:
+# @src/app.py @src/models.py
+# "Refactor the database queries to use connection pooling"</code></pre>
+            </div>
+
+            <h2>Claude Code</h2>
+
+            <h3>What It Is</h3>
+
+            <p>Claude Code is Anthropic's AI agent that runs in your terminal. Unlike Copilot (which suggests code in your editor) or Cursor (which is an editor itself), Claude Code is a full autonomous agent that can read files, write files, run commands, install packages, fix errors, and iterate — all from the command line. It's designed for developers who are comfortable with the terminal and want an AI that works like a pair programmer sitting next to you.</p>
+
+            <h3>Key Features</h3>
+
+            <ul>
+                <li><strong>Terminal-native</strong> — No editor to install, works with any codebase</li>
+                <li><strong>Autonomous agent</strong> — Can read files, write files, run tests, fix errors in a loop</li>
+                <li><strong>Full filesystem access</strong> — Works with any directory, any file type</li>
+                <li><strong>Run commands</strong> — Execute shell commands and interpret output</li>
+                <li><strong>Large context</strong> — Anthropic's Claude model has a large context window for deep codebase understanding</li>
+                <li><strong>Self-correction</strong> — Can read error output and attempt fixes autonomously</li>
+                <li><strong>Works with any editor</strong> — No need to switch editors</li>
+            </ul>
+
+            <h3>Best For</h3>
+
+            <ul>
+                <li>Developers who live in the terminal</li>
+                <li>Large refactoring tasks that touch many files</li>
+                <li>Setting up projects, writing boilerplate, and scaffolding</li>
+                <li>Debugging sessions where AI reads error output and proposes fixes</li>
+                <li>People who want the most autonomous AI coding experience</li>
+            </ul>
+
+            <h3>Limitations</h3>
+
+            <ul>
+                <li>Terminal-only interface (no GUI for reviewing changes)</li>
+                <li>Requires trust — it can run arbitrary commands</li>
+                <li>Usage-based pricing tied to Claude API costs</li>
+                <li>Still evolving — some features improve weekly</li>
+            </ul>
+
+            <h3>Quick Start</h3>
+
+            <div class="code-block">
+                <pre><code># Install Claude Code (npm required)
+npm install -g @anthropic-ai/claude-code
+
+# Run in your project directory
+cd ~/my-project
+claude
+
+# Basic commands:
+"Read the README and explain the project structure"
+"Write a Flask API with a /users endpoint and tests"
+"Fix the test failures in tests/test_api.py"
+"Refactor the database layer to use async/await"
+"Create a Dockerfile that runs this Python app with uvicorn"
+
+# It will:
+# 1. Read relevant files
+# 2. Propose changes
+# 3. Show diffs
+# 4. Apply changes
+# 5. Run tests
+# 6. Fix any errors it finds
+# (all without leaving the terminal)</code></pre>
+            </div>
+
+            <h2>Head-to-Head Comparison</h2>
+
+            <div class="code-block">
+                <pre><code>Feature                | Copilot      | Cursor       | Claude Code
+-----------------------|--------------|--------------|----------------
+Editor                 | Plugin       | Full editor  | Terminal
+Multi-file editing     | Good (Edits) | Excellent    | Excellent
+Codebase awareness     | Current files| Indexed      | On-demand read
+Can run commands       | Limited      | Via terminal | Full access
+Autonomous agent       | Basic        | Good         | Best
+Price                  | $10/mo       | $20/mo       | Usage-based
+Learning curve         | None         | Low          | Medium
+Team features          | Excellent    | Basic        | None
+Best workflow          | Suggestions  | Editor AI    | Terminal agent</code></pre>
+            </div>
+
+            <h2>When to Use Each Tool</h2>
+
+            <h3>Choose GitHub Copilot if:</h3>
+
+            <ul>
+                <li>You want the least-friction AI experience — just install and type</li>
+                <li>You already love VS Code or JetBrains and don't want to change</li>
+                <li>Inline completions are your primary need</li>
+                <li>Your team uses GitHub and you want enterprise features</li>
+                <li>You're on a tight budget ($10/month)</li>
+            </ul>
+
+            <h3>Choose Cursor if:</h3>
+
+            <ul>
+                <li>You want AI deeply integrated into your editing workflow</li>
+                <li>You're building a new project and want AI to help architect it</li>
+                <li>Multi-file editing with deep context is important</li>
+                <li>You want a visual diff review before applying changes</li>
+                <li>You don't mind learning a new editor for better AI features</li>
+            </ul>
+
+            <h3>Choose Claude Code if:</h3>
+
+            <ul>
+                <li>You're comfortable with the terminal and want maximum autonomy</li>
+                <li>You need to refactor large codebases across many files</li>
+                <li>You want AI that can run tests, read errors, and fix things iteratively</li>
+                <li>You work with many different editors/tools and don't want one to lock you in</li>
+                <li>You value the best reasoning quality for complex tasks</li>
+            </ul>
+
+            <h2>Combining Tools: The Power User Setup</h2>
+
+            <p>You don't have to pick just one. Many developers combine tools for maximum productivity:</p>
+
+            <div class="code-block">
+                <pre><code># Common power setups:
+
+Setup 1: Cursor + Claude Code
+- Use Cursor for daily editing and inline AI
+- Drop into Claude Code for heavy refactoring or debugging
+
+Setup 2: VS Code + Copilot + Claude Code
+- Copilot handles inline completions (fast, hands-free)
+- Claude Code handles complex multi-file tasks in terminal
+
+Setup 3: The Terminal Developer
+- Neovim + Copilot for completions
+- Claude Code for everything else
+- Fast, lightweight, no GUI overhead</code></pre>
+            </div>
+
+            <h2>Getting the Most Out of Any AI Coding Tool</h2>
+
+            <p>Regardless of which tool you choose, these practices will make AI coding dramatically more effective:</p>
+
+            <ol>
+                <li><strong>Write clear prompts</strong> — Be specific. "Add authentication to the API" beats "make it secure"</li>
+                <li><strong>Provide context</strong> — Tell the AI about your project, stack, and constraints</li>
+                <li><strong>Review all changes</strong> — AI makes mistakes. Always read diffs before accepting</li>
+                <li><strong>Test after applying</strong> — Run your test suite after every AI-generated change</li>
+                <li><strong>Iterate</strong> — If the first result isn't right, explain what's wrong and ask again</li>
+                <li><strong>Keep your code clean</strong> — AI works best with well-structured, readable code</li>
+                <li><strong>Use project rules</strong> — Configure style guides and conventions so AI matches your standards</li>
+            </ol>
+
+            <h2>Final Verdict</h2>
+
+            <p>There's no single "best" tool — it depends on your workflow:</p>
+
+            <ul>
+                <li><strong>Copilot</strong> is the best general-purpose tool for developers who want minimal disruption</li>
+                <li><strong>Cursor</strong> is the best all-in-one AI editor for those willing to adopt a new tool</li>
+                <li><strong>Claude Code</strong> is the most powerful autonomous agent for complex, multi-file tasks</li>
+            </ul>
+
+            <p>My recommendation for beginners: Start with <strong>GitHub Copilot</strong> to get comfortable with AI-assisted coding. When you're ready for more, try <strong>Cursor</strong> for a week and <strong>Claude Code</strong> for a complex task. You'll quickly discover which fits your brain and workflow.</p>
+
+            <p>The real win isn't picking the perfect tool — it's using <em>any</em> of them consistently. AI coding is a skill that improves with practice, just like anything else.</p>
+
+        </article>
+
+        <div class="post-navigation">
+            <a href="vibe-coding-full-app.html" class="nav-link prev">← Building a Full App with Vibe Coding</a>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes. Built with ☕ and Cloudflare.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Reading progress bar
+        window.addEventListener('scroll', () => {
+            const winScroll = document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            const bar = document.getElementById('progressBar');
+            if (bar) bar.style.width = scrolled + '%';
+        });
+
+        // Dark mode toggle
+        const toggle = document.getElementById('themeToggle');
+        if (toggle) {
+            const saved = localStorage.getItem('darkMode');
+            if (saved === 'true') {
+                document.body.classList.add('dark-mode');
+                toggle.textContent = '☀️';
+            }
+            toggle.addEventListener('click', () => {
+                document.body.classList.toggle('dark-mode');
+                localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+                toggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+            });
+        }
+    </script>
+</body>
+</html>

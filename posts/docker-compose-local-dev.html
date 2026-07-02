@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docker Compose for Local Development: Multi-Container Setups Made Easy</title>
+    <meta name="description" content="Set up complete local development environments with Docker Compose — databases, caches, message queues, and your app all running together. Step-by-step with docker-compose.yml examples.">
+    <meta name="keywords" content="docker compose, docker-compose.yml, local development, multi-container, docker networking, docker volumes, development environment, database docker">
+    <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/docker-compose-local-dev.html">
+    <meta property="og:title" content="Docker Compose for Local Development: Multi-Container Setups">
+    <meta property="og:description" content="Spin up databases, caches, and your app with a single command. Practical docker-compose.yml examples for real development workflows.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.hugow.dev/posts/docker-compose-local-dev.html">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "headline": "Docker Compose for Local Development: Multi-Container Setups Made Easy",
+      "author": {"@type": "Person", "name": "Hugo Wong"},
+      "datePublished": "2026-07-02",
+      "dateModified": "2026-07-02",
+      "publisher": {"@type": "Organization", "name": "Hugo's Dev Notes"}
+    }
+    </script>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+        
+        <article class="post-content">
+            <span class="tag devops">DevOps</span>
+            <span class="tag python">Python</span>
+            <h1>Docker Compose for Local Development: Multi-Container Setups Made Easy</h1>
+            <time>July 2, 2026 · 10 min read</time>
+
+            <p>Imagine this: you join a new project and need to set up a web app, PostgreSQL database, and Redis cache. With Docker Compose, it takes <strong>one command</strong>. No manual installs, no configuration conflicts, no "works on my machine" excuses.</p>
+
+            <p>This guide covers everything you need to spin up complete development environments locally using <code>docker-compose.yml</code> files. We'll go from a single service to a full-stack setup with databases, caches, and hot-reloading code.</p>
+
+            <h2>What Is Docker Compose?</h2>
+
+            <p>Docker Compose is a tool for defining and running multi-container Docker applications. You describe your entire stack in a single YAML file, then start everything with one command:</p>
+
+            <pre><code>docker compose up</code></pre>
+
+            <p>Think of it as infrastructure code for your local machine. Your <code>docker-compose.yml</code> file becomes the source of truth for how all your services connect, share data, and talk to each other.</p>
+
+            <h2>Install Docker Compose</h2>
+
+            <h3>Docker Desktop (Mac/Windows)</h3>
+            <p>Compose comes bundled with Docker Desktop. Just install it from <a href="https://docker.com/products/docker-desktop">docker.com</a>.</p>
+
+            <h3>Linux</h3>
+            <pre><code># Modern Docker (Compose is a plugin)
+docker compose version
+
+# Or install separately
+sudo apt install docker-compose-plugin</code></pre>
+
+            <p>Note: Modern Docker uses <code>docker compose</code> (space, no hyphen) as a built-in plugin. The old <code>docker-compose</code> (hyphenated standalone binary) is deprecated but still works.</p>
+
+            <h2>Your First docker-compose.yml</h2>
+
+            <p>Create a file called <code>docker-compose.yml</code> in your project root:</p>
+
+            <pre><code>services:
+  web:
+    image: nginx:alpine
+    ports:
+      - "8080:80"</code></pre>
+
+            <p>That's the minimal file. Three lines of config that spin up an Nginx server. Run it:</p>
+
+            <pre><code>docker compose up
+# [+] Running 1/1
+#  ✔ Container web-started               0.5s
+
+# Open http://localhost:8080 — you'll see Nginx welcome page</code></pre>
+
+            <p>Stop it with <code>Ctrl+C</code> or run <code>docker compose down</code> from another terminal.</p>
+
+            <h2>Adding a Database: PostgreSQL</h2>
+
+            <p>Most apps need a database. Here's how to add PostgreSQL alongside your app:</p>
+
+            <pre><code>services:
+  web:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    depends_on:
+      - db
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: devuser
+      POSTGRES_PASSWORD: devpass
+      POSTGRES_DB: myapp
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:</code></pre>
+
+            <p>Let's break this down:</p>
+
+            <ul>
+                <li><code>depends_on</code>: Ensures the database starts before the web service. This only waits for the container to start, not for the database to be ready.</li>
+                <li><code>environment</code>: Passes credentials and database name to PostgreSQL. These are the standard Postgres environment variables.</li>
+                <li><code>ports</code>: Maps host port 5432 to container port 5432. Now you can connect with your local database client (pgAdmin, DBeaver, etc.).</li>
+                <li><code>volumes</code>: Persists database data. Without this, your data disappears when the container stops. The named volume <code>postgres_data</code> is declared at the bottom.</li>
+            </ul>
+
+            <h2>Real Example: Python App with Postgres and Redis</h2>
+
+            <p>Here's a realistic development setup for a Python web application:</p>
+
+            <pre><code># docker-compose.yml
+services:
+  # Python web application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://devuser:devpass@db:5432/myapp
+      REDIS_URL: redis://redis:6379/0
+      FLASK_ENV: development
+    volumes:
+      - .:/app
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: unless-stopped
+
+  # PostgreSQL database
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: devuser
+      POSTGRES_PASSWORD: devpass
+      POSTGRES_DB: myapp
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U devuser -d myapp"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # Redis cache
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+volumes:
+  postgres_data:
+  redis_data:</code></pre>
+
+            <p>And the <code>Dockerfile.dev</code> for the Python app:</p>
+
+            <pre><code># Dockerfile.dev
+FROM python:3.12-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY . .
+
+# Expose the development server port
+EXPOSE 8000
+
+# Run with auto-reload for development
+CMD ["flask", "run", "--host=0.0.0.0", "--reload"]</code></pre>
+
+            <h3>Key Concepts Explained</h3>
+
+            <h4>Healthchecks</h4>
+            <p>The <code>healthcheck</code> on the database service tells Docker how to verify PostgreSQL is actually ready to accept connections. Combined with <code>depends_on</code> using <code>condition: service_healthy</code>, this ensures the app doesn't start until the database is truly ready:</p>
+
+            <pre><code>db:
+  healthcheck:
+    test: ["CMD-SHELL", "pg_isready -U devuser -d myapp"]
+    interval: 5s      # Check every 5 seconds
+    timeout: 3s       # Wait up to 3 seconds for response
+    retries: 5        # Try up to 5 times before marking unhealthy</code></pre>
+
+            <h4>Volume Mounting for Code Hot-Reload</h4>
+            <p>The line <code>volumes: - .:/app</code> mounts your entire project directory into the container. When you edit files on your host machine, the changes appear instantly inside the container. Combined with Flask's <code>--reload</code> flag, this gives you live code updates without rebuilding the container.</p>
+
+            <h4>Environment Variables as Configuration</h4>
+            <p>Notice how <code>DATABASE_URL</code> uses <code>db</code> as the hostname, not <code>localhost</code>. Inside Docker Compose, each service can reach others by their service name. The web app connects to PostgreSQL at <code>db:5432</code> and Redis at <code>redis:6379</code> because Docker Compose sets up internal DNS automatically.</p>
+
+            <h2>Using .env Files for Secrets</h2>
+
+            <p>Never hardcode passwords in <code>docker-compose.yml</code>. Use <code>.env</code> files instead:</p>
+
+            <pre><code># .env (add to .gitignore!)
+POSTGRES_USER=devuser
+POSTGRES_PASSWORD=supersecret123
+POSTGRES_DB=myapp
+REDIS_PASSWORD=redispass
+FLASK_SECRET_KEY=random-string-here</code></pre>
+
+            <pre><code># docker-compose.yml
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+
+  app:
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      FLASK_SECRET_KEY: ${FLASK_SECRET_KEY}</code></pre>
+
+            <p>Docker Compose automatically loads <code>.env</code> files and substitutes the variables. Your actual passwords never end up in version control.</p>
+
+            <h2>Common Docker Compose Commands</h2>
+
+            <pre><code># Start everything (foreground)
+docker compose up
+
+# Start in background (detached)
+docker compose up -d
+
+# Start and rebuild images
+docker compose up --build
+
+# Stop and remove containers
+docker compose down
+
+# Stop and also remove volumes (⚠️ deletes data!)
+docker compose down -v
+
+# View logs
+docker compose logs
+docker compose logs -f          # Follow (like tail -f)
+docker compose logs app         # Logs for specific service
+
+# Execute a command inside a running container
+docker compose exec app python manage.py migrate
+docker compose exec db psql -U devuser -d myapp
+
+# Restart a single service
+docker compose restart app
+
+# Check container status
+docker compose ps
+
+# View resource usage
+docker compose top</code></pre>
+
+            <h2>Profiles: Optional Services</h2>
+
+            <p>Some services you only want in certain environments. Use profiles to conditionally start them:</p>
+
+            <pre><code>services:
+  app:
+    image: myapp:dev
+    ports:
+      - "8000:8000"
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: devuser
+      POSTGRES_PASSWORD: devpass
+
+  # Only starts with: docker compose --profile admin up
+  adminer:
+    image: adminer
+    ports:
+      - "8081:8080"
+    profiles:
+      - admin
+    depends_on:
+      - db
+
+  # Only starts with: docker compose --profile test up
+  test_db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: testuser
+      POSTGRES_PASSWORD: testpass
+    profiles:
+      - test</code></pre>
+
+            <pre><code># Start everything except profiled services
+docker compose up -d
+
+# Start with Adminer for database management
+docker compose --profile admin up -d
+
+# Start with test database
+docker compose --profile test up -d</code></pre>
+
+            <h2>Extending with override.yml</h2>
+
+            <p>Share a base <code>docker-compose.yml</code> with your team, but customize it locally with <code>docker-compose.override.yml</code>:</p>
+
+            <pre><code># docker-compose.yml (committed to git)
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      DEBUG: "false"
+
+# docker-compose.override.yml (in .gitignore)
+services:
+  app:
+    environment:
+      DEBUG: "true"
+    volumes:
+      - .:/app
+    ports:
+      - "9000:8000"   # Different port for my machine</code></pre>
+
+            <p>Docker Compose automatically merges the override file. You get team-shared config plus personal customization without touching the base file.</p>
+
+            <h2>Troubleshooting Checklist</h2>
+
+            <ul>
+                <li><strong>Container keeps crashing?</strong> Run <code>docker compose logs app</code> to see the error. Common issue: the app can't connect to the database because it hasn't finished starting.</li>
+                <li><strong>Port already in use?</strong> Change the host port mapping: <code>"9000:8000"</code> instead of <code>"8000:8000"</code>. Or stop the conflicting process with <code>lsof -i :8000</code>.</li>
+                <li><strong>Can't connect to database from host?</strong> Make sure the <code>ports</code> section maps the database port. Without it, the database is only accessible from other containers.</li>
+                <li><strong>Data disappeared after down/up?</strong> You probably used <code>docker compose down -v</code>. Named volumes persist between runs — only <code>-v</code> removes them.</li>
+                <li><strong>Old image being used?</strong> Force rebuild: <code>docker compose up --build</code> or <code>docker compose up --build --force-recreate</code>.</li>
+            </ul>
+
+            <h2>Summary</h2>
+
+            <p>Docker Compose turns your entire local development environment into code. One <code>docker-compose.yml</code> file gives every developer on the team the exact same setup — databases, caches, queues, whatever your app needs. The key patterns are:</p>
+
+            <ul>
+                <li><strong>Services</strong> — Each container is a service</li>
+                <li><strong>Volumes</strong> — Persist data across container restarts</li>
+                <li><strong>Environment variables</strong> — Configure services without rebuilding</li>
+                <li><strong>Healthchecks</strong> — Wait for dependencies to be truly ready</li>
+                <li><strong>Profiles</strong> — Optional services for specific needs</li>
+                <li><strong>Override files</strong> — Personal customization without affecting the team</li>
+            </ul>
+
+            <p>Next steps: check out our <a href="docker-compose-networking.html">Docker Compose Networking</a> guide to learn about custom networks, internal DNS, and multi-project setups.</p>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Hugo's Dev Notes. Built with Python and ☕</p>
+        </div>
+    </footer>
+
+    <script>
+        const toggle = document.getElementById('themeToggle');
+        if (toggle) {
+            toggle.addEventListener('click', () => {
+                document.body.classList.toggle('light-theme');
+                localStorage.setItem('theme', document.body.classList.contains('light-theme') ? 'light' : 'dark');
+            });
+            if (localStorage.getItem('theme') === 'light') document.body.classList.add('light-theme');
+        }
+        window.addEventListener('scroll', () => {
+            const bar = document.getElementById('progressBar');
+            if (bar) {
+                const scrolled = window.scrollY / (document.body.scrollHeight - window.innerHeight) * 100;
+                bar.style.width = scrolled + '%';
+            }
+        });
+    </script>
+</body>
+</html>

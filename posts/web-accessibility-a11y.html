@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Accessibility (a11y): Build Sites Everyone Can Use - Hugo's Dev Notes</title>
+    <meta name="description" content="Learn web accessibility (a11y) fundamentals — semantic HTML, ARIA attributes, keyboard navigation, color contrast, screen readers, and testing tools. Make your sites usable for everyone.">
+    <meta name="keywords" content="web accessibility, a11y, ARIA, screen readers, inclusive design, keyboard navigation, web standards">
+    <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/web-accessibility-a11y.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn active">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-full">
+            <div class="post-header">
+                <div class="post-tags">
+                    <span class="tag web">Web Dev</span>
+                    <span class="tag security">Accessibility</span>
+                </div>
+                <h1>Web Accessibility (a11y): Build Sites Everyone Can Use</h1>
+                <div class="post-meta">
+                    <span class="post-date">July 2, 2026</span>
+                    <span class="read-time">10 min read</span>
+                </div>
+            </div>
+
+            <div class="post-content">
+                <p>Over <strong>1 billion people worldwide</strong> live with some form of disability. That's roughly 15% of the global population. Yet most websites still don't work for them. Web accessibility (often abbreviated as <strong>a11y</strong> — "a" + 11 letters + "y") is the practice of making your websites usable by as many people as possible.</p>
+
+                <p>Accessibility isn't just a nice-to-have — it's often <strong>required by law</strong> (the ADA, EU Web Accessibility Directive, Section 508), and it improves your site for <em>everyone</em>. Clear navigation helps tourists. Captions help people watching videos on a noisy bus. Good contrast helps everyone reading in bright sunlight.</p>
+
+                <h2>The Four Principles: POUR</h2>
+
+                <p>The Web Content Accessibility Guidelines (WCAG) are built on four principles, known by the acronym <strong>POUR</strong>:</p>
+
+                <ul>
+                    <li><strong>Perceivable</strong> — Content must be presentable in ways users can perceive (not all-zero for sight, hearing, etc.)</li>
+                    <li><strong>Operable</strong> — Users must be able to operate the interface (keyboard, voice, switch device)</li>
+                    <li><strong>Understandable</strong> — Content and UI operation must be understandable</li>
+                    <li><strong>Robust</strong> — Content must be robust enough for different user agents (browsers, screen readers)</li>
+                </ul>
+
+                <h2>1. Semantic HTML: The Foundation of Accessibility</h2>
+
+                <p>The single biggest thing you can do for accessibility is use <strong>semantic HTML</strong>. Every HTML element has built-in accessibility information — a button knows it's a button, a heading knows it's a heading, a link knows it's a link.</p>
+
+                <p><strong>Don't do this:</strong></p>
+
+                <pre><code>&lt;!-- ❌ Bad: A div pretending to be a button --&gt;
+&lt;div onclick="goToDashboard()" style="background: blue; padding: 10px;"&gt;
+    Go to Dashboard
+&lt;/div&gt;
+
+&lt;!-- ❌ Bad: Using div for headings --&gt;
+&lt;div style="font-size: 24px; font-weight: bold;"&gt;Page Title&lt;/div&gt;</code></pre>
+
+                <p><strong>Do this instead:</strong></p>
+
+                <pre><code>&lt;!-- ✅ Good: Real button, real heading --&gt;
+&lt;button onclick="goToDashboard()"&gt;Go to Dashboard&lt;/button&gt;
+&lt;h1&gt;Page Title&lt;/h1&gt;</code></pre>
+
+                <p>Screen readers announce semantic elements to users. A <code>&lt;button&gt;</code> tells the user "button, go to dashboard, press space or enter to activate." A div tells them nothing useful.</p>
+
+                <h3>Heading Hierarchy Matters</h3>
+
+                <p>Use headings in order. Don't skip from <code>&lt;h1&gt;</code> to <code>&lt;h4&gt;</code>. Screen reader users often navigate by jumping between headings — it's their version of skimming.</p>
+
+                <pre><code>&lt;!-- ✅ Correct heading structure --&gt;
+&lt;h1&gt;Page Title&lt;/h1&gt;
+  &lt;h2&gt;Section One&lt;/h2&gt;
+    &lt;h3&gt;Subsection A&lt;/h3&gt;
+    &lt;h3&gt;Subsection B&lt;/h3&gt;
+  &lt;h2&gt;Section Two&lt;/h2&gt;
+    &lt;h3&gt;Subsection C&lt;/h3&gt;
+&lt;/h1&gt;</code></pre>
+
+                <h2>2. Alternative Text for Images</h2>
+
+                <p>Every image needs an <code>alt</code> attribute. The alt text should describe the <strong>information</strong> the image conveys, not the image itself.</p>
+
+                <pre><code>&lt;!-- ❌ Bad: Useless alt text --&gt;
+&lt;img src="chart.png" alt="image"&gt;
+&lt;img src="chart.png" alt="chart showing data"&gt;
+
+&lt;!-- ✅ Good: Describes the information --&gt;
+&lt;img src="chart.png" alt="Bar chart showing Q1-Q4 revenue: Q1 $12K, Q2 $15K, Q3 $11K, Q4 $18K"&gt;
+
+&lt;!-- ✅ Decorative images get empty alt --&gt;
+&lt;img src="decorative-line.svg" alt=""&gt;</code></pre>
+
+                <p>Complex images like charts need longer descriptions. Use <code>&lt;figure&gt;</code> with <code>&lt;figcaption&gt;</code>:</p>
+
+                <pre><code>&lt;figure&gt;
+    &lt;img src="architecture.png" alt="System architecture diagram"&gt;
+    &lt;figcaption&gt;
+        The frontend connects to the API gateway, which routes to three microservices:
+        auth-service, user-service, and payment-service. All services communicate via
+        the message queue.
+    &lt;/figcaption&gt;
+&lt;/figure&gt;</code></pre>
+
+                <h2>3. Color and Contrast</h2>
+
+                <p>Never use color as the <strong>only</strong> way to convey information. 1 in 12 men and 1 in 200 women have color blindness.</p>
+
+                <pre><code>&lt;!-- ❌ Bad: Color-only indicators --&gt;
+&lt;span class="error"&gt;Please fix the following errors&lt;/span&gt;
+&lt;!-- Only red color tells them it's an error --&gt;
+
+&lt;!-- ✅ Good: Color + icon + text --&gt;
+&lt;div class="error-message" role="alert"&gt;
+    ⚠️ Please fix the following errors:
+    &lt;ul&gt;
+        &lt;li&gt;Email field is required&lt;/li&gt;
+        &lt;li&gt;Password must be at least 8 characters&lt;/li&gt;
+    &lt;/ul&gt;
+&lt;/div&gt;</code></pre>
+
+                <p>For text contrast, WCAG 2.1 requires:</p>
+
+                <ul>
+                    <li><strong>Level AA (minimum):</strong> 4.5:1 ratio for normal text, 3:1 for large text (18px+ or 14px+ bold)</li>
+                    <li><strong>Level AAA (enhanced):</strong> 7:1 for normal text, 4.5:1 for large text</li>
+                </ul>
+
+                <p>Test your contrast with browser DevTools (right-click → Inspect → Elements tab → Computed → check color contrast) or free tools like <a href="https://webaim.org/resources/contrastchecker/">WebAIM Contrast Checker</a>.</p>
+
+                <h2>4. Keyboard Navigation</h2>
+
+                <p>Every interactive element must be usable with a keyboard. The Tab key moves focus between elements, Enter/Space activates buttons and links, and arrow keys navigate menus and lists.</p>
+
+                <pre><code>&lt;!-- ✅ Make custom components keyboard accessible --&gt;
+&lt;div
+    role="button"
+    tabindex="0"
+    aria-pressed="false"
+    onclick="toggleMenu()"
+    onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleMenu()}"
+&gt;
+    Toggle Menu
+&lt;/div&gt;</code></pre>
+
+                <p><strong>Key rules for keyboard navigation:</strong></p>
+
+                <ul>
+                    <li>Use <code>tabindex="0"</code> to make custom elements focusable</li>
+                    <li>Never use <code>tabindex</code> values above 0 (it creates confusing tab orders)</li>
+                    <li>Always show a visible <strong>focus indicator</strong> (don't set <code>outline: none</code> without a replacement)</li>
+                    <li>Use <code>&lt;button&gt;</code> for actions, <code>&lt;a&gt;</code> for navigation</li>
+                </ul>
+
+                <h2>5. Forms: Labels and Error Messages</h2>
+
+                <p>Forms are where accessibility matters most. Every input needs a properly associated label:</p>
+
+                <pre><code>&lt;!-- ❌ Bad: Placeholder as label --&gt;
+&lt;input type="email" placeholder="Enter your email"&gt;
+
+&lt;!-- ❌ Bad: Visually hidden but unassociated label --&gt;
+&lt;span style="display:none"&gt;Email&lt;/span&gt;
+&lt;input type="email"&gt;
+
+&lt;!-- ✅ Good: Explicit label association --&gt;
+&lt;label for="email"&gt;Email address&lt;/label&gt;
+&lt;input type="email" id="email" name="email" autocomplete="email"&gt;
+
+&lt;!-- ✅ Good: Wrapping label (no id needed) --&gt;
+&lt;label&gt;
+    Email address
+    &lt;input type="email" name="email" autocomplete="email"&gt;
+&lt;/label&gt;</code></pre>
+
+                <h3>Accessible Error Handling</h3>
+
+                <pre><code>&lt;form novalidate&gt;
+    &lt;label for="password"&gt;Password&lt;/label&gt;
+    &lt;input
+        type="password"
+        id="password"
+        aria-describedby="password-hint"
+        aria-invalid="true"
+    &gt;
+    &lt;span id="password-hint"&gt;Must be at least 12 characters&lt;/span&gt;
+    &lt;div role="alert" aria-live="polite"&gt;
+        Password does not meet requirements
+    &lt;/div&gt;
+
+    &lt;!-- Group related fields with fieldset --&gt;
+    &lt;fieldset&gt;
+        &lt;legend&gt;Shipping Address&lt;/legend&gt;
+        &lt;label for="street"&gt;Street&lt;/label&gt;
+        &lt;input type="text" id="street" name="street"&gt;
+        &lt;label for="city"&gt;City&lt;/label&gt;
+        &lt;input type="text" id="city" name="city"&gt;
+    &lt;/fieldset&gt;
+&lt;/form&gt;</code></pre>
+
+                <h2>6. ARIA Attributes</h2>
+
+                <p>ARIA (Accessible Rich Internet Applications) attributes add accessibility information when HTML alone isn't enough. But remember: <strong>the best ARIA attribute is no ARIA attribute</strong>. Use native HTML first.</p>
+
+                <p>Common ARIA attributes you'll use:</p>
+
+                <pre><code>&lt;!-- Live regions for dynamic content --&gt;
+&lt;div aria-live="polite"&gt;
+    Results updated: 3 new notifications
+&lt;/div&gt;
+
+&lt;!-- Landmark roles (mostly automatic in HTML5) --&gt;
+&lt;nav aria-label="Main navigation"&gt;...&lt;/nav&gt;
+&lt;main&gt;...&lt;/main&gt;
+&lt;aside aria-label="Related articles"&gt;...&lt;/aside&gt;
+
+&lt;!-- State management --&gt;
+&lt;button aria-expanded="false" aria-controls="dropdown-menu"&gt;
+    Options
+&lt;/button&gt;
+&lt;div id="dropdown-menu" hidden&gt;...&lt;/div&gt;
+
+&lt;!-- Descriptions --&gt;
+&lt;button aria-describedby="search-help"&gt;Search&lt;/button&gt;
+&lt;span id="search-help"&gt;Press Enter to search all articles&lt;/span&gt;</code></pre>
+
+                <h2>7. Skip Navigation Links</h2>
+
+                <p>Keyboard users have to tab through every navigation item to reach content. A skip link lets them jump straight to the main content:</p>
+
+                <pre><code>&lt;!-- First element in your &lt;body&gt; --&gt;
+&lt;a href="#main-content" class="skip-link"&gt;Skip to main content&lt;/a&gt;
+
+&lt;header&gt;...navigation...&lt;/header&gt;
+&lt;main id="main-content"&gt;...content...&lt;/main&gt;
+
+&lt;!-- CSS to show skip link only when focused --&gt;
+&lt;style&gt;
+.skip-link {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: #000;
+    color: #fff;
+    padding: 8px 16px;
+    z-index: 100;
+    transition: top 0.2s;
+}
+.skip-link:focus {
+    top: 0;
+}
+&lt;/style&gt;</code></pre>
+
+                <h2>8. Testing for Accessibility</h2>
+
+                <p>Use these tools to audit your site:</p>
+
+                <ul>
+                    <li><strong>Browser DevTools:</strong> Chrome, Firefox, and Edge all have built-in Lighthouse audits (right-click → Inspect → Lighthouse tab)</li>
+                    <li><strong>axe DevTools:</strong> Browser extension that identifies accessibility issues in real-time</li>
+                    <li><strong>WAVE:</strong> Web Accessibility Evaluation Tool — browser extension and online checker</li>
+                    <li><strong>NVDA (free) / VoiceOver (built-in to macOS):</strong> Actual screen readers — test your site using one</li>
+                    <li><strong>Keyboard-only testing:</strong> Unplug your mouse and try to use your entire site with Tab, Enter, Space, and arrow keys</li>
+                </ul>
+
+                <h2>Quick Accessibility Checklist</h2>
+
+                <p>Before shipping any page, run through this checklist:</p>
+
+                <ol>
+                    <li>✓ All images have meaningful alt text (or empty alt if decorative)</li>
+                    <li>✓ Headings are in logical order (h1 → h2 → h3)</li>
+                    <li>✓ All form inputs have associated labels</li>
+                    <li>✓ Text has sufficient color contrast (4.5:1 minimum)</li>
+                    <li>✓ All interactive elements are keyboard accessible</li>
+                    <li>✓ Focus indicators are visible</li>
+                    <li>✓ Page has a skip navigation link</li>
+                    <li>✓ Dynamic content updates use aria-live regions</li>
+                    <li>✓ Content is readable at 200% zoom without horizontal scrolling</li>
+                    <li>✓ Language is declared: <code>&lt;html lang="en"&gt;</code></li>
+                </ol>
+
+                <h2>Accessibility in JavaScript Frameworks</h2>
+
+                <p>The same principles apply whether you're using vanilla HTML, React, Vue, or any framework:</p>
+
+                <pre><code>// React example: accessible modal
+import { useState, useEffect } from 'react';
+
+function AccessibleModal({ isOpen, onClose, children }) {
+    const [prevActiveElement, setPrevActiveElement] = useState(null);
+
+    useEffect(() => {
+        if (isOpen) {
+            // Save the previously focused element
+            setPrevActiveElement(document.activeElement);
+            // Focus the modal
+            document.querySelector('[role="dialog"]')?.focus();
+            // Trap focus within the modal
+            // Prevent background scrolling
+            document.body.style.overflow = 'hidden';
+        }
+        return () => {
+            document.body.style.overflow = '';
+            prevActiveElement?.focus();
+        };
+    }, [isOpen]);
+
+    // Close on Escape key
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') onClose();
+        };
+        if (isOpen) window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isOpen, onClose]);
+
+    if (!isOpen) return null;
+
+    return (
+        &lt;div className="modal-overlay" onClick={onClose}&gt;
+            &lt;div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="modal-title"
+                tabIndex={-1}
+                onClick={(e) => e.stopPropagation()}
+            &gt;
+                &lt;h2 id="modal-title"&gt;Modal Title&lt;/h2&gt;
+                {children}
+                &lt;button onClick={onClose} aria-label="Close modal"&gt;
+                    Close
+                &lt;/button&gt;
+            &lt;/div&gt;
+        &lt;/div&gt;
+    );
+}</code></pre>
+
+                <h2>Moving Forward</h2>
+
+                <p>Accessibility isn't something you bolt on at the end — it's part of building a good website. Every principle of accessible design (clear structure, good contrast, keyboard support, descriptive labels) makes your site better for <em>everyone</em>, not just people with disabilities.</p>
+
+                <p>Start with semantic HTML. Add proper labels and alt text. Test with keyboard and screen reader. Run automated audits before deploying. You don't need to be an a11y expert — you just need to care enough to check.</p>
+
+                <div class="post-nav">
+                    <a href="responsive-web-design.html" class="prev-post">← Responsive Web Design with CSS</a>
+                    <a href="html-forms-validation.html" class="next-post">HTML Forms & Validation →</a>
+                </div>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes. Built with semantic HTML and a11y in mind.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Progress bar
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + '%';
+        });
+        // Theme toggle
+        const toggle = document.getElementById('themeToggle');
+        toggle?.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+        });
+        if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');
+    </script>
+</body>
+</html>

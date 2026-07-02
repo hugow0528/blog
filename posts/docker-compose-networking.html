@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docker Compose Networking: Connect Containers Like a Pro | Hugo's Dev Notes</title>
+    <meta name="description" content="Master Docker Compose networking — custom bridge networks, DNS resolution between services, port mapping strategies, external networks, and multi-project setups.">
+    <meta name="keywords" content="docker compose networking, docker networks, bridge network, DNS resolution, container networking, docker tutorial">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/docker-compose-networking.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+                <a href="../devops.html" class="nav-btn">🐳 DevOps</a>
+                <a href="../security.html" class="nav-btn">🔐 Security</a>
+                <a href="../webdev.html" class="nav-btn">💻 Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+        
+        <article class="post-content">
+            <span class="tag devops">DevOps</span>
+            <h1>Docker Compose Networking: Connect Containers Like a Pro</h1>
+            <time>July 1, 2026 · 11 min read</time>
+
+            <p>You've learned Docker Compose basics and can spin up a web app with a database. But what happens when you need containers to talk to each other securely? How do you connect two different Compose projects? How do you expose services to the outside world without opening everything?</p>
+
+            <p>Docker networking is the invisible backbone of containerized applications. Understanding it transforms you from someone who can run containers to someone who can design reliable, secure multi-service architectures.</p>
+
+            <h2>How Docker Compose Networks Work</h2>
+
+            <p>By default, Docker Compose creates a <strong>bridge network</strong> for your project. Every service in your <code>docker-compose.yml</code> joins this network automatically. Containers can communicate using their <strong>service names as hostnames</strong> — Docker handles DNS resolution internally.</p>
+
+            <pre><code># docker-compose.yml — default networking (implicit)
+services:
+  web:
+    image: nginx
+    ports:
+      - "8080:80"
+
+  api:
+    build: ./api
+    # Can reach the database at http://db:5432
+
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_PASSWORD: secret</code></pre>
+
+            <p>In this setup, all three services are on the same default network (<code>projectname_default</code>). The API container can reach PostgreSQL using just <code>db:5432</code> — Docker's embedded DNS resolves <code>db</code> to the container's IP address.</p>
+
+            <blockquote>
+                <strong>💡 Key concept:</strong> Service names are DNS hostnames within the network. No need to use IP addresses — they change when containers restart anyway.
+            </blockquote>
+
+            <h2>Custom Bridge Networks: Isolate Your Services</h2>
+
+            <p>The default network works for simple apps, but real projects benefit from <strong>explicit custom networks</strong>. They give you isolation between frontend and backend services, and prevent containers that shouldn't communicate from even seeing each other.</p>
+
+            <pre><code># docker-compose.yml — explicit custom networks
+services:
+  # Frontend — public-facing
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - frontend
+      - backend
+
+  # API — internal only, no ports exposed
+  api:
+    build: ./api
+    networks:
+      - backend
+    environment:
+      - DB_HOST=postgres
+      - REDIS_HOST=redis
+
+  # Database — backend only, never public
+  postgres:
+    image: postgres:15
+    networks:
+      - backend
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+  # Cache — backend only
+  redis:
+    image: redis:7-alpine
+    networks:
+      - backend
+
+networks:
+  frontend:
+    driver: bridge
+  backend:
+    driver: bridge
+
+volumes:
+  pg_data:</code></pre>
+
+            <p>Notice the network isolation:</p>
+            <ul>
+                <li><strong>nginx</strong> is on both <code>frontend</code> and <code>backend</code> — it can proxy requests to the API</li>
+                <li><strong>api</strong> is only on <code>backend</code> — no direct internet access via ports</li>
+                <li><strong>postgres</strong> and <strong>redis</strong> are only on <code>backend</strong> — completely isolated from the outside</li>
+            </ul>
+
+            <p>This means even if someone compromises the nginx container, they can't reach PostgreSQL directly because they're on different networks.</p>
+
+            <h2>Internal Networks: No External Access</h2>
+
+            <p>For maximum security, mark backend networks as <code>internal: true</code>. This prevents ANY container on that network from accessing the outside internet — perfect for databases that only need to talk to the API:</p>
+
+            <pre><code>networks:
+  frontend:
+    driver: bridge
+  backend:
+    driver: bridge
+    internal: true  # ← No external internet access</code></pre>
+
+            <blockquote>
+                <strong>⚠️ Watch out:</strong> With <code>internal: true</code>, containers can't install packages, pull images, or make HTTP calls outside the network. Only use this for services that truly don't need internet access (databases, caches, message queues).
+            </blockquote>
+
+            <h2>Port Mapping Strategies</h2>
+
+            <p>Ports are how containers talk to the outside world. Docker Compose gives you several options:</p>
+
+            <pre><code>services:
+  web:
+    image: nginx
+    ports:
+      # Host port : Container port
+      - "8080:80"         # Maps host:8080 → container:80
+      
+      # Specific interface: host port : container port
+      - "127.0.0.1:3000:3000"  # Only accessible from localhost
+      
+      # Container port only (Docker picks a random host port)
+      - "5000"            # Random host port → container:5000
+      
+      # Different container ports
+      - "8080:80"         # HTTP
+      - "8443:443"        # HTTPS
+      
+      # UDP ports
+      - "5353:5353/udp"   # UDP traffic
+
+  admin:
+    image: adminer
+    ports:
+      - "127.0.0.1:8081:8080"  # Localhost only — not accessible from other machines</code></pre>
+
+            <h3>Best Practices for Port Mapping</h3>
+            <ul>
+                <li><strong>Bind to 127.0.0.1 for admin tools</strong> — Adminer, phpMyAdmin, etc. should never be exposed to the network</li>
+                <li><strong>Use specific host ports</strong> — Avoid random ports so you know where your service is accessible</li>
+                <li><strong>Only expose what's needed</strong> — Databases should have no port mappings; access them through the API</li>
+                <li><strong>Use a reverse proxy</strong> — Put nginx or Traefik in front and only expose port 80/443</li>
+            </ul>
+
+            <h2>DNS Resolution and Service Discovery</h2>
+
+            <p>Docker's embedded DNS makes service discovery automatic. Here's how it works in practice:</p>
+
+            <pre><code># Inside any container on the same network, you can resolve:
+# Service name → container IP
+ping db              # resolves to the db container's IP
+ping api             # resolves to the api container's IP
+
+# With port
+curl http://api:3000/health
+curl http://postgres:5432  # PostgreSQL default port
+
+# DNS aliases for alternative names
+services:
+  api:
+    image: my-api
+    networks:
+      backend:
+        aliases:
+          - api-server      # Alternative DNS name
+          - internal-api    # Another alias
+
+# Now these all resolve to the same container:
+#   api, api-server, internal-api</code></pre>
+
+            <h3>Multiple Containers Per Service</h3>
+
+            <p>When you scale a service (<code>docker compose up --scale api=3</code>), DNS returns <strong>all IP addresses</strong> in round-robin fashion:</p>
+
+            <pre><code># docker-compose.yml
+services:
+  api:
+    image: my-api
+    networks:
+      - backend
+
+# Scale to 3 instances:
+docker compose up --scale api=3
+
+# Now "api" resolves to one of 3 IPs, rotating each request
+# Load balancing happens at the DNS level (basic round-robin)</code></pre>
+
+            <blockquote>
+                <strong>💡 Pro tip:</strong> DNS-based round-robin is simple but doesn't do health checks. For production load balancing, use a reverse proxy (nginx, Traefik, HAProxy) instead.
+            </blockquote>
+
+            <h2>Connecting to External Networks</h2>
+
+            <p>Sometimes you need to connect containers from different Compose projects or share a network with standalone containers. External networks make this possible.</p>
+
+            <pre><code># Step 1: Create the external network
+docker network create shared-network
+
+# Step 2: Use it in project A's docker-compose.yml
+# projectA/docker-compose.yml
+services:
+  api-a:
+    image: api-a
+    networks:
+      - shared-network
+
+networks:
+  shared-network:
+    external: true  # ← Don't create, just attach
+
+# Step 3: Use it in project B's docker-compose.yml  
+# projectB/docker-compose.yml
+services:
+  api-b:
+    image: api-b
+    networks:
+      - shared-network
+
+networks:
+  shared-network:
+    external: true
+
+# Now api-a and api-b can communicate despite being in different projects!
+# From api-a: curl http://api-b:3000/health</code></pre>
+
+            <h2>Network Drivers: Bridge vs Host vs None</h2>
+
+            <pre><code># Default: bridge (isolated virtual network)
+networks:
+  default:
+    driver: bridge
+
+# Host networking — no isolation, uses host's network directly
+# Useful for performance-critical apps or services that need host ports
+networks:
+  hostnet:
+    driver: host
+
+# None — completely isolated, no networking at all
+# Useful for batch processing jobs that don't need network access
+networks:
+  isolated:
+    driver: null</code></pre>
+
+            <h3>When to Use Each Driver</h3>
+            <ul>
+                <li><strong>bridge (default):</strong> Most common. Isolated, secure, good for development and staging.</li>
+                <li><strong>host:</strong> Maximum performance. Use when you need host-level network access (monitoring agents, network tools). Not available on Docker Desktop (Mac/Windows).</li>
+                <li><strong>none:</strong> Air-gapped containers. Use for build steps or batch jobs that don't need network access.</li>
+            </ul>
+
+            <h2>Real-World Example: Complete Microservices Setup</h2>
+
+            <p>Here's a production-like setup with proper network isolation:</p>
+
+            <pre><code># docker-compose.yml
+services:
+  # Reverse proxy — the only service with public ports
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+    networks:
+      - public
+      - app
+
+  # Web frontend (React/Vue/Next.js)
+  frontend:
+    build: ./frontend
+    networks:
+      - app
+    environment:
+      - API_URL=http://api:3000
+
+  # API server
+  api:
+    build: ./api
+    networks:
+      - app
+      - data
+    environment:
+      - DATABASE_URL=postgres://user:pass@postgres:5432/appdb
+      - REDIS_URL=redis://redis:6379
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+
+  # Worker processes (background jobs)
+  worker:
+    build: ./worker
+    networks:
+      - data
+    environment:
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+      - REDIS_URL=redis://redis:6379
+
+  # PostgreSQL — only accessible from app and data networks
+  postgres:
+    image: postgres:15-alpine
+    networks:
+      - data
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=appdb
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=pass
+
+  # Redis cache
+  redis:
+    image: redis:7-alpine
+    networks:
+      - data
+
+  # RabbitMQ message broker
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    networks:
+      - data
+
+  # Monitoring — visible on public network for dashboards
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "127.0.0.1:3000:3000"  # Localhost only
+    networks:
+      - public
+      - data
+
+networks:
+  public:     # Internet-facing (Caddy, Grafana)
+    driver: bridge
+  app:        # Application layer (frontend, API)
+    driver: bridge
+  data:       # Data layer (DB, Redis, RabbitMQ) — internal
+    driver: bridge
+    internal: true
+
+volumes:
+  pg_data:
+  caddy_data:</code></pre>
+
+            <p>The network topology:</p>
+            <ul>
+                <li><strong>public:</strong> Caddy (HTTP/HTTPS) + Grafana (localhost only)</li>
+                <li><strong>app:</strong> Frontend + API + Caddy (proxy)</li>
+                <li><strong>data:</strong> PostgreSQL + Redis + RabbitMQ + Worker (internal, no internet)</li>
+            </ul>
+
+            <h2>Debugging Network Issues</h2>
+
+            <p>When containers can't reach each other, these commands help diagnose the problem:</p>
+
+            <pre><code># List all networks
+docker network ls
+
+# Inspect a network — see which containers are attached
+docker network inspect project_default
+
+# Exec into a container to test connectivity
+docker compose exec api ping db
+docker compose exec api curl http://postgres:5432
+
+# Check DNS resolution inside a container
+docker compose exec api getent hosts db
+docker compose exec api nslookup postgres
+
+# View network configuration
+docker compose exec api ip addr
+docker compose exec api ip route
+docker compose exec api cat /etc/hosts
+
+# Common error: "Connection refused"
+# → The service isn't running on the expected port inside the container
+# Fix: Check the container's listening ports
+docker compose exec api netstat -tlnp
+# or
+docker compose exec api ss -tlnp</code></pre>
+
+            <h2>Summary</h2>
+
+            <p>Docker Compose networking gives you powerful tools for building secure, well-organized multi-container applications:</p>
+
+            <ul>
+                <li><strong>Default bridge network:</strong> Automatic, good for simple projects</li>
+                <li><strong>Custom networks:</strong> Isolate services that shouldn't communicate</li>
+                <li><strong>internal: true:</strong> Block all external internet access for data-tier services</li>
+                <li><strong>Service name DNS:</strong> Containers find each other by name, not IP</li>
+                <li><strong>Port mapping strategies:</strong> Expose only what's needed, bind admin tools to localhost</li>
+                <li><strong>External networks:</strong> Share connectivity between different Compose projects</li>
+                <li><strong>Network drivers:</strong> bridge (default), host (performance), none (isolation)</li>
+            </ul>
+
+            <p><strong>Security golden rule:</strong> Never expose database ports directly. Put a reverse proxy in front of your application and keep data services on internal networks.</p>
+
+            <p>Next up: Check out the <a href="docker-multi-stage-builds.html">Docker multi-stage builds guide</a> to shrink your container images, or the <a href="docker-compose.html">Docker Compose basics guide</a> if you're just getting started.</p>
+        </article>
+    </main>
+
+    <footer class="container">
+        <p>© 2026 Hugo's Dev Notes · Built with curiosity and Cloudflare Pages</p>
+    </footer>
+
+    <script src="../script.js"></script>
+</body>
+</html>

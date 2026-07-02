@@ -3,31 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Python Context Managers: The 'with' Statement Explained | Hugo's Dev Notes</title>
-    <meta name="description" content="Master Python context managers — the 'with' statement, __enter__/__exit__, contextlib, and custom resource management. Clean, safe resource handling.">
-    <meta name="keywords" content="python context manager, with statement, __enter__, __exit__, contextlib, resource management, python tutorial">
+    <title>Python Context Managers: The "with" Statement Explained — Clean Resource Management</title>
+    <meta name="description" content="Master Python context managers — the 'with' statement for clean resource management. File handling, database connections, locks, timing, and custom context managers from scratch.">
+    <meta name="keywords" content="python context managers, with statement, __enter__, __exit__, contextlib, resource management, python file handling, python database connections">
     <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://blog.hugow.dev/posts/python-context-managers.html">
+    <meta property="og:title" content="Python Context Managers: The 'with' Statement Explained">
+    <meta property="og:description" content="Clean resource management with Python's 'with' statement — custom context managers, contextlib, real-world patterns.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.hugow.dev/posts/python-context-managers.html">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "headline": "Python Context Managers: The 'with' Statement Explained — Clean Resource Management",
+      "author": {"@type": "Person", "name": "Hugo Wong"},
+      "datePublished": "2026-07-03",
+      "dateModified": "2026-07-03",
+      "publisher": {"@type": "Organization", "name": "Hugo's Dev Notes"}
+    }
+    </script>
     <link rel="stylesheet" href="../style.css">
 </head>
 <body>
     <div class="progress-bar" id="progressBar"></div>
-    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
 
     <header>
         <div class="container">
             <div class="logo">
-                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
                 <p class="subtitle">Cloudflare · Python · AI Coding</p>
             </div>
             <nav>
-                <a href="../index.html" class="nav-btn">🏠 Home</a>
-                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
-                <a href="../python.html" class="nav-btn">🐍 Python</a>
-                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
-                <a href="../devops.html" class="nav-btn">🐳 DevOps</a>
-                <a href="../security.html" class="nav-btn">🔐 Security</a>
-                <a href="../webdev.html" class="nav-btn">💻 Web Dev</a>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
             </nav>
         </div>
     </header>
@@ -37,377 +53,381 @@
         
         <article class="post-content">
             <span class="tag python">Python</span>
-            <h1>Python Context Managers: The <code>with</code> Statement Explained</h1>
-            <time>June 26, 2026 · 10 min read</time>
+            <h1>Python Context Managers: The "with" Statement Explained — Clean Resource Management</h1>
+            <time>July 3, 2026 · 9 min read</time>
 
-            <p>You've been using the <code>with</code> statement since your first Python script, but do you know <strong>how it works</strong>? Context managers are one of Python's most elegant features — they handle resources safely and cleanly, automatically cleaning up whether your code succeeds or crashes.</p>
+            <p>If you've written Python for any amount of time, you've used the <code>with</code> statement — probably for opening files:</p>
 
-            <p>This guide explains everything: how the <code>with</code> statement works under the hood, how to create your own context managers using classes and decorators, and real-world patterns you'll use in production code.</p>
-
-            <h2>What Is a Context Manager?</h2>
-
-            <p>A context manager is an object that defines <strong>setup</strong> and <strong>cleanup</strong> behavior. You use it with the <code>with</code> statement, and Python guarantees the cleanup runs <strong>even if an exception occurs</strong>.</p>
-
-            <p>The most common example is file handling:</p>
-
-            <pre><code># ✅ Context manager — file ALWAYS closes, even on error
-with open('data.txt', 'r') as f:
+<pre><code>with open("data.txt", "r") as f:
     content = f.read()
-    # If an exception happens here, the file still closes!
+# File is automatically closed here — even if an error occurred!</code></pre>
 
-# ❌ Without context manager — file might stay open on error
-f = open('data.txt', 'r')
-content = f.read()  # What if this raises an exception?
-f.close()  # This line never runs!</code></pre>
+<p>That one line does three things behind the scenes: it <strong>acquires</strong> a resource (opens the file), lets you <strong>use</strong> it, and <strong>cleans up</strong> afterward — even if something goes wrong. That pattern is called a <strong>context manager</strong>, and it's one of Python's most powerful features for writing safe, clean code.</p>
 
-            <p>The <code>with</code> statement is essentially Python's way of saying: <em>"Do this setup, run my code, and then do this cleanup — no matter what happens."</em></p>
+<p>In this tutorial, you'll learn how context managers work under the hood, how to build your own, and the real-world patterns that make them indispensable.</p>
+
+            <h2>Why Context Managers Matter</h2>
+
+            <p>Before Python 2.5, managing resources looked like this:</p>
+
+<pre><code># The old, fragile way
+f = open("data.txt", "r")
+try:
+    content = f.read()
+    process(content)  # What if this raises an error?
+finally:
+    f.close()  # This always runs — good! But verbose.</code></pre>
+
+<p>It works, but it's verbose. And developers forgot the <code>finally</code> block. A lot. Files leaked. Database connections hung. Locks never released.</p>
+
+<p>Context managers solve this with a clean, readable pattern that <strong>guarantees cleanup</strong>:</p>
+
+<pre><code># The Pythonic way
+with open("data.txt", "r") as f:
+    content = f.read()
+    process(content)  # Error here? No problem — file still closes.
+# File is guaranteed closed at this point.</code></pre>
 
             <h2>How Context Managers Work Under the Hood</h2>
 
-            <p>When Python sees <code>with expression as variable:</code>, it does three things:</p>
+            <p>When Python sees a <code>with</code> statement, it translates it into <code>__enter__</code> and <code>__exit__</code> method calls. Here's the exact translation:</p>
 
-            <ol>
-                <li><strong>Evaluates</strong> the expression to get a context manager object</li>
-                <li><strong>Calls <code>__enter__()</code></strong> — sets up the resource</li>
-                <li><strong>Runs your code block</strong> (the indented lines)</li>
-                <li><strong>Calls <code>__exit__()</code></strong> — cleans up the resource</li>
-            </ol>
+<pre><code># This:
+with open("data.txt") as f:
+    content = f.read()
 
-            <p>That's it. Any object with <code>__enter__</code> and <code>__exit__</code> methods is a context manager.</p>
+# Becomes:
+f = open("data.txt")          # Create the context manager
+f.__enter__()                  # Acquire resource → return value bound to 'f'
+try:
+    content = f.read()         # Your code block
+finally:
+    f.__exit__(None, None, None)  # Clean up (args are exception info)</code></pre>
 
-            <h2>Creating a Context Manager Class</h2>
+<p>The <code>__exit__</code> method receives three arguments: <code>exc_type</code>, <code>exc_value</code>, and <code>exc_traceback</code>. If an exception occurred in the <code>with</code> block, these contain the exception details. If no exception, they're all <code>None</code>.</p>
 
-            <p>Let's build a context manager that measures how long code takes to run:</p>
+            <h2>Building Your Own Context Manager (Class-Based)</h2>
 
-            <pre><code>import time
+            <p>Any class with <code>__enter__</code> and <code>__exit__</code> methods is a context manager:</p>
 
-class Timer:
+<pre><code>class Timer:
+    """A context manager that measures execution time."""
+    def __init__(self, label="Block"):
+        self.label = label
+        self.start_time = None
+
     def __enter__(self):
-        """Called when entering the 'with' block"""
-        self.start = time.time()
-        return self  # The returned value is assigned to 'as' variable
+        import time
+        self.start_time = time.time()
+        return self  # This is what gets bound to 'as timer'
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        """Called when exiting the 'with' block"""
-        self.elapsed = time.time() - self.start
-        print(f"⏱️  Took {self.elapsed:.4f} seconds")
+        import time
+        elapsed = time.time() - self.start_time
+        print(f"{self.label}: {elapsed:.4f} seconds")
         return False  # Don't suppress exceptions
 
-# Usage
-with Timer() as t:
-    # Do some work
-    time.sleep(1)
-    data = list(range(1000000))
+# Use it:
+with Timer("Counting to 1M"):
+    total = sum(range(1_000_000))
+# Output: Counting to 1M: 0.0423 seconds</code></pre>
 
-print(f"Elapsed: {t.elapsed:.4f} seconds")
-# Output:
-# ⏱️  Took 1.0023 seconds
-# Elapsed: 1.0023 seconds</code></pre>
+<p>Key points:</p>
+<ul>
+    <li><code>__enter__</code> runs <strong>before</strong> the block. Its return value binds to the <code>as</code> variable.</li>
+    <li><code>__exit__</code> runs <strong>after</strong> the block, even if an exception occurred.</li>
+    <li>Return <code>False</code> (or <code>None</code>) from <code>__exit__</code> to let exceptions propagate. Return <code>True</code> to suppress them.</li>
+</ul>
 
-            <p><strong>Key details about <code>__exit__</code>:</strong></p>
-            <ul>
-                <li><code>exc_type</code> — the exception class (or <code>None</code> if no error)</li>
-                <li><code>exc_val</code> — the exception value (or <code>None</code>)</li>
-                <li><code>exc_tb</code> — the traceback object (or <code>None</code>)</li>
-                <li>Return <code>True</code> to <strong>suppress</strong> the exception, <code>False</code> to let it propagate</li>
-            </ul>
+            <h2>Function-Based Context Managers with contextlib</h2>
 
-            <h2>Exception Handling Inside Context Managers</h2>
+            <p>Writing a full class for simple context managers is overkill. Enter the <code>contextlib</code> module — specifically <code>@contextmanager</code>:</p>
 
-            <p>Context managers can detect when errors occur and handle them gracefully:</p>
-
-            <pre><code>class DatabaseTransaction:
-    def __init__(self, connection):
-        self.conn = connection
-        self.success = False
-
-    def __enter__(self):
-        self.conn.execute("BEGIN")
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        if exc_type is not None:
-            # Error occurred — roll back the transaction
-            self.conn.execute("ROLLBACK")
-            print(f"❌ Transaction failed, rolled back: {exc_val}")
-        else:
-            # Everything succeeded — commit
-            self.conn.execute("COMMIT")
-            self.success = True
-            print("✅ Transaction committed")
-        return False  # Still propagate the exception to the caller
-
-# Usage
-conn = get_db_connection()
-try:
-    with DatabaseTransaction(conn) as txn:
-        conn.execute("INSERT INTO users VALUES (?, ?)", ("alice", "alice@email.com"))
-        conn.execute("INSERT INTO users VALUES (?, ?)", ("bob", "bob@email.com"))
-        # If any line fails, ALL changes are rolled back
-except Exception as e:
-    print(f"Handled: {e}")</code></pre>
-
-            <h2>The <code>contextlib</code> Module: Less Boilerplate</h2>
-
-            <p>Creating a full class for every context manager is verbose. Python's <code>contextlib</code> module provides decorators and helpers that make it much easier.</p>
-
-            <h3>@contextmanager — Generator-Based Context Managers</h3>
-
-            <p>Use <code>@contextmanager</code> to create a context manager from a simple generator. The <code>yield</code> separates setup from cleanup:</p>
-
-            <pre><code>from contextlib import contextmanager
+<pre><code>from contextlib import contextmanager
+import time
 
 @contextmanager
-def timer():
-    """A clean timer context manager"""
+def timer(label="Block"):
+    """Same as the class above, but much shorter."""
     start = time.time()
-    try:
-        yield  # Everything above = setup, below = cleanup
-    finally:
-        elapsed = time.time() - start
-        print(f"⏱️  Took {elapsed:.4f} seconds")
+    yield  # Everything before 'yield' is __enter__
+           # Everything after 'yield' is __exit__
+    elapsed = time.time() - start
+    print(f"{label}: {elapsed:.4f} seconds")
 
-# Usage — no class, no __enter__/__exit__, just a function!
-with timer():
-    time.sleep(0.5)
-# Output: ⏱️  Took 0.5012 seconds</code></pre>
+# Use it exactly the same:
+with timer("Counting to 1M"):
+    total = sum(range(1_000_000))
+# Output: Counting to 1M: 0.0423 seconds</code></pre>
 
-            <p>The <code>try/finally</code> around <code>yield</code> ensures cleanup runs even if an exception occurs in the <code>with</code> block.</p>
+<p>The <code>yield</code> keyword is the dividing line: code before it runs as <code>__enter__</code>, code after runs as <code>__exit__</code>. If the block raises an exception, it re-raises at the <code>yield</code> point.</p>
 
-            <h3>Returning Values from the Context Manager</h3>
+            <h2>Real-World Pattern: Database Connection Manager</h2>
 
-            <p>The value after <code>yield</code> becomes the <code>as</code> variable:</p>
+            <p>One of the most common use cases: managing database connections safely:</p>
 
-            <pre><code>from contextlib import contextmanager
+<pre><code>from contextlib import contextmanager
+import sqlite3
 
 @contextmanager
-def open_log(filename):
-    """Open a log file and return it"""
-    f = open(filename, 'a')
-    f.write(f"--- Session started at {time.ctime()} ---\n")
+def get_db_connection(db_path="app.db"):
+    """Open a database connection and ensure it's closed afterward."""
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row  # Access columns by name
     try:
-        yield f  # This value is what 'as log' receives
+        yield conn
+        conn.commit()  # Auto-commit if no exception
+    except Exception:
+        conn.rollback()  # Rollback on error
+        raise
     finally:
-        f.write(f"--- Session ended at {time.ctime()} ---\n")
-        f.close()
+        conn.close()  # Always close
 
-# Usage
-with open_log('app.log') as log:
-    log.write("Processing user request\n")
-    log.write("Sending response\n")
-    # File is automatically closed, end marker is written</code></pre>
+# Usage:
+with get_db_connection() as conn:
+    cursor = conn.execute("SELECT * FROM users WHERE active = ?", (1,))
+    users = cursor.fetchall()
+    print(f"Found {len(users)} active users")
 
-            <h3>Multiple Context Managers at Once</h3>
+# Connection is guaranteed closed, even if fetchAll() fails</code></pre>
 
-            <p>Python lets you nest context managers in a single <code>with</code> statement:</p>
+<p>This pattern — try/except/finally inside the context manager — is the gold standard for resource management. Commit on success, rollback on failure, always close.</p>
 
-            <pre><code>with Timer() as t, open('output.txt', 'w') as f, suppress(TypeError):
-    # Timer starts, file opens, TypeError is suppressed
-    results = process_data(data)
-    f.write(str(results))
-    # File closes, timer prints elapsed time, TypeError ignored
+            <h2>Real-World Pattern: Temporary Directory</h2>
 
-# Equivalent to nesting:
-with Timer() as t:
-    with open('output.txt', 'w') as f:
-        with suppress(TypeError):
-            results = process_data(data)
-            f.write(str(results))</code></pre>
+            <p>Create a temporary directory that auto-cleans up:</p>
 
-            <h3>contextlib.closing — Auto-Close Anything</h3>
-
-            <p>If an object has a <code>close()</code> method but isn't a context manager:</p>
-
-            <pre><code>from contextlib import closing
-import urllib.request
-
-# urllib response doesn't natively support 'with' in older Python
-with closing(urllib.request.urlopen('https://httpbin.org/get')) as response:
-    data = response.read()
-    # response.close() is called automatically</code></pre>
-
-            <h3>contextlib.redirect_stdout — Capture Print Output</h3>
-
-            <p>Redirect stdout to a file or string for testing:</p>
-
-            <pre><code>from contextlib import redirect_stdout
-import io
-
-# Capture print output to a string
-buffer = io.StringIO()
-with redirect_stdout(buffer):
-    print("This goes to the buffer, not the terminal")
-    print("So does this")
-
-captured = buffer.getvalue()
-print(captured)
-# Output:
-# This goes to the buffer, not the terminal
-# So does this
-
-# Redirect to a real file
-with open('output.txt', 'w') as f:
-    with redirect_stdout(f):
-        print("This goes to output.txt")
-        for i in range(5):
-            print(f"Line {i}")</code></pre>
-
-            <h2>Real-World Patterns</h2>
-
-            <h3>Temporary Directory for Testing</h3>
-
-            <pre><code>import tempfile
+<pre><code>from contextlib import contextmanager
+import tempfile
+import shutil
 import os
 
-# Built-in: creates a temp dir, cleans it up automatically
-with tempfile.TemporaryDirectory() as tmpdir:
-    filepath = os.path.join(tmpdir, 'test.txt')
-    with open(filepath, 'w') as f:
-        f.write("temporary data")
-    # Process files...
-# tmpdir and all files inside are deleted here!</code></pre>
+@contextmanager
+def temp_directory(prefix="myapp_"):
+    """Create a temp directory that gets cleaned up automatically."""
+    path = tempfile.mkdtemp(prefix=prefix)
+    try:
+        yield path
+    finally:
+        shutil.rmtree(path)  # Clean up everything
 
-            <h3>Locking for Thread Safety</h3>
+# Usage:
+with temp_directory() as tmpdir:
+    # Create files in the temp directory
+    filepath = os.path.join(tmpdir, "output.txt")
+    with open(filepath, "w") as f:
+        f.write("Processing data...")
+    print(f"Working in: {tmpdir}")
 
-            <pre><code>import threading
+# tmpdir is deleted here, including all files inside it</code></pre>
 
-lock = threading.Lock()
-shared_data = []
+            <h2>Real-World Pattern: Directory Changer</h2>
 
-# Lock ensures only one thread modifies data at a time
-with lock:
-    shared_data.append("safe operation")
-    shared_data.append("still safe")
-# Lock is released here — even if an exception occurred</code></pre>
+            <p>Safely change directories and return to the original:</p>
 
-            <h3>Custom Retry Context Manager</h3>
+<pre><code>from contextlib import contextmanager
+import os
 
-            <pre><code>from contextlib import contextmanager
-from functools import wraps
+@contextmanager
+def change_directory(path):
+    """Change to a directory and return to the original afterward."""
+    original = os.getcwd()
+    os.chdir(path)
+    try:
+        yield
+    finally:
+        os.chdir(original)
 
-def retry(max_attempts=3):
-    """Decorator that retries a function on failure"""
-    def decorator(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            for attempt in range(1, max_attempts + 1):
-                try:
-                    return func(*args, **kwargs)
-                except Exception as e:
-                    if attempt == max_attempts:
-                        raise
-                    print(f"Attempt {attempt} failed: {e}, retrying...")
-        return wrapper
-    return decorator
+# Usage:
+print(os.getcwd())  # /home/user
+with change_directory("/tmp"):
+    print(os.getcwd())  # /tmp
+    # Do stuff in /tmp...
+print(os.getcwd())  # /home/user — back where we started!</code></pre>
 
-# Usage
-@retry(max_attempts=3)
-def fetch_data(url):
-    import urllib.request
-    return urllib.request.urlopen(url).read()
+            <h2>Nested Context Managers</h2>
 
-# If the first call fails, it tries 2 more times automatically
-try:
-    data = fetch_data("https://api.example.com/data")
-except Exception as e:
-    print(f"All retries exhausted: {e}")</code></pre>
+            <p>You can combine multiple context managers. Python 3.1+ lets you stack them with commas:</p>
 
-            <h2>Common Built-in Context Managers</h2>
+<pre><code># Open two files at once (Python 3.1+)
+with open("input.txt", "r") as src, open("output.txt", "w") as dst:
+    for line in src:
+        dst.write(line.upper())
+# Both files closed automatically
 
-            <table class="table">
-                <thead>
-                    <tr><th>Context Manager</th><th>Module</th><th>Purpose</th></tr>
-                </thead>
-                <tbody>
-                    <tr><td><code>open()</code></td><td>Built-in</td><td>File handling</td></tr>
-                    <tr><td><code>threading.Lock()</code></td><td>threading</td><td>Thread synchronization</td></tr>
-                    <tr><td><code>tempfile.TemporaryDirectory()</code></td><td>tempfile</td><td>Temporary directories</td></tr>
-                    <tr><td><code>tempfile.NamedTemporaryFile()</code></td><td>tempfile</td><td>Temporary files</td></tr>
-                    <tr><td><code>contextlib.suppress()</code></td><td>contextlib</td><td>Ignore specific exceptions</td></tr>
-                    <tr><td><code>contextlib.redirect_stdout()</code></td><td>contextlib</td><td>Capture print output</td></tr>
-                    <tr><td><code>contextlib.chdir()</code></td><td>contextlib</td><td>Temporary directory change</td></tr>
-                    <tr><td><code>sqlite3.connect()</code></td><td>sqlite3</td><td>Database transactions</td></tr>
-                    <tr><td><code>decimal.localcontext()</code></td><td>decimal</td><td>Precise decimal arithmetic</td></tr>
-                </tbody>
+# Combine custom managers
+with get_db_connection() as conn, timer("DB Query"):
+    results = conn.execute("SELECT * FROM large_table").fetchall()
+    print(f"Got {len(results)} rows")</code></pre>
+
+            <h2>Suppressing Exceptions</h2>
+
+            <p>Sometimes you want to catch and handle an exception inside a context manager. Return <code>True</code> from <code>__exit__</code>:</p>
+
+<pre><code>from contextlib import contextmanager
+
+@contextmanager
+def suppress_errors(error_types=(Exception,)):
+    """Silently catch specified exceptions."""
+    try:
+        yield
+    except error_types as e:
+        print(f"Caught and suppressed: {e}")
+        return  # Suppress the exception
+
+# Usage:
+with suppress_errors():
+    result = 10 / 0  # ZeroDivisionError — caught!
+# No crash — execution continues normally
+
+# With custom types:
+with suppress_errors((ValueError, TypeError)):
+    int("not a number")  # ValueError — suppressed
+print("Still running!")</code></pre>
+
+<p>Python actually has a built-in version of this: <code>contextlib.suppress()</code>:</p>
+
+<pre><code>from contextlib import suppress
+
+with suppress(FileNotFoundError):
+    with open("missing.txt") as f:
+        data = f.read()
+# FileNotFoundError silently swallowed</code></pre>
+
+            <h2>Real-World Pattern: HTTP Request with Retry</h2>
+
+            <p>A more advanced example — automatic retry on failure:</p>
+
+<pre><code>from contextlib import contextmanager
+import requests
+import time
+
+@contextmanager
+def http_session(base_url, retries=3, delay=1.0):
+    """Create an HTTP session with automatic retry logic."""
+    session = requests.Session()
+    session.headers.update({"User-Agent": "MyApp/1.0"})
+    
+    for attempt in range(1, retries + 1):
+        try:
+            yield session
+            break  # Success — exit retry loop
+        except requests.RequestException as e:
+            if attempt < retries:
+                print(f"Attempt {attempt} failed: {e}. Retrying in {delay}s...")
+                time.sleep(delay)
+            else:
+                raise  # Last attempt — re-raise
+
+# Usage:
+with http_session("https://api.example.com") as session:
+    response = session.get("/users")
+    users = response.json()  # Auto-retries if the server is down</code></pre>
+
+            <h2>Standard Library Context Managers You Should Know</h2>
+
+            <table>
+                <tr><th>Module</th><th>Context Manager</th><th>What It Does</th></tr>
+                <tr><td><code>builtins</code></td><td><code>open()</code></td><td>Open/close files</td></tr>
+                <tr><td><code>threading</code></td><td><code>Lock()</code></td><td>Acquire/release thread locks</td></tr>
+                <tr><td><code>decimal</code></td><td><code>localcontext()</code></td><td>Set decimal precision temporarily</td></tr>
+                <tr><td><code>tempfile</code></td><td><code>TemporaryFile()</code></td><td>Create &amp; auto-delete temp files</td></tr>
+                <tr><td><code>contextlib</code></td><td><code>redirect_stdout()</code></td><td>Capture print() output</td></tr>
+                <tr><td><code>contextlib</code></td><td><code>chdir()</code></td><td>Change directory temporarily</td></tr>
+                <tr><td><code>contextlib</code></td><td><code>suppress()</code></td><td>Suppress specific exceptions</td></tr>
+                <tr><td><code>contextlib</code></td><td><code>ExitStack()</code></td><td>Dynamic/context-manager composition</td></tr>
             </table>
 
-            <h2>When to Use Context Managers</h2>
+            <h2>ExitStack: Dynamic Context Manager Composition</h2>
 
-            <p>Use a context manager whenever you need <strong>paired setup/cleanup operations</strong>:</p>
+            <p>When you don't know how many context managers you need until runtime:</p>
 
-            <ul>
-                <li>Opening files, network connections, database sessions</li>
-                <li>Acquiring and releasing locks or semaphores</li>
-                <li>Starting and stopping timers or profilers</li>
-                <li>Creating and removing temporary resources</li>
-                <li>Changing and restoring environment state (directory, locale, etc.)</li>
-                <li>Beginning and committing/rolling back transactions</li>
-            </ul>
+<pre><code>from contextlib import ExitStack
 
-            <p>The golden rule: <strong>if you have something to clean up, use a context manager</strong>. It makes your code safer, shorter, and more readable.</p>
+def process_files(file_paths):
+    """Open any number of files and ensure all are closed."""
+    with ExitStack() as stack:
+        files = [stack.enter_context(open(path, "r")) for path in file_paths]
+        # All files are open now
+        all_content = [f.read() for f in files]
+    # ExitStack closes ALL files in reverse order
 
-            <h2>Next Steps</h2>
+# Usage — works with 0 files, 1 file, or 100:
+content = process_files(["a.txt", "b.txt", "c.txt"])</code></pre>
 
-            <p>Check out the related Python tutorials:</p>
-            <ul>
-                <li><a href="python-functions.html">Python Functions</a> — Define and use functions</li>
-                <li><a href="python-error-handling.html">Python Error Handling</a> — Try/except patterns</li>
-                <li><a href="python-file-operations.html">Python File Operations</a> — Read/write files</li>
-                <li><a href="python-decorators-generators.html">Python Decorators & Generators</a> — Advanced patterns</li>
-            </ul>
+            <h2>Common Mistakes</h2>
+
+            <ol>
+                <li><strong>Forgetting to yield a value:</strong> If your <code>@contextmanager</code> doesn't <code>yield</code>, the <code>as</code> variable gets <code>None</code>.</li>
+                <li><strong>Swallowing exceptions silently:</strong> Only suppress exceptions you've explicitly planned for. Returning <code>True</code> from <code>__exit__</code> hides bugs.</li>
+                <li><strong>Not cleaning up on exceptions:</strong> Always use <code>try/finally</code> in your <code>@contextmanager</code> to guarantee cleanup.</li>
+                <li><strong>Using context managers for logic:</strong> They're for <em>resources</em>, not control flow. Don't put business logic in <code>__enter__</code>.</li>
+            </ol>
+
+            <h2>Summary</h2>
+
+<pre><code># Class-based (full control)
+class MyResource:
+    def __enter__(self): ...
+    def __exit__(self, exc_type, exc_val, exc_tb): ...
+
+# Function-based (concise)
+from contextlib import contextmanager
+
+@contextmanager
+def my_resource():
+    setup()
+    yield resource
+    cleanup()
+
+# Built-in helpers
+from contextlib import suppress, chdir, redirect_stdout, ExitStack</code></pre>
+
+<p>Context managers are Python's answer to "how do I guarantee cleanup?" Whether it's files, databases, locks, temp directories, or HTTP sessions — the <code>with</code> statement gives you a clean, safe, readable pattern that works every time.</p>
+
+            <h2>Practice Exercises</h2>
+
+            <ol>
+                <li>Write a context manager that temporarily sets an environment variable and restores it afterward.</li>
+                <li>Create a context manager that measures the memory usage of a code block (use <code>tracemalloc</code>).</li>
+                <li>Build a context manager that opens a file and yields a <code>csv.DictReader</code> instead of the raw file object.</li>
+                <li>Write a context manager that temporarily changes the logging level and restores it afterward.</li>
+            </ol>
+
+            <p>Stuck? Reply to this post or check the <a href="../python.html">Python tutorial index</a> for more guides.</p>
         </article>
     </main>
 
     <footer>
         <div class="container">
-            <p>© 2026 Hugo's Dev Notes. Built with 🤖 and ☕</p>
+            <p>© 2026 Hugo Wong · Built with curiosity and Coffee</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528">GitHub</a>
+                <a href="https://hugow.dev">hugow.dev</a>
+                <a href="/sitemap.xml">Sitemap</a>
+            </div>
         </div>
     </footer>
 
     <script>
-        // Progress bar
-        window.onscroll = function() {
-            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
-            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-            document.getElementById("progressBar").style.width = (winScroll / height) * 100 + "%";
-        };
-
-        // Dark mode toggle
-        const toggle = document.getElementById('themeToggle');
-        toggle.addEventListener('click', () => {
-            document.body.classList.toggle('dark-mode');
-            toggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
-            localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
-        });
-        if (localStorage.getItem('darkMode') === 'true') {
-            document.body.classList.add('dark-mode');
-            toggle.textContent = '☀️';
-        }
-    </script>
-    <script>
-        // Theme toggle
         const themeToggle = document.getElementById('themeToggle');
-        if (themeToggle) {{
-            const savedTheme = localStorage.getItem('theme') || 'dark';
-            if (savedTheme === 'light') {{
-                document.body.classList.add('light-mode');
-                themeToggle.textContent = '☀';
-            }}
-            themeToggle.addEventListener('click', () => {{
-                document.body.classList.toggle('light-mode');
-                const isLight = document.body.classList.contains('light-mode');
-                localStorage.setItem('theme', isLight ? 'light' : 'dark');
-                themeToggle.textContent = isLight ? '☀' : '◐';
-            }});
-        }}
-        // Progress bar
-        window.addEventListener('scroll', () => {{
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-mode');
+            themeToggle.textContent = '☀';
+        }
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            themeToggle.textContent = isLight ? '☀' : '◐';
+        });
+        window.addEventListener('scroll', () => {
             const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
             const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
             const scrolled = (winScroll / height) * 100;
-            const bar = document.getElementById('progressBar');
-            if (bar) bar.style.width = scrolled + "%";
-        }});
+            document.getElementById('progressBar').style.width = scrolled + "%";
+        });
     </script>
 </body>
 </html>

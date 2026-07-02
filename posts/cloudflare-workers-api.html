@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloudflare Workers: Build a Serverless REST API - Hugo's Dev Notes</title>
+    <meta name="description" content="Learn how to build a complete REST API using Cloudflare Workers. No servers to manage, no databases to provision. Step-by-step guide with working code examples.">
+    <meta name="keywords" content="cloudflare, workers, rest api, serverless, tutorial, edge computing, json">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/cloudflare-workers-api.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <article class="post-content">
+        <span class="tag cloudflare">Cloudflare</span>
+        <span class="tag devops">DevOps</span>
+        <h1>Cloudflare Workers: Build a Serverless REST API</h1>
+        <div class="post-meta">
+            <span class="post-date">July 1, 2026</span>
+            <span class="read-time">10 min read</span>
+            <span class="post-badge">New</span>
+        </div>
+
+        <p>Cloudflare Workers let you run code at the edge — in 300+ data centers worldwide — without provisioning a single server. In this guide, we'll build a complete REST API from scratch using the Workers platform. No AWS, no Docker, no servers to patch. Just code that runs instantly.</p>
+
+<p>Our API will manage a simple todo list with full CRUD operations (Create, Read, Update, Delete). We'll use Workers KV as our datastore and the Wrangler CLI for local development and deployment.</p>
+
+<h2>Why Cloudflare Workers for an API?</h2>
+
+<p>Traditional APIs need a server. Cloudflare Workers APIs don't:</p>
+
+<ul>
+    <li><strong>100K free requests per day</strong> — plenty for small projects</li>
+    <li><strong>Sub-millisecond cold starts</strong> — Workers never "spin up"</li>
+    <li><strong>Global edge execution</strong> — your code runs closest to the user</li>
+    <li><strong>No infrastructure to manage</strong> — no servers, no load balancers, no auto-scaling config</li>
+    <li><strong>Built-in HTTPS and DDoS protection</strong> — automatic, no configuration</li>
+</ul>
+
+<h2>Prerequisites</h2>
+
+<p>You need three things:</p>
+<ol>
+    <li>A free <a href="https://dash.cloudflare.com/sign-up">Cloudflare account</a></li>
+    <li>Node.js 18+ installed</li>
+    <li>The Wrangler CLI: <code>npm install -g wrangler</code></li>
+</ol>
+
+<p>Log in to Wrangler:</p>
+
+<pre><code>wrangler login
+</code></pre>
+
+<h2>Step 1: Create a New Worker Project</h2>
+
+<p>Wrangler scaffolds a new project with a single command:</p>
+
+<pre><code>wrangler init my-api --site
+cd my-api
+</code></pre>
+
+<p>This creates a project directory with a <code>wrangler.toml</code> configuration file and a <code>src/</code> folder containing your Worker code.</p>
+
+<h2>Step 2: Set Up Workers KV</h2>
+
+<p>We need a database. Workers KV is a globally distributed key-value store that's free to use (100K reads/day, 1K writes/day on the free tier). Create a namespace:</p>
+
+<pre><code>wrangler kv:namespace create "TODOS"
+</code></pre>
+
+<p>Wrangler outputs an ID like <code>abcd1234...</code>. Add it to your <code>wrangler.toml</code>:</p>
+
+<pre><code>[kv_namespaces]
+binding = "TODOS"
+id = "abcd1234..."
+preview_id = "abcd1234..."
+</code></pre>
+
+<h2>Step 3: Build the API Router</h2>
+
+<p>Create <code>src/index.js</code>. We'll implement a simple router that handles different HTTP methods and paths:</p>
+
+<pre><code>export default {
+    async fetch(request, env) {
+        const url = new URL(request.url);
+        const path = url.pathname;
+        const method = request.method;
+
+        try {
+            // Health check
+            if (path === "/" && method === "GET") {
+                return json({ status: "ok", api: "Todos API v1" });
+            }
+
+            // GET /todos — List all todos
+            if (path === "/todos" && method === "GET") {
+                return listTodos(env);
+            }
+
+            // POST /todos — Create a todo
+            if (path === "/todos" && method === "POST") {
+                return createTodo(request, env);
+            }
+
+            // GET /todos/:id — Get a single todo
+            const getMatch = path.match(/^\/todos\/([a-z0-9-]+)$/);
+            if (getMatch && method === "GET") {
+                return getTodo(getMatch[1], env);
+            }
+
+            // PUT /todos/:id — Update a todo
+            if (getMatch && method === "PUT") {
+                return updateTodo(getMatch[1], request, env);
+            }
+
+            // DELETE /todos/:id — Delete a todo
+            if (getMatch && method === "DELETE") {
+                return deleteTodo(getMatch[1], env);
+            }
+
+            return json({ error: "Not found" }, 404);
+
+        } catch (error) {
+            return json({ error: error.message }, 500);
+        }
+    }
+};
+
+// Helper: Return JSON response
+function json(data, status = 200) {
+    return new Response(JSON.stringify(data), {
+        status,
+        headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type"
+        }
+    });
+}
+</code></pre>
+
+<p>The router checks the URL path and HTTP method, then dispatches to the right handler. We also add CORS headers to every response so your API works with browser-based clients.</p>
+
+<h2>Step 4: Implement CRUD Operations</h2>
+
+<p>Add these functions to your <code>src/index.js</code> file:</p>
+
+<p><strong>List all todos:</strong></p>
+
+<pre><code>async function listTodos(env) {
+    const { keys } = await env.TODOS.list();
+    const todos = [];
+    for (const key of keys) {
+        const todo = await env.TODOS.get(key.name, { type: "json" });
+        if (todo) todos.push(todo);
+    }
+    return json(todos);
+}
+</code></pre>
+
+<p><strong>Create a new todo:</strong></p>
+
+<pre><code>async function createTodo(request, env) {
+    const body = await request.json();
+    const { task, completed = false } = body;
+
+    if (!task || typeof task !== "string") {
+        return json({ error: "task (string) is required" }, 400);
+    }
+
+    const id = crypto.randomUUID();
+    const todo = {
+        id,
+        task: task.trim(),
+        completed,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+    };
+
+    await env.TODOS.put(`todo:${id}`, JSON.stringify(todo));
+    return json(todo, 201);
+}
+</code></pre>
+
+<p><strong>Get a single todo:</strong></p>
+
+<pre><code>async function getTodo(id, env) {
+    const todo = await env.TODOS.get(`todo:${id}`, { type: "json" });
+    if (!todo) return json({ error: "Todo not found" }, 404);
+    return json(todo);
+}
+</code></pre>
+
+<p><strong>Update a todo:</strong></p>
+
+<pre><code>async function updateTodo(id, request, env) {
+    const existing = await env.TODOS.get(`todo:${id}`, { type: "json" });
+    if (!existing) return json({ error: "Todo not found" }, 404);
+
+    const body = await request.json();
+    const updated = {
+        ...existing,
+        task: body.task ?? existing.task,
+        completed: body.completed ?? existing.completed,
+        updatedAt: new Date().toISOString()
+    };
+
+    await env.TODOS.put(`todo:${id}`, JSON.stringify(updated));
+    return json(updated);
+}
+</code></pre>
+
+<p><strong>Delete a todo:</strong></p>
+
+<pre><code>async function deleteTodo(id, env) {
+    const existing = await env.TODOS.get(`todo:${id}`);
+    if (!existing) return json({ error: "Todo not found" }, 404);
+
+    await env.TODOS.delete(`todo:${id}`);
+    return json({ message: "Todo deleted", id });
+}
+</code></pre>
+
+<h2>Step 5: Handle CORS Preflight Requests</h2>
+
+<p>Browsers send <code>OPTIONS</code> requests before any cross-origin <code>PUT</code>, <code>DELETE</code>, or <code>POST</code> request. Add this to your router, before the method checks:</p>
+
+<pre><code>// Handle CORS preflight
+if (method === "OPTIONS") {
+    return new Response(null, {
+        headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type",
+        }
+    });
+}
+</code></pre>
+
+<h2>Step 6: Test Locally</h2>
+
+<p>Wrangler includes a local development server that simulates the edge environment:</p>
+
+<pre><code>wrangler dev
+</code></pre>
+
+<p>This starts <code>http://localhost:8787</code>. Test with <code>curl</code>:</p>
+
+<pre><code># Create a todo
+curl -X POST http://localhost:8787/todos \
+  -H "Content-Type: application/json" \
+  -d '{"task": "Learn Cloudflare Workers"}'
+
+# List todos
+curl http://localhost:8787/todos
+
+# Update a todo (replace the UUID)
+curl -X PUT http://localhost:8787/todos/&lt;id&gt; \
+  -H "Content-Type: application/json" \
+  -d '{"completed": true}'
+
+# Delete a todo
+curl -X DELETE http://localhost:8787/todos/&lt;id&gt;
+</code></pre>
+
+<h2>Step 7: Deploy</h2>
+
+<p>When you're ready, deploy to the edge with a single command:</p>
+
+<pre><code>wrangler deploy
+</code></pre>
+
+<p>Wrangler publishes your Worker and gives you a <code>*.workers.dev</code> URL. You can also bind a custom domain from your Cloudflare dashboard.</p>
+
+<h2>Add Input Validation</h2>
+
+<p>Production APIs need validation. Here's a simple approach:</p>
+
+<pre><code>async function createTodo(request, env) {
+    let body;
+    try {
+        body = await request.json();
+    } catch {
+        return json({ error: "Invalid JSON body" }, 400);
+    }
+
+    const { task, completed } = body;
+
+    if (!task || typeof task !== "string") {
+        return json({ error: "'task' must be a non-empty string" }, 400);
+    }
+
+    if (task.trim().length > 500) {
+        return json({ error: "'task' must be 500 characters or less" }, 400);
+    }
+
+    if (completed !== undefined && typeof completed !== "boolean") {
+        return json({ error: "'completed' must be a boolean" }, 400);
+    }
+
+    // ... rest of the function
+}
+</code></pre>
+
+<h2>Next Steps</h2>
+
+<p>Here are ways to extend this API:</p>
+
+<ul>
+    <li><strong>Add authentication</strong> — use a simple API key header check or Cloudflare Access</li>
+    <li><strong>Use D1 instead of KV</strong> — D1 gives you full SQL if you need relationships and queries</li>
+    <li><strong>Add pagination</strong> — KV's <code>list()</code> supports <code>limit</code> and <code>cursor</code> for large datasets</li>
+    <li><strong>Add search</strong> — store tasks in a separate KV key for fast lookups</li>
+    <li><strong>Add a Workers Cron trigger</strong> — auto-delete todos older than 30 days</li>
+    <li><strong>Connect to a frontend</strong> — pair with Cloudflare Pages for a full-stack app</li>
+</ul>
+
+<h2>Summary</h2>
+
+<p>We built a complete REST API in under 200 lines of code:</p>
+<ul>
+    <li><code>GET /</code> — Health check</li>
+    <li><code>GET /todos</code> — List all todos</li>
+    <li><code>POST /todos</code> — Create a todo</li>
+    <li><code>GET /todos/:id</code> — Get a single todo</li>
+    <li><code>PUT /todos/:id</code> — Update a todo</li>
+    <li><code>DELETE /todos/:id</code> — Delete a todo</li>
+</ul>
+
+<p>No server to provision, no database to manage, no DevOps to worry about. Your code runs on Cloudflare's global network, serving requests from the data center closest to each user. And the first 100K requests per day are free.</p>
+
+        <div style="margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--border-subtle);">
+            <a href="../cloudflare.html" class="nav-btn">← Back to Cloudflare Tutorials</a>
+            <a href="../index.html" class="nav-btn" style="margin-left: 8px;">Home</a>
+        </div>
+    </article>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo Wong · Built with curiosity and Coffee</p>
+        </div>
+    </footer>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        if (savedTheme === 'light') { document.body.classList.add('light-mode'); themeToggle.textContent = '☀'; }
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            themeToggle.textContent = isLight ? '☀' : '◐';
+        });
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + "%";
+        });
+    </script>
+</body>
+</html>

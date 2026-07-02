@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vibe Coding Best Practices: Write Better Prompts for Better Code | Hugo's Dev Notes</title>
+    <meta name="description" content="Master the art of prompting AI coding tools. Learn specific techniques — context management, incremental development, code review, and debugging — to get production-quality code from AI every time.">
+    <meta name="keywords" content="vibe coding, AI coding, prompts, Claude, Cursor, Copilot, AI programming, best practices">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/vibe-coding-best-practices.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+        
+        <article class="post-content">
+            <span class="tag vibe">AI Coding</span>
+            <h1>Vibe Coding Best Practices: Write Better Prompts for Better Code</h1>
+            <time>July 2, 2026 · 8 min read</time>
+
+            <p>You've heard about vibe coding. You've tried Cursor, Claude Code, or Copilot. But there's a big difference between getting <em>something</em> that runs and getting <em>good</em> code that you'd actually ship. The gap? Your prompts.</p>
+
+            <p>After spending hundreds of hours prompting AI to write production code, I've distilled a set of practices that consistently produce better results. These aren't theoretical — they're field-tested techniques used by developers who ship AI-assisted code daily.</p>
+
+            <h2>Rule 1: Give Context, Don't Just Describe Features</h2>
+
+            <p>The most common mistake is treating AI like a Google search. You type a feature request and hope for the best. Instead, think of AI as a junior developer who's been hired for the day but hasn't read the codebase.</p>
+
+            <p><strong>Bad prompt:</strong></p>
+            <blockquote>Write a Python API endpoint that handles user login.</blockquote>
+
+            <p><strong>Good prompt:</strong></p>
+            <blockquote>We have a FastAPI application with PostgreSQL. Users are stored in a <code>users</code> table with <code>email</code>, <code>password_hash</code> (bcrypt), and <code>is_active</code> fields. We use Pydantic for validation and SQLAlchemy async for database access. Write a POST <code>/auth/login</code> endpoint that:
+<ol>
+<li>Accepts email and password as JSON</li>
+<li>Validates the email format</li>
+<li>Checks the password against the stored hash</li>
+<li>Returns a JWT token if successful</li>
+<li>Returns appropriate HTTP error codes (401, 422)</li>
+</ol>
+Here's our existing <code>models.py</code>:
+<pre><code>class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True)
+    email = Column(String(255), unique=True, nullable=False)
+    password_hash = Column(String(255), nullable=False)
+    is_active = Column(Boolean, default=True)
+</code></pre>
+Write the endpoint using our existing patterns.</blockquote>
+
+            <p>Notice the difference? The second prompt gives the AI your <strong>tech stack</strong>, <strong>data models</strong>, <strong>existing code patterns</strong>, and <strong>specific requirements</strong>. The AI doesn't need to guess — it fills in the blanks.</p>
+
+            <h2>Rule 2: Build Incrementally, Not Monolithically</h2>
+
+            <p>Never ask AI to build an entire application in one prompt. It's like hiring a developer and saying "build me Instagram" without any discussion. Break your project into focused steps:</p>
+
+            <pre><code># Step 1 — Foundation
+"Set up a FastAPI project structure with these folders:
+/app
+  /routers
+  /schemas
+  /models
+  /services
+  /config
+  main.py
+  database.py
+Include a requirements.txt with fastapi, uvicorn, sqlalchemy[asyncio], 
+alembic, and pydantic-settings."
+
+# Step 2 — Database
+"Now add a SQLAlchemy async setup in database.py that connects to a 
+PostgreSQL database using settings from a .env file. Include the engine, 
+async session factory, and a get_db dependency."
+
+# Step 3 — Models
+"Create a User model with email (unique), hashed_password, full_name, 
+is_active, and is_superuser fields. Use UUIDs for the primary key."
+
+# Step 4 — Schema
+"Write Pydantic v2 schemas for UserCreate, UserUpdate, UserResponse, 
+and UserLogin. Include field validators where appropriate."
+
+# Step 5 — Service Layer
+"Create a UserService class with methods for create_user, get_by_email, 
+authenticate, and deactivate. Handle bcrypt hashing and proper error cases."
+
+# Step 6 — Router
+"Now build the auth router using the service layer. Endpoints: register, 
+login, get_me (with auth). Add proper error handling."
+</code></pre>
+
+            <p>Each step is small enough that the AI can produce quality code, and you can review it before moving on. If step 3 has an issue, you fix it before it propagates into steps 4-6.</p>
+
+            <h2>Rule 3: Review Every Line of AI-Generated Code</h2>
+
+            <p>This isn't about not trusting AI — it's about being a responsible engineer. AI makes mistakes that are easy to miss if you just copy-paste:</p>
+
+            <ul>
+                <li><strong>Security issues:</strong> SQL injection, missing input validation, hardcoded secrets</li>
+                <li><strong>Logic bugs:</strong> Off-by-one errors, incorrect conditionals, missing edge cases</li>
+                <li><strong>API hallucinations:</strong> Using methods that don't exist or calling functions with wrong arguments</li>
+                <li><strong>Inefficient patterns:</strong> N+1 queries, unnecessary loops, loading everything into memory</li>
+            </ul>
+
+            <p><strong>Real example:</strong> I once asked Claude to write a file upload handler. It generated this:</p>
+
+            <pre><code># AI-generated (has issues!)
+@app.post("/upload")
+async def upload(file: UploadFile):
+    content = await file.read()  # Loads entire file into memory!
+    path = f"uploads/{file.filename}"  # No sanitization!
+    with open(path, "wb") as f:
+        f.write(content)
+    return {"filename": file.filename}
+</code></pre>
+
+            <p>Two problems: (1) loading the entire file into memory is a DoS vector, and (2) <code>file.filename</code> is user-controlled input — path traversal attack. The fixed version:</p>
+
+            <pre><code>import os
+import shutil
+from fastapi import UploadFile, HTTPException
+
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+ALLOWED_TYPES = {".jpg", ".jpeg", ".png", ".gif", ".pdf"}
+
+@app.post("/upload")
+async def upload(file: UploadFile):
+    ext = os.path.splitext(file.filename)[1].lower()
+    if ext not in ALLOWED_TYPES:
+        raise HTTPException(400, "File type not allowed")
+    
+    safe_name = f"{uuid.uuid4()}{ext}"
+    path = f"uploads/{safe_name}"
+    
+    with open(path, "wb") as buffer:
+        while chunk := await file.read(8192):
+            if os.path.getsize(path) > MAX_FILE_SIZE:
+                os.remove(path)
+                raise HTTPException(413, "File too large")
+            buffer.write(chunk)
+    
+    return {"filename": safe_name}
+</code></pre>
+
+            <h2>Rule 4: Use AI as Your Rubber Duck, Not Just Your Writer</h2>
+
+            <p>Before asking AI to write code, use it to <strong>think through the problem</strong>:</p>
+
+            <pre><code>"I want to build a rate limiter for my API. I need to track requests per 
+user per minute, with a limit of 100. I'm using Redis. Walk me through 
+the design before writing any code:
+1. What data structure should I use in Redis?
+2. How do I handle the sliding window vs fixed window tradeoff?
+3. What happens if Redis is down?
+4. How do I communicate rate limit info to the client?"
+</code></pre>
+
+            <p>This "thinking step" catches architectural issues before they become bugs. AI might suggest using a simple counter when you actually need a sliding window, or point out that you should serve cached responses when Redis is unavailable.</p>
+
+            <h2>Rule 5: Debug With AI — But Feed It Error Messages</h2>
+
+            <p>When code breaks, don't just say "it's not working." Paste the actual error, the relevant code, and describe what you expected:</p>
+
+            <pre><code>"My FastAPI endpoint is returning a 500 error. Here's the stack trace:
+
+  File 'app/routers/users.py', line 15, in create_user
+    db_user = User(**user_data.model_dump())
+  File 'sqlalchemy/orm/decl_base.py', line 1285, in __init__
+    TypeError: User.__init__() got an unexpected keyword argument 'hashed_password'
+
+My model uses 'password_hash' as the column name, but my Pydantic schema 
+uses 'hashed_password'. Here are both files:
+
+# models.py
+class User(Base):
+    password_hash = Column(String, nullable=False)
+
+# schemas.py  
+class UserCreate(BaseModel):
+    hashed_password: str
+
+How do I fix this mapping?"
+</code></pre>
+
+            <p>The AI can immediately spot the mismatch and suggest using Pydantic's <code>model_config</code> with field aliases, or mapping fields manually in the service layer.</p>
+
+            <h2>Rule 6: Build Your Own Prompt Library</h2>
+
+            <p>As you refine your prompts, save the ones that work. Create a <code>prompts.md</code> file in your project with reusable templates:</p>
+
+            <pre><code># Prompt Templates
+
+## Write a FastAPI endpoint
+"Write a [METHOD] endpoint for [RESOURCE] that:
+- Uses FastAPI with Pydantic v2 schemas
+- Connects to PostgreSQL via SQLAlchemy async
+- Includes proper error handling with HTTPException
+- Returns appropriate status codes
+- Here are our existing patterns: [paste relevant code]"
+
+## Add tests to existing code
+"Write pytest tests for this function. Cover:
+- Happy path cases
+- Edge cases (empty input, None, invalid types)
+- Error conditions
+- Use async fixtures where needed
+Here's the code: [paste]"
+
+## Refactor for clarity
+"Review this code and suggest improvements for:
+- Readability (naming, structure, comments)
+- Performance (avoid N+1, unnecessary loops)
+- Security (input validation, error exposure)
+Don't change the API surface — keep the same inputs/outputs.
+Here's the code: [paste]"
+</code></pre>
+
+            <h2>Bonus: The "Two-Pass" Review Technique</h2>
+
+            <p>After AI generates code, don't merge it immediately. Run a two-pass review:</p>
+
+            <p><strong>Pass 1: "What's wrong?"</strong></p>
+            <pre><code>"Review this AI-generated code. List every bug, security issue, 
+performance problem, and deviation from best practices. Be specific 
+about line numbers and explain why each issue matters."</code></pre>
+
+            <p><strong>Pass 2: "Fix everything."</strong></p>
+            <pre><code>"Now fix all the issues you identified. Show the corrected code 
+with comments explaining each fix."</code></pre>
+
+            <p>This catches 80% more issues than a single review pass. AI is remarkably good at finding problems in its own output when you explicitly ask it to be critical.</p>
+
+            <h2>Summary</h2>
+
+            <table>
+                <tr><th>Practice</th><th>Why It Matters</th></tr>
+                <tr><td>Give specific context</td><td>Less guessing, more correct code</td></tr>
+                <tr><td>Build incrementally</td><td>Catch issues early, stay in control</td></tr>
+                <tr><td>Review every line</td><td>Catch security bugs and hallucinations</td></tr>
+                <tr><td>Think before coding</td><td>Better architecture, fewer rewrites</td></tr>
+                <tr><td>Paste real errors</td><td>Faster debugging, better solutions</td></tr>
+                <tr><td>Save working prompts</td><td>Reusable, consistent quality</td></tr>
+                <tr><td>Two-pass review</td><td>80% more issues caught</td></tr>
+            </table>
+
+            <p>Vibe coding isn't about being lazy — it's about being smart. The developers who benefit most from AI aren't the ones who ask the fanciest questions. They're the ones who give precise context, build incrementally, and review carefully. Master these practices and AI becomes a genuine force multiplier.</p>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo Wong · Built with curiosity and Coffee</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528">GitHub</a>
+                <a href="https://hugow.dev">hugow.dev</a>
+                <a href="/sitemap.xml">Sitemap</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-mode');
+            themeToggle.textContent = '☀';
+        }
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            themeToggle.textContent = isLight ? '☀' : '◐';
+        });
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + "%";
+        });
+    </script>
+</body>
+</html>

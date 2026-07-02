@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docker Security Best Practices: Hardening Containers for Production</title>
+    <meta name="description" content="Secure your Docker containers with proven best practices. Non-root users, read-only filesystems, secrets management, image scanning, and resource limits for production deployments.">
+    <meta name="keywords" content="docker security, container security, docker hardening, container best practices, image scanning, secrets management">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/docker-security-best-practices.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post">
+            <div class="post-tags">
+                <span class="tag security">Security</span>
+                <span class="tag devops">DevOps</span>
+            </div>
+
+            <h1 class="post-title">Docker Security Best Practices: Hardening Containers for Production</h1>
+
+            <div class="post-meta">
+                <span class="post-date">July 2, 2026</span>
+                <span class="post-read-time">11 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+
+            <div class="post-excerpt">
+                <p>Running Docker containers is convenient, but "it runs" doesn't mean "it's safe." Attackers exploit misconfigured containers every day — from vulnerable base images to privileged containers running as root. This guide covers the essential security practices you need before deploying containers to production.</p>
+            </div>
+
+            <div class="post-content">
+                <h2>Why Container Security Matters</h2>
+                <p>Containers share the host kernel. If an attacker escapes a container (through a kernel vulnerability, misconfiguration, or exploit), they have access to the entire host machine. A single vulnerable container can compromise your entire infrastructure. Security isn't optional — it's the difference between "my container got hacked" and "my entire server got hacked."</p>
+
+                <h2>1. Run Containers as Non-Root Users</h2>
+                <p>By default, containers run as <code>root</code>. This means if someone breaks into the container, they're root inside it — and possibly on the host.</p>
+
+                <p><strong>Bad Dockerfile:</strong></p>
+
+                <pre><code>FROM python:3.12-slim
+COPY app.py /app/
+WORKDIR /app
+RUN pip install -r requirements.txt
+CMD ["python", "app.py"]</code></pre>
+
+                <p>This runs as root. Fix it by creating a dedicated user:</p>
+
+                <pre><code>FROM python:3.12-slim
+
+# Create a non-root user
+RUN groupadd -r appuser && useradd -r -g appuser -d /home/appuser -s /sbin/nologin appuser
+
+# Set ownership
+WORKDIR /app
+COPY --chown=appuser:appuser . .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Switch to non-root user
+USER appuser
+
+CMD ["python", "app.py"]</code></pre>
+
+                <p>The <code>--chown</code> flag on <code>COPY</code> ensures files belong to the non-root user. The <code>USER</code> directive switches the container's default user.</p>
+
+                <p>Verify it works:</p>
+
+                <pre><code>$ docker run --rm myapp id
+uid=1001(appuser) gid=1001(appuser) groups=1001(appuser)</code></pre>
+
+                <h2>2. Use Minimal Base Images</h2>
+                <p>Every package in your image is a potential vulnerability. Choose the smallest base image that works:</p>
+
+                <pre><code># ❌ Full Ubuntu image (~77 MB just for the OS)
+FROM python:3.12
+
+# ✅ Slim variant (~150 MB total)
+FROM python:3.12-slim
+
+# ✅ Distroless - only your app and runtime (~60 MB)
+FROM gcr.io/distroless/python3</code></pre>
+
+                <p>The <code>-slim</code> variants remove development tools, documentation, and unnecessary packages. <code>distroless</code> images contain only your application and its runtime — no shell, no package manager, no extra surface area to exploit.</p>
+
+                <h2>3. Scan Images for Vulnerabilities</h2>
+                <p>Use automated tools to check your images before deploying. <strong>Trivy</strong> is fast, easy, and catches known CVEs:</p>
+
+                <pre><code># Install Trivy
+brew install aquasecurity/trivy/trivy  # macOS
+sudo apt install trivy                 # Ubuntu
+
+# Scan your image
+trivy image myapp:latest
+
+# Scan in CI/CD with severity filter (fail on HIGH or above)
+trivy image --severity HIGH,CRITICAL --exit-code 1 myapp:latest
+
+# Scan Dockerfiles for misconfigurations
+trivy config Dockerfile</code></pre>
+
+                <p>Example output showing vulnerabilities:</p>
+
+                <pre><code>myapp:latest (debian 12.x)
+=====================================
+Total: 12 (UNKNOWN: 0, LOW: 5, MEDIUM: 4, HIGH: 2, CRITICAL: 1)
+
+CVE-2024-1234  CRITICAL  libssl3
+CVE-2024-5678  HIGH      libsystemd0
+...</code></pre>
+
+                <p>Add scanning to your CI pipeline so vulnerabilities are caught before deployment:</p>
+
+                <pre><code># .github/workflows/security.yml
+name: Security Scan
+on: [push, pull_request]
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t myapp:test .
+      - name: Scan with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "myapp:test"
+          format: "table"
+          exit-code: "1"
+          severity: "HIGH,CRITICAL"</code></pre>
+
+                <h2>4. Pin Base Image Versions</h2>
+                <p>Never use <code>latest</code> or unpinned tags in production Dockerfiles. They can change unexpectedly and introduce breaking changes or vulnerabilities:</p>
+
+                <pre><code># ❌ Unpinned - could change at any time
+FROM python:3.12-slim
+
+# ✅ Pinned to a specific version
+FROM python:3.12.4-slim@sha256:abc123def456...
+
+# ✅ At minimum, pin to minor version
+FROM python:3.12-slim@sha256:abc123def456...</code></pre>
+
+                <p>Use the <code>@sha256:</code> digest for maximum reproducibility. You can find the digest with:</p>
+
+                <pre><code>docker pull python:3.12-slim
+docker inspect python:3.12-slim --format='{{index .RepoDigests 0}}'</code></pre>
+
+                <h2>5. Don't Hardcode Secrets</h2>
+                <p>This is the most common and most dangerous mistake. Secrets in Dockerfiles are baked into image layers and visible to anyone with access to the image:</p>
+
+                <pre><code># ❌ NEVER DO THIS
+FROM python:3.12-slim
+ENV DATABASE_URL="postgresql://user:password123@db.example.com/mydb"
+ENV API_KEY="sk-123456789abcdef"
+
+# ❌ Also bad - visible in docker inspect
+FROM python:3.12-slim
+ARG DB_PASSWORD="password123"
+ENV DB_PASSWORD=$DB_PASSWORD</code></pre>
+
+                <p><strong>Correct approach:</strong> Pass secrets at runtime via environment variables:</p>
+
+                <pre><code># docker-compose.yml
+services:
+  app:
+    build: .
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - API_KEY=${API_KEY}
+    # Or mount as files for better security:
+    secrets:
+      - db_password
+      - api_key
+
+secrets:
+  db_password:
+    file: ./secrets/db_password.txt
+  api_key:
+    file: ./secrets/api_key.txt</code></pre>
+
+                <p>Access mounted secrets in your application:</p>
+
+                <pre><code># In your Python app:
+import os
+
+# From environment variable
+db_url = os.environ["DATABASE_URL"]
+
+# From mounted secret file
+with open("/run/secrets/db_password") as f:
+    db_password = f.read().strip()</code></pre>
+
+                <p>In production, use a secrets manager (HashiCorp Vault, AWS Secrets Manager, or your cloud provider's equivalent) instead of files.</p>
+
+                <h2>6. Apply Runtime Security Options</h2>
+                <p>Docker provides runtime flags that restrict what a container can do. Use them aggressively:</p>
+
+                <pre><code># docker-compose.yml
+services:
+  app:
+    build: .
+    read_only: true              # Make filesystem read-only
+    security_opt:
+      - no-new-privileges:true   # Prevent privilege escalation
+    cap_drop:
+      - ALL                      # Drop ALL Linux capabilities
+    cap_add:
+      - NET_BIND_SERVICE         # Only add back what's needed
+    tmpfs:
+      - /tmp:size=64m            # Mount a writable temp directory
+    mem_limit: 512m              # Memory limit
+    cpus: 1.0                    # CPU limit
+    pids_limit: 100              # Process limit (prevents fork bombs)</code></pre>
+
+                <p><strong>What each option does:</strong></p>
+
+                <ul>
+                    <li><code>read_only: true</code> — Prevents the container from writing to its filesystem. Attackers can't plant malware or modify configs.</li>
+                    <li><code>no-new-privileges</code> — Blocks setuid/setgid binaries from elevating privileges.</li>
+                    <li><code>cap_drop: ALL</code> — Removes all 39 Linux capabilities. Most apps don't need any.</li>
+                    <li><code>cap_add</code> — Add back only what's needed. Common ones: <code>NET_BIND_SERVICE</code> (ports below 1024), <code>CHOWN</code> (change file ownership).</li>
+                    <li><code>mem_limit</code> and <code>cpus</code> — Prevent resource exhaustion attacks.</li>
+                    <li><code>pids_limit</code> — Limits the number of processes. A fork bomb becomes harmless.</li>
+                </ul>
+
+                <p>Note: With <code>read_only: true</code>, you need to mount writable directories for any files your app creates (logs, uploads, caches):</p>
+
+                <pre><code>volumes:
+  - ./data:/app/data
+tmpfs:
+  - /tmp
+  - /run</code></pre>
+
+                <h2>7. Health Checks for Fast Failure Detection</h2>
+                <p>Health checks let Docker know if your container is actually working, not just running:</p>
+
+                <pre><code># In Dockerfile
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+  CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
+
+# Or in docker-compose.yml
+healthcheck:
+  test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+  interval: 30s
+  timeout: 5s
+  retries: 3
+  start_period: 10s</code></pre>
+
+                <p>A failing health check doesn't mean your container is hacked — but it means something is wrong and Docker can restart it automatically:</p>
+
+                <pre><code>restart: unless-stopped</code></pre>
+
+                <h2>8. Keep the Docker Daemon Secure</h2>
+                <p>Container security also means securing the Docker daemon itself:</p>
+
+                <pre><code># /etc/docker/daemon.json
+{
+  "no-new-privileges": true,
+  "userns-remap": "default",
+  "live-restore": true,
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "10m",
+    "max-file": "3"
+  }
+}</code></pre>
+
+                <p><strong>Key daemon settings:</strong></p>
+                <ul>
+                    <li><code>no-new-privileges</code> — Default for all containers</li>
+                    <li><code>userns-remap</code> — Maps root inside containers to a non-root user on the host (container escape protection)</li>
+                    <li><code>live-restore</code> — Keeps containers running even if the daemon restarts</li>
+                    <li><code>log-opts</code> — Prevents log files from filling up your disk</li>
+                </ul>
+
+                <p><strong>Never expose the Docker socket:</strong></p>
+
+                <pre><code># ❌ DANGEROUS - gives root access to the host!
+-v /var/run/docker.sock:/var/run/docker.sock
+
+# ✅ Better: use Docker context or a restricted proxy like Tini</code></pre>
+
+                <h2>Complete Secure Dockerfile Example</h2>
+                <p>Putting it all together:</p>
+
+                <pre><code># syntax=docker/dockerfile:1
+
+FROM python:3.12.4-slim AS builder
+
+WORKDIR /build
+COPY requirements.txt .
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+FROM python:3.12.4-slim
+
+# Create non-root user
+RUN groupadd -r appuser && \
+    useradd -r -g appuser -d /home/appuser -s /sbin/nologin appuser
+
+# Install only needed system packages
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends curl && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy installed packages
+COPY --from=builder /install /usr/local
+
+# Copy application
+WORKDIR /app
+COPY --chown=appuser:appuser . .
+
+# Add health check
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+  CMD curl -f http://localhost:8000/health || exit 1
+
+# Run as non-root
+USER appuser
+
+EXPOSE 8000
+
+CMD ["python", "app.py"]</code></pre>
+
+                <h2>Security Checklist</h2>
+                <table>
+                    <tr><th>Check</th><th>Priority</th></tr>
+                    <tr><td>Run as non-root user</td><td>🔴 Critical</td></tr>
+                    <tr><td>No hardcoded secrets</td><td>🔴 Critical</td></tr>
+                    <tr><td>Pin base image versions</td><td>🔴 Critical</td></tr>
+                    <tr><td>Scan images for CVEs</td><td>🟡 High</td></tr>
+                    <tr><td>Drop all capabilities</td><td>🟡 High</td></tr>
+                    <tr><td>Read-only filesystem</td><td>🟡 High</td></tr>
+                    <tr><td>Resource limits</td><td>🟡 High</td></tr>
+                    <tr><td>Health checks</td><td>🟢 Medium</td></tr>
+                    <tr><td>Minimal base image</td><td>🟢 Medium</td></tr>
+                    <tr><td>Secure daemon config</td><td>🟢 Medium</td></tr>
+                </table>
+
+                <h2>Summary</h2>
+                <p>Container security boils down to defense in depth: assume your container will be compromised and limit the damage. Run as non-root, scan for vulnerabilities, remove unnecessary capabilities, pin your dependencies, and never bake secrets into images. These practices take about 30 minutes to implement and can save you from a production breach.</p>
+
+                <p>Start with the critical items (non-root, no secrets, pinned images), then layer on the rest as you build your pipeline. Secure containers aren't harder to maintain — they're more reliable because they have fewer moving parts to break.</p>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo Wong · Built with curiosity and Coffee</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528">GitHub</a>
+                <a href="https://hugow.dev">hugow.dev</a>
+                <a href="/sitemap.xml">Sitemap</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-mode');
+            themeToggle.textContent = '☀';
+        }
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            themeToggle.textContent = isLight ? '☀' : '◐';
+        });
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + "%";
+        });
+    </script>
+</body>
+</html>

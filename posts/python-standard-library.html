@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Standard Library Essentials: datetime, pathlib, collections &amp; More | Hugo's Dev Notes</title>
+    <meta name="description" content="Master Python's built-in standard library — datetime, pathlib, collections, subprocess, csv, argparse, shutil. Zero pip installs, maximum productivity.">
+    <meta name="keywords" content="python standard library, datetime, pathlib, collections, subprocess, csv, argparse, shutil, python tutorial">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-standard-library.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+                <a href="../devops.html" class="nav-btn">🐳 DevOps</a>
+                <a href="../security.html" class="nav-btn">🔐 Security</a>
+                <a href="../webdev.html" class="nav-btn">💻 Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+        
+        <article class="post-content">
+            <span class="tag python">Python</span>
+            <h1>Python Standard Library Essentials: datetime, pathlib, collections &amp; More</h1>
+            <time>July 1, 2026 · 12 min read</time>
+
+            <p>Python's greatest strength isn't its syntax or its popularity — it's the <strong>standard library</strong>. With just <code>import</code>, you get modules for working with dates, file paths, data structures, system commands, CSV files, command-line arguments, and more. Zero <code>pip install</code> required. Zero extra dependencies to break on your team.</p>
+
+            <p>After learning Python basics like variables, loops, and functions, the standard library is your next natural step. This guide covers the most useful built-in modules with practical examples you'll actually use in real projects.</p>
+
+            <h2>1. datetime: Working with Dates and Times</h2>
+
+            <p>Dates and times are everywhere in real applications — logging, scheduling, expiring tokens, calculating durations. Python's <code>datetime</code> module handles all of this cleanly.</p>
+
+            <h3>Current Date and Time</h3>
+
+            <pre><code>from datetime import datetime, timedelta
+
+# Current date and time
+now = datetime.now()
+print(now)                     # 2026-07-01 14:30:00.123456
+print(now.strftime("%Y-%m-%d"))# 2026-07-01
+print(now.strftime("%d %b %Y"))# 01 Jul 2026
+
+# Parse a string into a datetime
+date_str = "2026-07-01"
+parsed = datetime.strptime(date_str, "%Y-%m-%d")
+print(parsed)                  # 2026-07-01 00:00:00
+
+# Work with relative times
+yesterday = now - timedelta(days=1)
+next_week = now + timedelta(weeks=1)
+print(yesterday.strftime("%Y-%m-%d"))  # 2026-06-30</code></pre>
+
+            <h3>Real-World Example: Expiration Check</h3>
+
+            <pre><code>from datetime import datetime, timedelta
+
+def is_token_expired(created_at, expiry_hours=24):
+    """Check if an authentication token has expired."""
+    expires_at = created_at + timedelta(hours=expiry_hours)
+    return datetime.now() > expires_at
+
+token_created = datetime(2026, 7, 1, 10, 0, 0)
+print(is_token_expired(token_created))  # True or False depending on current time
+
+# Calculate time differences
+start = datetime(2026, 7, 1, 9, 0, 0)
+end = datetime(2026, 7, 1, 10, 30, 0)
+duration = end - start
+print(duration.total_seconds())  # 5400.0 (1.5 hours in seconds)</code></pre>
+
+            <h2>2. pathlib: Modern File and Path Handling</h2>
+
+            <p>Forget <code>os.path</code> — <code>pathlib</code> gives you an object-oriented way to handle file paths. It's cleaner, safer, and often less code.</p>
+
+            <h3>Basic Path Operations</h3>
+
+            <pre><code>from pathlib import Path
+
+# Create path objects (no filesystem check needed)
+p = Path("src/main.py")
+print(p.parent)      # src
+print(p.name)        # main.py
+print(p.stem)        # main
+print(p.suffix)      # .py
+
+# Join paths (use / instead of os.path.join)
+config_path = Path("config") / "settings" / "database.yml"
+print(config_path)   # config/settings/database.yml
+
+# Resolve to absolute path
+print(p.resolve())   # /home/user/project/src/main.py
+
+# Check existence
+if config_path.exists():
+    print("Config file found!")
+elif config_path.is_file():
+    print("It's a file")
+elif config_path.is_dir():
+    print("It's a directory")</code></pre>
+
+            <h3>Reading and Writing Files</h3>
+
+            <pre><code>from pathlib import Path
+
+# Write a file
+data = Path("output.txt")
+data.write_text("Hello, pathlib!\nSecond line.")
+
+# Read a file
+content = data.read_text()
+print(content)
+
+# Read as bytes (for images, binary files)
+image = Path("photo.png").read_bytes()
+
+# Append to a file
+data.write_text(data.read_text() + "\nThird line.", encoding="utf-8")</code></pre>
+
+            <h3>Real-World Example: Find All Python Files</h3>
+
+            <pre><code>from pathlib import Path
+
+def find_python_files(directory="."):
+    """Find all .py files recursively."""
+    search_dir = Path(directory)
+    for py_file in search_dir.rglob("*.py"):
+        # Skip __pycache__ and hidden directories
+        if any(part.startswith("_") for part in py_file.parts):
+            continue
+        print(f"{py_file.relative_to(search_dir)}")
+
+find_python_files("my_project")
+# Output:
+# src/main.py
+# src/utils/helpers.py
+# tests/test_main.py</code></pre>
+
+            <h2>3. collections: Powerful Built-in Data Structures</h2>
+
+            <p>Beyond lists and dicts, <code>collections</code> provides specialized containers that solve common problems elegantly.</p>
+
+            <h3>Counter — Frequency Counts Made Simple</h3>
+
+            <pre><code>from collections import Counter
+
+# Count word frequency in text
+text = "the cat sat on the mat the cat played"
+words = text.split()
+word_counts = Counter(words)
+print(word_counts)                    # Counter({'the': 3, 'cat': 2, 'sat': 1, 'on': 1, 'mat': 1, 'played': 1})
+print(word_counts.most_common(3))     # [('the', 3), ('cat', 2), ('sat', 1)]
+print(word_counts['the'])             # 3
+print(word_counts['dog'])             # 0 (returns 0, not KeyError)
+
+# Count characters in a file
+with open("data.txt") as f:
+    char_counts = Counter(f.read())
+print(char_counts.most_common(5))</code></pre>
+
+            <h3>defaultdict — No More KeyErrors</h3>
+
+            <pre><code>from collections import defaultdict
+
+# Group items by a key
+students = [
+    ("Alice", "Math"), ("Bob", "Science"),
+    ("Charlie", "Math"), ("Diana", "Science"),
+    ("Eve", "Art")
+]
+
+# Using defaultdict — auto-creates missing keys
+class_roster = defaultdict(list)
+for name, subject in students:
+    class_roster[subject].append(name)
+
+for subject, names in class_roster.items():
+    print(f"{subject}: {', '.join(names)}")
+# Science: Bob, Diana
+# Math: Alice, Charlie
+# Art: Eve
+
+# defaultdict with int (useful for counting)
+char_count = defaultdict(int)
+for ch in "hello world":
+    char_count[ch] += 1
+print(dict(char_count))  # {'h': 1, 'e': 1, 'l': 3, 'o': 2, ' ': 1, 'w': 1, 'r': 1, 'd': 1}</code></pre>
+
+            <h3>OrderedDict and namedtuple</h3>
+
+            <pre><code>from collections import OrderedDict, namedtuple
+
+# OrderedDict preserves insertion order (Python 3.7+ dicts do this too)
+ordered = OrderedDict()
+ordered["first"] = 1
+ordered["second"] = 2
+ordered["third"] = 3
+for key in ordered:
+    print(key)  # first, second, third
+
+# namedtuple — lightweight, immutable data objects
+Point = namedtuple("Point", ["x", "y", "label"])
+p = Point(3, 4, "origin")
+print(p.x, p.y, p.label)   # 3 4 origin
+print(p[0])                 # 3 (also indexable)
+
+# Default values with _replace
+p2 = p._replace(label="center")
+print(p2)                   # Point(x=3, y=4, label='center')</code></pre>
+
+            <h2>4. subprocess: Run System Commands from Python</h2>
+
+            <p>Need to call shell commands from your Python script? <code>subprocess</code> is the safe, modern way.</p>
+
+            <pre><code>import subprocess
+
+# Run a command and capture output
+result = subprocess.run(
+    ["ls", "-la", "/tmp"],
+    capture_output=True,    # Capture stdout and stderr
+    text=True               # Return strings instead of bytes
+)
+
+print(result.returncode)    # 0 = success, non-zero = error
+print(result.stdout[:200])  # First 200 chars of output
+
+# Check if command failed
+if result.returncode != 0:
+    print(f"Error: {result.stderr}")
+
+# Real-world: Check if a port is in use
+def is_port_in_use(port):
+    result = subprocess.run(
+        ["lsof", "-i", f":{port}"],
+        capture_output=True, text=True
+    )
+    return result.returncode == 0
+
+print(is_port_in_use(80))  # True if something is listening on port 80
+
+# Run a shell command with input
+result = subprocess.run(
+    "echo 'hello' | wc -c",
+    shell=True,              # Use shell=True for pipes and redirections
+    capture_output=True,
+    text=True
+)
+print(result.stdout.strip())  # 6</code></pre>
+
+            <blockquote>
+                <strong>⚠️ Security Note:</strong> Avoid <code>shell=True</code> with user-supplied input. It opens shell injection vulnerabilities. Use the list form (e.g., <code>["ls", "-la"]</code>) whenever possible.
+            </blockquote>
+
+            <h2>5. csv: Read and Write CSV Files</h2>
+
+            <p>CSV files are everywhere — export data from spreadsheets, import configuration, log analysis. Python's <code>csv</code> module handles them properly, including quoting and escaping.</p>
+
+            <pre><code>import csv
+
+# Writing CSV
+with open("employees.csv", "w", newline="") as f:
+    writer = csv.writer(f)
+    writer.writerow(["Name", "Role", "Department"])
+    writer.writerow(["Alice", "Engineer", "Engineering"])
+    writer.writerow(["Bob", "Designer", "Product"])
+    writer.writerow(["Charlie", "Manager", "Engineering"])
+
+# Reading CSV with DictReader (easier than plain reader)
+with open("employees.csv", newline="") as f:
+    reader = csv.DictReader(f)
+    for row in reader:
+        print(f"{row['Name']} works in {row['Department']}")
+        # Alice works in Engineering
+        # Bob works in Product
+        # Charlie works in Engineering
+
+# Filter rows by department
+with open("employees.csv", newline="") as f:
+    reader = csv.DictReader(f)
+    eng_team = [row for row in reader if row["Department"] == "Engineering"]
+    print(len(eng_team))  # 2</code></pre>
+
+            <h2>6. argparse: Build Command-Line Tools</h2>
+
+            <p>Every good script eventually needs command-line arguments. <code>argparse</code> makes it professional with auto-generated help messages.</p>
+
+            <pre><code>import argparse
+
+parser = argparse.ArgumentParser(
+    description="Process a file and output results."
+)
+
+# Required positional argument
+parser.add_argument("filename", help="Path to the input file")
+
+# Optional arguments
+parser.add_argument("-o", "--output", default="results.txt",
+                    help="Output file path (default: results.txt)")
+parser.add_argument("-v", "--verbose", action="store_true",
+                    help="Enable verbose output")
+parser.add_argument("-n", "--count", type=int, default=10,
+                    help="Number of items to process (default: 10)")
+
+# Choices — restrict to specific values
+parser.add_argument("--format", choices=["json", "csv", "text"],
+                    default="json", help="Output format")
+
+args = parser.parse_args()
+
+if args.verbose:
+    print(f"Processing: {args.filename}")
+    print(f"Output: {args.output}")
+    print(f"Items: {args.count}")
+
+# Usage:
+# python script.py data.csv                 → runs with defaults
+# python script.py data.csv --verbose       → shows debug info
+# python script.py data.csv -o out.txt -n 5 → custom output + count
+# python script.py --help                   → auto-generated help message</code></pre>
+
+            <h2>7. shutil: High-Level File Operations</h2>
+
+            <p>For copying, moving, and deleting files and directories, <code>shutil</code> provides simple, safe functions.</p>
+
+            <pre><code>import shutil
+from pathlib import Path
+
+# Copy a single file
+shutil.copy("src/main.py", "backup/main.py")
+
+# Copy an entire directory tree
+shutil.copytree("my_project", "my_project_backup")
+
+# Move a file (like mv in shell)
+shutil.move("temp.txt", "archive/temp.txt")
+
+# Remove a directory and all contents
+shutil.rmtree("build_output")
+
+# Create a zip archive
+shutil.make_archive("my_project", "zip", root_dir="my_project")
+
+# Walk a directory tree (like find in shell)
+for dirpath, dirnames, filenames in os.walk("my_project"):
+    for filename in filenames:
+        if filename.endswith(".py"):
+            filepath = Path(dirpath) / filename
+            print(filepath)</code></pre>
+
+            <h2>Putting It All Together: A Real Project</h2>
+
+            <p>Here's a practical script that combines several standard library modules — a CLI tool that analyzes log files:</p>
+
+            <pre><code>#!/usr/bin/env python3
+"""Log file analyzer — reads log files and produces a CSV report."""
+
+import argparse
+import csv
+from pathlib import Path
+from collections import Counter
+from datetime import datetime
+
+def parse_log_line(line):
+    """Parse a log line: '2026-07-01 14:30:00 ERROR Failed to connect'"""
+    parts = line.strip().split(" ", 3)
+    if len(parts) >= 4:
+        return {
+            "date": parts[0],
+            "time": parts[1],
+            "level": parts[2],
+            "message": parts[3]
+        }
+    return None
+
+def analyze_logs(log_files, output, verbose=False):
+    """Analyze one or more log files and write a summary CSV."""
+    level_counts = Counter()
+    hourly_counts = Counter()
+    errors = []
+
+    for log_file in log_files:
+        path = Path(log_file)
+        if not path.exists():
+            print(f"⚠️  File not found: {log_file}")
+            continue
+        
+        if verbose:
+            print(f"📄 Processing: {path.name}")
+        
+        with open(path) as f:
+            for line in f:
+                parsed = parse_log_line(line)
+                if parsed:
+                    level_counts[parsed["level"]] += 1
+                    hourly_counts[parsed["time"][:2]] += 1  # Hour bucket
+                    if parsed["level"] == "ERROR":
+                        errors.append(parsed)
+
+    # Write summary to CSV
+    with open(output, "w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["Metric", "Value"])
+        writer.writerow(["Total Lines", sum(level_counts.values())])
+        for level, count in level_counts.most_common():
+            writer.writerow([f"Count: {level}", count])
+        for hour, count in sorted(hourly_counts.items()):
+            writer.writerow([f"Hour: {hour}:00", count])
+        writer.writerow(["Error Count", len(errors)])
+
+    print(f"✅ Report written to {output}")
+    print(f"   Total entries: {sum(level_counts.values())}")
+    print(f"   Errors: {len(errors)}")
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Analyze log files")
+    parser.add_argument("files", nargs="+", help="Log files to analyze")
+    parser.add_argument("-o", "--output", default="report.csv")
+    parser.add_argument("-v", "--verbose", action="store_true")
+    
+    args = parser.parse_args()
+    analyze_logs(args.files, args.output, args.verbose)</code></pre>
+
+            <pre><code># Run the script:
+# python log_analyzer.py server.log -o results.csv -v
+# python log_analyzer.py *.log --output summary.csv
+# python log_analyzer.py --help</code></pre>
+
+            <h2>Other Useful Standard Library Modules</h2>
+
+            <p>These are worth knowing about — you won't need to <code>pip install</code> anything:</p>
+
+            <ul>
+                <li><strong><code>json</code></strong> — Parse and generate JSON (<code>json.load()`, <code>json.dump()</code>)</li>
+                <li><strong><code>os</code></strong> — Environment variables, process management, filesystem info</li>
+                <li><strong><code>sys</code></strong> — Command-line args (<code>sys.argv</code>), exit codes, Python version</li>
+                <li><strong><code>glob</code></strong> — Find files using shell-style patterns (<code>glob("*.py")</code>)</li>
+                <li><strong><code>tempfile</code></strong> — Create temporary files and directories safely</li>
+                <li><strong><code>logging</code></strong> — Structured logging (covered in the dedicated logging guide)</li>
+                <li><strong><code>unittest</code></strong> — Built-in testing framework</li>
+                <li><strong><code>urllib</code></strong> — Make HTTP requests without third-party libraries</li>
+                <li><strong><code>hashlib</code></strong> — SHA-256, MD5, and other hash functions</li>
+                <li><strong><code>re</code></strong> — Regular expressions (covered in the regex guide)</li>
+                <li><strong><code>itertools</code></strong> — Advanced iteration tools (covered in the itertools guide)</li>
+                <li><strong><code>dataclasses</code></strong> — Boilerplate-free data classes (covered in the dataclasses guide)</li>
+            </ul>
+
+            <h2>Summary</h2>
+
+            <p>The Python standard library is enormous — over 200 modules. But mastering these 7 core ones (<code>datetime</code>, <code>pathlib</code>, <code>collections</code>, <code>subprocess</code>, <code>csv</code>, <code>argparse</code>, <code>shutil</code>) will handle 80% of your everyday scripting needs. You don't need external dependencies for most tasks.</p>
+
+            <p><strong>Key takeaways:</strong></p>
+            <ul>
+                <li><code>datetime</code> — Always use for dates; prefer <code>strftime</code>/<code>strptime</code> for formatting</li>
+                <li><code>pathlib</code> — Use instead of <code>os.path</code> for cleaner path handling</li>
+                <li><code>collections.Counter</code> — Instant frequency counting</li>
+                <li><code>collections.defaultdict</code> — Grouping data without manual key checks</li>
+                <li><code>subprocess.run()</code> — The safe way to call shell commands</li>
+                <li><code>csv.DictReader</code> — Easier than <code>csv.reader</code> for structured data</li>
+                <li><code>argparse</code> — Professional CLI with auto-generated help</li>
+                <li><code>shutil</code> — High-level file operations (copy, move, delete)</li>
+            </ul>
+
+            <p>Next up: Check out the <a href="python-logging-configuration.html">Python logging guide</a> to learn how to add professional logging to your scripts, or the <a href="python-packaging-publishing.html">packaging guide</a> to share your tools with others on PyPI.</p>
+        </article>
+    </main>
+
+    <footer class="container">
+        <p>© 2026 Hugo's Dev Notes · Built with curiosity and Cloudflare Pages</p>
+    </footer>
+
+    <script src="../script.js"></script>
+</body>
+</html>

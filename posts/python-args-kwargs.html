@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python *args and **kwargs: Flexible Function Parameters - Hugo's Dev Notes</title>
+    <meta name="description" content="Learn how to write flexible Python functions using *args and **kwargs. Practical examples from logging utilities to API wrappers. Beginner-friendly with working code.">
+    <meta name="keywords" content="python, args, kwargs, functions, parameters, tutorial, beginner">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-args-kwargs.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <article class="post-content">
+        <span class="tag python">Python</span>
+        <h1>Python <code>*args</code> and <code>**kwargs</code>: Flexible Function Parameters</h1>
+        <div class="post-meta">
+            <span class="post-date">July 1, 2026</span>
+            <span class="read-time">7 min read</span>
+            <span class="post-badge">New</span>
+        </div>
+
+        <p>Have you ever looked at a Python function definition and wondered what those mysterious asterisks mean?</p>
+
+<pre><code>def my_function(*args, **kwargs):
+    pass
+</code></pre>
+
+<p>You've probably seen <code>*args</code> and <code>**kwargs</code> in tutorials, library documentation, and even in frameworks like Flask or FastAPI. They look intimidating but are actually one of Python's most practical features. Once you understand them, you'll use them constantly.</p>
+
+<h2>The Problem: What If You Don't Know How Many Arguments?</h2>
+
+<p>Regular functions take a fixed number of parameters:</p>
+
+<pre><code>def greet(name):
+    print(f"Hello, {name}!")
+
+greet("Alice")   # ✅ Works
+greet("Alice", "Bob")  # ❌ TypeError: too many arguments
+</code></pre>
+
+<p>What if you want to greet one person, five people, or fifty — without knowing the count ahead of time? That's where <code>*args</code> comes in.</p>
+
+<h2>Understanding <code>*args</code> (Positional Arguments)</h2>
+
+<p>The <code>*args</code> parameter collects <strong>extra positional arguments</strong> into a <strong>tuple</strong>. Think of it as a catch-all bucket for all the values that don't fit into your named parameters.</p>
+
+<pre><code>def greet_all(*args):
+    for name in args:
+        print(f"Hello, {name}!")
+
+greet_all("Alice")
+# Output: Hello, Alice!
+
+greet_all("Alice", "Bob", "Charlie")
+# Output:
+# Hello, Alice!
+# Hello, Bob!
+# Hello, Charlie!
+
+# args is just a tuple:
+print(type(args))  # &lt;class 'tuple'&gt;
+</code></pre>
+
+<p>Key insight: <code>*args</code> is <em>not special syntax inside the function</em>. It's just a tuple. The asterisk <em>packs</em> the arguments into a tuple when the function is called.</p>
+
+<h3>Mixing <code>*args</code> with Regular Parameters</h3>
+
+<p>You can combine regular parameters with <code>*args</code>. Regular parameters come first, then <code>*args</code> catches the rest:</p>
+
+<pre><code>def build_profile(title, *skills):
+    profile = {"title": title, "skills": list(skills)}
+    return profile
+
+result = build_profile("Developer", "Python", "Docker", "Git")
+print(result)
+# {'title': 'Developer', 'skills': ['Python', 'Docker', 'Git']}
+</code></pre>
+
+<h2>Understanding <code>**kwargs</code> (Keyword Arguments)</h2>
+
+<p>While <code>*args</code> collects positional arguments into a tuple, <code>**kwargs</code> collects <strong>keyword arguments</strong> (name=value pairs) into a <strong>dictionary</strong>.</p>
+
+<pre><code>def create_user(**kwargs):
+    print(kwargs)
+    print(type(kwargs))
+
+create_user(name="Alice", age=30, role="admin")
+# Output:
+# {'name': 'Alice', 'age': 30, 'role': 'admin'}
+# &lt;class 'dict'&gt;
+</code></pre>
+
+<p>This is incredibly useful for configuration, options, or any scenario where you have many optional parameters.</p>
+
+<h2>Unpacking: The Reverse Operation</h2>
+
+<p>The asterisks work in reverse too. You can <strong>unpack</strong> a list or dictionary <em>into</strong> a function call:</p>
+
+<pre><code>def add(a, b, c):
+    return a + b + c
+
+# Unpacking a list with *
+numbers = [1, 2, 3]
+print(add(*numbers))  # 6 (same as add(1, 2, 3))
+
+# Unpacking a dict with **
+def introduce(name, age, city):
+    return f"{name} is {age} years old, lives in {city}."
+
+info = {"name": "Hugo", "age": 28, "city": "Toronto"}
+print(introduce(**info))
+# Hugo is 28 years old, lives in Toronto.
+</code></pre>
+
+<h2>Real-World Example: A Flexible Logger</h2>
+
+<p>Let's build something practical — a logging function that accepts any number of messages with optional formatting:</p>
+
+<pre><code>def log(level, *messages, **options):
+    """Log messages with flexible formatting."""
+    timestamp = options.get("timestamp", True)
+    prefix = options.get("prefix", "APP")
+    separator = options.get("separator", " | ")
+
+    parts = []
+    if timestamp:
+        parts.append("[2026-07-01]")
+    parts.append(f"[{prefix}]")
+    parts.append(f"[{level}]")
+    parts.append(separator.join(messages))
+
+    print(" ".join(parts))
+
+# Use it flexibly:
+log("INFO", "Server started")
+# [2026-07-01] [APP] [INFO] Server started
+
+log("ERROR", "Connection failed", "Retrying...", prefix="DB")
+# [2026-07-01] [DB] [ERROR] Connection failed | Retrying...
+
+log("DEBUG", "Payload:", "{'key': 'value'}", timestamp=False)
+# [APP] [DEBUG] Payload: | {'key': 'value'}
+</code></pre>
+
+<h2>Real-World Example: API Wrapper</h2>
+
+<p>API wrappers often need to pass through arbitrary parameters. <code>**kwargs</code> shines here:</p>
+
+<pre><code>import requests
+
+def fetch(url, method="GET", **params):
+    """Fetch data from any API with flexible parameters."""
+    headers = params.pop("headers", {"Accept": "application/json"})
+    timeout = params.pop("timeout", 10)
+
+    response = requests.request(
+        method, url, params=params, headers=headers, timeout=timeout
+    )
+    return response.json()
+
+# Pass any query parameters you need:
+data = fetch(
+    "https://jsonplaceholder.typicode.com/posts",
+    userId=1,
+    _limit=3
+)
+
+print(f"Found {len(data)} posts")
+</code></pre>
+
+<h2>Real-World Example: Function Decorator with <code>*args</code> and <code>**kwargs</code></h2>
+
+<p>Decorators almost always use <code>*args</code> and <code>**kwargs</code> because they don't know what the wrapped function accepts:</p>
+
+<pre><code>import time
+import functools
+
+def timer(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        start = time.perf_counter()
+        result = func(*args, **kwargs)  # Pass everything through
+        elapsed = time.perf_counter() - start
+        print(f"{func.__name__} took {elapsed:.4f} seconds")
+        return result
+    return wrapper
+
+# Works with ANY function signature:
+@timer
+def slow_operation(x, y, label="default"):
+    time.sleep(0.1)
+    return x + y
+
+slow_operation(3, 4)           # slow_operation took 0.1001 seconds
+slow_operation(10, 20, label="test")  # slow_operation took 0.1001 seconds
+</code></pre>
+
+<h2>Parameter Order Rules</h2>
+
+<p>When you combine everything in one function, the order matters. Python enforces this strict order:</p>
+
+<pre><code>def example(positional, *args, keyword="default", **kwargs):
+    pass
+    #  ^^^^^^^^^^  ^^^^  ^^^^^^^  ^^^^^^
+    #  Regular    Variable   Keyword  Variable
+    #  params     positional params    keyword
+</code></pre>
+
+<p>Here's the working example:</p>
+
+<pre><code>def full_example(name, *skills, role="developer", **details):
+    print(f"Name: {name}")
+    print(f"Skills: {skills}")
+    print(f"Role: {role}")
+    print(f"Details: {details}")
+
+full_example("Hugo", "Python", "Docker", role="Senior", location="Toronto", years=5)
+
+# Output:
+# Name: Hugo
+# Skills: ('Python', 'Docker')
+# Role: Senior
+# Details: {'location': 'Toronto', 'years': 5}
+</code></pre>
+
+<h2>Common Pitfalls to Avoid</h2>
+
+<p><strong>1. Forgetting that <code>*args</code> is a tuple (immutable):</strong></p>
+
+<pre><code>def collect(*args):
+    args.append("new")  # ❌ AttributeError: 'tuple' has no attribute 'append'
+
+def collect_fixed(*args):
+    args = list(args)  # Convert to list first
+    args.append("new")
+    return args
+</code></pre>
+
+<p><strong>2. Name conflicts with <code>**kwargs</code>:</strong></p>
+
+<pre><code>def configure(host, port=8080, **kwargs):
+    # If caller passes host or port in kwargs, you get a conflict:
+    pass
+
+configure("localhost", host="remote")  # ❌ TypeError: multiple values for 'host'
+</code></pre>
+
+<p><strong>3. Confusing <code>*args</code> in definition vs. calling:</strong></p>
+
+<pre><code>def func(*args):    # Packing: collects arguments into a tuple
+    print(args)
+
+values = [1, 2, 3]
+func(*values)       # Unpacking: spreads the list into individual arguments
+# Output: (1, 2, 3)
+</code></pre>
+
+<h2>When NOT to Use <code>*args</code> / <code>**kwargs</code></h2>
+
+<p>Despite their flexibility, don't overuse them:</p>
+<ul>
+    <li><strong>Prefer explicit parameters</strong> when you know what arguments a function needs — it makes the API self-documenting</li>
+    <li><strong>Avoid <code>**kwargs</code> as a catch-all</strong> for hiding too many parameters — it makes debugging harder</li>
+    <li><strong>Use dataclasses or dictionaries</strong> instead of <code>**kwargs</code> when the config has many known fields</li>
+</ul>
+
+<pre><code># ❌ Don't do this
+def create_product(**kwargs):
+    pass
+
+# ✅ Do this instead
+def create_product(name: str, price: float, category: str = "general"):
+    pass
+</code></pre>
+
+<h2>Summary</h2>
+
+<p><code>*args</code> and <code>**kwargs</code> are Python's way of making functions accept a variable number of arguments:</p>
+<ul>
+    <li><code>*args</code> — collects extra positional arguments into a <strong>tuple</strong></li>
+    <li><code>**kwargs</code> — collects extra keyword arguments into a <strong>dictionary</strong></li>
+    <li>Use <code>*</code> and <code>**</code> to <strong>unpack</strong> iterables and dictionaries when calling functions</li>
+    <li>Essential for decorators, wrappers, and any API that needs flexibility</li>
+</ul>
+
+<p>The next time you see a function with asterisks, you'll know exactly what's happening under the hood.</p>
+
+        <div style="margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--border-subtle);">
+            <a href="../python.html" class="nav-btn">← Back to Python Tutorials</a>
+            <a href="../index.html" class="nav-btn" style="margin-left: 8px;">Home</a>
+        </div>
+    </article>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo Wong · Built with curiosity and Coffee</p>
+        </div>
+    </footer>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        if (savedTheme === 'light') { document.body.classList.add('light-mode'); themeToggle.textContent = '☀'; }
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            themeToggle.textContent = isLight ? '☀' : '◐';
+        });
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + "%";
+        });
+    </script>
+</body>
+</html>

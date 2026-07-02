@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python CLI Tools: Build Beautiful Command-Line Apps with Click and Rich</title>
+    <meta name="description" content="Learn to build professional CLI tools in Python using Click and Rich. Full examples with subcommands, configuration files, progress bars, tables, and colored output.">
+    <meta name="keywords" content="python cli, click library, rich library, command line tools, python terminal, argparse alternative">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-cli-tools-click-rich.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post">
+            <div class="post-tags">
+                <span class="tag python">Python</span>
+                <span class="tag devops">DevOps</a>
+            </div>
+
+            <h1 class="post-title">Python CLI Tools: Build Beautiful Command-Line Apps with Click and Rich</h1>
+
+            <div class="post-meta">
+                <span class="post-date">July 2, 2026</span>
+                <span class="post-read-time">10 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+
+            <div class="post-excerpt">
+                <p>Every developer loves a well-built CLI tool. <code>git</code>, <code>docker</code>, <code>terraform</code> — they all share something: intuitive commands, clear output, and helpful error messages. In this guide, you'll learn to build your own professional CLI tool in Python using two libraries: <strong>Click</strong> for argument parsing and <strong>Rich</strong> for beautiful terminal output.</p>
+            </div>
+
+            <div class="post-content">
+                <h2>Why Click and Rich?</h2>
+                <p>Python has <code>argparse</code> in the standard library, but it gets verbose fast. Click provides a declarative, decorator-based approach that reads like documentation. Rich adds tables, progress bars, colors, and formatting that make your CLI look like a native app.</p>
+
+                <p>Install both libraries:</p>
+
+                <pre><code>pip install click rich</code></pre>
+
+                <h2>Your First CLI Tool with Click</h2>
+                <p>Let's start simple. Create <code>hello.py</code>:</p>
+
+                <pre><code>import click
+
+@click.command()
+@click.option('--name', '-n', default='World', help='Name to greet')
+@click.option('--count', '-c', default=1, type=int, help='Number of greetings')
+def hello(name, count):
+    """Say hello to someone, multiple times."""
+    for _ in range(count):
+        click.echo(f"Hello, {name}!")
+
+if __name__ == '__main__':
+    hello()</code></pre>
+
+                <p>Run it with different arguments:</p>
+
+                <pre><code>$ python hello.py --name Hugo --count 3
+Hello, Hugo!
+Hello, Hugo!
+Hello, Hugo!
+
+$ python hello.py --help
+Usage: hello.py [OPTIONS]
+
+  Say hello to someone, multiple times.
+
+Options:
+  -n, --name TEXT  Name to greet
+  -c, --count INTEGER  Number of greetings
+  --help            Show this message and exit.</code></pre>
+
+                <p>Notice that Click automatically generates a <code>--help</code> message from your docstring. No manual argument parsing needed.</p>
+
+                <h2>Adding Beautiful Output with Rich</h2>
+                <p>Now let's make it look good. Replace <code>click.echo()</code> with Rich's <code>print()</code>:</p>
+
+                <pre><code>from rich.console import Console
+from rich.table import Table
+from rich.progress import Progress, SpinnerColumn, TextColumn
+import click
+
+console = Console()
+
+@click.command()
+@click.argument('files', nargs=-1, type=click.Path(exists=True))
+def analyze(files):
+    """Analyze files and show stats in a beautiful table."""
+    table = Table(title="File Analysis Report")
+    table.add_column("File", style="cyan")
+    table.add_column("Size", style="magenta", justify="right")
+    table.add_column("Lines", style="green", justify="right")
+
+    for filepath in files:
+        with open(filepath) as f:
+            content = f.read()
+        lines = len(content.splitlines())
+        size = len(content)
+        table.add_row(filepath, f"{size:,} B", str(lines))
+
+    console.print(table)
+    console.print(f"\n[bold green]✓ Analyzed {len(files)} files[/bold green]")
+
+if __name__ == '__main__':
+    analyze()</code></pre>
+
+                <p>Running this produces a formatted table with colored columns — something that would take 50+ lines with just standard library tools.</p>
+
+                <h2>Subcommands: The Git Pattern</h2>
+                <p>Most CLI tools have subcommands. Click handles this with <code>@click.group()</code>:</p>
+
+                <pre><code>import click
+from rich.console import Console
+
+console = Console()
+
+@click.group()
+@click.version_option(version="1.0.0")
+def cli():
+    """MyTool - A sample CLI application."""
+    pass
+
+@cli.command()
+@click.argument('name')
+def create(name):
+    """Create a new resource."""
+    console.print(f"[bold yellow]Creating[/bold yellow] [cyan]{name}[/cyan]...")
+    console.print("[bold green]✓ Created successfully![/bold green]")
+
+@cli.command()
+@click.argument('name')
+@click.option('--force', '-f', is_flag=True, help='Force deletion')
+def delete(name, force):
+    """Delete a resource."""
+    if not force:
+        confirm = click.confirm(f"Delete '{name}'?")
+        if not confirm:
+            console.print("[dim]Cancelled.[/dim]")
+            return
+    console.print(f"[bold red]Deleted[/bold red] [cyan]{name}[/cyan]")
+
+@cli.command('list')
+def list_resources():
+    """List all resources."""
+    console.print("[dim]No resources found.[/dim]")
+
+if __name__ == '__main__':
+    cli()</code></pre>
+
+                <p>Now you have a CLI with <code>create</code>, <code>delete</code>, and <code>list</code> subcommands, plus a <code>--version</code> flag and interactive confirmation for destructive actions.</p>
+
+                <h2>Progress Bars and Spinners</h2>
+                <p>Loading indicators keep users informed during long operations:</p>
+
+                <pre><code>from rich.progress import Progress, SpinnerColumn, BarColumn, TextColumn
+import time
+
+def long_operation():
+    """Simulate a multi-step process."""
+    tasks = [
+        "Fetching data from API",
+        "Processing records",
+        "Generating report",
+        "Uploading results"
+    ]
+
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        TextColumn("{task.percentage:>3.0f}%"),
+    ) as progress:
+        for task_name in tasks:
+            task_id = progress.add_task(task_name, total=100)
+            for i in range(100):
+                progress.update(task_id, advance=1)
+                time.sleep(0.02)
+
+long_operation()
+</code></pre>
+
+                <p>This produces an animated progress bar with a spinner, percentage, and description — just like <code>pip install</code> or <code>docker pull</code>.</p>
+
+                <h2>Configuration Files</h2>
+                <p>Professional tools let users set defaults in a config file. Here's how to support <code>.mytool.yaml</code>:</p>
+
+                <pre><code>import click
+import yaml
+
+def load_config(ctx):
+    """Load config file if it exists."""
+    config_file = ctx.params.get('config') or '.mytool.yaml'
+    config = {}
+
+    if os.path.exists(config_file):
+        with open(config_file) as f:
+            config = yaml.safe_load(f) or {}
+
+    ctx.obj = config
+
+@click.command()
+@click.option('--config', '-c', help='Path to config file')
+@click.option('--output', '-o', help='Output directory')
+@click.pass_context
+def main(ctx, config, output):
+    """Main command."""
+    # Merge CLI args with config
+    output = output or ctx.obj.get('output', './output')
+    ctx.obj['output'] = output
+
+    click.echo(f"Output will go to: {output}")
+
+if __name__ == '__main__':
+    main()</code></pre>
+
+                <p>Users can create a <code>.mytool.yaml</code> in their project:</p>
+
+                <pre><code># .mytool.yaml
+output: /tmp/results
+verbose: true
+format: json</code></pre>
+
+                <h2>Real-World Project: Docker Container Monitor</h2>
+                <p>Let's combine everything into a practical tool that monitors Docker containers:</p>
+
+                <pre><code>#!/usr/bin/env python3
+import click
+import subprocess
+import json
+from rich.console import Console
+from rich.table import Table
+from rich.panel import Panel
+from rich import box
+
+console = Console()
+
+@click.group()
+def cli():
+    """Container Monitor - Quick Docker status at a glance."""
+    pass
+
+@cli.command()
+def status():
+    """Show container status overview."""
+    try:
+        result = subprocess.run(
+            ["docker", "ps", "--format", "{{json .}}"],
+            capture_output=True, text=True
+        )
+    except FileNotFoundError:
+        console.print("[bold red]Docker not found. Is it installed?[/bold red]")
+        return
+
+    if not result.stdout.strip():
+        console.print("[dim]No running containers.[/dim]")
+        return
+
+    table = Table(box=box.ROUNDED, title="Running Containers")
+    table.add_column("Name", style="bold cyan")
+    table.add_column("Image", style="magenta")
+    table.add_column("Status", style="green")
+    table.add_column("Ports", style="yellow")
+
+    for line in result.stdout.strip().split("\n"):
+        container = json.loads(line)
+        table.add_row(
+            container.get("Names", ""),
+            container.get("Image", ""),
+            container.get("Status", ""),
+            container.get("Ports", "")
+        )
+
+    console.print(table)
+
+@cli.command()
+@click.argument('name')
+def logs(name):
+    """Show recent logs from a container."""
+    result = subprocess.run(
+        ["docker", "logs", "--tail", "50", name],
+        capture_output=True, text=True
+    )
+    console.print(Panel(result.stdout, title=f"[bold]{name}[/bold] logs"))
+
+if __name__ == '__main__':
+    cli()</code></pre>
+
+                <h2>Packaging Your CLI Tool</h2>
+                <p>Make it installable with <code>pip</code>. Create <code>pyproject.toml</code>:</p>
+
+                <pre><code>[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "my-tool"
+version = "1.0.0"
+description = "A beautiful CLI tool"
+dependencies = ["click>=8.0", "rich>=10.0"]
+
+[project.scripts]
+my-tool = "my_tool.cli:cli"</code></pre>
+
+                <p>After <code>pip install -e .</code>, users run <code>my-tool --help</code> from anywhere. Publish to PyPI to share it with the world.</p>
+
+                <h2>Best Practices</h2>
+                <ul>
+                    <li><strong>Always provide --help:</strong> Click does this automatically from docstrings</li>
+                    <li><strong>Use consistent naming:</strong> kebab-case for CLI args (Click converts to snake_case)</li>
+                    <li><strong>Show progress for long operations:</strong> Users hate staring at a blank terminal</li>
+                    <li><strong>Respect NO_COLOR:</strong> Rich auto-detects this environment variable</li>
+                    <li><strong>Handle errors gracefully:</strong> Use try/except with Rich error panels</li>
+                    <li><strong>Support --verbose and --quiet flags:</strong> Let users control output</li>
+                </ul>
+
+                <h2>Summary</h2>
+                <p>Click handles the hard work of argument parsing, subcommands, and help text. Rich transforms boring terminal output into professional-looking reports. Together, they let you build CLI tools that feel like the best Unix utilities — with a fraction of the code.</p>
+
+                <p>Start small with a single command, add Rich formatting early (it makes debugging easier too), and grow your tool into something you'll actually want to use every day.</p>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo Wong · Built with curiosity and Coffee</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528">GitHub</a>
+                <a href="https://hugow.dev">hugow.dev</a>
+                <a href="/sitemap.xml">Sitemap</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-mode');
+            themeToggle.textContent = '☀';
+        }
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            themeToggle.textContent = isLight ? '☀' : '◐';
+        });
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + "%";
+        });
+    </script>
+</body>
+</html>

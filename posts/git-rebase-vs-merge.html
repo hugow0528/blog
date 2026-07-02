@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Git Rebasing vs Merging: Clean History for Your Projects - Hugo's Dev Notes</title>
+    <meta name="description" content="Learn the difference between git rebase and git merge. Step-by-step examples showing when to use each approach. Build a clean, readable commit history.">
+    <meta name="keywords" content="git, rebase, merge, branching, commit history, version control, tutorial, beginner">
+    <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/git-rebase-vs-merge.html">
+    
+    <meta property="og:title" content="Git Rebasing vs Merging: Clean History for Your Projects">
+    <meta property="og:description" content="Learn the difference between git rebase and git merge with practical examples.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.hugow.dev/posts/git-rebase-vs-merge.html">
+    
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <article class="post-content">
+        <span class="tag devops">DevOps</span>
+        <h1>Git Rebasing vs Merging: Clean History for Your Projects</h1>
+        <div class="post-meta">
+            <span class="post-date">July 1, 2026</span>
+            <span class="read-time">10 min read</span>
+            <span class="post-badge">New</span>
+        </div>
+
+        <p>You've been using <code>git merge</code> for months. It works. But your commit history looks like a tangled spiderweb of merge commits. You've seen other projects with beautiful, linear histories and wondered how they did it.</p>
+
+        <p>Enter <code>git rebase</code> — the tool that rewrites your commit history to be clean and linear. But rebase has a reputation for being dangerous. Let's clear that up with practical examples you can run today.</p>
+
+        <h2>The Two Ways to Combine Branches</h2>
+
+        <p>Git offers two primary ways to integrate changes from one branch into another:</p>
+
+        <ul>
+            <li><strong>Merge</strong> — Creates a new "merge commit" that preserves the full history of both branches</li>
+            <li><strong>Rebase</strong> — Moves your commits to "play on top" of the target branch, creating a linear history</li>
+        </ul>
+
+        <h2>Merge: The Safe, Explicit Approach</h2>
+
+        <p>Let's say you're working on a feature branch called <code>feature/login</code>. Meanwhile, the <code>main</code> branch has received new commits.</p>
+
+        <pre><code># Scenario: main has new commits, you're on feature/login
+git checkout feature/login
+git merge main
+</code></pre>
+
+        <p>This creates a merge commit:</p>
+
+        <pre><code>   feature/login
+   A — B — C
+          \
+main:  D — E — F — M (merge commit)
+</code></pre>
+
+        <p>The merge commit <code>M</code> connects both histories. You can see exactly when and how branches diverged and converged. This is the <strong>safer</strong> default because it never rewrites history.</p>
+
+        <p><strong>When to use merge:</strong></p>
+        <ul>
+            <li>Merging a <code>main</code> branch in a shared repository</li>
+            <li>You need to preserve the exact timeline of events</li>
+            <li>Working on public/shared branches where others may have based their work on your commits</li>
+        </ul>
+
+        <h2>Rebase: The Clean History Approach</h2>
+
+        <p>Now the same scenario, but with rebase:</p>
+
+        <pre><code>git checkout feature/login
+git rebase main
+</code></pre>
+
+        <p>Git takes your commits (A, B, C), temporarily removes them, fast-forwards to main, then reapplies your commits on top:</p>
+
+        <pre><code>   feature/login
+               A' — B' — C'
+              /
+main:  D — E — F
+</code></pre>
+
+        <p>Notice A', B', C' — these are <strong>new</strong> commits with new hashes. Your history is now perfectly linear. No merge commits cluttering the log.</p>
+
+        <pre><code>$ git log --oneline --graph
+* C' (feature/login) Fix button styling
+* B' Add login form
+* A' Create auth module
+* F Update dependencies
+* E Add user profiles
+* D Initial commit
+</code></pre>
+
+        <h2>Hands-On: Rebase a Feature Branch</h2>
+
+        <p>Let's walk through a real example. Create a test repo:</p>
+
+        <pre><code># Create a test project
+mkdir git-rebase-demo && cd git-rebase-demo
+git init
+
+# Simulate main branch history
+echo "# My Project" > README.md
+git add README.md
+git commit -m "Initial commit"
+
+echo "version 1.0" > version.txt
+git add version.txt
+git commit -m "Add version file"
+
+# Create feature branch
+git checkout -b feature/user-auth
+echo "def login(): pass" > auth.py
+git add auth.py
+git commit -m "Add login function"
+
+echo "def register(): pass" >> auth.py
+git add auth.py
+git commit -m "Add registration function"
+
+# Go back to main and add more commits
+git checkout main
+echo "def dashboard(): pass" > views.py
+git add views.py
+git commit -m "Add dashboard view"
+
+echo "DATABASE_URL=sqlite:///db.sqlite3" > .env
+git add .env
+git commit -m "Add environment config"
+</code></pre>
+
+        <p>Now rebase your feature branch onto the updated main:</p>
+
+        <pre><code>git checkout feature/user-auth
+git rebase main
+
+# Check the clean history
+git log --oneline --graph
+</code></pre>
+
+        <h2>Handling Conflicts During Rebase</h2>
+
+        <p>Rebase can cause conflicts — just like merge — but the experience is different. With merge, you resolve once. With rebase, you may resolve the <strong>same conflict multiple times</strong> (once per commit being replayed).</p>
+
+        <pre><code># During a rebase, if a conflict occurs:
+# 1. Git stops and tells you which files conflict
+# 2. Fix the conflicts in the files
+# 3. Tell Git you resolved it:
+git add &lt;resolved-file&gt;
+git rebase --continue
+
+# If you want to skip this commit entirely:
+git rebase --skip
+
+# If you want to abandon the whole rebase:
+git rebase --abort
+</code></pre>
+
+        <h2>Interactive Rebase: Rewrite Your Commits</h2>
+
+        <p>This is where rebase becomes a superpower. <strong>Interactive rebase</strong> lets you edit, squash, reorder, and rewrite your commits <em>before</em> sharing them.</p>
+
+        <pre><code># Rebase the last 3 commits interactively
+git rebase -i HEAD~3
+</code></pre>
+
+        <p>Git opens an editor with a list of your commits:</p>
+
+        <pre><code>pick a1b2c3d Add login function
+pick e4f5g6h Fix login typo
+pick i7j8k9l Add registration function
+
+# Rebase onto main (3 commands)
+# Commands:
+#  pick, reword, edit, squash, fixup, drop
+</code></pre>
+
+        <p><strong>Common interactive rebase operations:</strong></p>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Command</th>
+                    <th>What It Does</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>pick</code></td>
+                    <td>Keep the commit as-is (default)</td>
+                </tr>
+                <tr>
+                    <td><code>reword</code></td>
+                    <td>Keep the commit but edit the message</td>
+                </tr>
+                <tr>
+                    <td><code>squash</code></td>
+                    <td>Combine with previous commit, merge messages</td>
+                </tr>
+                <tr>
+                    <td><code>fixup</code></td>
+                    <td>Combine with previous commit, discard this message</td>
+                </tr>
+                <tr>
+                    <td><code>drop</code></td>
+                    <td>Delete this commit entirely</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Practical Example: Squash Tiny Commits</h2>
+
+        <p>Say your branch looks messy with tiny "fix typo" commits:</p>
+
+        <pre><code>pick a1b2c3d Add login function
+fixup e4f5g6h Fix login typo       # ← squash this away
+pick i7j8k9l Add registration function
+fixup m3n4o5p Fix registration typo  # ← squash this too
+</code></pre>
+
+        <p>After the interactive rebase, your history becomes:</p>
+
+        <pre><code>$ git log --oneline
+a1b2c3d Add login function
+i7j8k9l Add registration function
+</code></pre>
+
+        <p>Clean, readable, professional. This is what senior developers do before opening a Pull Request.</p>
+
+        <h2>The Golden Rule: Never Rebase Public Branches</h2>
+
+        <p>This is the most important rule about rebasing:</p>
+
+        <blockquote class="tip">
+            <strong>Only rebase commits that no one else has based their work on.</strong>
+        </blockquote>
+
+        <p>If you rebase a shared branch (like <code>main</code>), you rewrite commit hashes that your teammates are already referencing. When they try to push, Git rejects it. When they force-pull, their local history diverges from everyone else's. Chaos ensues.</p>
+
+        <pre><code># ✅ Safe to rebase: your private feature branches
+git checkout feature/my-work
+git rebase main
+
+# ❌ NEVER do this on shared branches
+git checkout main
+git rebase origin/old-main  # THIS WILL MAKE YOUR TEAMMATES HATE YOU
+</code></pre>
+
+        <h2>My Recommended Workflow</h2>
+
+        <p>Here's the workflow I use for every project:</p>
+
+        <pre><code># 1. Start your feature branch from main
+git checkout main
+git pull origin main
+git checkout -b feature/user-auth
+
+# 2. Work and commit frequently
+echo "login code..." > auth.py
+git add auth.py
+git commit -m "Add login function"
+
+# 3. Before pushing, clean up your history
+git rebase -i HEAD~5
+# → squash tiny commits, reword messages, drop WIP commits
+
+# 4. Rebase onto latest main to stay current
+git fetch origin
+git rebase origin/main
+
+# 5. Push (use --force-with-lease, never --force)
+git push origin feature/user-auth --force-with-lease
+</code></pre>
+
+        <p>Notice <code>--force-with-lease</code> instead of <code>--force</code>. The "with-lease" part checks that nobody else has pushed new commits since you last fetched. If they have, Git refuses the push — protecting you from accidentally overwriting someone else's work.</p>
+
+        <h2>Quick Comparison Cheat Sheet</h2>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>Merge</th>
+                    <th>Rebase</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>History</td>
+                    <td>Branching (graph)</td>
+                    <td>Linear</td>
+                </tr>
+                <tr>
+                    <td>Commit hashes</td>
+                    <td>Preserved</td>
+                    <td>Changed (rewritten)</td>
+                </tr>
+                <tr>
+                    <td>Safety</td>
+                    <td>Always safe</td>
+                    <td>Dangerous on shared branches</td>
+                </tr>
+                <tr>
+                    <td>Best for</td>
+                    <td>Shared/integrated branches</td>
+                    <td>Personal feature branches</td>
+                </tr>
+                <tr>
+                    <td>PR/GitHub</td>
+                    <td>Default merge button</td>
+                    <td>"Squash and merge" option</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Summary</h2>
+
+        <p><strong>Use merge</strong> when integrating into shared branches like <code>main</code> or <code>develop</code>. It's safe, preserves history, and everyone understands it.</p>
+
+        <p><strong>Use rebase</strong> when cleaning up your personal feature branches before sharing them. Interactive rebase is your best friend for creating clean, professional commit histories.</p>
+
+        <p><strong>Never rebase</strong> a branch that others have pulled. This is the cardinal sin of Git.</p>
+
+        <p>Start by practicing interactive rebase on personal projects. Once you're comfortable, try rebasing feature branches in team projects. Your future self — and your code reviewers — will thank you.</p>
+
+        <div class="prev-next-nav">
+            <a href="../posts/git-branching-merge-conflicts.html" class="prev-link">← Git Branching & Merge Conflicts</a>
+            <a href="../posts/git-hooks-pre-commit.html" class="next-link">Git Hooks & Pre-Commit →</a>
+        </div>
+    </article>
+
+    <script src="../theme.js"></script>
+</body>
+</html>

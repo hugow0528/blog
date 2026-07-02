@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python FastAPI Tutorial: Build Your First REST API | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn FastAPI from scratch. Build a complete REST API with data validation, database integration, authentication, and deployment. Beginner-friendly with working code examples.">
+    <meta name="keywords" content="FastAPI, Python, REST API, web framework, tutorial, Pydantic, async Python">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-fastapi-tutorial.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+        
+        <article class="post-content">
+            <span class="tag python">Python</span><span class="tag web">Web Dev</span>
+            <h1>Python FastAPI Tutorial: Build Your First REST API in 30 Minutes</h1>
+            <time>July 2, 2026 · 12 min read</time>
+
+            <p>You've learned Python basics — variables, functions, loops, and maybe APIs as a client. Now let's flip the script and <strong>build</strong> your own API. FastAPI is the modern Python web framework that makes this shockingly simple.</p>
+
+            <p>FastAPI is fast (literally — one of the fastest Python frameworks), generates automatic API documentation, handles data validation for free, and supports async out of the box. It's the go-to framework for Python microservices in 2026.</p>
+
+            <h2>Why FastAPI Over Flask or Django?</h2>
+
+            <ul>
+                <li><strong>Flask</strong> is great for small projects but requires extra packages for validation, serialization, and OpenAPI docs</li>
+                <li><strong>Django</strong> is a full-stack framework with ORM, admin panel, and auth — but that's overkill for an API</li>
+                <li><strong>FastAPI</strong> hits the sweet spot: lightweight, type-driven validation, auto-generated docs, and async support</li>
+            </ul>
+
+            <h2>Step 1: Set Up the Project</h2>
+
+            <p>First, create a project directory and virtual environment:</p>
+
+            <pre><code># Create project
+mkdir myapi && cd myapi
+
+# Virtual environment
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install fastapi uvicorn pydantic
+</code></pre>
+
+            <p><strong>What's what:</strong></p>
+
+            <ul>
+                <li><strong>FastAPI</strong> — the web framework</li>
+                <li><strong>uvicorn</strong> — the ASGI server that runs FastAPI</li>
+                <li><strong>pydantic</strong> — data validation (bundled with FastAPI)</li>
+            </ul>
+
+            <h2>Step 2: Your First Endpoint</h2>
+
+            <p>Create a file called <code>main.py</code>:</p>
+
+            <pre><code>from fastapi import FastAPI
+
+app = FastAPI(title="My First API")
+
+@app.get("/")
+def root():
+    return {"message": "Hello, API!", "status": "running"}
+
+@app.get("/health")
+def health_check():
+    return {"status": "healthy"}
+</code></pre>
+
+            <p>Run it:</p>
+
+            <pre><code>uvicorn main:app --reload
+</code></pre>
+
+            <p>The <code>--reload</code> flag restarts the server whenever you change code (development only!). Visit <code>http://localhost:8000</code> and you'll see your JSON response. But wait — visit <code>http://localhost:8000/docs</code> and you'll see <strong>auto-generated API documentation</strong>. That's FastAPI magic.</p>
+
+            <h2>Step 3: Path Parameters and Query Parameters</h2>
+
+            <p>Let's add endpoints that accept input:</p>
+
+            <pre><code>from fastapi import FastAPI, Query
+
+app = FastAPI()
+
+# Path parameter — the ID is part of the URL
+@app.get("/users/{user_id}")
+def get_user(user_id: int):
+    return {"user_id": user_id, "name": "Hugo", "email": "hugo@example.com"}
+
+# Query parameters — passed as ?key=value
+@app.get("/search")
+def search(q: str = Query(..., min_length=1, description="Search term"),
+           limit: int = Query(10, ge=1, le=100),
+           page: int = Query(1, ge=1)):
+    offset = (page - 1) * limit
+    return {
+        "query": q,
+        "limit": limit,
+        "page": page,
+        "offset": offset,
+        "results": []
+    }
+</code></pre>
+
+            <p>Try these URLs:</p>
+
+            <ul>
+                <li><code>/users/42</code> — path parameter (user_id = 42)</li>
+                <li><code>/search?q=python&amp;limit=5&amp;page=2</code> — query parameters</li>
+                <li><code>/search?q=</code> — FastAPI automatically returns a 422 error because of <code>min_length=1</code></li>
+            </ul>
+
+            <p>Notice how <code>limit: int = Query(10, ge=1, le=100)</code> validates the input. If someone sends <code>limit=-5</code> or <code>limit=200</code>, FastAPI rejects it with a clear error message. No manual validation needed.</p>
+
+            <h2>Step 4: Request Bodies with Pydantic Models</h2>
+
+            <p>This is where FastAPI really shines. Define your data model once, and FastAPI handles validation, documentation, and serialization:</p>
+
+            <pre><code>from pydantic import BaseModel, EmailStr, Field
+from typing import Optional
+
+class UserCreate(BaseModel):
+    email: EmailStr
+    full_name: str = Field(..., min_length=1, max_length=100)
+    age: Optional[int] = Field(None, ge=0, le=150)
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "email": "hugo@example.com",
+                "full_name": "Hugo Wong",
+                "age": 28
+            }
+        }
+
+class UserResponse(BaseModel):
+    id: int
+    email: str
+    full_name: str
+    age: Optional[int]
+
+    class Config:
+        from_attributes = True  # Allows loading from ORM objects
+
+@app.post("/users", status_code=201)
+def create_user(user: UserCreate):
+    # In a real app, you'd save to a database here
+    new_user = {
+        "id": 1,
+        "email": user.email,
+        "full_name": user.full_name,
+        "age": user.age
+    }
+    return new_user
+</code></pre>
+
+            <p>Test it with curl:</p>
+
+            <pre><code>curl -X POST http://localhost:8000/users \
+  -H "Content-Type: application/json" \
+  -d '{"email": "hugo@example.com", "full_name": "Hugo Wong", "age": 28}'
+
+# Returns: {"id": 1, "email": "hugo@example.com", "full_name": "Hugo Wong", "age": 28}
+
+# Try bad data:
+curl -X POST http://localhost:8000/users \
+  -H "Content-Type: application/json" \
+  -d '{"email": "not-an-email", "full_name": ""}'
+
+# Returns 422 with detailed validation errors!
+</code></pre>
+
+            <p>The <code>EmailStr</code> type automatically validates email format. The <code>Field(..., ge=0, le=150)</code> constrains age. FastAPI returns structured error messages for every validation failure.</p>
+
+            <h2>Step 5: Add a Database with SQLAlchemy</h2>
+
+            <p>Let's make our API persistent. Install the async database dependencies:</p>
+
+            <pre><code>pip install sqlalchemy aiosqlite alembic
+</code></pre>
+
+            <p>Create <code>database.py</code> for the connection:</p>
+
+            <pre><code>from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from sqlalchemy.orm import DeclarativeBase
+
+# SQLite for development — swap to PostgreSQL for production
+DATABASE_URL = "sqlite+aiosqlite:///./app.db"
+
+engine = create_async_engine(DATABASE_URL, echo=True)
+async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+class Base(DeclarativeBase):
+    pass
+
+async def get_db():
+    async with async_session() as session:
+        yield session
+</code></pre>
+
+            <p>Create <code>models.py</code> for your tables:</p>
+
+            <pre><code>from sqlalchemy import Column, Integer, String, Boolean
+from database import Base
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String(255), unique=True, nullable=False, index=True)
+    full_name = Column(String(100), nullable=False)
+    age = Column(Integer, nullable=True)
+    is_active = Column(Boolean, default=True)
+</code></pre>
+
+            <p>Create <code>crud.py</code> for database operations:</p>
+
+            <pre><code>from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from models import User
+
+async def get_user(db: AsyncSession, user_id: int):
+    result = await db.execute(select(User).where(User.id == user_id))
+    return result.scalar_one_or_none()
+
+async def get_user_by_email(db: AsyncSession, email: str):
+    result = await db.execute(select(User).where(User.email == email))
+    return result.scalar_one_or_none()
+
+async def create_user(db: AsyncSession, email: str, full_name: str, age: int = None):
+    user = User(email=email, full_name=full_name, age=age)
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+    return user
+
+async def list_users(db: AsyncSession, skip: int = 0, limit: int = 100):
+    result = await db.execute(select(User).offset(skip).limit(limit))
+    return result.scalars().all()
+
+async def delete_user(db: AsyncSession, user_id: int):
+    user = await get_user(db, user_id)
+    if user:
+        await db.delete(user)
+        await db.commit()
+        return True
+    return False
+</code></pre>
+
+            <p>Now wire everything together in <code>main.py</code>:</p>
+
+            <pre><code>from fastapi import FastAPI, Depends, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
+from database import get_db, engine, Base
+from models import User
+from crud import get_user, get_user_by_email, create_user, list_users, delete_user
+from schemas import UserCreate, UserResponse
+
+app = FastAPI(title="User API")
+
+# Create tables on startup
+@app.on_event("startup")
+async def startup():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+@app.post("/users", response_model=UserResponse, status_code=201)
+async def create_user_endpoint(user: UserCreate, db: AsyncSession = Depends(get_db)):
+    existing = await get_user_by_email(db, user.email)
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
+    db_user = await create_user(db, email=user.email, full_name=user.full_name, age=user.age)
+    return db_user
+
+@app.get("/users", response_model=list[UserResponse])
+async def get_users(skip: int = 0, limit: int = 100, db: AsyncSession = Depends(get_db)):
+    return await list_users(db, skip=skip, limit=limit)
+
+@app.get("/users/{user_id}", response_model=UserResponse)
+async def get_user_endpoint(user_id: int, db: AsyncSession = Depends(get_db)):
+    user = await get_user(db, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+
+@app.delete("/users/{user_id}", status_code=204)
+async def delete_user_endpoint(user_id: int, db: AsyncSession = Depends(get_db)):
+    success = await delete_user(db, user_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="User not found")
+</code></pre>
+
+            <p>The <code>Depends(get_db)</code> pattern is FastAPI's dependency injection. It automatically creates a database session, yields it to your endpoint, and closes it afterward. Clean separation of concerns.</p>
+
+            <h2>Step 6: Add Error Handling Middleware</h2>
+
+            <p>Professional APIs handle errors gracefully. Add middleware for consistent error responses:</p>
+
+            <pre><code>from fastapi import Request, status
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content={
+            "error": "Validation failed",
+            "details": exc.errors()
+        }
+    )
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"error": exc.detail}
+    )
+</code></pre>
+
+            <h2>Step 7: Run It</h2>
+
+            <pre><code>uvicorn main:app --reload
+</code></pre>
+
+            <p>Visit the auto-generated docs at:</p>
+
+            <ul>
+                <li><strong>Swagger UI:</strong> <code>http://localhost:8000/docs</code> — interactive API explorer</li>
+                <li><strong>ReDoc:</strong> <code>http://localhost:8000/redoc</code> — clean reference docs</li>
+            </ul>
+
+            <p>Both are generated automatically from your type hints and Pydantic models. No extra configuration needed.</p>
+
+            <h2>Step 8: Test Your API</h2>
+
+            <p>Let's test the full CRUD flow:</p>
+
+            <pre><code># Create a user
+curl -X POST http://localhost:8000/users \
+  -H "Content-Type: application/json" \
+  -d '{"email": "hugo@example.com", "full_name": "Hugo Wong", "age": 28}'
+
+# Get all users
+curl http://localhost:8000/users
+
+# Get specific user
+curl http://localhost:8000/users/1
+
+# Try duplicate email (should get 400)
+curl -X POST http://localhost:8000/users \
+  -H "Content-Type: application/json" \
+  -d '{"email": "hugo@example.com", "full_name": "Hugo Wong", "age": 28}'
+
+# Delete a user
+curl -X DELETE http://localhost:8000/users/1
+
+# Get non-existent user (should get 404)
+curl http://localhost:8000/users/999
+</code></pre>
+
+            <h2>Next Steps</h2>
+
+            <p>You now have a working REST API with data validation, database persistence, and auto-generated docs. Here's where to go next:</p>
+
+            <ul>
+                <li><strong>Authentication:</strong> Add JWT-based auth with <code>python-jose</code> and <code>passlib</code></li>
+                <li><strong>Production database:</strong> Swap SQLite for PostgreSQL with <code>asyncpg</code></li>
+                <li><strong>Migrations:</strong> Use <code>alembic</code> to manage database schema changes</li>
+                <li><strong>Docker:</strong> Containerize with a Dockerfile and docker-compose.yml</li>
+                <li><strong>Background tasks:</strong> Use FastAPI's <code>BackgroundTasks</code> for email sending</li>
+                <li><strong>Testing:</strong> Use <code>httpx</code> with FastAPI's <code>TestClient</code></li>
+            </ul>
+
+            <blockquote>
+                <p>FastAPI is one of those frameworks where the learning curve is gentle but the ceiling is high. Start with simple endpoints like we did here, and gradually add complexity — auth, caching, background tasks, WebSocket support. The type-driven approach means your code is always self-documenting and self-validating.</p>
+            </blockquote>
+
+            <p>Want to see how to containerize this API with Docker? Check out the <a href="posts/docker-basics.html">Docker Basics</a> tutorial next.</p>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo Wong · Built with curiosity and Coffee</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528">GitHub</a>
+                <a href="https://hugow.dev">hugow.dev</a>
+                <a href="/sitemap.xml">Sitemap</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-mode');
+            themeToggle.textContent = '☀';
+        }
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            themeToggle.textContent = isLight ? '☀' : '◐';
+        });
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + "%";
+        });
+    </script>
+</body>
+</html>

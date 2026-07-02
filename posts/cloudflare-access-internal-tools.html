@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloudflare Access: Secure Internal Tools Without VPNs - Hugo's Dev Notes</title>
+    <meta name="description" content="Learn how to protect internal dashboards, admin panels, and dev tools with Cloudflare Access. Zero-trust security without expensive VPN infrastructure. Step-by-step setup guide.">
+    <meta name="keywords" content="cloudflare, access, zero trust, internal tools, VPN alternative, authentication, security, tutorial">
+    <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/cloudflare-access-internal-tools.html">
+    
+    <meta property="og:title" content="Cloudflare Access: Secure Internal Tools Without VPNs">
+    <meta property="og:description" content="Protect internal dashboards and admin panels with Cloudflare Access. No VPN needed.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.hugow.dev/posts/cloudflare-access-internal-tools.html">
+    
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <article class="post-content">
+        <span class="tag cloudflare">Cloudflare</span>
+        <span class="tag security">Security</span>
+        <h1>Cloudflare Access: Secure Internal Tools Without VPNs</h1>
+        <div class="post-meta">
+            <span class="post-date">July 1, 2026</span>
+            <span class="read-time">9 min read</span>
+            <span class="post-badge">New</span>
+        </div>
+
+        <p>You built an internal dashboard, admin panel, or monitoring tool. It works great locally. Now you need to share it with your team. What do you do?</p>
+
+        <p>Old way: Set up a VPN, manage certificates, handle NAT routing, deal with "why can't I connect" tickets at 2 AM.</p>
+
+        <p>New way: Point Cloudflare at it, enable Access, and your team logs in with Google/GitHub/Okta. Done in 20 minutes. Zero VPN configuration.</p>
+
+        <p>This guide walks you through setting up Cloudflare Access for internal tools — from the free tier basics to production-ready configurations with custom policies.</p>
+
+        <h2>What is Cloudflare Access?</h2>
+
+        <p>Cloudflare Access is a zero-trust authentication service that sits between the internet and your internal applications. Instead of exposing your admin panel with a password or building custom login pages, Access:</p>
+
+        <ul>
+            <li>Intercepts requests to your application</li>
+            <li>Challenges users to authenticate via Google, GitHub, Okta, SAML, or other identity providers</li>
+            <li>Applies policies (e.g., "only people with @company.com email")</li>
+            <li>Forwards authorized requests to your application with identity headers</li>
+            <li>Blocks everyone else before they even reach your server</li>
+        </ul>
+
+        <p>Your application code never touches authentication. Cloudflare handles it all at the edge.</p>
+
+        <h2>Architecture: How Access Works</h2>
+
+        <p>Here's what happens when someone visits <code>admin.yourdomain.com</code>:</p>
+
+        <pre><code>User → Cloudflare Edge → Access Policy Check → Your Server
+
+If not authenticated:
+  → Redirect to Google/GitHub/Okta login
+  → After login, issue a session token (JWT)
+  → User gets 12-hour authenticated session
+
+If authenticated:
+  → Forward request with user identity headers
+  → Your app receives X-Auth-Email, X-Auth-Name, etc.
+</code></pre>
+
+        <p>The key insight: your server never sees unauthorized traffic. Access evaluates and authenticates at Cloudflare's edge network — before the request traverses the internet to your server.</p>
+
+        <h2>Step 1: Connect Your App via Cloudflare Tunnel</h2>
+
+        <p>Before Access can protect your app, Cloudflare needs to route traffic to it. We use Cloudflare Tunnel (zero-trust networking) — no open ports, no public IP needed.</p>
+
+        <pre><code># Install cloudflared
+curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o cloudflared
+chmod +x cloudflared
+sudo mv cloudflared /usr/local/bin/
+
+# Authenticate with your Cloudflare account
+cloudflared tunnel login
+
+# Create a tunnel
+cloudflared tunnel create my-admin-tunnel
+
+# Save the tunnel ID (from the output)
+</code></pre>
+
+        <p>Create a configuration file at <code>~/.cloudflared/config.yml</code>:</p>
+
+        <pre><code># ~/.cloudflared/config.yml
+tunnel: my-admin-tunnel
+credentials-file: /root/.cloudflared/&lt;TUNNEL_ID&gt;.json
+
+ingress:
+  - hostname: admin.yourdomain.com
+    service: http://localhost:8080
+    originRequest:
+      noTLSVerify: true
+  - service: http_status:404
+</code></pre>
+
+        <p>Start the tunnel:</p>
+
+        <pre><code>cloudflared tunnel run my-admin-tunnel
+</code></pre>
+
+        <p>Now <code>admin.yourdomain.com</code> is accessible — but not yet protected. Let's add Access.</p>
+
+        <h2>Step 2: Enable Access in the Dashboard</h2>
+
+        <p>Navigate to <strong>Zero Trust → Access → Applications</strong> in the Cloudflare dashboard and click <strong>Add an application</strong>.</p>
+
+        <p>Configure the application:</p>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Setting</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Application name</td>
+                    <td>Admin Dashboard</td>
+                </tr>
+                <tr>
+                    <td>Domain</td>
+                    <td>admin.yourdomain.com</td>
+                </tr>
+                <tr>
+                    <td>Public URL include rules</td>
+                    <td>*</td>
+                </tr>
+                <tr>
+                    <td>Authentication duration</td>
+                    <td>12 hours</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p>This creates the Access application. Now configure the identity provider.</p>
+
+        <h2>Step 3: Set Up an Identity Provider</h2>
+
+        <p>Cloudflare Access supports multiple identity providers. For most small teams and solo developers, Google or GitHub are the easiest.</p>
+
+        <p><strong>Google (recommended for most teams):</strong></p>
+
+        <ol>
+            <li>Go to Google Cloud Console → APIs &amp; Services → Credentials</li>
+            <li>Create an OAuth 2.0 Client ID (Web application type)</li>
+            <li>Add authorized redirect URI: <code>https://yourdomain.com/cdn-cgi/access/callback</code></li>
+            <li>Copy the Client ID and Client Secret</li>
+        </ol>
+
+        <p>In Cloudflare Zero Trust → Access → Settings → Identity Providers:</p>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Setting</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Name</td>
+                    <td>Google</td>
+                </tr>
+                <tr>
+                    <td>Domain</td>
+                    <td>yourdomain.com</td>
+                </tr>
+                <tr>
+                    <td>Client ID</td>
+                    <td>(from Google Console)</td>
+                </tr>
+                <tr>
+                    <td>Client Secret</td>
+                    <td>(from Google Console)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Step 4: Create Access Policies</h2>
+
+        <p>Policies define <em>who</em> can access your application. Each application can have multiple policies — the first matching policy wins.</p>
+
+        <p><strong>Basic: Allow specific email domain</strong></p>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Rule</th>
+                    <th>Operator</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Email</td>
+                    <td>Ends with</td>
+                    <td>@company.com</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p><strong>Advanced: Allow specific team + group</strong></p>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Rule</th>
+                    <th>Operator</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Google Group Membership</td>
+                    <td>Is</td>
+                    <td>dev-team@company.com</td>
+                </tr>
+                <tr>
+                    <td>Device Posture</td>
+                    <td>Is</td>
+                    <td>Compliant</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p><strong>For personal projects: Allow specific emails</strong></p>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Rule</th>
+                    <th>Operator</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Email</td>
+                    <td>Is</td>
+                    <td>you@yourdomain.com</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Step 5: Read User Identity in Your Application</h2>
+
+        <p>Once Access authenticates the user, Cloudflare adds identity headers to every forwarded request. Your application can read these headers to know who is logged in.</p>
+
+        <p><strong>Python (Flask example):</strong></p>
+
+        <pre><code>from flask import Flask, request
+
+app = Flask(__name__)
+
+@app.route("/")
+def admin_dashboard():
+    # Cloudflare Access adds these headers
+    user_email = request.headers.get("X-Auth-Email")
+    user_name = request.headers.get("X-Auth-Name")
+    user_groups = request.headers.get("X-Auth-User-Groups")
+
+    return f"""
+    &lt;h1&gt;Welcome, {user_name}!&lt;/h1&gt;
+    &lt;p&gt;Email: {user_email}&lt;/p&gt;
+    &lt;p&gt;Groups: {user_groups or 'None'}&lt;/p&gt;
+    """
+
+if __name__ == "__main__":
+    app.run(host="127.0.0.1", port=8080)
+</code></pre>
+
+        <p><strong>Python (FastAPI example):</strong></p>
+
+        <pre><code>from fastapi import FastAPI, Request
+
+app = FastAPI()
+
+@app.get("/")
+async def dashboard(request: Request):
+    email = request.headers.get("x-auth-email", "Unknown")
+    name = request.headers.get("x-auth-name", "Unknown")
+
+    return {
+        "message": f"Welcome, {name}!",
+        "email": email,
+        "authenticated": True
+    }
+</code></pre>
+
+        <p><strong>Node.js (Express example):</strong></p>
+
+        <pre><code>const express = require("express");
+const app = express();
+
+app.get("/", (req, res) => {
+    const email = req.headers["x-auth-email"];
+    const name = req.headers["x-auth-name"];
+
+    res.send(`
+        &lt;h1&gt;Welcome, ${name}!&lt;/h1&gt;
+        &lt;p&gt;Email: ${email}&lt;/p&gt;
+    `);
+});
+
+app.listen(8080, "127.0.0.1");
+</code></pre>
+
+        <p>The available headers include:</p>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Header</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>X-Auth-Email</code></td>
+                    <td>User's email address</td>
+                </tr>
+                <tr>
+                    <td><code>X-Auth-Name</code></td>
+                    <td>User's display name</td>
+                </tr>
+                <tr>
+                    <td><code>X-Auth-User-Groups</code></td>
+                    <td>Comma-separated list of groups</td>
+                </tr>
+                <tr>
+                    <td><code>X-Auth-User-Id</code></td>
+                    <td>Unique user identifier</td>
+                </tr>
+                <tr>
+                    <td><code>Cf-Access-Jwt-Assertion</code></td>
+                    <td>Full JWT token (for advanced use)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Step 6: Run the Tunnel as a System Service</h2>
+
+        <p>For production, you want your tunnel to survive reboots. Use systemd:</p>
+
+        <pre><code># Create the systemd service
+sudo tee /etc/systemd/system/cloudflared-tunnel.service &gt; /dev/null &lt;&lt; 'EOF'
+[Unit]
+Description=Cloudflare Tunnel for Admin Dashboard
+After=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/cloudflared --config /root/.cloudflared/config.yml tunnel run my-admin-tunnel
+Restart=on-failure
+RestartSec=5
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Enable and start
+sudo systemctl enable cloudflared-tunnel
+sudo systemctl start cloudflared-tunnel
+
+# Check status
+sudo systemctl status cloudflared-tunnel
+</code></pre>
+
+        <h2>Advanced: Service Tokens for API Access</h2>
+
+        <p>Not all users access your tool through a browser. Monitoring scripts, CI/CD pipelines, and automation tools need machine-to-machine authentication.</p>
+
+        <p>Cloudflare Access <strong>Service Tokens</strong> solve this. Create one in the Access application settings:</p>
+
+        <pre><code># Generate a service token (Cloudflare dashboard)
+# You get: Client ID and Client Secret
+
+# Use it in your automation scripts
+curl -H "Cf-Access-Client-Id: &lt;CLIENT_ID&gt;" \
+     -H "Cf-Access-Client-Secret: &lt;CLIENT_SECRET&gt;" \
+     https://admin.yourdomain.com/api/health
+</code></pre>
+
+        <p><strong>Python example for automated access:</strong></p>
+
+        <pre><code>import requests
+from requests.auth import HTTPBasicAuth
+import base64
+
+# Service token auth via Cloudflare's challenge flow
+CLIENT_ID = "your-client-id"
+CLIENT_SECRET = "your-client-secret"
+AUDIENCE = "your-audience-from-dashboard"
+SERVICE_URL = "https://your-account.cloudflareaccess.com/cdn-cgi/access/service-token"
+
+# Step 1: Get a JWT token from Cloudflare
+token_resp = requests.post(SERVICE_URL, json={
+    "client_id": CLIENT_ID,
+    "client_secret": CLIENT_SECRET,
+    "audience": AUDIENCE
+})
+jwt_token = token_resp.json()["token"]
+
+# Step 2: Use the token to access your protected app
+response = requests.get(
+    "https://admin.yourdomain.com/api/health",
+    headers={"Authorization": f"Bearer {jwt_token}"}
+)
+
+print(response.json())
+</code></pre>
+
+        <h2>Cost: Free Tier Coverage</h2>
+
+        <p>Cloudflare's Free tier includes:</p>
+
+        <ul>
+            <li>Unlimited Cloudflare Tunnels</li>
+            <li>Cloudflare Access for up to 50 monthly active users (free)</li>
+            <li>Google, GitHub, and other SSO providers</li>
+            <li>Session tokens and basic policies</li>
+            <li>Service tokens</li>
+        </ul>
+
+        <p>For personal projects and small teams, the free tier covers everything. You only pay if you need enterprise features like device posture, MFA enforcement, or advanced logging (50+ users).</p>
+
+        <h2>Troubleshooting Common Issues</h2>
+
+        <p><strong>Issue: "403 Forbidden" after login</strong></p>
+        <p>Your Access policy is too restrictive. Check that your email matches the policy exactly. For testing, temporarily set the policy to "Email ends with" your domain.</p>
+
+        <p><strong>Issue: Tunnel won't start</strong></p>
+        <p>Check that your credentials file matches the tunnel ID. Run <code>cloudflared tunnel info</code> to verify the tunnel is active.</p>
+
+        <p><strong>Issue: Identity headers missing</strong></p>
+        <p>Make sure your application is accessed through the Cloudflare domain, not directly. If you bypass Cloudflare, the headers won't be present.</p>
+
+        <p><strong>Issue: Google OAuth redirect fails</strong></p>
+        <p>Verify your redirect URI in Google Cloud Console exactly matches <code>https://yourdomain.com/cdn-cgi/access/callback</code>. Even a trailing slash difference will break it.</p>
+
+        <h2>Summary</h2>
+
+        <p>Cloudflare Access replaces VPNs for internal tool access with a simpler, more secure model:</p>
+
+        <ol>
+            <li><strong>Tunnel</strong> — Connect your local app to Cloudflare without opening ports</li>
+            <li><strong>Identity Provider</strong> — Let users log in with Google/GitHub/Okta</li>
+            <li><strong>Policies</strong> — Define who can access (email domain, groups, etc.)</li>
+            <li><strong>Headers</strong> — Your app gets user identity via HTTP headers</li>
+            <li><strong>Service Tokens</strong> — Machine-to-machine auth for automation</li>
+        </ol>
+
+        <p>For solo developers and small teams, this setup takes under 30 minutes and costs nothing on the free tier. Your internal tools get enterprise-grade authentication without writing a single line of login code.</p>
+
+        <div class="prev-next-nav">
+            <a href="../posts/cloudflare-zero-trust.html" class="prev-link">← Cloudflare Zero Trust Overview</a>
+            <a href="../posts/cloudflare-tunnel.html" class="next-link">Cloudflare Tunnel Deep Dive →</a>
+        </div>
+    </article>
+
+    <script src="../theme.js"></script>
+</body>
+</html>

@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Dict & Set Comprehensions: Beyond Lists — Pythonic Data Processing</title>
+    <meta name="description" content="Master Python dictionary and set comprehensions — powerful one-liners for building dicts, filtering sets, inverting mappings, and grouping data the Pythonic way.">
+    <meta name="keywords" content="python dict comprehensions, python set comprehensions, dictionary comprehension, set comprehension, pythonic code, python data grouping, python mapping">
+    <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-dict-set-comprehensions.html">
+    <meta property="og:title" content="Python Dict & Set Comprehensions: Beyond Lists">
+    <meta property="og:description" content="Build dictionaries and sets in one line — invert mappings, group data, unique filtering, and more with Pythonic comprehensions.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.hugow.dev/posts/python-dict-set-comprehensions.html">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "headline": "Python Dict & Set Comprehensions: Beyond Lists — Pythonic Data Processing",
+      "author": {"@type": "Person", "name": "Hugo Wong"},
+      "datePublished": "2026-07-02",
+      "dateModified": "2026-07-02",
+      "publisher": {"@type": "Organization", "name": "Hugo's Dev Notes"}
+    }
+    </script>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+        
+        <article class="post-content">
+            <span class="tag python">Python</span>
+            <h1>Python Dict &amp; Set Comprehensions: Beyond Lists — Pythonic Data Processing</h1>
+            <time>July 2, 2026 · 8 min read</time>
+
+            <p>You've probably seen list comprehensions — that neat one-liner syntax that lets you build lists in a single expression. But Python offers two equally powerful siblings: <strong>dictionary comprehensions</strong> and <strong>set comprehensions</strong>. Together, they let you transform, filter, and restructure data with minimal code.</p>
+
+            <p>If you already know list comprehensions from our <a href="python-list-comprehensions.html">previous tutorial</a>, these will feel natural. If not, don't worry — the pattern is the same across all three.</p>
+
+            <h2>Quick Refresher: The Comprehension Pattern</h2>
+
+            <p>All Python comprehensions share the same structure:</p>
+            <pre><code># List comprehension
+[expression for item in iterable if condition]
+
+# Dict comprehension  ← curly braces, key:value pairs
+{key_expr: value_expr for item in iterable if condition}
+
+# Set comprehension    ← curly braces, single expression
+{expression for item in iterable if condition}</code></pre>
+
+            <p>The only difference? <code>[]</code> for lists, <code>{}</code> for dicts and sets. Dict comprehensions need a colon to separate keys from values. Set comprehensions work just like list comprehensions but return a set instead.</p>
+
+            <h2>Dictionary Comprehensions: Build Mappings in One Line</h2>
+
+            <h3>Basic Example: Square Numbers</h3>
+
+            <p>Create a dictionary where keys are numbers and values are their squares:</p>
+            <pre><code>squares = {x: x**2 for x in range(1, 6)}
+print(squares)
+# {1: 1, 2: 4, 3: 9, 4: 16, 5: 25}</code></pre>
+
+            <p>Without comprehensions, you'd write:</p>
+            <pre><code>squares = {}
+for x in range(1, 6):
+    squares[x] = x**2</code></pre>
+
+            <h3>Inverting a Dictionary</h3>
+
+            <p>One of the most common use cases: swap keys and values:</p>
+            <pre><code>prices = {"apple": 1.20, "banana": 0.50, "cherry": 3.00}
+lookup = {price: fruit for fruit, price in prices.items()}
+print(lookup)
+# {1.2: 'apple', 0.5: 'banana', 3.0: 'cherry'}</code></pre>
+
+            <p>Now you can look up a fruit by its price. Note that this only works when values are unique — duplicate values will overwrite keys in the result.</p>
+
+            <h3>Filtering Dictionaries</h3>
+
+            <p>Keep only entries that meet a condition:</p>
+            <pre><code>scores = {"alice": 92, "bob": 45, "charlie": 78, "diana": 88, "eve": 34}
+
+# Pass: score >= 60
+passing = {name: score for name, score in scores.items() if score >= 60}
+print(passing)
+# {'alice': 92, 'charlie': 78, 'diana': 88}
+
+# Grade letter mapping
+grades = {name: "A" if s >= 90 else "B" if s >= 80 
+          else "C" if s >= 70 else "F" 
+          for name, s in scores.items()}
+print(grades)
+# {'alice': 'A', 'bob': 'F', 'charlie': 'C', 'diana': 'B', 'eve': 'F'}</code></pre>
+
+            <h3>Grouping Data with Dict Comprehensions</h3>
+
+            <p>Combine with <code>setdefault</code> or use a regular loop for complex grouping:</p>
+            <pre><code>from collections import defaultdict
+
+words = ["hello", "world", "lol", "ok", "python", "hi", "code", "ai"]
+by_length = defaultdict(list)
+for word in words:
+    by_length[len(word)].append(word)
+
+print(dict(by_length))
+# {5: ['hello', 'world', 'python'], 3: ['lol', 'ok', 'hi', 'code'], 2: ['ai']}</code></pre>
+
+            <p>Or build an index for fast lookups:</p>
+            <pre><code>users = [
+    {"id": 1, "name": "Alice", "dept": "engineering"},
+    {"id": 2, "name": "Bob", "dept": "marketing"},
+    {"id": 3, "name": "Charlie", "dept": "engineering"},
+    {"id": 4, "name": "Diana", "dept": "sales"},
+]
+
+# Index by department
+by_dept = {}
+for user in users:
+    dept = user["dept"]
+    by_dept.setdefault(dept, []).append(user["name"])
+
+print(by_dept)
+# {'engineering': ['Alice', 'Charlie'], 'marketing': ['Bob'], 'sales': ['Diana']}</code></pre>
+
+            <h3>Merging Two Lists into a Dictionary</h3>
+
+            <p>Use <code>zip()</code> with a dict comprehension:</p>
+            <pre><code>names = ["Alice", "Bob", "Charlie"]
+ages = [30, 25, 35]
+
+people = {name: age for name, age in zip(names, ages)}
+print(people)
+# {'Alice': 30, 'Bob': 25, 'Charlie': 35}</code></pre>
+
+            <h3>Nested Dict Comprehensions</h3>
+
+            <p>Create matrices or lookup tables:</p>
+            <pre><code># Multiplication table as a nested dict
+mult_table = {x: {y: x * y for y in range(1, 4)} for x in range(1, 4)}
+print(mult_table)
+# {1: {1: 1, 2: 2, 3: 3}, 2: {1: 2, 2: 4, 3: 6}, 3: {1: 3, 2: 6, 3: 9}}</code></pre>
+
+            <h2>Set Comprehensions: Unique Values Made Easy</h2>
+
+            <h3>Basic Example</h3>
+
+            <p>Set comprehensions look identical to list comprehensions but use <code>{}</code> instead of <code>[]</code>:</p>
+            <pre><code>numbers = [1, 2, 2, 3, 3, 3, 4, 4, 4, 4]
+unique = {n for n in numbers}
+print(unique)
+# {1, 2, 3, 4}
+
+# Squares of even numbers
+even_squares = {x**2 for x in range(10) if x % 2 == 0}
+print(even_squares)
+# {0, 4, 16, 36, 64}</code></pre>
+
+            <h3>Extracting Unique Words</h3>
+
+            <p>Remove duplicates from text:</p>
+            <pre><code>text = "the quick brown fox jumps over the lazy dog and the fox"
+unique_words = {word.lower() for word in text.split()}
+print(unique_words)
+# {'the', 'quick', 'brown', 'fox', 'jumps', 'over', 'lazy', 'dog', 'and'}
+
+# Only words longer than 3 characters
+long_words = {word for word in text.split() if len(word) > 3}
+print(long_words)
+# {'quick', 'brown', 'jumps', 'over', 'lazy'}</code></pre>
+
+            <h3>Set Operations with Comprehensions</h3>
+
+            <p>Find common or unique elements across collections:</p>
+            <pre><code>students_cs = {"Alice", "Bob", "Charlie", "Diana"}
+students_math = {"Bob", "Diana", "Eve", "Frank"}
+
+# Students in both classes (intersection)
+both = students_cs & students_math
+print(both)
+# {'Bob', 'Diana'}
+
+# Students in only one class (symmetric difference)
+either = students_cs ^ students_math
+print(either)
+# {'Alice', 'Charlie', 'Eve', 'Frank'}
+
+# Combine with comprehension for filtering
+# Students whose names start with a vowel
+vowel_students = {name for name in students_cs if name[0].lower() in "aeiou"}
+print(vowel_students)
+# {'Alice'}</code></pre>
+
+            <h3>Practical Example: Processing API Response</h3>
+
+            <p>Here's a real-world pattern you'll encounter when working with APIs:</p>
+            <pre><code>response = [
+    {"user": "alice", "role": "admin", "active": True},
+    {"user": "bob", "role": "editor", "active": True},
+    {"user": "charlie", "role": "admin", "active": False},
+    {"user": "diana", "role": "viewer", "active": True},
+]
+
+# Get all unique roles
+roles = {entry["role"] for entry in response}
+print(roles)
+# {'admin', 'editor', 'viewer'}
+
+# Map active users to their roles
+active_roles = {entry["user"]: entry["role"] for entry in response if entry["active"]}
+print(active_roles)
+# {'alice': 'admin', 'bob': 'editor', 'diana': 'viewer'}
+
+# Group users by role
+role_groups = {}
+for entry in response:
+    role_groups.setdefault(entry["role"], []).append(entry["user"])
+print(role_groups)
+# {'admin': ['alice', 'charlie'], 'editor': ['bob'], 'viewer': ['diana']}</code></pre>
+
+            <h2>When NOT to Use Comprehensions</h2>
+
+            <p>Comprehensions are powerful, but not always the right tool:</p>
+
+            <ul>
+                <li><strong>Complex logic:</strong> If your comprehension spans more than 2 lines or has nested conditions, use a regular loop. Readability matters more than brevity.</li>
+                <li><strong>Side effects:</strong> Comprehensions should create new data structures, not perform actions like printing or file I/O.</li>
+                <li><strong>Memory concerns:</strong> Like list comprehensions, dict and set comprehensions load everything into memory. For massive datasets, use generators or process in chunks.</li>
+                <li><strong>Empty set trap:</strong> <code>{}</code> creates an empty dict, NOT an empty set. Use <code>set()</code> for an empty set.</li>
+            </ul>
+
+            <pre><code># ❌ This creates a dict, not a set!
+empty = {}
+print(type(empty))
+# &lt;class 'dict'&gt;
+
+# ✅ Correct way to create an empty set
+empty_set = set()
+print(type(empty_set))
+# &lt;class 'set'&gt;</code></pre>
+
+            <h2>Performance Comparison</h2>
+
+            <p>Comprehensions are not just cleaner — they're usually faster:</p>
+
+            <pre><code>import time
+
+# Method 1: Regular loop
+start = time.time()
+result = {}
+for i in range(100000):
+    result[i] = i * 2
+loop_time = time.time() - start
+
+# Method 2: Dict comprehension
+start = time.time()
+result = {i: i * 2 for i in range(100000)}
+comp_time = time.time() - start
+
+print(f"Loop: {loop_time:.4f}s, Comprehension: {comp_time:.4f}s")
+# Loop: 0.0156s, Comprehension: 0.0098s</code></pre>
+
+            <p>The comprehension wins because Python optimizes the internal loop at the C level. The difference is small for small datasets but adds up with millions of items.</p>
+
+            <h2>Summary Cheat Sheet</h2>
+
+            <pre><code># List comprehension
+[x*2 for x in range(5)]           # [0, 2, 4, 6, 8]
+
+# Dict comprehension
+{x: x*2 for x in range(5)}        # {0: 0, 1: 2, 2: 4, 3: 6, 4: 8}
+
+# Set comprehension
+{x*2 for x in range(5) if x > 0}  # {2, 4, 6, 8}
+
+# Invert a dict
+{k: v for v, k in original.items()}
+
+# Filter a dict
+{k: v for k, v in d.items() if v > 0}
+
+# Zip two lists into a dict
+{k: v for k, v in zip(keys, values)}</code></pre>
+
+            <p>Master these three comprehension types and you'll write significantly more Pythonic code. They're everywhere in the standard library, data science, and production codebases.</p>
+
+            <h2>Practice Exercises</h2>
+
+            <ol>
+                <li>Create a dict comprehension that maps each letter of the alphabet to its position (1-26).</li>
+                <li>Given a list of sentences, create a set comprehension of all unique words (lowercase, no punctuation).</li>
+                <li>Invert the <code>active_roles</code> dictionary from the API example above so roles are keys and lists of users are values.</li>
+                <li>Create a dict comprehension that converts temperatures from Celsius to Fahrenheit: <code>{°C: °F}</code>.</li>
+            </ol>
+
+            <p>Stuck? Reply to this post or check the <a href="../python.html">Python tutorial index</a> for more guides.</p>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Hugo's Dev Notes. Built with Python and ☕</p>
+        </div>
+    </footer>
+
+    <script>
+        // Theme toggle
+        const toggle = document.getElementById('themeToggle');
+        if (toggle) {
+            toggle.addEventListener('click', () => {
+                document.body.classList.toggle('light-theme');
+                localStorage.setItem('theme', document.body.classList.contains('light-theme') ? 'light' : 'dark');
+            });
+            if (localStorage.getItem('theme') === 'light') document.body.classList.add('light-theme');
+        }
+        // Progress bar
+        window.addEventListener('scroll', () => {
+            const bar = document.getElementById('progressBar');
+            if (bar) {
+                const scrolled = window.scrollY / (document.body.scrollHeight - window.innerHeight) * 100;
+                bar.style.width = scrolled + '%';
+            }
+        });
+    </script>
+</body>
+</html>

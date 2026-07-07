@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS Selectors, Specificity & the Cascade: Beginner's Complete Guide | Hugo's Dev Notes</title>
+    <meta name="description" content="Master CSS selectors, specificity calculations, and the cascade order. Learn how browsers decide which styles win with practical examples and working code snippets.">
+    <meta name="keywords" content="css selectors, css specificity, css cascade, css inheritance, web development, css tutorial">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn active">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+        
+        <article class="post-content">
+            <span class="tag web">Web Dev</span>
+            <h1>CSS Selectors, Specificity & the Cascade: How Browsers Decide Which Styles Win</h1>
+            <time>July 5, 2026 · 9 min read</time>
+
+            <p>You've written your CSS, but the browser is applying the wrong color, the wrong size, the wrong padding. You add <code>!important</code> and it "works" — but now your stylesheet is a mess of hacks. The root cause? Not understanding CSS selectors, specificity, and the cascade.</p>
+
+            <p>This guide explains exactly how browsers decide which style rule wins when multiple rules target the same element. Once you understand this system, you'll never need <code>!important</code> again.</p>
+
+            <h2>What Are CSS Selectors?</h2>
+
+            <p>CSS selectors are patterns that tell the browser <em>which elements</em> to apply styles to. They're the "who" in your CSS rules — the "what" (properties and values) comes after the curly braces.</p>
+
+            <p>Every CSS rule has the form:</p>
+
+            <pre><code>selector {
+    property: value;
+}</code></pre>
+
+            <p>There are several types of selectors, each with different power and specificity:</p>
+
+            <h3>Type Selectors (Element Selectors)</h3>
+
+            <p>The simplest selector — match elements by their HTML tag name:</p>
+
+            <pre><code>/* Targets all &lt;p&gt; elements on the page */
+p {
+    color: #333;
+    font-size: 16px;
+}
+
+/* Targets all &lt;h1&gt; elements */
+h1 {
+    font-size: 32px;
+    margin-bottom: 16px;
+}</code></pre>
+
+            <p>Type selectors have the lowest specificity. They're great for setting baseline styles across your entire page.</p>
+
+            <h3>Class Selectors</h3>
+
+            <p>The most commonly used selector — match elements by their <code>class</code> attribute:</p>
+
+            <pre><code>/* Targets elements with class="btn" */
+.btn {
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+/* You can reuse classes on any element */
+.btn-primary {
+    background-color: #4f46e5;
+    color: white;
+}
+
+/* Multiple classes on one element */
+.btn.btn-primary {
+    font-weight: bold;
+}</code></pre>
+
+            <p>HTML usage:</p>
+
+            <pre><code>&lt;button class="btn btn-primary"&gt;Sign Up&lt;/button&gt;
+&lt;a class="btn btn-primary" href="/login"&gt;Log In&lt;/a&gt;</code></pre>
+
+            <h3>ID Selectors</h3>
+
+            <p>Match elements by their <code>id</code> attribute. IDs should be unique per page:</p>
+
+            <pre><code>/* Targets the element with id="main-nav" */
+#main-nav {
+    display: flex;
+    justify-content: space-between;
+    padding: 16px 24px;
+}</code></pre>
+
+            <p>HTML usage:</p>
+
+            <pre><code>&lt;nav id="main-nav"&gt;
+    &lt;h1&gt;My Site&lt;/h1&gt;
+    &lt;ul&gt;...&lt;/ul&gt;
+&lt;/nav&gt;</code></pre>
+
+            <h3>Attribute Selectors</h3>
+
+            <p>Match elements based on their attributes — useful for forms and inputs:</p>
+
+            <pre><code>/* Any input with a type attribute */
+input[type="text"] {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+}
+
+/* Elements with a data attribute */
+[data-theme="dark"] {
+    background-color: #1a1a2e;
+    color: #eee;
+}
+
+/* Attribute starts with "icon-" */
+[class^="icon-"] {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+}</code></pre>
+
+            <h2>Combinators: Selecting by Relationship</h2>
+
+            <p>So far we've matched single elements. Combinators let you select elements based on their position in the HTML tree.</p>
+
+            <h3>Descendant Combinator (Space)</h3>
+
+            <p>Select any element nested inside another, at any depth:</p>
+
+            <pre><code>/* Any &lt;a&gt; inside a &lt;nav&gt;, no matter how deep */
+nav a {
+    text-decoration: none;
+    color: #666;
+}
+
+/* &lt;li&gt; → &lt;div&gt; → &lt;a&gt; also matches! */
+/* &lt;nav&gt; → &lt;ul&gt; → &lt;li&gt; → &lt;a&gt; also matches! */</code></pre>
+
+            <h3>Child Combinator (>)</h3>
+
+            <p>Select only <em>direct</em> children — one level deep:</p>
+
+            <pre><code>/* Only &lt;li&gt; that are direct children of &lt;ul&gt; */
+ul > li {
+    list-style: none;
+    padding: 4px 0;
+}
+
+/* This would NOT match: &lt;ul&gt; → &lt;div&gt; → &lt;li&gt; */</code></pre>
+
+            <h3>Adjacent Sibling (+) and General Sibling (~)</h3>
+
+            <pre><code>/* The &lt;p&gt; immediately after &lt;h2&gt; */
+h2 + p {
+    font-size: 1.2em;
+    color: #555;
+}
+
+/* ALL &lt;p&gt; siblings that come after &lt;h2&gt; */
+h2 ~ p {
+    margin-left: 16px;
+}</code></pre>
+
+            <h2>CSS Specificity: The Scoring System</h2>
+
+            <p>When two rules target the same element, the browser uses <strong>specificity</strong> to decide which one wins. Specificity is calculated as a three-part score: <code>(a, b, c)</code></p>
+
+            <ul>
+                <li><strong>a</strong> = number of ID selectors</li>
+                <li><strong>b</strong> = number of class selectors, attribute selectors, and pseudo-classes</li>
+                <li><strong>c</strong> = number of type selectors and pseudo-elements</li>
+            </ul>
+
+            <p>The higher score wins. Compare left to right — <code>(0, 1, 0)</code> beats <code>(0, 0, 999)</code> because the <strong>b</strong> column is higher.</p>
+
+            <h3>Specificity Examples</h3>
+
+            <pre><code>/* Specificity calculations */
+p                         → (0, 0, 1)   /* type selector */
+.btn                     → (0, 1, 0)   /* class selector */
+#header                  → (1, 0, 0)   /* ID selector */
+nav > ul.menu > li a     → (0, 1, 3)   /* 1 class + 3 types */
+.nav-link:hover          → (0, 2, 0)   /* 1 class + 1 pseudo-class */
+div.container > p        → (0, 1, 2)   /* 1 class + 2 types */
+input[type="email"]      → (0, 1, 1)   /* 1 attribute + 1 type */</code></pre>
+
+            <h3>Worked Example: The Battle</h3>
+
+            <pre><code>&lt;div id="sidebar" class="widget"&gt;
+    &lt;p&gt;This is sidebar text&lt;/p&gt;
+&lt;/div&gt;</code></pre>
+
+            <p>Three rules target the <code>&lt;p&gt;</code>:</p>
+
+            <pre><code>/* Rule 1: specificity (0, 0, 1) */
+p { color: red; }
+
+/* Rule 2: specificity (0, 1, 1) */
+.widget p { color: blue; }
+
+/* Rule 3: specificity (1, 0, 1) */
+#sidebar p { color: green; }</code></pre>
+
+            <p>Winner: <strong>Rule 3</strong> — the text is <code>green</code>. Even though Rule 2's class score (1) is higher than Rule 3's class score (0), Rule 3 wins because the ID column (1) is higher than all others (0). Compare column by column, left to right.</p>
+
+            <h2>The Cascade: What Happens When Specificity Is Equal?</h2>
+
+            <p>When two rules have the <em>same</em> specificity, the browser uses the cascade order:</p>
+
+            <ol>
+                <li><strong>Origin</strong> — browser defaults &lt; user styles &lt; author styles</li>
+                <li><strong>Importance</strong> — normal &lt; <code>!important</code></li>
+                <li><strong>Specificity</strong> — higher wins</li>
+                <li><strong>Source order</strong> — later rules win (last rule in the file)</li>
+            </ol>
+
+            <h3>Source Order: Last One Wins</h3>
+
+            <pre><code>/* These have the SAME specificity (0, 1, 0) */
+
+/* Rule A — appears first */
+.card {
+    background-color: white;
+}
+
+/* Rule B — appears LATER, so it wins */
+.card {
+    background-color: #f5f5f5;
+}</code></pre>
+
+            <p>The card's background is <code>#f5f5f5</code> because Rule B comes after Rule A, and both have equal specificity. This is why organizing your CSS file matters — put base styles first, component styles later, and overrides at the end.</p>
+
+            <h2>Inheritance: Which Properties Travel Down the Tree?</h2>
+
+            <p>Not all CSS properties are inherited. Understanding what gets inherited saves you from writing redundant rules.</p>
+
+            <h3>Inherited Properties (travel to children)</h3>
+
+            <pre><code>/* Font styles inherit automatically */
+body {
+    font-family: 'Inter', sans-serif;
+    font-size: 16px;
+    color: #333;
+    line-height: 1.6;
+}
+
+/* No need to set these on every child element */
+/* &lt;p&gt;, &lt;span&gt;, &lt;li&gt;, &lt;a&gt; all get these styles automatically */</code></pre>
+
+            <p>Other inherited properties: <code>letter-spacing</code>, <code>text-align</code>, <code>visibility</code>, <code>cursor</code>.</p>
+
+            <h3>Non-Inherited Properties (set per element)</h3>
+
+            <pre><code>/* These do NOT inherit — each element sets its own */
+div {
+    margin: 16px;
+    padding: 24px;
+    border: 1px solid #ddd;
+    background-color: #fff;
+    width: 100%;
+    display: block;
+}</code></pre>
+
+            <p>Non-inherited properties: <code>margin</code>, <code>padding</code>, <code>border</code>, <code>background</code>, <code>width</code>/<code>height</code>, <code>display</code>, <code>position</code>, <code>overflow</code>.</p>
+
+            <h3>Forcing Inheritance with the <code>inherit</code> Keyword</h3>
+
+            <pre><code>/* Make anchor tags inherit the body text color */
+/* (browsers default &lt;a&gt; to blue by default) */
+a {
+    color: inherit;
+}</code></pre>
+
+            <h2>Real-World Example: Building a Card Component</h2>
+
+            <p>Let's put it all together. Here's a clean card component using proper selector strategy:</p>
+
+            <pre><code>&lt;div class="card"&gt;
+    &lt;img class="card__image" src="photo.jpg" alt="Demo"&gt;
+    &lt;div class="card__body"&gt;
+        &lt;h3 class="card__title"&gt;Card Title&lt;/h3&gt;
+        &lt;p class="card__text"&gt;Card description text...&lt;/p&gt;
+        &lt;a class="card__link" href="#"&gt;Read more &rarr;&lt;/a&gt;
+    &lt;/div&gt;
+&lt;/div&gt;</code></pre>
+
+            <pre><code>/* Base card container */
+.card {
+    max-width: 360px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    overflow: hidden;
+    /* specificity: (0, 1, 0) */
+}
+
+/* Image area */
+.card__image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    /* specificity: (0, 1, 0) */
+}
+
+/* Content area */
+.card__body {
+    padding: 20px;
+    /* specificity: (0, 1, 0) */
+}
+
+/* Title — inherits font-family from body */
+.card__title {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0 0 8px;
+    /* specificity: (0, 1, 0) */
+}
+
+/* Text */
+.card__text {
+    font-size: 14px;
+    color: #6b7280;
+    line-height: 1.5;
+    margin: 0 0 16px;
+    /* specificity: (0, 1, 0) */
+}
+
+/* Link — inherits font-family, overrides color */
+.card__link {
+    color: #4f46e5;
+    text-decoration: none;
+    font-weight: 500;
+    /* specificity: (0, 1, 0) */
+}
+
+/* Hover state — higher specificity than .card__link */
+.card__link:hover {
+    text-decoration: underline;
+    /* specificity: (0, 2, 0) — class + pseudo-class */
+}</code></pre>
+
+            <h2>Best Practices: Avoiding Specificity Nightmares</h2>
+
+            <ol>
+                <li><strong>Prefer class selectors</strong> over ID selectors for styling. IDs have high specificity and can't be reused.</li>
+                <li><strong>Avoid deep nesting</strong> like <code>div > ul > li > a</code>. Use a single class like <code>.nav-link</code> instead.</li>
+                <li><strong>Never use <code>!important</code></strong> as a solution. If you need it, your selector strategy is wrong.</li>
+                <li><strong>Use BEM or utility naming</strong> to keep specificity flat and predictable.</li>
+                <li><strong>Keep specificity low and equal</strong> — make most selectors <code>(0, 1, 0)</code> so source order is the only tiebreaker.</li>
+                <li><strong>Use CSS custom properties</strong> (variables) for theming instead of overriding with more specific selectors.</li>
+            </ol>
+
+            <h2>Quick Reference: Specificity Cheat Sheet</h2>
+
+            <pre><code>Selector                    Specificity
+────────────────────────────────────────
+*                           (0, 0, 0)
+p                           (0, 0, 1)
+p:first-child               (0, 1, 1)
+.class                      (0, 1, 0)
+.class1.class2              (0, 2, 0)
+#id                         (1, 0, 0)
+!important                  ∞ (infinity)
+inline style                (1, 0, 0)
+</code></pre>
+
+            <h2>Practice Exercise</h2>
+
+            <p>Try this: What color is the text in this HTML?</p>
+
+            <pre><code>&lt;div id="main" class="content"&gt;
+    &lt;p class="highlight"&gt;What color am I?&lt;/p&gt;
+&lt;/div&gt;
+
+/* 1 */ .content p         { color: red; }     /* (0, 1, 1) */
+/* 2 */ p.highlight        { color: blue; }    /* (0, 1, 1) */
+/* 3 */ #main .highlight   { color: green; }   /* (1, 1, 0) */
+/* 4 */ div p              { color: orange; }  /* (0, 0, 2) */</code></pre>
+
+            <p>Answer: <strong>green</strong>. Rule 3 has specificity <code>(1, 1, 0)</code> which beats everything because of the ID selector. Between rules 1 and 2 (both <code>(0, 1, 1)</code>), rule 2 wins by source order — but rule 3 wins over both.</p>
+
+            <h2>Summary</h2>
+
+            <p>CSS specificity and the cascade are not optional knowledge — they're the foundation of every stylesheet you'll write. Remember the key principles:</p>
+
+            <ul>
+                <li>Specificity is scored as <code>(IDs, classes, types)</code></li>
+                <li>When specificity ties, the <strong>last rule wins</strong></li>
+                <li>Font and color properties <strong>inherit</strong>, layout properties do not</li>
+                <li>Flat, class-based selectors are easier to maintain</li>
+                <li><code>!important</code> should be a last resort, never a first choice</li>
+            </ul>
+
+            <p>Master these concepts, and your CSS will be predictable, maintainable, and free of hacks.</p>
+
+        </article>
+    </main>
+
+    <footer class="site-footer">
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes. Built with curiosity.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Progress bar
+        window.addEventListener('scroll', () => {
+            const winScroll = document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + '%';
+        });
+
+        // Theme toggle
+        const toggle = document.getElementById('themeToggle');
+        toggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            localStorage.setItem('theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
+        });
+        if (localStorage.getItem('theme') === 'light') {
+            document.body.classList.add('light-mode');
+        }
+    </script>
+</body>
+</html>

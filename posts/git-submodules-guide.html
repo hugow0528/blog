@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Git Submodules: Embed Repos Inside Repos — The Complete Guide | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn Git submodules for embedding external repositories. Setup, common commands, automation with git submodule foreach, troubleshooting, and when to use alternatives like Git subtrees.">
+    <meta name="keywords" content="git submodules, git tutorial, git subtrees, external dependencies, version control, git workflow">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/git-submodules-guide.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+            </nav>
+        </div>
+    </header>
+
+    <article class="post-content container">
+        <span class="tag devops">DevOps</span>
+        <div class="post-meta">
+            <span class="post-date">July 4, 2026</span>
+            <span class="read-time">10 min read</span>
+        </div>
+
+        <hr>
+
+        <p>Have you ever needed to use another Git repository as part of your project? Maybe a shared library, a common configuration, or a tool you're contributing to? Git submodules let you <strong>embed one repository inside another</strong>, keeping them as separate repos while tracking exactly which commit you're using.</p>
+
+        <p>Submodules have a reputation for being confusing. This guide demystifies them with practical examples, explains the common pain points, and shows you when to use submodules versus alternatives like Git subtrees.</p>
+
+        <h2>Why Use Submodules?</h2>
+
+        <p>Here are common scenarios where submodules make sense:</p>
+
+        <ul>
+            <li><strong>Shared libraries</strong> — A Python package used across multiple projects, maintained in its own repo</li>
+            <li><strong>Common configurations</strong> — Terraform modules, Dockerfiles, or CI configs shared across repositories</li>
+            <li><strong>External tools</strong> — Embedding a CLI tool you're developing alongside a project that uses it</li>
+            <li><strong>Forked dependencies</strong> — Using a fork of an open-source project while tracking the upstream</li>
+        </ul>
+
+        <p>Without submodules, you'd either copy the code (and fall out of sync) or install it as a package (and lose the ability to make local changes that immediately affect your project). Submodules give you the best of both worlds.</p>
+
+        <h2>Setting Up a Submodule</h2>
+
+        <p>Adding a submodule is straightforward. Here's the basic command:</p>
+
+        <pre><code># Add a submodule to your project
+git submodule add https://github.com/example/shared-config.git config
+
+# This creates:
+# - A new directory called 'config' with the repo contents
+# - A .gitmodules file tracking the submodule
+# - A gitlink entry in your main repo</code></pre>
+
+        <p>Let's walk through a real example:</p>
+
+        <pre><code># Start a new project
+mkdir my-project && cd my-project
+git init
+
+# Add a shared utility library as a submodule
+git submodule add https://github.com/hugow0528/shared-utils.git lib/shared-utils
+
+# Check what was created
+ls lib/shared-utils/    # The actual repository contents
+cat .gitmodules         # Config file tracking submodules</code></pre>
+
+        <p>The <code>.gitmodules</code> file is just a config file — it looks like this:</p>
+
+        <pre><code>[submodule "lib/shared-utils"]
+    path = lib/shared-utils
+    url = https://github.com/hugow0528/shared-utils.git</code></pre>
+
+        <p><strong>Important:</strong> <code>.gitmodules</code> is human-readable and committed to your repo. The actual submodule state is stored in the Git index as a special <em>gitlink</em> entry that points to a specific commit hash.</p>
+
+        <h2>The Clone That Breaks Everyone</h2>
+
+        <p>Here's the #1 thing that trips people up. When someone clones your repo with submodules, the submodule directories are created but <strong>they're empty</strong>:</p>
+
+        <pre><code># Someone clones your project:
+git clone https://github.com/example/my-project.git
+cd my-project
+
+ls lib/shared-utils/
+# → empty directory! The files aren't there.</code></pre>
+
+        <p>To actually get the submodule contents, they need to run:</p>
+
+        <pre><code># Option 1: Initialize and update submodules after cloning
+git submodule init
+git submodule update
+
+# Option 2: The modern one-liner
+git submodule update --init
+
+# Option 3: Clone everything at once (recommended for new clones)
+git clone --recurse-submodules https://github.com/example/my-project.git</code></pre>
+
+        <p><strong>Best practice:</strong> Always tell your team (or document) to use <code>--recurse-submodules</code> when cloning. Add it to your README:</p>
+
+        <pre><code># Clone with submodules
+git clone --recurse-submodules https://github.com/example/my-project.git
+
+# Or if you already cloned:
+git submodule update --init --recursive</code></pre>
+
+        <h2>Working with Submodules</h2>
+
+        <h3>Updating a Submodule to a Newer Commit</h3>
+        <p>When the external repo gets new changes, you can update your project to use them:</p>
+
+        <pre><code># Enter the submodule directory
+cd lib/shared-utils
+
+# Fetch and pull latest changes
+git pull origin main
+
+# Go back to the main project
+cd ../..
+
+# Commit the new submodule pointer
+git add lib/shared-utils
+git commit -m "Update shared-utils to latest version"</code></pre>
+
+        <p>This is clean because your project now points to a specific, tested commit of the submodule.</p>
+
+        <h3>Making Changes Inside a Submodule</h3>
+        <p>Submodule directories are regular Git repos. You can make changes, commit, and push normally:</p>
+
+        <pre><code># Navigate into the submodule
+cd lib/shared-utils
+
+# Make your changes
+echo "new_feature = True" >> config.py
+git add config.py
+git commit -m "Add new feature flag"
+
+# Push the submodule to its own remote
+git push origin main
+
+# NOW go back to the parent repo and commit the new reference
+cd ../..
+git add lib/shared-utils
+git commit -m "Update shared-utils: add feature flag"</code></pre>
+
+        <p><strong>Remember the two commits:</strong> one in the submodule repo, and one in the parent repo updating the gitlink.</p>
+
+        <h3>Common Submodule Commands</h3>
+
+        <pre><code># See all submodules and their status
+git submodule status
+# → abc123 lib/shared-utils (v1.2.0-12-gabc123)
+#   ↑abc123 means the submodule is ahead of the parent's pointer
+
+# See which branch each submodule is on
+git submodule foreach 'git branch --show-current'
+
+# Update all submodules to their tracked commits
+git submodule update --init --recursive
+
+# Sync submodule URLs (if the remote URL changed)
+git submodule sync
+
+# Remove a submodule (tedious, but necessary sometimes)
+git submodule deinit -f lib/shared-utils
+git rm lib/shared-utils
+rm -rf .git/modules/lib/shared-utils
+git commit -m "Remove shared-utils submodule"</code></pre>
+
+        <h2>Automation: Using <code>git submodule foreach</code></h2>
+
+        <p>The <code>foreach</code> command runs any shell command in every submodule. This is incredibly useful:</p>
+
+        <pre><code># Pull latest changes in ALL submodules
+git submodule foreach 'git pull origin $(git branch --show-current)'
+
+# Check status of all submodules
+git submodule foreach 'git status --short'
+
+# Show the last commit in each submodule
+git submodule foreach 'git log -1 --oneline'
+
+# Update all submodules to latest main
+git submodule foreach 'git checkout main && git pull'</code></pre>
+
+        <p>This is especially handy in monorepo-style setups where you have many submodules that need to stay in sync.</p>
+
+        <h2>Python Project Example: Using Submodules as Libraries</h2>
+
+        <p>Here's a practical setup for a Python project that uses a shared utility library:</p>
+
+        <pre><code># Project structure:
+my-project/
+├── main.py
+├── lib/
+│   └── shared-utils/    # submodule
+│       ├── utils.py
+│       └── __init__.py
+├── .gitmodules
+└── setup.py</code></pre>
+
+        <p>To use the submodule as an importable library, create a symlink or use the path directly:</p>
+
+        <pre><code># main.py
+import sys
+sys.path.insert(0, 'lib/shared-utils')
+
+from utils import format_date, send_email
+
+# Use the library normally
+today = format_date("2026-07-04")
+print(today)</code></pre>
+
+        <p>Or, for a cleaner approach, add the submodule to your project's <code>setup.py</code> or <code>pyproject.toml</code> as a path dependency:</p>
+
+        <pre><code># pyproject.toml
+[project]
+name = "my-project"
+version = "0.1.0"
+
+[tool.setuptools.package-data]
+"my-project" = ["lib/shared-utils/*"]</code></pre>
+
+        <h2>Submodules vs. Subtrees: When to Use What</h2>
+
+        <p>Git subtrees is an alternative that embeds another repo's contents directly into your project's directory tree (without tracking a separate gitlink):</p>
+
+        <div class="comparison-table">
+            <table>
+                <tr>
+                    <th>Feature</th>
+                    <th>Submodules</th>
+                    <th>Subtrees</th>
+                </tr>
+                <tr>
+                    <td>Clone complexity</td>
+                    <td>Needs <code>--recurse-submodules</code></td>
+                    <td>Normal <code>git clone</code></td>
+                </tr>
+                <tr>
+                    <td>Separate repo history</td>
+                    <td>Preserved</td>
+                    <td>Embedded in parent</td>
+                </tr>
+                <tr>
+                    <td>Multiple parents</td>
+                    <td>Same commit in many projects</td>
+                    <td>Each parent has its own copy</td>
+                </tr>
+                <tr>
+                    <td>Learning curve</td>
+                    <td>Steep</td>
+                    <td>Moderate</td>
+                </tr>
+                <tr>
+                    <td>Best for</td>
+                    <td>Shared libraries, many consumers</td>
+                    <td>Single-project dependencies</td>
+                </tr>
+            </table>
+        </div>
+
+        <p><strong>Rule of thumb:</strong> Use submodules when the same repo is shared across multiple projects. Use subtrees when you want simplicity and don't need to share the exact same commit across many projects.</p>
+
+        <h2>Troubleshooting Common Issues</h2>
+
+        <h3>Issue: "Empty directory" after cloning</h3>
+        <p>Run <code>git submodule update --init --recursive</code>. This is the most common first-time issue.</p>
+
+        <h3>Issue: Submodule points to a different commit</h3>
+        <p>Git status shows modified submodules. Use <code>git submodule status</code> to see the mismatch, then <code>git submodule update</code> to reset to the tracked commit.</p>
+
+        <h3>Issue: "fatal: no submodule mapping found"</h3>
+        <p>The <code>.gitmodules</code> file and <code>.git/config</code> are out of sync. Run <code>git submodule sync</code> to fix.</p>
+
+        <h3>Issue: GitHub can't see submodule content</h3>
+        <p>GitHub displays submodule links, not contents. If a submodule repo is private, clone the parent repo with your credentials (SSH token or HTTPS auth) so Git can access the private submodule.</p>
+
+        <h2>GitHub-Specific Tips</h2>
+
+        <pre><code># If using SSH, configure submodule URLs to use SSH
+git submodule foreach 'git config url.git@github.com:.insteadOf https://github.com/'
+
+# Check if submodules are on the correct branch
+git submodule foreach 'echo $name; git branch --show-current'
+
+# Update all submodules to latest on their respective branches
+git submodule foreach 'git pull origin $(git symbolic-ref --short HEAD)'</code></pre>
+
+        <h2>Summary</h2>
+
+        <p>Git submodules are powerful but need a bit of upfront knowledge:</p>
+
+        <ol>
+            <li><strong>Adding:</strong> <code>git submodule add URL path</code></li>
+            <li><strong>Cloning:</strong> <code>git clone --recurse-submodules</code></li>
+            <li><strong>Initializing:</strong> <code>git submodule update --init --recursive</code></li>
+            <li><strong>Updating:</strong> <code>cd</code> into submodule, <code>git pull</code>, then <code>git add</code> + <code>git commit</code> in parent</li>
+            <li><strong>Batching:</strong> <code>git submodule foreach 'command'</code></li>
+        </ol>
+
+        <p>Once you know the workflow, submodules become a reliable way to manage shared code across projects without the copy-paste trap.</p>
+
+    </article>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Hugo's Dev Notes. Built with curiosity and caffeine.</p>
+        </div>
+    </footer>
+
+    <script src="../theme.js"></script>
+    <script src="../progress.js"></script>
+</body>
+</html>

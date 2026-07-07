@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloudflare Workers + D1 Database: Build Serverless Apps with SQL | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn to build serverless applications using Cloudflare Workers with D1 SQL database. CRUD operations, migrations, indexing, and real-world patterns with zero infrastructure.">
+    <meta name="keywords" content="cloudflare workers, D1 database, serverless, SQL, edge computing, wrangler, migrations">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/cloudflare-workers-d1-database.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+
+        <article class="post-content">
+            <span class="tag cloudflare">Cloudflare</span>
+            <span class="tag devops">DevOps</span>
+            <h1>Cloudflare Workers + D1 Database: Build Serverless Apps with SQL</h1>
+            <time>July 7, 2026 · 11 min read</time>
+
+            <p>Cloudflare Workers lets you run code at the edge without managing servers. D1 is Cloudflare's native SQL database built on SQLite. Together, they form a powerful serverless stack: write a Worker, bind a D1 database, and you have a complete web application running on 300+ data centers worldwide.</p>
+
+            <p>Best part? The free tier includes 100,000 daily requests, 5 million D1 reads, and 100,000 D1 writes per day. That's enough for real production workloads.</p>
+
+            <h2>Why Workers + D1?</h2>
+
+            <p>Traditional serverless platforms (AWS Lambda, Vercel, Supabase) work well, but Workers + D1 offers unique advantages:</p>
+
+            <ul>
+                <li><strong>Speed:</strong> Your code runs at the edge, close to users worldwide. No cold starts.</li>
+                <li><strong>Cost:</strong> Generous free tier. Only pay when you exceed limits.</li>
+                <li><strong>SQL:</strong> D1 is SQLite — familiar syntax, JOINs, indexes, transactions.</li>
+                <li><strong>Ecosystem:</strong> Integrate with Cloudflare KV, Queues, R2, AI, and more from the same platform.</li>
+                <li><strong>Security:</strong> No public server IPs. Everything runs behind Cloudflare's network.</li>
+            </ul>
+
+            <h2>Setup: Install Wrangler</h2>
+
+            <p>Wrangler is Cloudflare's CLI tool for managing Workers, D1, and other services:</p>
+
+            <pre><code># Install Wrangler (requires Node.js 18+)
+npm install -g wrangler
+
+# Login to your Cloudflare account
+wrangler login</code></pre>
+
+            <h2>Step 1: Create a Worker Project</h2>
+
+            <pre><code># Initialize a new project
+npm create cloudflare@latest my-app
+# Choose: Worker
+# Choose: TypeScript (recommended) or JavaScript
+
+cd my-app</code></pre>
+
+            <p>This creates a project with a <code>wrangler.toml</code> config file and a <code>src/index.ts</code> entry point.</p>
+
+            <h2>Step 2: Create a D1 Database</h2>
+
+            <pre><code># Create a D1 database
+wrangler d1 create my-db
+
+# You'll get output like:
+# ⌛ Creating worker 'my-db'...
+# Success! Your DB name is 'my-db'
+# Your D1 database ID is: abc123-def456
+
+# Add it to your wrangler.toml</code></pre>
+
+            <p>Update <code>wrangler.toml</code> to bind the database:</p>
+
+            <pre><code>[d1_databases]
+bindings = [
+  { binding = "DB", database_name = "my-db", database_id = "abc123-def456" }
+]</code></pre>
+
+            <h2>Step 3: Define Your Schema with Migrations</h2>
+
+            <p>D1 uses migration files to define your database schema. Create a <code>migrations</code> directory:</p>
+
+            <pre><code>mkdir migrations</code></pre>
+
+            <p>Create your first migration file (<code>migrations/001_create_users.sql</code>):</p>
+
+            <pre><code>-- migrations/001_create_users.sql
+
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    email TEXT NOT NULL UNIQUE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS posts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    body TEXT NOT NULL,
+    published INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE INDEX idx_posts_user_id ON posts(user_id);
+CREATE INDEX idx_posts_published ON posts(published);</code></pre>
+
+            <p>Apply the migration to your local database:</p>
+
+            <pre><code># Run migration locally (uses SQLite)
+wrangler d1 execute my-db --local --file=migrations/001_create_users.sql
+
+# Run migration on Cloudflare (production)
+wrangler d1 execute my-db --remote --file=migrations/001_create_users.sql</code></pre>
+
+            <h2>Step 4: Build CRUD Endpoints</h2>
+
+            <p>Here's a complete Worker with full CRUD operations:</p>
+
+            <pre><code>// src/index.ts
+export interface Env {
+  DB: D1Database;
+}
+
+export default {
+  async fetch(request: Request, env: Env) {
+    const url = new URL(request.url);
+    const path = url.pathname;
+    const method = request.method;
+
+    // ---- USERS ----
+
+    // GET /api/users — List all users
+    if (path === "/api/users" && method === "GET") {
+      const result = await env.DB.prepare("SELECT * FROM users ORDER BY created_at DESC").all();
+      return Response.json(result.results);
+    }
+
+    // POST /api/users — Create a user
+    if (path === "/api/users" && method === "POST") {
+      const body = await request.json();
+      const { name, email } = body;
+
+      if (!name || !email) {
+        return Response.json({ error: "name and email are required" }, { status: 400 });
+      }
+
+      const result = await env.DB.prepare(
+        "INSERT INTO users (name, email) VALUES (?, ?)"
+      ).bind(name, email).run();
+
+      return Response.json({ id: result.meta.last_row_id, name, email }, { status: 201 });
+    }
+
+    // GET /api/users/:id — Get a single user
+    const userMatch = path.match(/^\/api\/users\/(\d+)$/);
+    if (userMatch && method === "GET") {
+      const userId = userMatch[1];
+      const result = await env.DB.prepare(
+        "SELECT * FROM users WHERE id = ?"
+      ).bind(userId).first();
+
+      if (!result) {
+        return Response.json({ error: "User not found" }, { status: 404 });
+      }
+
+      return Response.json(result);
+    }
+
+    // ---- POSTS ----
+
+    // GET /api/posts?published=1 — List posts (with optional filter)
+    if (path === "/api/posts" && method === "GET") {
+      const published = url.searchParams.get("published");
+
+      let query = "SELECT posts.*, users.name as author FROM posts JOIN users ON posts.user_id = users.id";
+      const bindings: (string | number)[] = [];
+
+      if (published !== null) {
+        query += " WHERE posts.published = ?";
+        bindings.push(parseInt(published));
+      }
+
+      query += " ORDER BY posts.created_at DESC";
+
+      const stmt = env.DB.prepare(query);
+      bindings.forEach((b) => stmt.bind(b));
+      const result = await stmt.all();
+
+      return Response.json(result.results);
+    }
+
+    // POST /api/posts — Create a post
+    if (path === "/api/posts" && method === "POST") {
+      const body = await request.json();
+      const { user_id, title, body: postBody } = body;
+
+      if (!user_id || !title || !postBody) {
+        return Response.json({ error: "user_id, title, and body are required" }, { status: 400 });
+      }
+
+      // Verify user exists
+      const user = await env.DB.prepare(
+        "SELECT id FROM users WHERE id = ?"
+      ).bind(user_id).first();
+
+      if (!user) {
+        return Response.json({ error: "User not found" }, { status: 404 });
+      }
+
+      const result = await env.DB.prepare(
+        "INSERT INTO posts (user_id, title, body) VALUES (?, ?, ?)"
+      ).bind(user_id, title, postBody).run();
+
+      return Response.json({ id: result.meta.last_row_id, user_id, title }, { status: 201 });
+    }
+
+    // PATCH /api/posts/:id/publish — Publish a post
+    const publishMatch = path.match(/^\/api\/posts\/(\d+)\/publish$/);
+    if (publishMatch && method === "PATCH") {
+      const postId = publishMatch[1];
+
+      const result = await env.DB.prepare(
+        "UPDATE posts SET published = 1 WHERE id = ?"
+      ).bind(postId).run();
+
+      if (result.meta.changes === 0) {
+        return Response.json({ error: "Post not found" }, { status: 404 });
+      }
+
+      return Response.json({ published: true });
+    }
+
+    // 404 for everything else
+    return Response.json({ error: "Not found" }, { status: 404 });
+  }
+};</code></pre>
+
+            <h2>Understanding D1 Query Methods</h2>
+
+            <p>D1 provides three query methods depending on your needs:</p>
+
+            <table>
+                <tr>
+                    <th>Method</th>
+                    <th>Returns</th>
+                    <th>Use Case</th>
+                </tr>
+                <tr>
+                    <td><code>.all()</code></td>
+                    <td>Array of all rows</td>
+                    <td>SELECT queries returning multiple rows</td>
+                </tr>
+                <tr>
+                    <td><code>.first()</code></td>
+                    <td>Single row object</td>
+                    <td>SELECT queries expecting one result</td>
+                </tr>
+                <tr>
+                    <td><code>.run()</code></td>
+                    <td>Metadata (changes, last_row_id)</td>
+                    <td>INSERT, UPDATE, DELETE (no data returned)</td>
+                </tr>
+            </table>
+
+            <p>Example of each:</p>
+
+            <pre><code>// .all() — Get all results
+const allPosts = await env.DB.prepare("SELECT * FROM posts").all();
+// { results: [{id: 1, title: "..."}, ...], success: true }
+
+// .first() — Get first result only (more efficient)
+const post = await env.DB.prepare(
+  "SELECT * FROM posts WHERE id = ?"
+).bind(1).first();
+// { id: 1, title: "Hello", body: "...", ... }
+
+// .run() — Execute without returning rows
+const result = await env.DB.prepare(
+  "DELETE FROM posts WHERE id = ?"
+).bind(1).run();
+// { changes: 1, last_row_id: 0, success: true }</code></pre>
+
+            <h2>Parameterized Queries: Never Concatenate SQL</h2>
+
+            <p>Always use parameterized queries with <code>.bind()</code> to prevent SQL injection:</p>
+
+            <pre><code>// ✅ SAFE — parameterized query
+await env.DB.prepare(
+  "SELECT * FROM users WHERE email = ?"
+).bind(userInput).all();
+
+// ❌ DANGEROUS — SQL injection vulnerability
+await env.DB.prepare(
+  `SELECT * FROM users WHERE email = '${userInput}'`
+).all();</code></pre>
+
+            <p>You can bind multiple values:</p>
+
+            <pre><code>await env.DB.prepare(
+  "SELECT * FROM posts WHERE user_id = ? AND published = ?"
+).bind(userId, 1).all();</code></pre>
+
+            <h2>Batch Queries with Transactions</p>
+
+            <p>For multiple operations that should succeed or fail together, use D1's batch API:</p>
+
+            <pre><code>// Execute multiple queries atomically
+const result = await env.DB.batch([
+  env.DB.prepare("INSERT INTO users (name, email) VALUES (?, ?)").bind("Hugo", "hugo@example.com"),
+  env.DB.prepare("INSERT INTO posts (user_id, title, body) VALUES ((SELECT id FROM users WHERE email = ?), ?, ?)")
+    .bind("hugo@example.com", "First Post", "Hello world!"),
+  env.DB.prepare("UPDATE users SET name = ? WHERE email = ?").bind("Hugo W.", "hugo@example.com"),
+]);</code></pre>
+
+            <p>All queries either succeed together or none execute. This is essential for operations like creating a user and their default settings, or transferring money between accounts.</p>
+
+            <h2>Local Development with Wrangler</h2>
+
+            <p>Test your Worker locally before deploying:</p>
+
+            <pre><code># Start local dev server
+wrangler dev
+
+# Your Worker is now running at http://localhost:8787
+
+# Test it:
+curl http://localhost:8787/api/users
+# []
+
+curl -X POST http://localhost:8787/api/users \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Hugo", "email": "hugo@example.com"}'
+# {"id": 1, "name": "Hugo", "email": "hugo@example.com"}</code></pre>
+
+            <h2>Deploy to Production</h2>
+
+            <pre><code># Deploy your Worker
+wrangler deploy
+
+# Visit your URL
+# https://my-app.your-subdomain.workers.dev/api/users</code></pre>
+
+            <p>Set a custom domain in the Cloudflare dashboard or via CLI:</p>
+
+            <pre><code>wrangler pages domain my-app.workers.dev api.mydomain.com</code></pre>
+
+            <h2>Performance Tips</h2>
+
+            <ul>
+                <li><strong>Use indexes wisely:</strong> Add indexes on columns you filter or sort by. Too many indexes slow down writes. The rule of thumb: index columns used in <code>WHERE</code> and <code>JOIN</code> clauses.</li>
+                <li><strong>SELECT only what you need:</strong> <code>SELECT id, name FROM users</code> is faster than <code>SELECT * FROM users</code>.</li>
+                <li><strong>Use LIMIT:</strong> Always add <code>LIMIT</code> to queries that might return large result sets.</li>
+                <li><strong>Cache at the edge:</strong> Use Cloudflare's edge cache or Workers KV for frequently read data. Query D1 only when you need fresh data.</li>
+                <li><strong>Batch operations:</strong> Instead of N separate queries, use D1's batch API for atomic multi-query operations.</li>
+                <li><strong>Handle D1 latency:</strong> D1 replication can take up to 60 seconds. Avoid write-then-read patterns; use <code>idempotent</code> operations when possible.</li>
+            </ul>
+
+            <h2>Real-World Example: URL Shortener</h2>
+
+            <p>Here's a complete URL shortener in under 80 lines:</p>
+
+            <pre><code>// migrations/001_create_urls.sql
+CREATE TABLE IF NOT EXISTS urls (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    short_code TEXT NOT NULL UNIQUE,
+    original_url TEXT NOT NULL,
+    clicks INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+// src/index.ts
+export interface Env { DB: D1Database; }
+
+function generateCode(length = 6) {
+  const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let result = "";
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
+export default {
+  async fetch(request: Request, env: Env) {
+    const url = new URL(request.url);
+
+    // Shorten URL: POST /api/shorten?url=https://example.com
+    if (url.pathname === "/api/shorten" && request.method === "POST") {
+      const body = await request.json();
+      const { url: originalUrl } = body;
+
+      if (!originalUrl) {
+        return Response.json({ error: "url parameter required" }, { status: 400 });
+      }
+
+      const code = generateCode();
+      await env.DB.prepare(
+        "INSERT INTO urls (short_code, original_url) VALUES (?, ?)"
+      ).bind(code, originalUrl).run();
+
+      return Response.json({ short_url: `${url.origin}/${code}` });
+    }
+
+    // Redirect: GET /:code
+    const match = url.pathname.match(/^\/([a-zA-Z0-9]{6})$/);
+    if (match) {
+      const code = match[1];
+
+      // Get URL and increment clicks in a batch
+      const result = await env.DB.batch([
+        env.DB.prepare("SELECT original_url FROM urls WHERE short_code = ?").bind(code),
+        env.DB.prepare("UPDATE urls SET clicks = clicks + 1 WHERE short_code = ?").bind(code),
+      ]);
+
+      const row = result[0].results?.[0];
+      if (!row) {
+        return Response.json({ error: "Short URL not found" }, { status: 404 });
+      }
+
+      return Response.redirect(row.original_url, 302);
+    }
+
+    // Stats: GET /api/stats/:code
+    const statsMatch = url.pathname.match(/^\/api\/stats\/([a-zA-Z0-9]{6})$/);
+    if (statsMatch) {
+      const code = statsMatch[1];
+      const row = await env.DB.prepare(
+        "SELECT clicks, created_at FROM urls WHERE short_code = ?"
+      ).bind(code).first();
+
+      if (!row) {
+        return Response.json({ error: "Not found" }, { status: 404 });
+      }
+
+      return Response.json(row);
+    }
+
+    return new Response("Welcome to the URL Shortener! POST to /api/shorten", {
+      headers: { "Content-Type": "text/plain" },
+    });
+  }
+};</code></pre>
+
+            <h2>Monitoring and Limits</h2>
+
+            <p>Track your D1 usage in the Cloudflare dashboard:</p>
+
+            <ul>
+                <li><strong>Database size:</strong> Free tier allows 5 GB. You'll get notified at 80%.</li>
+                <li><strong>Reads/Writes:</strong> Monitor via the API — <code>wrangler d1 info my-db</code></li>
+                <li><strong>Execution time:</strong> D1 queries are limited to 15 seconds. Optimize slow queries with indexes and <code>EXPLAIN</code>.</li>
+            </ul>
+
+            <pre><code># Check database info
+wrangler d1 info my-db
+
+# Sample a query to check performance
+wrangler d1 execute my-db --local --execute="EXPLAIN QUERY PLAN SELECT * FROM posts WHERE user_id = 1"</code></pre>
+
+            <h2>Common Gotchas</h2>
+
+            <ul>
+                <li><strong>D1 is eventually consistent:</strong> After writing, reads may return stale data for up to 60 seconds. Design your app around this.</li>
+                <li><strong>No joins across databases:</strong> Each D1 database is isolated. Plan your schema carefully.</li>
+                <li><strong>SQLite syntax:</strong> D1 uses SQLite, not PostgreSQL or MySQL. Some syntax differs (e.g., <code>AUTOINCREMENT</code> behavior, <code>INTEGER PRIMARY KEY</code> auto-increments).</li>
+                <li><strong>Migration files must be sequential:</strong> Name them <code>001_...</code>, <code>002_...</code> etc. Running them out of order will fail.</li>
+                <li><strong>Local vs Remote:</strong> Always test migrations locally first with <code>--local</code>, then push to production with <code>--remote</code>.</li>
+            </ul>
+
+            <h2>Conclusion</h2>
+
+            <p>Cloudflare Workers + D1 gives you a complete serverless application platform. Write code, define your schema with migrations, and deploy globally in seconds. The free tier is generous enough for production workloads, and the edge network ensures your app is fast everywhere.</p>
+
+            <p>Start small — a CRUD API, a URL shortener, a personal dashboard — and expand as you learn. The same patterns scale from hobby projects to production applications handling millions of requests.</p>
+
+            <p>Already know Workers? Check out the <a href="posts/cloudflare-workers-api.html">Workers API tutorial</a> or explore <a href="posts/cloudflare-queues-guide.html">Cloudflare Queues</a> for async task processing.</p>
+
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo Wong · Built with curiosity and Coffee</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528">GitHub</a>
+                <a href="https://hugow.dev">hugow.dev</a>
+                <a href="/sitemap.xml">Sitemap</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-mode');
+            themeToggle.textContent = '☀';
+        }
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            themeToggle.textContent = isLight ? '☀' : '◐';
+        });
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + "%";
+        });
+    </script>
+</body>
+</html>

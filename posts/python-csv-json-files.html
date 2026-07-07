@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python CSV and JSON Files: Read, Write, and Transform Data - Hugo's Dev Notes</title>
+    <meta name="description" content="Learn to read, write, and transform CSV and JSON files in Python. Practical examples for data processing, API responses, and configuration files with the built-in csv and json modules.">
+    <meta name="keywords" content="python, csv, json, files, data processing, tutorial, beginner, standard library">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-csv-json-files.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <article class="post-content">
+        <span class="tag python">Python</span>
+        <h1>Python CSV and JSON Files: Read, Write, and Transform Data</h1>
+        <div class="post-meta">
+            <span class="post-date">July 7, 2026</span>
+            <span class="read-time">10 min read</span>
+            <span class="post-badge">New</span>
+        </div>
+
+        <p>If you're working with data in Python, you'll inevitably encounter CSV and JSON files. Whether you're exporting reports, importing datasets, or interacting with APIs, these two formats are everywhere. Python makes handling them effortless with built-in modules — no <code>pip install</code> required.</p>
+
+        <p>In this guide, we'll cover everything from basic file reading to advanced data transformations, with practical examples you can use in real projects today.</p>
+
+        <h2>What Are CSV and JSON?</h2>
+
+        <p><strong>CSV (Comma-Separated Values)</strong> is a tabular format where each line represents a row and values are separated by commas. It's the go-to format for spreadsheets, databases, and data exports.</p>
+
+        <p><strong>JSON (JavaScript Object Notation)</strong> is a hierarchical format for structured data. APIs return JSON, configuration files use JSON, and many NoSQL databases store data as JSON. It maps naturally to Python dictionaries and lists.</p>
+
+        <h2>Reading CSV Files with the <code>csv</code> Module</h2>
+
+        <p>Python's built-in <code>csv</code> module handles all the quirks of CSV parsing — quoted fields, commas inside values, different delimiters — so you don't have to.</p>
+
+        <h3>Basic CSV Reading</h3>
+
+        <p>Here's a sample CSV file called <code>employees.csv</code>:</p>
+
+<pre><code>name,department,salary,start_year
+Alice,Engineering,95000,2021
+Bob,Marketing,72000,2020
+Charlie,Engineering,105000,2019
+Diana,Sales,68000,2022
+Eve,Engineering,88000,2023
+</code></pre>
+
+        <p>Read it row by row using <code>csv.reader</code>:</p>
+
+<pre><code>import csv
+
+with open('employees.csv', 'r') as f:
+    reader = csv.reader(f)
+    header = next(reader)  # Skip header row
+    print(header)
+    # Output: ['name', 'department', 'salary', 'start_year']
+
+    for row in reader:
+        print(row)
+    # Output:
+    # ['Alice', 'Engineering', '95000', '2021']
+    # ['Bob', 'Marketing', '72000', '2020']
+    # ...
+</code></pre>
+
+        <p>Each row is returned as a list of strings. The <code>next(reader)</code> call skips the header row.</p>
+
+        <h3>Using <code>csv.DictReader</code> for Cleaner Access</h3>
+
+        <p>When your CSV has headers, <code>csv.DictReader</code> is much more convenient. Each row becomes a dictionary keyed by column name:</p>
+
+<pre><code>import csv
+
+with open('employees.csv', 'r') as f:
+    reader = csv.DictReader(f)
+    for row in reader:
+        print(f"{row['name']}: ${row['salary']} in {row['department']}")
+
+# Output:
+# Alice: $95000 in Engineering
+# Bob: $72000 in Marketing
+# Charlie: $105000 in Engineering
+# Diana: $68000 in Sales
+# Eve: $88000 in Engineering
+</code></pre>
+
+        <h3>Filtering and Transforming CSV Data</h3>
+
+        <p>Let's find all engineers and calculate their average salary:</p>
+
+<pre><code>import csv
+
+engineers = []
+
+with open('employees.csv', 'r') as f:
+    reader = csv.DictReader(f)
+    for row in reader:
+        if row['department'] == 'Engineering':
+            engineers.append(row)
+
+# Calculate average salary
+avg_salary = sum(int(e['salary']) for e in engineers) / len(engineers)
+print(f"Engineering team: {len(engineers)} people")
+print(f"Average salary: ${avg_salary:,.0f}")
+
+# Output:
+# Engineering team: 3 people
+# Average salary: $96,000
+</code></pre>
+
+        <h3>Writing CSV Files</h3>
+
+        <p>Use <code>csv.writer</code> to create CSV output:</p>
+
+<pre><code>import csv
+
+# Filter: only engineers, write to new file
+with open('employees.csv', 'r') as infile:
+    reader = csv.DictReader(infile)
+    engineers = [row for row in reader if row['department'] == 'Engineering']
+
+# Write filtered results
+with open('engineers.csv', 'w', newline='') as outfile:
+    writer = csv.DictWriter(outfile, fieldnames=['name', 'salary', 'start_year'])
+    writer.writeheader()
+    writer.writerows(engineers)
+
+print("Created engineers.csv with", len(engineers), "rows")
+</code></pre>
+
+        <p>Note the <code>newline=''</code> parameter — it's essential on Windows to avoid blank lines between rows. Always include it when writing CSV files.</p>
+
+        <h3>Working with Different Delimiters</h3>
+
+        <p>CSV doesn't always mean commas. Many files use tabs, semicolons, or pipes:</p>
+
+<pre><code>import csv
+
+# Tab-separated file
+with open('data.tsv', 'r') as f:
+    reader = csv.reader(f, delimiter='\t')
+    for row in reader:
+        print(row)
+
+# Semicolon-separated (common in European exports)
+with open('european_data.csv', 'r') as f:
+    reader = csv.DictReader(f, delimiter=';')
+    for row in reader:
+        print(row)
+</code></pre>
+
+        <h2>Reading JSON Files with the <code>json</code> Module</h2>
+
+        <p>JSON maps directly to Python data types: objects become dictionaries, arrays become lists, strings stay strings, numbers become int or float, and boolean/null become True/False/None.</p>
+
+        <h3>Basic JSON Reading</h3>
+
+        <p>Here's a <code>config.json</code> file:</p>
+
+<pre><code>{
+    "app_name": "MyApp",
+    "version": "2.1.0",
+    "database": {
+        "host": "localhost",
+        "port": 5432,
+        "name": "myapp_db"
+    },
+    "features": ["auth", "logging", "cache"],
+    "debug": false
+}
+</code></pre>
+
+        <p>Load it into a Python dictionary:</p>
+
+<pre><code>import json
+
+with open('config.json', 'r') as f:
+    config = json.load(f)
+
+print(config['app_name'])       # MyApp
+print(config['database']['host'])  # localhost
+print(config['features'])        # ['auth', 'logging', 'cache']
+print(type(config))              # &lt;class 'dict'&gt;
+</code></pre>
+
+        <h3>Working with JSON Arrays</h3>
+
+        <p>Many API responses return a JSON array at the top level:</p>
+
+<pre><code>{
+    "users": [
+        {"id": 1, "name": "Alice", "role": "admin"},
+        {"id": 2, "name": "Bob", "role": "user"},
+        {"id": 3, "name": "Charlie", "role": "user"}
+    ]
+}
+</code></pre>
+
+<pre><code>import json
+
+with open('users.json', 'r') as f:
+    data = json.load(f)
+
+# Iterate over the users array
+for user in data['users']:
+    print(f"User {user['id']}: {user['name']} ({user['role']})")
+
+# Filter admins
+admins = [u for u in data['users'] if u['role'] == 'admin']
+print(f"Found {len(admins)} admin(s)")
+</code></pre>
+
+        <h3>Writing JSON Files</h3>
+
+        <p>Convert Python objects back to JSON with <code>json.dump()</code>:</p>
+
+<pre><code>import json
+
+# Transform data and save
+summary = {
+    "total_users": len(data['users']),
+    "admin_count": len(admins),
+    "user_count": len(data['users']) - len(admins),
+    "roles": {}
+}
+
+# Count by role
+for user in data['users']:
+    role = user['role']
+    summary['roles'][role] = summary['roles'].get(role, 0) + 1
+
+with open('summary.json', 'w') as f:
+    json.dump(summary, f, indent=2)
+
+print("Created summary.json")
+# Output:
+# {
+#   "total_users": 3,
+#   "admin_count": 1,
+#   "user_count": 2,
+#   "roles": {
+#     "admin": 1,
+#     "user": 2
+#   }
+# }
+</code></pre>
+
+        <p>The <code>indent=2</code> parameter formats the output with readable indentation. Without it, <code>json.dump()</code> produces compact one-line JSON.</p>
+
+        <h3>Pretty-Printing JSON Strings</h3>
+
+        <p>Use <code>json.dumps()</code> (with an 's' for "string") when you want a formatted string instead of writing to a file:</p>
+
+<pre><code>import json
+
+data = {"name": "Alice", "scores": [95, 87, 92], "active": True}
+
+# Compact
+print(json.dumps(data))
+# Output: {"name": "Alice", "scores": [95, 87, 92], "active": true}
+
+# Pretty-printed
+print(json.dumps(data, indent=2))
+# Output:
+# {
+#   "name": "Alice",
+#   "scores": [95, 87, 92],
+#   "active": true
+# }
+</code></pre>
+
+        <h3>Handling JSON Parsing Errors</h3>
+
+        <p>Always handle malformed JSON — especially when reading from external sources:</p>
+
+<pre><code>import json
+
+def safe_load_json(filepath):
+    """Load JSON with error handling."""
+    try:
+        with open(filepath, 'r') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        print(f"Error: {filepath} not found")
+        return None
+    except json.JSONDecodeError as e:
+        print(f"Error: Invalid JSON in {filepath}")
+        print(f"  Line {e.lineno}, Column {e.colno}: {e.msg}")
+        return None
+    except PermissionError:
+        print(f"Error: Cannot read {filepath}")
+        return None
+
+data = safe_load_json('data.json')
+if data is not None:
+    print(f"Loaded {len(data)} items")
+</code></pre>
+
+        <h2>Converting Between CSV and JSON</h2>
+
+        <p>A common task is converting CSV to JSON (or vice versa). Here's a complete conversion utility:</p>
+
+<pre><code>import csv
+import json
+
+def csv_to_json(csv_file, json_file):
+    """Convert a CSV file to JSON array of objects."""
+    with open(csv_file, 'r') as f:
+        reader = csv.DictReader(f)
+        data = list(reader)
+
+    with open(json_file, 'w') as f:
+        json.dump(data, f, indent=2)
+
+    print(f"Converted {len(data)} rows to JSON")
+
+def json_to_csv(json_file, csv_file):
+    """Convert a JSON array of objects to CSV."""
+    with open(json_file, 'r') as f:
+        data = json.load(f)
+
+    if not data:
+        print("No data to convert")
+        return
+
+    # Get all unique keys (column names)
+    fieldnames = list(data[0].keys())
+
+    with open(csv_file, 'w', newline='') as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(data)
+
+    print(f"Converted {len(data)} records to CSV")
+
+# Usage
+csv_to_json('employees.csv', 'employees.json')
+json_to_csv('employees.json', 'employees_backup.csv')
+</code></pre>
+
+        <h2>Real-World Example: Processing API Data</h2>
+
+        <p>Let's combine CSV and JSON skills to process data fetched from an API, transform it, and save it in both formats:</p>
+
+<pre><code>import json
+import csv
+
+# Simulated API response
+api_data = {
+    "status": "success",
+    "count": 4,
+    "results": [
+        {"id": 1, "project": "Web App", "budget": 50000, "status": "active", "team_size": 5},
+        {"id": 2, "project": "Mobile App", "budget": 75000, "status": "planning", "team_size": 3},
+        {"id": 3, "project": "API Service", "budget": 30000, "status": "active", "team_size": 2},
+        {"id": 4, "project": "Data Pipeline", "budget": 45000, "status": "completed", "team_size": 4}
+    ]
+}
+
+# Save raw API response as JSON
+with open('api_response.json', 'w') as f:
+    json.dump(api_data, f, indent=2)
+
+# Extract and transform data
+projects = api_data['results']
+
+# Filter active projects
+active_projects = [p for p in projects if p['status'] == 'active']
+
+# Calculate total budget for active projects
+total_active_budget = sum(p['budget'] for p in active_projects)
+
+# Write summary to CSV
+with open('active_projects.csv', 'w', newline='') as f:
+    writer = csv.DictWriter(f, fieldnames=['id', 'project', 'budget', 'team_size'])
+    writer.writeheader()
+    writer.writerows(active_projects)
+
+# Write report as JSON
+report = {
+    "total_projects": len(projects),
+    "active_projects": len(active_projects),
+    "total_active_budget": total_active_budget,
+    "average_team_size": round(
+        sum(p['team_size'] for p in active_projects) / len(active_projects), 1
+    ),
+    "projects": active_projects
+}
+
+with open('report.json', 'w') as f:
+    json.dump(report, f, indent=2)
+
+print(f"Active projects: {len(active_projects)}")
+print(f"Total active budget: ${total_active_budget:,}")
+print(f"Average team size: {report['average_team_size']}")
+
+# Output:
+# Active projects: 2
+# Total active budget: $80,000
+# Average team size: 3.5
+</code></pre>
+
+        <h2>Handling Large Files</h2>
+
+        <p>For files that won't fit in memory, process them line by line or in chunks:</p>
+
+<pre><code>import csv
+
+# Process large CSV one row at a time (constant memory usage)
+def count_by_department(filename):
+    departments = {}
+    with open(filename, 'r') as f:
+        reader = csv.DictReader(f)
+        for row in reader:  # Reads one row at a time
+            dept = row['department']
+            departments[dept] = departments.get(dept, 0) + 1
+    return departments
+
+counts = count_by_department('huge_employees.csv')
+print(counts)
+# Output: {'Engineering': 1523, 'Marketing': 487, 'Sales': 932, ...}
+</code></pre>
+
+        <p>For large JSON arrays, consider using <code>ijson</code> (a streaming JSON parser) instead of <code>json.load()</code>, which loads the entire file into memory.</p>
+
+        <h2>Quick Reference</h2>
+
+        <table class="reference-table">
+            <tr>
+                <th>Task</th>
+                <th>Code</th>
+            </tr>
+            <tr>
+                <td>Read CSV as rows</td>
+                <td><code>csv.reader(f)</code></td>
+            </tr>
+            <tr>
+                <td>Read CSV as dicts</td>
+                <td><code>csv.DictReader(f)</code></td>
+            </tr>
+            <tr>
+                <td>Write CSV</td>
+                <td><code>csv.writer(f)</code> / <code>csv.DictWriter(f)</code></td>
+            </tr>
+            <tr>
+                <td>Read JSON file</td>
+                <td><code>json.load(f)</code></td>
+            </tr>
+            <tr>
+                <td>Read JSON string</td>
+                <td><code>json.loads(text)</code></td>
+            </tr>
+            <tr>
+                <td>Write JSON file</td>
+                <td><code>json.dump(data, f, indent=2)</code></td>
+            </tr>
+            <tr>
+                <td>Write JSON string</td>
+                <td><code>json.dumps(data, indent=2)</code></td>
+            </tr>
+            <tr>
+                <td>Custom CSV delimiter</td>
+                <td><code>csv.reader(f, delimiter='\t')</code></td>
+            </tr>
+        </table>
+
+        <h2>Summary</h2>
+
+        <p>CSV and JSON are the two most common data formats you'll encounter in Python. The built-in <code>csv</code> and <code>json</code> modules handle everything you need:</p>
+
+        <ul>
+            <li><code>csv.DictReader</code> and <code>csv.DictWriter</code> for tabular data</li>
+            <li><code>json.load()</code> and <code>json.dump()</code> for structured data</li>
+            <li>Both support reading/writing from files and strings</li>
+            <li>Always handle errors — especially for external data sources</li>
+            <li>Use <code>newline=''</code> when writing CSV on all platforms</li>
+            <li>Use <code>indent=2</code> for human-readable JSON output</li>
+        </ul>
+
+        <p>Practice these patterns with your own data files. Once you're comfortable reading and writing CSV and JSON, you're ready to tackle APIs, data pipelines, and automation scripts.</p>
+
+    </article>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo Wong · Built with curiosity and Coffee</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528">GitHub</a>
+                <a href="https://hugow.dev">hugow.dev</a>
+                <a href="../sitemap.xml">Sitemap</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-mode');
+            themeToggle.textContent = '☀';
+        }
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            themeToggle.textContent = isLight ? '☀' : '◐';
+        });
+
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + "%";
+        });
+    </script>
+</body>
+</html>

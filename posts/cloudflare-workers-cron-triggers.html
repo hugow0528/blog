@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloudflare Workers Cron Triggers: Scheduled Tasks on the Edge | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn how to run scheduled tasks with Cloudflare Workers Cron Triggers. Build automated jobs, health checks, data syncs, and webhooks — all serverless, all running at the edge.">
+    <meta name="keywords" content="cloudflare workers, cron triggers, scheduled tasks, serverless cron, cloudflare workers cron, automation, edge computing">
+    <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/cloudflare-workers-cron-triggers.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+
+        <article class="post-content">
+            <span class="tag cloudflare">Cloudflare</span>
+            <span class="tag devops">DevOps</span>
+            <h1>Cloudflare Workers Cron Triggers: Scheduled Tasks on the Edge</h1>
+            <time>July 3, 2026 · 11 min read</time>
+
+            <p>Need to run a cleanup job every hour? Fetch data from an API every 10 minutes? Send daily digest emails? Traditionally, you'd set up a server with <code>crontab</code>, keep it running 24/7, and manage its uptime. Cloudflare Workers Cron Triggers eliminate all of that — you write a small script, and Cloudflare runs it on a schedule, for free (up to 500K invocations/month on the free tier).</p>
+
+            <p>This guide covers everything: setup, cron expressions, real-world patterns, Python integration via the Workers API, and production best practices.</p>
+
+            <h2>What Are Cron Triggers?</h2>
+
+            <p>Cron Triggers let your Cloudflare Worker execute on a schedule — just like <code>crontab</code> on Linux, but running on Cloudflare's global network. Your code executes at one of Cloudflare's edge locations, with no server to provision or maintain.</p>
+
+            <h3>Key features:</h3>
+            <ul>
+                <li><strong>Free tier:</strong> Up to 500,000 invocations per month (enough for a cron running every minute: ~43,800/month)</li>
+                <li><strong>Execution time:</strong> Up to 15 minutes (Workers Paid: up to 30 minutes)</li>
+                <li><strong>Cron syntax:</strong> Standard cron expressions with one caveat — you need at least one <code>*</code> or <code>,</code> in the minute or hour field</li>
+                <li><strong>Global execution:</strong> Runs from the nearest edge location, low latency</li>
+            </ul>
+
+            <h2>Setup: Your First Cron Worker</h2>
+
+            <h3>Step 1: Install Wrangler CLI</h3>
+            <pre><code># Install Wrangler (Cloudflare's CLI tool)
+npm install -g wrangler
+
+# Log in to your Cloudflare account
+wrangler login</code></pre>
+
+            <h3>Step 2: Initialize a Worker Project</h3>
+            <pre><code># Create a new project
+mkdir cron-worker
+cd cron-worker
+wrangler init --name my-cron-worker
+
+# This creates:
+# └── src/
+#     └── index.js    # Your Worker code
+# └── wrangler.toml   # Configuration file</code></pre>
+
+            <h3>Step 3: Configure Cron in wrangler.toml</h3>
+            <pre><code># wrangler.toml
+name = "my-cron-worker"
+main = "src/index.js"
+compatibility_date = "2026-07-01"
+
+# Define cron schedule(s)
+triggers = { cron = ["*/10 * * * *", "0 9 * * 1"] }</code></pre>
+
+            <p>This configuration runs the worker:</p>
+            <ul>
+                <li><code>*/10 * * * *</code> — Every 10 minutes</li>
+                <li><code>0 9 * * 1</code> — Every Monday at 9:00 AM UTC</li>
+            </ul>
+
+            <h3>Step 4: Write the Worker Code</h3>
+            <pre><code>// src/index.js
+
+export default {
+    // Regular HTTP request handler
+    async fetch(request, env) {
+        return new Response("Worker is alive!", {
+            headers: { "Content-Type": "text/plain" }
+        });
+    },
+
+    // Cron schedule handler — runs on schedule
+    async scheduled(event, env, ctx) {
+        console.log(`Cron triggered at ${new Date().toISOString()}`);
+        console.log("Scheduled event:", JSON.stringify(event));
+
+        // Your scheduled task logic here
+        await doSomething(env);
+    }
+};
+
+async function doSomething(env) {
+    // Example: fetch data and store in Workers KV
+    const response = await fetch("https://api.example.com/data");
+    const data = await response.json();
+
+    // Store in KV
+    await env.MY_KV.put("latest-data", JSON.stringify(data));
+    console.log("Data stored successfully");
+}</code></pre>
+
+            <h3>Step 5: Deploy</h3>
+            <pre><code># Deploy to Cloudflare
+wrangler deploy
+
+# Verify cron schedule
+wrangler triggers cron list
+
+# Test locally (simulate a cron trigger)
+npx wrangler dev --test-scheduled</code></pre>
+
+            <h2>Understanding Cron Expressions</h2>
+
+            <p>Cron expressions define when your job runs. Standard format: <code>minute hour day-of-month month day-of-week</code></p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Schedule</th>
+                        <th>Expression</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Every minute</td>
+                        <td><code>* * * * *</code></td>
+                    </tr>
+                    <tr>
+                        <td>Every 5 minutes</td>
+                        <td><code>*/5 * * * *</code></td>
+                    </tr>
+                    <tr>
+                        <td>Every hour at :30</td>
+                        <td><code>30 * * * *</code></td>
+                    </tr>
+                    <tr>
+                        <td>Every Monday at 9 AM UTC</td>
+                        <td><code>0 9 * * 1</code></td>
+                    </tr>
+                    <tr>
+                        <td>Weekdays at 2 PM UTC</td>
+                        <td><code>0 14 * * 1-5</code></td>
+                    </tr>
+                    <tr>
+                        <td>1st of every month at midnight</td>
+                        <td><code>0 0 1 * *</code></td>
+                    </tr>
+                    <tr>
+                        <td>Every 30 minutes, 8 AM–6 PM UTC</td>
+                        <td><code>*/30 8-18 * * *</code></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <blockquote>
+                <strong>Important limitation:</strong> Cloudflare requires at least one <code>*</code> or <code>,</code> in the minute or hour field. This means you can't use <code>30 14 * * *</code> (specific time, no wildcard). Instead use <code>30 14 * * *</code> — wait, that actually works because of the <code>*</code> in other fields. The real rule: you need a <code>*</code> or <code>,</code> in the <strong>minute</strong> field specifically. So <code>30 14 * * *</code> works, but you can't do something like "exactly 2:30 PM only on Mondays" without adding flexibility.
+            </blockquote>
+
+            <p>Use <a href="https://crontab.guru/" target="_blank">crontab.guru</a> to validate your expressions.</p>
+
+            <h2>Real-World Use Cases</h2>
+
+            <h3>1. Health Check Monitor</h3>
+            <p>Monitor your services and get alerted if they go down:</p>
+
+            <pre><code>// src/index.js
+export default {
+    async scheduled(event, env, ctx) {
+        const services = [
+            { name: "API", url: "https://api.example.com/health" },
+            { name: "Web App", url: "https://app.example.com" },
+            { name: "Database Proxy", url: "https://db.example.com/status" },
+        ];
+
+        const results = [];
+
+        for (const service of services) {
+            const start = Date.now();
+            try {
+                const res = await fetch(service.url, {
+                    signal: AbortSignal.timeout(5000),
+                });
+                const elapsed = Date.now() - start;
+
+                results.push({
+                    name: service.name,
+                    status: res.status === 200 ? "healthy" : "degraded",
+                    response_time_ms: elapsed,
+                    http_status: res.status,
+                });
+
+            } catch (err) {
+                results.push({
+                    name: service.name,
+                    status: "down",
+                    error: err.message,
+                });
+            }
+        }
+
+        // Store results in KV for dashboard display
+        await env.HEALTH_KV.put(
+            `check-${Date.now()}`,
+            JSON.stringify(results)
+        );
+
+        // Send alert if any service is down
+        const anyDown = results.some(r => r.status === "down");
+        if (anyDown) {
+            await sendAlert(env, results);
+        }
+    }
+};
+
+async function sendAlert(env, results) {
+    // Send to Discord webhook
+    const failed = results.filter(r => r.status === "down");
+    const message = {
+        content: `🚨 Service Alert:\n${failed.map(f => `• ${f.name}: ${f.error || f.status}`).join("\n")}`,
+    };
+
+    await fetch(env.DISCORD_WEBHOOK_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(message),
+    });
+}</code></pre>
+
+            <h3>2. Data Sync Between APIs</h3>
+            <p>Periodically sync data from one service to another:</p>
+
+            <pre><code>export default {
+    async scheduled(event, env, ctx) {
+        console.log("Starting data sync...");
+
+        // Fetch new records from source
+        const source = await fetch(
+            `${env.SOURCE_API_URL}/items?since=${env.LAST_SYNC_TS}`,
+            { headers: { "Authorization": `Bearer ${env.SOURCE_API_KEY}` } }
+        );
+        const items = await source.json();
+
+        // Transform and send to destination
+        for (const item of items) {
+            await fetch(env.DEST_API_URL, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${env.DEST_API_KEY}`,
+                },
+                body: JSON.stringify(transformItem(item)),
+            });
+        }
+
+        // Update last sync timestamp
+        await env.MY_KV.put("last_sync", Date.now().toString());
+        console.log(`Synced ${items.length} items`);
+    }
+};
+
+function transformItem(item) {
+    return {
+        id: item.uid,
+        title: item.name,
+        price: item.cost * 1.1, // Add 10% margin
+        category: item.type.toLowerCase(),
+    };
+}</code></pre>
+
+            <h3>3. Automated Report Generator</h3>
+            <p>Generate and email daily/weekly reports:</p>
+
+            <pre><code>export default {
+    async scheduled(event, env, ctx) {
+        // Build report from stored data
+        const cursor = await env.STATS_KV.list({ limit: 1000 });
+        const data = cursor.keys.map(k => ({ key: k.name }));
+
+        const report = {
+            date: new Date().toISOString(),
+            total_entries: data.length,
+            summary: data.slice(0, 100), // First 100 entries
+        };
+
+        // Store report in R2 for long-term storage
+        await env.MY_R2.put(`reports/${new Date().toISOString().split('T')[0]}.json`,
+            JSON.stringify(report, null, 2)
+        );
+
+        console.log("Report generated and stored in R2");
+    }
+};</code></pre>
+
+            <h2>Using Python with Workers Cron</h2>
+
+            <p>Workers run JavaScript/TypeScript, but you can orchestrate Python scripts via the API. Here's a pattern for triggering Python jobs from a Worker cron:</p>
+
+            <h3>Python Script (runs on your server or via GitHub Actions)</h3>
+            <pre><code># process_data.py
+import requests
+import json
+
+def process_data():
+    """Fetch data, process it, send results back."""
+    # Fetch from Cloudflare KV via API
+    headers = {
+        "Authorization": f"Bearer {CF_API_TOKEN}",
+        "Content-Type": "application/json",
+    }
+
+    # Process and store results
+    response = requests.post(
+        "https://api.cloudflare.com/client/v4/accounts/"
+        f"{ACCOUNT_ID}/storage/kv/namespaces/{NAMESPACE_ID}",
+        headers=headers,
+        data={"key": "processed-result", "value": json.dumps({"status": "ok"})}
+    )
+    print(f"Stored result: {response.status_code}")
+
+if __name__ == "__main__":
+    process_data()</code></pre>
+
+            <h3>Worker Cron that triggers a webhook</h3>
+            <pre><code>// This cron calls your Python endpoint
+export default {
+    async scheduled(event, env, ctx) {
+        try {
+            const res = await fetch(env.PYTHON_WEBHOOK_URL, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Trigger": "cloudflare-cron",
+                },
+                body: JSON.stringify({
+                    timestamp: new Date().toISOString(),
+                    schedule: event.cron,
+                }),
+            });
+
+            if (!res.ok) {
+                console.error(`Webhook failed: ${res.status} ${res.statusText}`);
+            }
+        } catch (err) {
+            console.error("Webhook error:", err);
+        }
+    }
+};</code></pre>
+
+            <h2>Bindings: What Data Can Your Cron Access?</h2>
+
+            <p>Cron triggers have the same bindings as regular Workers — your scheduled code can access:</p>
+
+            <ul>
+                <li><strong>Workers KV</strong> — Key-value storage (free tier: 100K reads, 1K writes/day)</li>
+                <li><strong>D1 Database</strong> — SQLite database (free tier: 5MB storage, 5M reads/day)</li>
+                <li><strong>R2 Storage</strong> — Object storage (free tier: 10GB storage, 1M reads/month)</li>
+                <li><strong>Secrets</strong> — Secure environment variables</li>
+                <li><strong>Fetch API</strong> — Call any HTTP endpoint</li>
+                <li><strong>Hyperdrive</strong> — Database connection pooling</li>
+            </ul>
+
+            <p>Configure these in <code>wrangler.toml</code>:</p>
+
+            <pre><code># wrangler.toml
+kv_namespaces = [
+    { binding = "MY_KV", id = "abc123" },
+    { binding = "HEALTH_KV", id = "def456" }
+]
+
+d1_databases = [
+    { binding = "DB", database_name = "my-db", database_id = "xyz789" }
+]
+
+r2_buckets = [
+    { binding = "MY_R2", bucket_name = "reports" }
+]
+
+[vars]
+DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/..."
+
+# Secrets are set via CLI, never stored in wrangler.toml
+# wrangler secret put SOURCE_API_KEY
+# wrangler secret put DEST_API_KEY</code></pre>
+
+            <h2>Error Handling and Reliability</h2>
+
+            <p>Cron jobs can fail. Here's how to handle it gracefully:</p>
+
+            <pre><code>export default {
+    async scheduled(event, env, ctx) {
+        const runId = crypto.randomUUID();
+        console.log(`Run ${runId} started`);
+
+        try {
+            // Check if a previous run is still in progress (avoid overlap)
+            const lastRun = await env.MY_KV.get("last_run_id");
+            if (lastRun) {
+                console.log(`Previous run ${lastRun} may still be running, skipping`);
+                // Optional: send alert about overlap
+                return;
+            }
+
+            // Mark this run as started
+            await env.MY_KV.put("last_run_id", runId, {
+                expirationTtl: 600, // Expire after 10 minutes
+            });
+
+            // Your main logic
+            await doTheWork(env);
+
+            // Clean up
+            await env.MY_KV.delete("last_run_id");
+            console.log(`Run ${runId} completed successfully`);
+
+        } catch (error) {
+            console.error(`Run ${runId} failed:`, error);
+            // Log the error for investigation
+            await env.MY_KV.put(`error-${runId}`, JSON.stringify({
+                error: error.message,
+                timestamp: new Date().toISOString(),
+                cron: event.cron,
+            }));
+            // Optionally retry or alert
+        }
+    }
+};</code></pre>
+
+            <h2>Monitoring and Debugging</h2>
+
+            <h3>View Logs</h3>
+            <pre><code># View logs in the Cloudflare dashboard:
+# Workers & Pages → Your Worker → Logs
+
+# Or via Wrangler CLI
+wrangler tail
+
+# Filter for specific cron runs
+wrangler tail --include "scheduled"</code></pre>
+
+            <h3>Cloudflare Observability</h3>
+            <p>Cloudflare Workers includes built-in logging with logdrain support. You can send logs to:</p>
+            <ul>
+                <li>Cloudflare's built-in Log Explorer (paid plans)</li>
+                <li>External services via Logpush (Datadog, Splunk, AWS CloudWatch, etc.)</li>
+                <li>Workers KV for custom dashboards</li>
+            </ul>
+
+            <h2>Cost Considerations</h2>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Plan</th>
+                        <th>Cron Invocations/Month</th>
+                        <th>Price</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Free</td>
+                        <td>500,000</td>
+                        <td>$0</td>
+                    </tr>
+                    <tr>
+                        <td>Workers Paid</td>
+                        <td>Unlimited (charged per invocation)</td>
+                        <td>$5 + $0.30/M requests</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p>For most use cases, the free tier is plenty. A cron running every 5 minutes = ~8,760 invocations/year = well within the free limit.</p>
+
+            <h2>Best Practices</h2>
+
+            <ul>
+                <li><strong>Keep jobs short:</strong> Design cron tasks to complete within seconds, not minutes. Use queues for long-running work.</li>
+                <li><strong>Idempotent design:</strong> A cron job might run twice (rare but possible). Design so double-runs don't cause data corruption.</li>
+                <li><strong>Use <code>ctx</code> for deferred work:</strong> The <code>ctx</code> parameter lets you defer non-critical work (like sending notifications) that runs after the response:</li>
+                <li><strong>Store state externally:</strong> Workers are stateless. Use KV, D1, or R2 to persist data between runs.</li>
+                <li><strong>Set timeouts:</strong> Always use <code>AbortSignal.timeout()</code> when fetching external APIs to avoid hanging.</li>
+                <li><strong>Monitor failures:</strong> Set up alerts for failed cron runs so you catch issues early.</li>
+                <li><strong>Use UTC:</strong> All cron schedules use UTC. Plan accordingly and document the timezone.</li>
+            </ul>
+
+            <p>Example using <code>ctx</code> for deferred work:</p>
+
+            <pre><code>export default {
+    async scheduled(event, env, ctx) {
+        // Critical path — must complete within timeout
+        const data = await fetchAndProcessData(env);
+
+        // Defer non-critical work — runs after the scheduled event "completes"
+        ctx.waitUntil(sendNotification(env, data));
+
+        console.log("Cron completed, notification sending in background");
+    }
+};</code></pre>
+
+            <h2>Next Steps</h2>
+            <ul>
+                <li>Combine Workers Cron with <a href="cloudflare-workers-kv.html">Workers KV</a> for persistent state</li>
+                <li>Use Workers to build a <a href="cloudflare-workers-api.html">serverless API</a> that your cron jobs call</li>
+                <li>Pair with <a href="cloudflare-d1-database.html">D1 Database</a> for structured data storage</li>
+                <li>Deploy with <a href="github-actions-cicd.html">GitHub Actions</a> for automated cron worker updates</li>
+            </ul>
+
+            <blockquote>
+                <strong>Practice tip:</strong> Start with a simple cron that logs "Hello World" every 5 minutes. Deploy it, verify it runs, then gradually add real logic. The fastest way to learn Workers Cron is to build something small and watch it execute on Cloudflare's network.
+            </blockquote>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes. Built with vibe coding.</p>
+        </div>
+    </footer>
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        if (themeToggle) {{
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            if (savedTheme === 'light') {{
+                document.body.classList.add('light-mode');
+                themeToggle.textContent = '☀';
+            }}
+            themeToggle.addEventListener('click', () => {{
+                document.body.classList.toggle('light-mode');
+                const isLight = document.body.classList.contains('light-mode');
+                localStorage.setItem('theme', isLight ? 'light' : 'dark');
+                themeToggle.textContent = isLight ? '☀' : '◐';
+            }});
+        }}
+        window.addEventListener('scroll', () => {{
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            const bar = document.getElementById('progressBar');
+            if (bar) bar.style.width = scrolled + "%";
+        }});
+    </script>
+</body>
+</html>

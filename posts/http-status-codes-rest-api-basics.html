@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTTP Status Codes & REST API Basics — Beginner's Guide with Python Examples | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn HTTP status codes, REST API principles, and how to build and test APIs with Python. Beginner-friendly guide with working curl and Python examples.">
+    <meta name="keywords" content="HTTP status codes, REST API, API basics, Python requests, web development, 200 404 500, API tutorial">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/http-status-codes-rest-api-basics.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-content">
+            <span class="tag web">Web Dev</span>
+            <span class="tag python">Python</span>
+            <span class="tag security">Security</span>
+
+            <h1>HTTP Status Codes & REST API Basics: A Beginner's Guide with Python Examples</h1>
+            <time>July 3, 2026 · 10 min read</time>
+
+            <p>If you've ever used the internet, you've interacted with HTTP — the Hypertext Transfer Protocol. It's the foundation of every website, every API call, and every time you load a page. Understanding HTTP status codes and REST API principles is essential for any developer, whether you're building web apps, writing Python scripts that talk to APIs, or just debugging why a request failed.</p>
+
+            <p>In this guide, we'll cover the most important HTTP status codes, the core principles of REST APIs, and how to interact with APIs using Python's <code>requests</code> library. You'll walk away with working examples you can run immediately.</p>
+
+            <h2>What Are HTTP Status Codes?</h2>
+
+            <p>Every time your browser or a Python script makes an HTTP request, the server responds with a <strong>status code</strong> — a three-digit number that tells you what happened. Think of it as the server's way of communicating success, errors, or special instructions.</p>
+
+            <p>Status codes are grouped into five categories:</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Range</th>
+                        <th>Category</th>
+                        <th>Meaning</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>1xx</code></td>
+                        <td>Informational</td>
+                        <td>Request received, continue</td>
+                    </tr>
+                    <tr>
+                        <td><code>2xx</code></td>
+                        <td>Success</td>
+                        <td>Request succeeded</td>
+                    </tr>
+                    <tr>
+                        <td><code>3xx</code></td>
+                        <td>Redirection</td>
+                        <td>Take further action</td>
+                    </tr>
+                    <tr>
+                        <td><code>4xx</code></td>
+                        <td>Client Error</td>
+                        <td>Something's wrong with your request</td>
+                    </tr>
+                    <tr>
+                        <td><code>5xx</code></td>
+                        <td>Server Error</td>
+                        <td>Something's wrong on the server</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2>The Most Common Status Codes You'll See</h2>
+
+            <h3>2xx — Success</h3>
+
+            <p><strong><code>200 OK</code></strong> — The golden standard. Your request was received, understood, and processed successfully. This is what you want to see 99% of the time.</p>
+
+            <p><strong><code>201 Created</code></strong> — A new resource was successfully created. You'll see this when you POST data to create a new user, blog post, or database entry.</p>
+
+            <p><strong><code>204 No Content</code></strong> — The request succeeded, but there's nothing to return in the body. Common when you delete a resource or update something that doesn't need a response body.</p>
+
+            <h3>3xx — Redirection</h3>
+
+            <p><strong><code>301 Moved Permanently</code></strong> — The resource has moved to a new URL forever. Search engines use this for permanent redirects. Your browser will automatically follow it.</p>
+
+            <p><strong><code>302 Found</code></strong> — The resource is temporarily at a different URL. Common for login redirects or A/B testing.</p>
+
+            <p><strong><code>304 Not Modified</code></strong> — Your browser already has a cached version, and it hasn't changed. The server is telling you to use your local copy instead of downloading again. This is a performance optimization.</p>
+
+            <h3>4xx — Client Errors</h3>
+
+            <p><strong><code>400 Bad Request</code></strong> — The server couldn't understand your request. Maybe you sent malformed JSON, a missing required field, or invalid parameters. Fix your request and try again.</p>
+
+            <p><strong><code>401 Unauthorized</code></strong> — You need to authenticate. Missing or invalid API key? Not logged in? That's a 401. The server is asking "Who are you?"</p>
+
+            <p><strong><code>403 Forbidden</code></strong> — You're authenticated, but you don't have permission. Maybe you're trying to access an admin endpoint as a regular user. The server knows who you are but says "You can't go there."</p>
+
+            <p><strong><code>404 Not Found</code></strong> — The classic "page not found." The resource doesn't exist at the URL you requested. Typo in the endpoint? Deleted resource? Either way, it's not here.</p>
+
+            <p><strong><code>405 Method Not Allowed</code></strong> — You used the wrong HTTP method. Maybe you tried DELETE on an endpoint that only accepts GET and POST.</p>
+
+            <p><strong><code>409 Conflict</code></strong> — Your request conflicts with the current state of the server. For example, trying to create a user with an email that already exists.</p>
+
+            <p><strong><code>422 Unprocessable Entity</code></strong> — The request was well-formed but contained semantic errors. The server understood what you asked but couldn't do it. Common in APIs for validation errors.</p>
+
+            <p><strong><code>429 Too Many Requests</code></strong> — You're being rate-limited. You've made too many requests in a short time. Back off and try again later — usually the response includes a <code>Retry-After</code> header telling you when.</p>
+
+            <h3>5xx — Server Errors</h3>
+
+            <p><strong><code>500 Internal Server Error</code></strong> — Something went wrong on the server side. This is a catch-all error. The application crashed, an unhandled exception occurred, or the database is down.</p>
+
+            <p><strong><code>502 Bad Gateway</code></strong> — A server acting as a gateway or proxy received an invalid response from an upstream server. If you're behind Cloudflare, you might see this when your origin server is broken.</p>
+
+            <p><strong><code>503 Service Unavailable</code></strong> — The server is temporarily overloaded or undergoing maintenance. Usually transient — retry after a short delay.</p>
+
+            <p><strong><code>504 Gateway Timeout</code></strong> — The server acting as a gateway didn't get a timely response from the upstream server. Your origin server is too slow or not responding.</p>
+
+            <h2>REST API Fundamentals</h2>
+
+            <p>REST (Representational State Transfer) is an architectural style for building web APIs. It uses HTTP methods to perform operations on resources. Here's how it maps:</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>HTTP Method</th>
+                        <th>CRUD Operation</th>
+                        <th>Example</th>
+                        <th>Expected Response</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>GET</code></td>
+                        <td>Read</td>
+                        <td><code>GET /api/users</code></td>
+                        <td>200 OK</td>
+                    </tr>
+                    <tr>
+                        <td><code>POST</code></td>
+                        <td>Create</td>
+                        <td><code>POST /api/users</code></td>
+                        <td>201 Created</td>
+                    </tr>
+                    <tr>
+                        <td><code>PUT</code></td>
+                        <td>Update (full)</td>
+                        <td><code>PUT /api/users/123</code></td>
+                        <td>200 OK</td>
+                    </tr>
+                    <tr>
+                        <td><code>PATCH</code></td>
+                        <td>Update (partial)</td>
+                        <td><code>PATCH /api/users/123</code></td>
+                        <td>200 OK</td>
+                    </tr>
+                    <tr>
+                        <td><code>DELETE</code></td>
+                        <td>Delete</td>
+                        <td><code>DELETE /api/users/123</code></td>
+                        <td>204 No Content</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p>REST APIs typically return data in JSON format. A well-designed API follows conventions like using plural nouns for resources (<code>/users</code>, not <code>/getUser</code>), using status codes appropriately, and including pagination for large lists.</p>
+
+            <h2>Making API Calls with Python</h2>
+
+            <p>The <code>requests</code> library is the most popular way to make HTTP requests in Python. Install it with <code>pip install requests</code>.</p>
+
+            <h3>GET Request — Fetching Data</h3>
+
+            <pre><code>import requests
+import json
+
+# Simple GET request
+response = requests.get("https://jsonplaceholder.typicode.com/posts/1")
+
+# Check status code
+print(f"Status: {response.status_code}")  # 200
+
+# Parse JSON response
+data = response.json()
+print(json.dumps(data, indent=2))
+
+# Output:
+# {
+#   "userId": 1,
+#   "id": 1,
+#   "title": "sunt aut facere repellat provident occaecati...",
+#   "body": "quia et suscipit..."
+# }</code></pre>
+
+            <h3>POST Request — Creating Data</h3>
+
+            <pre><code>import requests
+import json
+
+# POST request with JSON body
+url = "https://jsonplaceholder.typicode.com/posts"
+payload = {
+    "title": "My First Post",
+    "body": "Hello, REST API!",
+    "userId": 1
+}
+
+response = requests.post(url, json=payload)
+print(f"Status: {response.status_code}")  # 201
+
+# The API echoes back your data with a new ID
+print(json.dumps(response.json(), indent=2))
+# Output:
+# {
+#   "title": "My First Post",
+#   "body": "Hello, REST API!",
+#   "userId": 1,
+#   "id": 101
+# }</code></pre>
+
+            <h3>PUT Request — Full Update</h3>
+
+            <pre><code>import requests
+
+# PUT replaces the entire resource
+url = "https://jsonplaceholder.typicode.com/posts/1"
+payload = {
+    "id": 1,
+    "title": "Updated Title",
+    "body": "This is the updated content.",
+    "userId": 1
+}
+
+response = requests.put(url, json=payload)
+print(f"Status: {response.status_code}")  # 200</code></pre>
+
+            <h3>PATCH Request — Partial Update</h3>
+
+            <pre><code>import requests
+
+# PATCH updates only specified fields
+url = "https://jsonplaceholder.typicode.com/posts/1"
+payload = {"title": "Only this changes"}
+
+response = requests.patch(url, json=payload)
+print(f"Status: {response.status_code}")  # 200
+
+# The 'body' field stays the same — only 'title' changed</code></pre>
+
+            <h3>DELETE Request — Removing Data</h3>
+
+            <pre><code>import requests
+
+url = "https://jsonplaceholder.typicode.com/posts/1"
+response = requests.delete(url)
+print(f"Status: {response.status_code}")  # 200
+
+# Response body is usually empty for DELETE</code></pre>
+
+            <h3>Error Handling Best Practices</h3>
+
+            <p>Always handle HTTP errors gracefully. Here's a production-ready pattern:</p>
+
+            <pre><code>import requests
+
+def fetch_user(user_id):
+    """Fetch user data with proper error handling."""
+    url = f"https://jsonplaceholder.typicode.com/users/{user_id}"
+
+    try:
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()  # Raises exception for 4xx/5xx
+        return response.json()
+
+    except requests.HTTPError as e:
+        if response.status_code == 404:
+            print(f"User {user_id} not found.")
+        elif response.status_code == 429:
+            print("Rate limited. Try again later.")
+        else:
+            print(f"HTTP error: {e}")
+
+    except requests.Timeout:
+        print("Request timed out. Server is slow.")
+
+    except requests.RequestException as e:
+        print(f"Network error: {e}")
+
+    return None
+
+# Usage
+user = fetch_user(1)    # Works — returns user data
+user = fetch_user(999)   # 404 — prints "not found"
+user = fetch_user(1)     # Returns the user dict</code></pre>
+
+            <h3>Working with API Authentication</h3>
+
+            <p>Most real APIs require authentication. Here's how to handle common auth methods:</p>
+
+            <pre><code>import requests
+
+# 1. API Key in headers
+response = requests.get(
+    "https://api.example.com/data",
+    headers={"Authorization": "Bearer YOUR_API_KEY"}
+)
+
+# 2. API Key as query parameter
+response = requests.get(
+    "https://api.example.com/data",
+    params={"api_key": "YOUR_API_KEY"}
+)
+
+# 3. Basic Authentication
+response = requests.get(
+    "https://api.example.com/data",
+    auth=("username", "password")
+)
+
+# 4. API Key in custom header (Cloudflare style)
+response = requests.get(
+    "https://api.cloudflare.com/client/v4/zones",
+    headers={
+        "X-Auth-Email": "you@example.com",
+        "X-Auth-Key": "YOUR_GLOBAL_API_KEY"
+    }
+)</code></pre>
+
+            <h3>Pagination — Getting All Results</h3>
+
+            <p>Most APIs paginate large result sets. Here's how to handle it:</p>
+
+            <pre><code>import requests
+
+def fetch_all_posts():
+    """Fetch all posts handling pagination."""
+    all_posts = []
+    page = 1
+
+    while True:
+        response = requests.get(
+            "https://jsonplaceholder.typicode.com/posts",
+            params={"_page": page, "_limit": 10},
+            timeout=10
+        )
+
+        if response.status_code != 200:
+            break
+
+        posts = response.json()
+        if not posts:
+            break
+
+        all_posts.extend(posts)
+        print(f"Fetched page {page}: {len(posts)} posts")
+
+        if len(posts) < 10:
+            break  # Last page
+
+        page += 1
+
+    return all_posts
+
+posts = fetch_all_posts()
+print(f"Total posts: {len(posts)}")  # 100 posts</code></pre>
+
+            <h2>Quick Reference: Status Code Cheatsheet</h2>
+
+            <p>Save this mental model for debugging:</p>
+
+            <ul>
+                <li><strong>200</strong> — Everything is fine</li>
+                <li><strong>201</strong> — Something new was created</li>
+                <li><strong>301/302</strong> — Go look somewhere else</li>
+                <li><strong>400</strong> — Fix your request</li>
+                <li><strong>401</strong> — Log in / provide credentials</li>
+                <li><strong>403</strong> — You don't have permission</li>
+                <li><strong>404</strong> — Resource doesn't exist</li>
+                <li><strong>429</strong> — Slow down, you're too fast</li>
+                <li><strong>500</strong> — Server crashed, try again later</li>
+                <li><strong>502/504</strong> — Backend is broken or slow</li>
+            </ul>
+
+            <h2>Building Your Own Simple API with FastAPI</h2>
+
+            <p>Now that you know how to consume APIs, let's build one. Install FastAPI: <code>pip install fastapi uvicorn</code></p>
+
+            <pre><code># main.py
+from fastapi import FastAPI, HTTPException, status
+from pydantic import BaseModel
+
+app = FastAPI()
+
+# In-memory "database"
+items = {
+    1: {"id": 1, "name": "Widget", "price": 9.99},
+    2: {"id": 2, "name": "Gadget", "price": 24.99}
+}
+
+class ItemCreate(BaseModel):
+    name: str
+    price: float
+
+# GET — list all items
+@app.get("/items", status_code=status.HTTP_200_OK)
+def list_items():
+    return list(items.values())
+
+# GET — single item
+@app.get("/items/{item_id}", status_code=status.HTTP_200_OK)
+def get_item(item_id: int):
+    if item_id not in items:
+        raise HTTPException(status_code=404, detail="Item not found")
+    return items[item_id]
+
+# POST — create item
+@app.post("/items", status_code=status.HTTP_201_CREATED)
+def create_item(item: ItemCreate):
+    new_id = max(items.keys()) + 1
+    new_item = {"id": new_id, **item.model_dump()}
+    items[new_id] = new_item
+    return new_item
+
+# PUT — update item
+@app.put("/items/{item_id}", status_code=status.HTTP_200_OK)
+def update_item(item_id: int, item: ItemCreate):
+    if item_id not in items:
+        raise HTTPException(status_code=404, detail="Item not found")
+    items[item_id] = {"id": item_id, **item.model_dump()}
+    return items[item_id]
+
+# DELETE — remove item
+@app.delete("/items/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_item(item_id: int):
+    if item_id not in items:
+        raise HTTPException(status_code=404, detail="Item not found")
+    del items[item_id]
+    return None</code></pre>
+
+            <p>Run it with <code>uvicorn main:app --reload</code>, then test with curl:</p>
+
+            <pre><code># List items
+curl http://localhost:8000/items
+
+# Get one item
+curl http://localhost:8000/items/1
+
+# Create an item
+curl -X POST http://localhost:8000/items \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Doohickey", "price": 14.99}'
+
+# Update an item
+curl -X PUT http://localhost:8000/items/1 \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Super Widget", "price": 19.99}'
+
+# Delete an item (returns 204 — no body)
+curl -X DELETE http://localhost:8000/items/1 -v
+
+# Try to get a deleted item (returns 404)
+curl http://localhost:8000/items/1</code></pre>
+
+            <h2>Common API Mistakes to Avoid</h2>
+
+            <ol>
+                <li><strong>Not checking status codes</strong> — Don't just assume a request worked. Always check <code>response.status_code</code> or use <code>raise_for_status()</code>.</li>
+                <li><strong>No timeouts</strong> — Always set a <code>timeout</code> parameter. Without it, your program could hang indefinitely on a slow server.</li>
+                <li><strong>Hardcoding API keys</strong> — Use environment variables. Never commit secrets to version control.</li>
+                <li><strong>Ignoring rate limits</strong> — Check response headers for <code>X-RateLimit-Remaining</code> and handle 429 responses gracefully.</li>
+                <li><strong>Not using HTTPS</strong> — Always use <code>https://</code> for API calls to prevent man-in-the-middle attacks.</li>
+            </ol>
+
+            <blockquote>
+                <p><strong>Pro tip:</strong> Use <code>response.raise_for_status()</code> instead of manually checking status codes. It converts any 4xx/5xx response into a Python exception you can catch with a try/except block — clean and consistent.</p>
+            </blockquote>
+
+            <h2>Summary</h2>
+
+            <p>HTTP status codes are your API's communication tool. <code>2xx</code> means success, <code>4xx</code> means you need to fix your request, and <code>5xx</code> means the server had a problem. REST APIs use HTTP methods (GET, POST, PUT, PATCH, DELETE) to map to CRUD operations, and the Python <code>requests</code> library makes it trivial to interact with any API.</p>
+
+            <p>Remember the three pillars of good API code: <strong>always handle errors</strong>, <strong>always set timeouts</strong>, and <strong>never hardcode secrets</strong>. Master these fundamentals and you'll be ready for any API you encounter.</p>
+
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes. Built with curiosity and coffee.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Progress bar
+        window.addEventListener('scroll', () => {
+            const winScroll = document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            document.getElementById('progressBar').style.width = (winScroll / height) * 100 + '%';
+        });
+        // Theme toggle
+        const toggle = document.getElementById('themeToggle');
+        if (toggle) {
+            toggle.addEventListener('click', () => {
+                document.body.classList.toggle('light-mode');
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XSS and CSRF Protection in Python Web Apps | Hugo's Dev Notes</title>
+    <meta name="description" content="Protect your Python web applications from cross-site scripting (XSS) and cross-site request forgery (CSRF). Learn defense patterns with FastAPI, Flask, and Django examples. Working code snippets included.">
+    <meta name="keywords" content="XSS protection, CSRF protection, cross-site scripting, cross-site request forgery, Python web security, FastAPI security, Flask security">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+
+        <article class="post-content">
+            <span class="tag security">Security</span>
+            <span class="tag python">Python</span>
+            <span class="tag web">Web Dev</span>
+            <h1>XSS and CSRF Protection in Python Web Apps: Secure Your Applications</h1>
+            <time>July 4, 2026 · 10 min read</time>
+
+            <p>Cross-site scripting (XSS) and cross-site request forgery (CSRF) are two of the most common web vulnerabilities — and both are entirely preventable. In 2025, the OWASP Top 10 still lists them as critical risks. This guide shows you exactly how to defend against both attacks using Python frameworks like FastAPI, Flask, and Django, with working code examples you can copy and adapt.</p>
+
+            <h2>Understanding the Threats</h2>
+
+            <h3>What is XSS? (Cross-Site Scripting)</h3>
+            <p>XSS happens when an attacker injects malicious JavaScript into a page that other users see. The browser can't tell the difference between your legitimate HTML and the attacker's injected script — it just executes everything.</p>
+
+            <p>Types of XSS:</p>
+            <ul>
+                <li><strong>Reflected XSS</strong> — Malicious input in a URL is reflected back in the response (e.g., search results page). Most common in search boxes and error messages.</li>
+                <li><strong>Stored XSS</strong> — Malicious input is saved to a database and served to all visitors (e.g., comment sections, profiles). Most dangerous because it persists.</li>
+                <li><strong>DOM-based XSS</strong> — The vulnerability exists in client-side JavaScript that manipulates the DOM using unsanitized input. Server is never involved.</li>
+            </ul>
+
+            <h3>What is CSRF? (Cross-Site Request Forgery)</h3>
+            <p>CSRF tricks an authenticated user into performing an action they didn't intend. The attacker creates a malicious site that sends requests to your app while the user is logged in. Since the browser automatically includes cookies, your app thinks the request is legitimate.</p>
+
+            <h3>XSS vs CSRF: Key Difference</h3>
+            <ul>
+                <li><strong>XSS</strong> = The attacker gets code to <em>run</em> in the victim's browser</li>
+                <li><strong>CSRF</strong> = The attacker gets the victim's browser to <em>send</em> a request to the victim's account</li>
+            </ul>
+
+            <h2>Defending Against XSS</h2>
+
+            <h3>Rule #1: Escape All User Input in HTML Output</h3>
+            <p>The single most important defense: never insert raw user input into HTML. Convert dangerous characters to their HTML entities:</p>
+            <pre><code># BAD — raw user input in HTML (vulnerable!)
+html = f"&lt;h1&gt;{user_name}&lt;/h1&gt;"
+
+# GOOD — escape special characters
+from html import escape
+html = f"&lt;h1&gt;{escape(user_name)}&lt;/h1&gt;"</code></pre>
+
+            <p>The <code>html.escape()</code> function converts <code>&lt; &gt; &amp; " '</code> to safe HTML entities. An attacker inputting <code>&lt;script&gt;alert('XSS')&lt;/script&gt;</code> becomes harmless text: <code>&amp;lt;script&amp;gt;alert('XSS')&amp;lt;/script&amp;gt;</code>.</p>
+
+            <h3>FastAPI: Auto-Escaping with Jinja2 Templates</h3>
+            <p>FastAPI doesn't auto-escape by default — it's a framework for APIs, not HTML rendering. But when you use Jinja2 templates (the standard approach), escaping is automatic:</p>
+
+            <pre><code>from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+
+app = FastAPI()
+templates = Jinja2Templates(directory="templates")
+
+@app.get("/user/{username}", response_class=HTMLResponse)
+async def user_profile(request: Request, username: str):
+    return templates.TemplateResponse("profile.html", {
+        "request": request,
+        "username": username  # Jinja2 auto-escapes this!
+    })</code></pre>
+
+            <p>In your <code>profile.html</code> template, this is safe:</p>
+            <pre><code>&lt;h1&gt;{{ username }}&lt;/h1&gt;</code></pre>
+
+            <p>But this is <strong>NOT</strong> safe — you explicitly told Jinja2 to skip escaping:</p>
+            <pre><code>&lt;h1&gt;{{ username | safe }}&lt;/h1&gt;  <!-- ⚠️ DANGEROUS! Only use when you trust the content --&gt;</code></pre>
+
+            <h3>Flask: Auto-Escaping Built In</h3>
+            <p>Flask uses Jinja2 by default, so all template variables are auto-escaped:</p>
+
+            <pre><code>from flask import Flask, render_template, request
+
+app = Flask(__name__)
+
+@app.route("/search")
+def search():
+    query = request.args.get("q", "")
+    # query is safely escaped in the template
+    return render_template("results.html", query=query)
+
+# BAD: returning raw HTML string
+@app.route("/search/bad")
+def search_bad():
+    query = request.args.get("q", "")
+    return f"&lt;p&gt;Results for: {query}&lt;/p&gt;"  # ⚠️ XSS vulnerable!</code></pre>
+
+            <p>When you use <code>render_template()</code>, Flask's Jinja2 handles escaping. When you return raw strings (as shown in the bad example), you're responsible for escaping — and most developers forget.</p>
+
+            <h3>Django: Auto-Escaping with Context Processors</h3>
+            <p>Django auto-escapes all variables in templates by default:</p>
+
+            <pre><code># views.py
+from django.shortcuts import render
+
+def comment_list(request):
+    comments = Comment.objects.all()
+    # All comment.text values are auto-escaped in template
+    return render(request, "comments.html", {"comments": comments})
+
+# comments.html
+{% for comment in comments %}
+    &lt;p&gt;{{ comment.text }}&lt;/p&gt;  {# Auto-escaped by Django #}
+{% endfor %}
+
+{# DANGEROUS — only if you know the content is safe HTML #}
+&lt;p&gt;{{ comment.html_content|safe }}&lt;/p&gt;</code></pre>
+
+            <h3>Content Security Policy (CSP): Defense in Depth</h3>
+            <p>Even if XSS somehow slips through, CSP tells the browser to only execute scripts from trusted sources. Add it as an HTTP header:</p>
+
+            <pre><code># FastAPI with CSP middleware
+from starlette.middleware.base import BaseHTTPMiddleware
+
+class CSPMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self'; "
+            "style-src 'self' 'unsafe-inline'; "
+            "img-src 'self' data: https:; "
+            "frame-ancestors 'none'"
+        )
+        return response
+
+app.add_middleware(CSPMiddleware)</code></pre>
+
+            <p>Key CSP directives:</p>
+            <ul>
+                <li><code>script-src 'self'</code> — Only load scripts from your domain</li>
+                <li><code>style-src 'self' 'unsafe-inline'</code> — Allow inline styles (often needed)</li>
+                <li><code>frame-ancestors 'none'</code> — Prevent clickjacking by blocking iframe embedding</li>
+                <li><code>img-src 'self' data: https:</code> — Allow images from your domain, data URIs, and HTTPS</li>
+            </ul>
+
+            <h3>Sanitizing HTML Input When You Need Rich Text</h3>
+            <p>Some apps (blogs, forums, docs) need to accept HTML input. Use a sanitization library:</p>
+
+            <pre><code>pip install bleach
+
+import bleach
+
+allowed_tags = ["p", "br", "strong", "em", "a", "code", "pre", "ul", "ol", "li"]
+allowed_attrs = {"a": ["href", "title"]}
+
+# Sanitize user HTML — strip dangerous tags, keep safe ones
+dirty = '&lt;p&gt;Hello&lt;/p&gt;&lt;script&gt;alert("XSS")&lt;/script&gt;&lt;a href="https://safe.com"&gt;Link&lt;/a&gt;'
+clean = bleach.clean(dirty, tags=allowed_tags, attributes=allowed_attrs)
+
+print(clean)
+# &lt;p&gt;Hello&lt;/p&gt;&lt;a href="https://safe.com"&gt;Link&lt;/a&gt;</code></pre>
+
+            <p><code>bleach.clean()</code> strips <code>&lt;script&gt;</code>, <code>on*</code> event handlers, <code>javascript:</code> URLs, and any tags not in your whitelist. This is the industry-standard approach for rich text in Python.</p>
+
+            <h2>Defending Against CSRF</h2>
+
+            <h3>The Problem: How CSRF Works</h3>
+            <p>An attacker creates a page with this hidden form:</p>
+
+            <pre><code>&lt;!-- Attacker's malicious page --&gt;
+&lt;form action="https://yourbank.com/transfer" method="POST"&gt;
+    &lt;input type="hidden" name="to" value="attacker_account"&gt;
+    &lt;input type="hidden" name="amount" value="10000"&gt;
+&lt;/form&gt;
+&lt;script&gt;document.forms[0].submit();&lt;/script&gt;</code></pre>
+
+            <p>If the victim is logged into yourbank.com, the browser automatically includes their session cookie. The bank processes the transfer — and the victim never knew it happened.</p>
+
+            <h3>The Solution: Synchronizer Token Pattern</h3>
+            <p>Generate a unique token for each user session. Include it in every form and AJAX request. The server validates the token on every state-changing request. An attacker's site can't guess or steal the token.</p>
+
+            <h3>FastAPI: Manual CSRF Protection</h3>
+            <p>FastAPI doesn't include CSRF protection — it assumes you're building a JSON API. For HTML forms, implement it yourself:</p>
+
+            <pre><code>import secrets
+from fastapi import FastAPI, Request, Form, HTTPException
+from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.templating import Jinja2Templates
+
+app = FastAPI()
+templates = Jinja2Templates(directory="templates")
+
+# Store tokens server-side (use Redis/DB in production)
+session_tokens = {}
+
+@app.get("/transfer")
+async def show_form(request: Request):
+    token = secrets.token_urlsafe(32)
+    session_tokens[request.session.get("user_id")] = token
+    return templates.TemplateResponse("transfer.html", {
+        "request": request,
+        "csrf_token": token
+    })
+
+@app.post("/transfer")
+async def process_transfer(
+    request: Request,
+    csrf_token: str = Form(...),
+    to: str = Form(...),
+    amount: float = Form(...)
+):
+    expected = session_tokens.get(request.session.get("user_id"))
+    if not expected or not secrets.compare_digest(expected, csrf_token):
+        raise HTTPException(status_code=403, detail="CSRF token invalid")
+    # Process transfer...
+    return RedirectResponse(url="/success", status_code=303)
+
+# transfer.html template:
+# &lt;form method="POST"&gt;
+#     &lt;input type="hidden" name="csrf_token" value="{{ csrf_token }}"&gt;
+#     &lt;input name="to" placeholder="Recipient"&gt;
+#     &lt;input name="amount" type="number" step="0.01"&gt;
+#     &lt;button type="submit"&gt;Transfer&lt;/button&gt;
+# &lt;/form&gt;</code></pre>
+
+            <p>Key points: <code>secrets.compare_digest()</code> prevents timing attacks when comparing tokens. The token is stored server-side and matched on POST — an attacker's form can't include a valid token.</p>
+
+            <h3>Flask-WTF: CSRF Protection in One Line</h3>
+            <p>Flask-WTF adds CSRF protection automatically:</p>
+
+            <pre><code>from flask import Flask, render_template_string, redirect, url_for
+from flask_wtf import CSRFProtect
+
+app = Flask(__name__)
+app.config["SECRET_KEY"] = "your-secret-key-change-in-production"
+CSRFProtect(app)  # That's it — CSRF protection enabled!
+
+@app.route("/transfer", methods=["GET", "POST"])
+def transfer():
+    if request.method == "POST":
+        # CSRF token validated automatically
+        # If invalid, returns 400 error
+        to = request.form["to"]
+        amount = request.form["amount"]
+        return redirect(url_for("success"))
+    return render_template("transfer.html")
+
+# In your template, just add {{ form.hidden_tag() }}
+# &lt;form method="POST"&gt;
+#     {{ form.hidden_tag() }}  {# Injects CSRF token #}
+#     &lt;input name="to"&gt;
+#     &lt;input name="amount"&gt;
+# &lt;/form&gt;</code></pre>
+
+            <p>For API endpoints using JSON, include the token in headers:</p>
+
+            <pre><code># Get CSRF token via API
+@app.route("/csrf-token")
+def csrf_token():
+    from flask_wtf.csrf import generate_csrf
+    return {"csrf_token": generate_csrf()}
+
+# Frontend sends it in headers
+fetch("/api/transfer", {
+    method: "POST",
+    headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": csrfToken  // From /csrf-token endpoint
+    },
+    body: JSON.stringify({ to: "account", amount: 100 })
+});</code></pre>
+
+            <h3>Django: CSRF Middleware (Built In)</h3>
+            <p>Django includes CSRF protection out of the box. Make sure <code>CsrfViewMiddleware</code> is in your middleware (it is by default):</p>
+
+            <pre><code># views.py
+from django.shortcuts import render, redirect
+
+def transfer(request):
+    if request.method == "POST":
+        # Django validates CSRF token automatically
+        to = request.POST["to"]
+        amount = request.POST["amount"]
+        return redirect("success")
+    return render(request, "transfer.html")
+
+# transfer.html
+{# The {% csrf_token %} tag inserts the hidden token field #}
+&lt;form method="POST"&gt;
+    {% csrf_token %}
+    &lt;input name="to"&gt;
+    &lt;input name="amount"&gt;
+    &lt;button&gt;Transfer&lt;/button&gt;
+&lt;/form&gt;</code></pre>
+
+            <p>For AJAX requests with Django, send the token in the <code>X-CSRFToken</code> header:</p>
+
+            <pre><code># settings.py — ensure this is in MIDDLEWARE
+# 'django.middleware.csrf.CsrfViewMiddleware',
+
+# JavaScript
+const csrftoken = getCookie('csrftoken');
+fetch('/api/transfer', {
+    method: 'POST',
+    headers: {
+        'X-CSRFToken': csrftoken,
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ to: 'account', amount: 100 })
+});</code></pre>
+
+            <h3>SameSite Cookies: Browser-Level CSRF Defense</h3>
+            <p>Modern browsers support the <code>SameSite</code> cookie attribute, which prevents the browser from sending cookies on cross-site requests:</p>
+
+            <pre><code># FastAPI
+from fastapi.responses import JSONResponse
+
+response = JSONResponse(content={"status": "ok"})
+response.set_cookie(
+    key="session",
+    value="abc123",
+    httponly=True,
+    secure=True,
+    samesite="strict"  # Never send on cross-site requests
+)
+
+# Flask
+app.config.update(
+    SESSION_COOKIE_SAMESITE="Lax",  # Allow top-level GET, block POST
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SECURE=True,
+)
+
+# Django
+SESSION_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SECURE = True</code></pre>
+
+            <p><code>SameSite=Strict</code> is most secure but can break legitimate cross-site flows (e.g., clicking a link from Gmail to your app). <code>SameSite=Lax</code> is the practical default — blocks CSRF POST requests but allows top-level GET navigation.</p>
+
+            <h2>Security Checklist</h2>
+
+            <p>Run through this list for every Python web app:</p>
+
+            <h3>XSS Prevention</h3>
+            <ul>
+                <li>✅ Use template engines (Jinja2, Django templates) — never format HTML with f-strings</li>
+                <li>✅ Set Content-Security-Policy headers</li>
+                <li>✅ Use <code>bleach</code> to sanitize rich HTML input</li>
+                <li>✅ Set <code>X-Content-Type-Options: nosniff</code> header</li>
+                <li>✅ Never use <code>| safe</code> in Jinja2 or <code>|safe</code> in Django unless absolutely necessary</li>
+                <li>✅ For API responses: set <code>Content-Type: application/json</code></li>
+            </ul>
+
+            <h3>CSRF Prevention</h3>
+            <ul>
+                <li>✅ Use framework CSRF protection (Flask-WTF, Django middleware, or manual tokens)</li>
+                <li>✅ Set <code>SameSite=Lax</code> or <code>SameSite=Strict</code> on session cookies</li>
+                <li>✅ Use <code>HTTPOnly</code> flag on cookies (prevents JavaScript access)</li>
+                <li>✅ Use <code>Secure</code> flag on cookies (HTTPS only)</li>
+                <li>✅ Use POST/PUT/DELETE for state-changing operations (never GET)</li>
+                <li>✅ Require re-authentication for sensitive operations (password change, withdrawal)</li>
+            </ul>
+
+            <h2>Summary</h2>
+
+            <p>XSS and CSRF are well-understood attacks with well-understood defenses. The key is consistency: escape everything, validate everything, and never trust user input. Modern Python frameworks provide the tools — you just need to use them. Start with these rules and you'll block 99% of web attacks targeting your application.</p>
+
+            <ul>
+                <li><strong>XSS defense</strong>: Auto-escaping templates + CSP headers + bleach sanitization</li>
+                <li><strong>CSRF defense</strong>: Synchronizer tokens + SameSite cookies + HTTPOnly flags</li>
+                <li><strong>Framework choice</strong>: Django and Flask-WTF have CSRF built in. FastAPI needs manual setup for HTML forms.</li>
+                <li><strong>Defense in depth</strong>: Layer multiple protections so if one fails, another catches the attack.</li>
+            </ul>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes. Built with curiosity.</p>
+        </div>
+    </footer>
+
+    <script src="../theme.js"></script>
+</body>
+</html>

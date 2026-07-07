@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vibe Coding for Production: Ship AI-Generated Code with Confidence | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn how to use AI coding tools in production workflows. Testing, code review, CI/CD integration, prompt strategies, and debugging patterns for shipping AI-assisted code safely.">
+    <meta name="keywords" content="vibe coding, AI coding, production, Claude Code, Cursor, Copilot, testing, CI/CD, code review">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <article class="post-content">
+            <span class="tag vibe">AI Coding</span>
+            <span class="tag devops">DevOps</span>
+
+            <h1>Vibe Coding for Production: Ship AI-Generated Code with Confidence</h1>
+
+            <p class="post-meta">
+                <span class="post-date">July 5, 2026</span>
+                <span class="read-time">10 min read</span>
+            </p>
+
+            <hr>
+
+            <p>AI coding tools let you build features in minutes that used to take hours. But there's a gap between "it runs locally" and "it's safe to push to production." This guide covers the workflows, guardrails, and prompt strategies that separate hobby vibe-coding from professional delivery.</p>
+
+            <p>Whether you use <strong>Claude Code</strong>, <strong>Cursor</strong>, <strong>GitHub Copilot</strong>, or <strong>Windsurf</strong>, the production patterns below apply to every tool.</p>
+
+            <h2>The Production Vibe-Coding Workflow</h2>
+
+            <p>Here's the workflow I use daily, distilled into five phases:</p>
+
+            <ol>
+                <li><strong>Plan</strong> — Write a spec before prompting the AI</li>
+                <li><strong>Generate</strong> — Prompt iteratively, one file at a time</li>
+                <li><strong>Review</strong> — Read every line, understand the logic</li>
+                <li><strong>Test</strong> — Write tests before and after generating code</li>
+                <li><strong>Ship</strong> — PR review, CI/CD, monitoring</li>
+            </ol>
+
+            <h3>Phase 1: Plan with a Spec File</h3>
+
+            <p>Before asking the AI to write code, create a <code>SPEC.md</code> that describes what you're building. This dramatically improves output quality.</p>
+
+            <div class="code-block">
+                <pre><code># SPEC: Add user rate limiting to the API
+
+## Context
+Our FastAPI app currently has no rate limiting. A recent attack hit 10K requests/sec from a single IP.
+
+## Requirements
+- Limit each IP to 100 requests per minute
+- Return 429 Too Many Requests when exceeded
+- Store counters in Redis (already available at redis://localhost:6379)
+- Include rate limit info in response headers (X-RateLimit-Remaining)
+- Must work with existing authentication middleware
+
+## Files to modify
+- app/middleware.py (add rate limiter)
+- app/redis.py (add increment_and_check helper)
+- tests/test_rate_limit.py (new test file)
+
+## Acceptance criteria
+- pytest passes with 100% coverage on new code
+- Manual test: curl with 101 requests returns 429 on the 101st
+- Response headers include rate limit remaining count</code></pre>
+            </div>
+
+            <p>Now prompt the AI with: <em>"Read SPEC.md and implement the rate limiter. Start with the Redis helper, then middleware, then tests."</em></p>
+
+            <h3>Phase 2: Generate Iteratively</h3>
+
+            <p>Don't ask for everything at once. Generate one component at a time:</p>
+
+            <div class="code-block">
+                <pre><code># Bad prompt:
+"Build me a full e-commerce app with auth, payments, inventory, and a dashboard"
+
+# Good prompt (iterative):
+"Step 1: Create a Product model with name, price, stock, and SKU.
+Use Pydantic v2 with validators. Include a method that checks
+if stock is sufficient for a given quantity. Generate tests too."</code></pre>
+            </div>
+
+            <p>Each step should be small enough that you can review it in under 2 minutes. If the AI generates 300 lines, your prompt was too broad.</p>
+
+            <h3>Phase 3: Review Every Line</h3>
+
+            <p>This is where most people cut corners. <strong>Never commit AI-generated code you haven't read and understood.</strong></p>
+
+            <p>Check for these common AI mistakes:</p>
+
+            <ul>
+                <li><strong>Hallucinated APIs</strong> — functions or modules that don't exist</li>
+                <li><strong>Deprecated patterns</strong> — old syntax from the training data cutoff</li>
+                <li><strong>Missing error handling</strong> — AI often assumes happy paths</li>
+                <li><strong>Security oversights</strong> — SQL injection, hardcoded secrets, missing validation</li>
+                <li><strong>Copy-paste artifacts</strong> — TODO comments, placeholder text left in</li>
+            </ul>
+
+            <h3>Phase 4: Test Before and After</h3>
+
+            <p>Write tests <em>before</em> asking the AI to implement a feature. This gives the AI a target and catches bugs immediately.</p>
+
+            <div class="code-block">
+                <pre><code># Prompt: "Read test_rate_limit.py and implement the
+# rate limiter in middleware.py to make all tests pass"
+
+import pytest
+from unittest.mock import MagicMock, patch
+
+def test_rate_limit_allows_under_threshold():
+    """100 requests should all succeed"""
+    with patch('app.redis.Redis') as mock_redis:
+        mock_redis.return_value.incr.return_value = 100
+        mock_redis.return_value.ttl.return_value = 55
+        
+        headers = rate_limit_middleware(
+            request=MagicMock(), ip="1.2.3.4"
+        )
+        
+        assert headers["X-RateLimit-Remaining"] == 0
+        assert headers["X-RateLimit-Limit"] == 100
+
+def test_rate_limit_blocks_over_threshold():
+    """101st request should return 429"""
+    with patch('app.redis.Redis') as mock_redis:
+        mock_redis.return_value.incr.return_value = 101
+        
+        response = rate_limit_middleware(
+            request=MagicMock(), ip="1.2.3.4"
+        )
+        
+        assert response.status_code == 429</code></pre>
+            </div>
+
+            <h3>Phase 5: Ship with Guardrails</h3>
+
+            <p>Your CI/CD pipeline is your safety net. Never skip these checks:</p>
+
+            <div class="code-block">
+                <pre><code># .github/workflows/ci.yml
+name: CI
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: pytest --cov=app --cov-report=term-missing
+      - run: mypy app/  # Type checking catches hallucinated types
+      - run: bandit -r app/  # Security linting
+      - run: ruff check app/  # Style + common bugs</code></pre>
+            </div>
+
+            <h2>Prompt Strategies for Production Code</h2>
+
+            <h3>Context Anchoring</h3>
+
+            <p>AI tools work best when grounded in your actual codebase. Anchor prompts to real files:</p>
+
+            <div class="code-block">
+                <pre><code># Weak:
+"Add pagination to this API"
+
+# Strong:
+"Look at app/routes/products.py line 42. The get_products()
+endpoint returns all rows. Add cursor-based pagination using
+the same pattern as orders.py (see lines 15-30). The Product
+model has an 'id' field suitable for cursor pagination."</code></pre>
+            </div>
+
+            <h3>The "Explain Then Fix" Pattern</h3>
+
+            <p>When AI-generated code has bugs, don't just ask for a fix. Ask it to explain the bug first:</p>
+
+            <div class="code-block">
+                <pre><code># Prompt when you see a test failure:
+"test_pagination_returns_empty fails. Explain what the test
+expects, trace through the code to find where it diverges,
+then provide the fix."</code></pre>
+            </div>
+
+            <h3>Constraint Injection</h3>
+
+            <p>Add constraints that prevent common AI failures:</p>
+
+            <div class="code-block">
+                <pre><code>"Implement the cache layer with these constraints:
+1. No external dependencies — use only Python standard library
+2. Memory limit: max 1000 entries, LRU eviction
+3. Thread-safe using threading.Lock
+4. Include a maxsize parameter with default 1000
+5. Generate pytest file with at least 8 test cases
+6. Add docstrings with examples for every public method"</code></pre>
+            </div>
+
+            <h2>Debugging AI-Generated Code</h2>
+
+            <p>When things go wrong (they will), use these strategies:</p>
+
+            <h3>Strategy 1: Ask the AI to Debug Itself</h3>
+
+            <div class="code-block">
+                <pre><code># Paste the error + AI's code:
+"The code you generated fails with this traceback:
+  File 'app/cache.py', line 23, in get
+    return self._cache.popitem()[-1]
+KeyError: 'cache is empty'
+
+The issue happens when the LRU cache is accessed after
+eviction. Fix it."</code></pre>
+            </div>
+
+            <h3>Strategy 2: Isolate and Simplify</h3>
+
+            <p>If the AI generated a complex function, create a minimal reproduction:</p>
+
+            <div class="code-block">
+                <pre><code># Extract just the broken logic:
+def debug_test():
+    cache = LRUCache(maxsize=2)
+    cache.put("a", 1)
+    cache.put("b", 2)
+    cache.put("c", 3)  # Should evict "a"
+    
+    print(cache.get("a"))  # Should return None, not crash
+    print(cache.get("b"))  # Should return 2
+    
+debug_test()</code></pre>
+            </div>
+
+            <h3>Strategy 3: Pair the AI with Your Linter</h3>
+
+            <p>Use ruff, mypy, and bandit as your first line of defense before human review:</p>
+
+            <div class="code-block">
+                <pre><code># Install all at once:
+pip install ruff mypy bandit
+
+# Run the full suite:
+ruff check app/        # Catches 80% of common bugs
+mypy app/             # Catches type mismatches
+bandit -r app/        # Catches security issues
+pytest app/           # Catches logic errors
+
+# One-liner for your workflow:
+ruff check app/ && mypy app/ && pytest app/ -q</code></pre>
+            </div>
+
+            <h2>Real-World Example: Building a Feature End-to-End</h2>
+
+            <p>Let's walk through adding a notification system to a Python app:</p>
+
+            <div class="code-block">
+                <pre><code># Step 1: Spec
+SPEC.md:
+- Users can subscribe to topic channels
+- Notifications stored in PostgreSQL (async)
+- Email delivery via SMTP
+- In-app notification list endpoint
+
+# Step 2: Generate model first
+Prompt: "Create a Notification SQLAlchemy model with fields:
+id (UUID), user_id (FK), topic, title, body, read (bool),
+created_at (datetime, default now). Include __repr__ and
+a mark_read() method."
+
+# Step 3: Generate repository
+Prompt: "Create NotificationRepository with methods:
+create(), get_by_user(), mark_read(), count_unread().
+Use async/await and SQLAlchemy 2.0 style. The DBSession
+dependency is already defined in deps.py line 12."
+
+# Step 4: Generate tests
+Prompt: "Write pytest async tests for all four repository
+methods. Use pytest-asyncio and the test fixture pattern
+from test_orders.py. Test both success and error paths."
+
+# Step 5: Generate API endpoints
+Prompt: "Add FastAPI endpoints to routes.py:
+POST /notifications (create), GET /notifications (list),
+PATCH /notifications/{id}/read. Reuse the repository from
+step 3. Follow the same pattern as orders.py."</code></pre>
+            </div>
+
+            <h2>Common Pitfalls and How to Avoid Them</h2>
+
+            <table>
+                <tr>
+                    <th>Pitfall</th>
+                    <th>Symptom</th>
+                    <th>Solution</th>
+                </tr>
+                <tr>
+                    <td>Over-prompting</td>
+                    <td>Too much code to review</td>
+                    <td>One file per prompt, max 100 lines</td>
+                </tr>
+                <tr>
+                    <td>Blind trust</td>
+                    <td>Bugs in production</td>
+                    <td>Read every line, run every test</td>
+                </tr>
+                <tr>
+                    <td>Context switching</td>
+                    <td>Inconsistent patterns</td>
+                    <td>Anchor to existing code files</td>
+                </tr>
+                <tr>
+                    <td>Skipping tests</td>
+                    <td>Regressions later</td>
+                    <td>Tests first, always</td>
+                </tr>
+                <tr>
+                    <td>Ignoring CI</td>
+                    <td>"Works on my machine"</td>
+                    <td>Green CI = ready to merge</td>
+                </tr>
+            </table>
+
+            <h2>Your Production Checklist</h2>
+
+            <p>Before merging AI-assisted code, verify:</p>
+
+            <ul>
+                <li>✅ You understand every line the AI generated</li>
+                <li>✅ All tests pass locally and in CI</li>
+                <li>✅ Type checking passes (mypy / pyright)</li>
+                <li>✅ Security scan is clean (bandit / semgrep)</li>
+                <li>✅ Code style is consistent (ruff / black)</li>
+                <li>✅ No hardcoded secrets, API keys, or credentials</li>
+                <li>✅ Error handling covers the unhappy paths</li>
+                <li>✅ A human code reviewer approved the PR</li>
+            </ul>
+
+            <h2>Conclusion</h2>
+
+            <p>Vibe coding is a superpower when paired with discipline. The AI writes the code, but <em>you</em> are still the engineer responsible for quality, security, and correctness. Treat AI-generated code like code from a junior developer — helpful and fast, but it needs review, tests, and guardrails before it ships.</p>
+
+            <p>The teams that win with AI coding aren't the ones who prompt the most. They're the ones who build the best review and testing workflows around the AI's output.</p>
+
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo Wong · Built with curiosity and Coffee</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528">GitHub</a>
+                <a href="https://hugow.dev">hugow.dev</a>
+                <a href="../sitemap.xml">Sitemap</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-mode');
+            themeToggle.textContent = '☀';
+        }
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            themeToggle.textContent = isLight ? '☀' : '◐';
+        });
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + "%";
+        });
+    </script>
+</body>
+</html>

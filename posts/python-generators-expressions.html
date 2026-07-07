@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Generators and Generator Expressions: Memory-Efficient Data Processing | Hugo's Dev Notes</title>
+    <meta name="description" content="Master Python generators and generator expressions — lazy evaluation, memory-efficient iteration, custom iterators with yield, pipelines, and real-world patterns for big data processing.">
+    <meta name="keywords" content="python generators, generator expressions, yield, lazy evaluation, python iterators, memory efficient, python tutorial">
+    <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-generators-expressions.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+
+        <article class="post-content">
+            <span class="tag python">Python</span>
+            <h1>Python Generators and Generator Expressions: Memory-Efficient Data Processing</h1>
+            <time>July 3, 2026 · 10 min read</time>
+
+            <p>You've learned about lists, loops, and list comprehensions. But what happens when you need to process a file with 10 million lines? Loading everything into a list would eat gigabytes of RAM. Generators solve this by producing values one at a time, only when needed — a concept called <strong>lazy evaluation</strong>.</p>
+
+            <p>Generators are one of Python's most powerful yet underused features. They give you the clean syntax of a function with the memory efficiency of an iterator. By the end of this guide, you'll understand when and why to use them, and how to build your own.</p>
+
+            <h2>Lists vs Generators: The Memory Problem</h2>
+
+            <p>Let's start with a real problem. Say you want to find the sum of squares of the first 10 million numbers:</p>
+
+            <pre><code># BAD: Creates a list of 10 million integers in memory
+squares = [x * x for x in range(10_000_000)]
+total = sum(squares)
+print(total)
+
+# This works, but uses hundreds of megabytes of RAM.</code></pre>
+
+            <p>Now with a generator expression (notice the <strong>parentheses</strong> instead of brackets):</p>
+
+            <pre><code># GOOD: Generates one square at a time, uses almost zero extra memory
+squares = (x * x for x in range(10_000_000))
+total = sum(squares)
+print(total)
+
+# Same result, ~100x less memory.</code></pre>
+
+            <p>That's the core idea: a <strong>generator expression</strong> looks like a list comprehension but produces items lazily. It doesn't store anything — it calculates each value on demand.</p>
+
+            <blockquote>
+                <strong>Key insight:</strong> A list is a snapshot of all values stored in memory. A generator is a recipe that produces values one at a time. Think of it as the difference between having all the chapters of a book printed vs reading them from a vending machine one page at a time.
+            </blockquote>
+
+            <h2>Generator Functions with <code>yield</code></h2>
+
+            <p>Generator expressions are great, but what if you need custom logic? That's where <strong>generator functions</strong> come in. They use <code>yield</code> instead of <code>return</code>:</p>
+
+            <pre><code># Regular function — returns all at once
+def get_even_numbers(n):
+    result = []
+    for i in range(n):
+        if i % 2 == 0:
+            result.append(i)
+    return result
+
+# Generator function — yields one at a time
+def even_numbers(n):
+    for i in range(n):
+        if i % 2 == 0:
+            yield i
+
+# Usage
+for num in even_numbers(20):
+    print(num, end=" ")
+# Output: 0 2 4 6 8 10 12 14 16 18</code></pre>
+
+            <p>When a function contains <code>yield</code>, Python automatically makes it a generator. Each time <code>yield</code> runs, the function <strong>pauses</strong>, returns a value, and resumes exactly where it left off on the next call. All local variables are preserved.</p>
+
+            <h2>How <code>yield</code> Works Under the Hood</h2>
+
+            <p>Let's trace through what happens:</p>
+
+            <pre><code>def countdown(n):
+    print("Starting countdown!")
+    while n > 0:
+        print(f"Pausing at {n}...")
+        yield n
+        print(f"Resumed at {n}, now decrementing")
+        n -= 1
+    print("Done!")
+
+# Create the generator — nothing runs yet!
+gen = countdown(3)
+# Output: (nothing — generator is created but not started)
+
+# Get the first value
+print(next(gen))
+# Output:
+# Starting countdown!
+# Pausing at 3...
+# 3
+
+print(next(gen))
+# Output:
+# Resumed at 3, now decrementing
+# Pausing at 2...
+# 2
+
+print(next(gen))
+# Output:
+# Resumed at 2, now decrementing
+# Pausing at 1...
+# 1
+
+print(next(gen))
+# Output:
+# Resumed at 1, now decrementing
+# Done!
+# StopIteration (because there's nothing left to yield)</code></pre>
+
+            <p>This pause-and-resume behavior is what makes generators so useful. The function's entire local state (variables, loop position, everything) is frozen between yields.</p>
+
+            <h2>Common Generator Patterns</h2>
+
+            <h3>1. Infinite Sequences</h3>
+            <p>Generators can run forever — useful for sequences that don't have a natural end:</p>
+
+            <pre><code># Infinite Fibonacci generator
+def fibonacci():
+    a, b = 0, 1
+    while True:
+        yield a
+        a, b = b, a + b
+
+# Take first 10
+from itertools import islice
+fib = fibonacci()
+print(list(islice(fib, 10)))
+# Output: [0, 1, 1, 2, 3, 5, 8, 13, 21, 34]</code></pre>
+
+            <h3>2. Reading Large Files Line by Line</h3>
+            <p>This is the most practical use case. Process massive log files without loading them all into memory:</p>
+
+            <pre><code># Memory-efficient file processor
+def read_large_file(filepath):
+    with open(filepath, 'r') as f:
+        for line in f:
+            yield line.strip()
+
+# Process only lines matching a pattern
+error_lines = (
+    line for line in read_large_file('server.log')
+    if 'ERROR' in line
+)
+
+for line in error_lines:
+    print(line)</code></pre>
+
+            <p>The file is read one line at a time. Even a 50 GB log file won't cause memory issues.</p>
+
+            <h3>3. Data Processing Pipelines</h3>
+            <p>Chain generators together for elegant data pipelines. Each stage processes items one at a time:</p>
+
+            <pre><code># Simulating data from a database
+def fetch_records():
+    for i in range(1, 10001):
+        yield {"id": i, "name": f"user_{i}", "score": i * 17 % 100}
+
+# Pipeline stages
+def filter_high_scores(records, threshold=80):
+    for record in records:
+        if record["score"] >= threshold:
+            yield record
+
+def sort_by_score(records):
+    # Note: this collects into a list for sorting
+    # For truly lazy sorting, use heapq.nlargest()
+    records_list = list(records)
+    yield from sorted(records_list, key=lambda r: r["score"], reverse=True)
+
+def format_output(records):
+    for record in records:
+        yield f"ID: {record['id']}, Name: {record['name']}, Score: {record['score']}"
+
+# Chain them together
+pipeline = format_output(
+    sort_by_score(
+        filter_high_scores(
+            fetch_records()
+        )
+    )
+)
+
+# Print top results
+for i, line in enumerate(pipeline):
+    if i >= 5:
+        break
+    print(line)
+# Output:
+# ID: 1030, Name: user_1030, Score: 99
+# ID: 2060, Name: user_2060, Score: 98
+# ID: 3090, Name: user_3090, Score: 97
+# ...</code></pre>
+
+            <p>Each stage is a separate generator. Data flows through like an assembly line — one item at a time, minimal memory overhead.</p>
+
+            <h2>Generator Expressions: The Shorthand</h2>
+
+            <p>Just like list comprehensions have <code>[]</code>, generator expressions use <code>()</code>:</p>
+
+            <pre><code># List comprehension — creates list in memory
+big_list = [x * 2 for x in range(1_000_000)]
+
+# Generator expression — creates iterator, no list
+big_gen = (x * 2 for x in range(1_000_000))
+
+# Both work with sum(), but only the generator is memory-efficient
+print(sum(big_gen))  # 999999000000
+
+# With filtering
+squares_of_evens = (x * x for x in range(100) if x % 2 == 0)
+print(list(squares_of_evens))
+# [0, 4, 16, 36, 64, 100, 144, 196, 256, 324, 400, 484, 576, 676, 784, 900]</code></pre>
+
+            <p>When a function takes an iterable, passing a generator expression (without extra parens) is clean and Pythonic:</p>
+
+            <pre><code># Clean: no extra parentheses needed
+total = sum(x * x for x in range(1000) if x % 3 == 0)
+
+max_score = max(student["score"] for student in students)
+
+# Multiple generators in one call
+first_ten = list(
+    x for x in range(100)
+    if x % 7 == 0
+)[:10]</code></pre>
+
+            <h2>When to Use Each Approach</h2>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Scenario</th>
+                        <th>Use</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Simple filtering/transformation</td>
+                        <td>Generator expression <code>(x for x in data if ...)</code></td>
+                    </tr>
+                    <tr>
+                        <td>Complex logic, stateful iteration</td>
+                        <td>Generator function with <code>yield</code></td>
+                    </tr>
+                    <tr>
+                        <td>Need random access or to iterate multiple times</td>
+                        <td>List (you need all data in memory)</td>
+                    </tr>
+                    <tr>
+                        <td>Processing large files or streams</td>
+                        <td>Generator (always)</td>
+                    </tr>
+                    <tr>
+                        <td>Infinite or potentially huge data</td>
+                        <td>Generator (essential)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2>Advanced: <code>yield from</code> and Subgenerators</h2>
+
+            <p><code>yield from</code> delegates to another generator, flattening nested structures:</p>
+
+            <pre><code># Flatten a list of lists
+data = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+
+def flatten(nested):
+    for sublist in nested:
+        yield from sublist
+
+print(list(flatten(data)))
+# [1, 2, 3, 4, 5, 6, 7, 8, 9]</code></pre>
+
+            <p>Without <code>yield from</code>, you'd need a nested loop. This becomes essential when working with arbitrarily nested data structures.</p>
+
+            <h2>Real-World Project: Log Analyzer</h2>
+
+            <p>Let's build a practical tool that analyzes a web server access log (potentially huge) using generators:</p>
+
+            <pre><code>import re
+
+def parse_access_log(filepath):
+    """Parse each line of a Common Log Format access log."""
+    pattern = re.compile(
+        r'(\S+) \S+ \S+ \[([^\]]+)\] "(\S+) (\S+) \S+" (\d{3}) (\d+)'
+    )
+    with open(filepath) as f:
+        for line in f:
+            match = pattern.match(line)
+            if match:
+                yield {
+                    "ip": match.group(1),
+                    "timestamp": match.group(2),
+                    "method": match.group(3),
+                    "path": match.group(4),
+                    "status": int(match.group(5)),
+                    "size": int(match.group(6)),
+                }
+
+def error_responses(log):
+    """Yield only 4xx and 5xx responses."""
+    for entry in log:
+        if entry["status"] >= 400:
+            yield entry
+
+def top_ips(log, n=10):
+    """Find the top N IPs by request count."""
+    from collections import Counter
+    ip_counts = Counter(entry["ip"] for entry in log)
+    yield from ip_counts.most_common(n)
+
+# Usage — processes a 50GB log file with < 10MB RAM
+log = parse_access_log('/var/log/nginx/access.log')
+print("Top offending IPs:")
+for ip, count in top_ips(log, n=10):
+    print(f"  {ip}: {count} requests")</code></pre>
+
+            <h2>Common Pitfalls</h2>
+
+            <ul>
+                <li><strong>One-time use only:</strong> A generator can be consumed once. To reuse, create a new one or convert to a list: <code>my_list = list(my_generator)</code></li>
+                <li><strong>Debugging is harder:</strong> Generators don't have a <code>__repr__</code> that shows contents. Use <code>list(gen)</code> or <code>next(gen)</code> to inspect.</li>
+                <li><strong>Don't overuse:</strong> For small datasets, lists are faster and simpler. Generators shine with large or streaming data.</li>
+                <li><strong>Resource cleanup:</strong> If your generator opens files or connections, use a <code>try/finally</code> block or a context manager to ensure cleanup even if the generator isn't fully consumed.</li>
+            </ul>
+
+            <h2>Cheat Sheet</h2>
+            <pre><code># Generator expression
+gen = (x * 2 for x in range(1000))
+
+# Generator function
+def my_gen():
+    yield 1
+    yield 2
+    yield 3
+
+# Iterate through a generator
+for item in gen:
+    print(item)
+
+# Get single next value
+next(gen)
+
+# Convert to list (consumes the generator!)
+all_values = list(gen)
+
+# Chain generators
+def pipeline():
+    for x in generator_a():
+        yield from generator_b(x)
+
+# Take first N items
+from itertools import islice
+first_10 = list(islice(gen, 10))</code></pre>
+
+            <h2>Next Steps</h2>
+            <ul>
+                <li>Combine generators with <a href="python-iterators-itertools.html">itertools</a> for powerful data operations</li>
+                <li>Learn about <a href="python-context-managers.html">context managers</a> for clean resource handling in generators</li>
+                <li>Explore <a href="python-async-await.html">async generators</a> for I/O-bound data pipelines</li>
+                <li>Use generators in <a href="python-fastapi-tutorial.html">FastAPI</a> to stream large API responses</li>
+            </ul>
+
+            <blockquote>
+                <strong>Practice tip:</strong> Find a script where you load a whole list, then filter or transform it. Rewrite it with a generator expression. Check memory usage with <code>import tracemalloc</code> — you'll see the difference immediately.
+            </blockquote>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes. Built with vibe coding.</p>
+        </div>
+    </footer>
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        if (themeToggle) {{
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            if (savedTheme === 'light') {{
+                document.body.classList.add('light-mode');
+                themeToggle.textContent = '☀';
+            }}
+            themeToggle.addEventListener('click', () => {{
+                document.body.classList.toggle('light-mode');
+                const isLight = document.body.classList.contains('light-mode');
+                localStorage.setItem('theme', isLight ? 'light' : 'dark');
+                themeToggle.textContent = isLight ? '☀' : '◐';
+            }});
+        }}
+        window.addEventListener('scroll', () => {{
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            const bar = document.getElementById('progressBar');
+            if (bar) bar.style.width = scrolled + "%";
+        }});
+    </script>
+</body>
+</html>

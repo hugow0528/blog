@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python map(), filter(), and reduce(): Functional Programming for Beginners | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn Python's functional programming tools — map(), filter(), and reduce(). Beginner-friendly guide with working examples, list comprehension comparisons, and real-world data processing patterns.">
+    <meta name="keywords" content="python map filter reduce, functional programming python, python beginner, lambda functions, python data processing">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-map-filter-reduce.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+
+        <article class="post-content">
+            <span class="tag python">Python</span>
+            <h1>Python map(), filter(), and reduce(): Functional Programming for Beginners</h1>
+            <time>July 4, 2026 · 10 min read</time>
+
+            <p>Python has three built-in functions that bring functional programming to your toolbox: <code>map()</code>, <code>filter()</code>, and <code>reduce()</code>. They let you transform, select, and combine data in one clean line — no for loops required. These tools are especially useful for data processing pipelines, cleaning API responses, and preparing datasets.</p>
+
+            <p>In this guide, you'll learn how each function works, when to use them versus list comprehensions, and see real-world examples you can run immediately.</p>
+
+            <h2>1. map() — Transform Every Item in a List</h2>
+
+            <p><code>map()</code> applies a function to every item in an iterable and returns a new iterable with the results. Think of it as "do this to everything."</p>
+
+            <h3>Basic Example: Convert Strings to Uppercase</h3>
+
+            <pre><code># Without map() — the loop way
+names = ["alice", "bob", "charlie", "diana"]
+upper_names = []
+for name in names:
+    upper_names.append(name.upper())
+print(upper_names)  # ['ALICE', 'BOB', 'CHARLIE', 'DIANA']
+
+# With map() — one line
+upper_names = list(map(str.upper, names))
+print(upper_names)  # ['ALICE', 'BOB', 'CHARLIE', 'DIANA']</code></pre>
+
+            <p>Notice we passed <code>str.upper</code> without parentheses — that's passing the <em>method itself</em>, not calling it. <code>map()</code> will call it for us on each element.</p>
+
+            <h3>With a Lambda Function</h3>
+
+            <p>When you need a quick transformation that doesn't deserve its own function, use a lambda:</p>
+
+            <pre><code>prices = [19.99, 29.99, 9.99, 49.99]
+
+# Add 10% tax to each price
+taxed = list(map(lambda p: round(p * 1.1, 2), prices))
+print(taxed)  # [21.99, 32.99, 10.99, 54.99]
+
+# Format as currency strings
+formatted = list(map(lambda p: f"${p:.2f}", prices))
+print(formatted)  # ['$19.99', '$29.99', '$9.99', '$49.99']</code></pre>
+
+            <h3>Real-World: Clean and Normalize User Data</h3>
+
+            <p>You receive messy data from an API. Use <code>map()</code> to normalize it:</p>
+
+            <pre><code>raw_users = [
+    "  Alice Johnson  ",
+    "bob.smith@EXAMPLE.COM",
+    "  Charlie Brown",
+]</code></pre>
+
+            <pre><code># Clean names: strip whitespace, title case
+names = list(map(lambda n: n.strip().title(), raw_users))
+print(names)  # ['Alice Johnson', 'Bob.smith@Example.Com', 'Charlie Brown']
+
+# Clean emails: strip whitespace, lowercase
+emails = list(map(lambda e: e.strip().lower(), raw_users))
+print(emails)  # ['alice johnson', 'bob.smith@example.com', 'charlie brown']</code></pre>
+
+            <h3>map() with Multiple Iterables</h3>
+
+            <p><code>map()</code> can take multiple iterables — the function receives one item from each:</p>
+
+            <pre><code>first_names = ["Alice", "Bob", "Charlie"]
+last_names =  ["Smith", "Jones", "Brown"]
+
+# Combine first and last names
+full_names = list(map(lambda f, l: f"{f} {l}", first_names, last_names))
+print(full_names)  # ['Alice Smith', 'Bob Jones', 'Charlie Brown']
+
+# Pair with IDs
+ids = [101, 102, 103]
+user_records = list(map(lambda id_, name: {"id": id_, "name": name}, ids, full_names))
+print(user_records)
+# [{'id': 101, 'name': 'Alice Smith'},
+#  {'id': 102, 'name': 'Bob Jones'},
+#  {'id': 103, 'name': 'Charlie Brown'}]</code></pre>
+
+            <h2>2. filter() — Select Items That Match a Condition</h2>
+
+            <p><code>filter()</code> takes a function that returns True/False and keeps only the items where the function returns True. Think of it as "keep only these."</p>
+
+            <h3>Basic Example: Get Even Numbers</h3>
+
+            <pre><code>numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+# Without filter()
+evens = [n for n in numbers if n % 2 == 0]
+
+# With filter()
+evens = list(filter(lambda n: n % 2 == 0, numbers))
+print(evens)  # [2, 4, 6, 8, 10]</code></pre>
+
+            <h3>Real-World: Filter Active Users from a Database</h3>
+
+            <pre><code>users = [
+    {"name": "Alice", "status": "active", "age": 28},
+    {"name": "Bob",   "status": "inactive", "age": 35},
+    {"name": "Carol", "status": "active", "age": 22},
+    {"name": "Dave",  "status": "active", "age": 45},
+    {"name": "Eve",   "status": "suspended", "age": 31},
+]</code></pre>
+
+            <pre><code># Get only active users
+active = list(filter(lambda u: u["status"] == "active", users))
+print(len(active))  # 3
+
+# Get active users under 30
+young_active = list(filter(lambda u: u["status"] == "active" and u["age"] < 30, users))
+print(young_active)  # [{'name': 'Alice', ...}, {'name': 'Carol', ...}]
+
+# Get users whose name starts with A or C
+filtered = list(filter(lambda u: u["name"][0] in ("A", "C"), users))
+print(filtered)  # Alice, Carol</code></pre>
+
+            <h3>filter() with None Returns Truthy Values</h3>
+
+            <p>A handy trick: passing <code>None</code> as the function removes all falsy values (empty strings, zeros, None, empty lists):</p>
+
+            <pre><code>messy_data = [0, 1, "", "hello", None, 42, [], [1, 2], False, True]
+clean = list(filter(None, messy_data))
+print(clean)  # [1, 'hello', 42, [1, 2], True]</code></pre>
+
+            <h2>3. reduce() — Combine All Items into a Single Result</h2>
+
+            <p><code>reduce()</code> takes a function of two arguments and applies it cumulatively across the iterable, collapsing it to a single value. It lives in the <code>functools</code> module.</p>
+
+            <pre><code>from functools import reduce</code></pre>
+
+            <h3>Basic Example: Sum a List</h3>
+
+            <pre><code>numbers = [1, 2, 3, 4, 5]
+
+# Without reduce()
+total = sum(numbers)
+
+# With reduce() — does: (((1+2)+3)+4)+5
+total = reduce(lambda acc, x: acc + x, numbers)
+print(total)  # 15
+
+# Find the product of all numbers
+product = reduce(lambda acc, x: acc * x, numbers)
+print(product)  # 120 = 1*2*3*4*5</code></pre>
+
+            <p>How <code>reduce()</code> works step by step:</p>
+            <pre><code>reduce(lambda acc, x: acc + x, [1, 2, 3, 4, 5])
+
+Step 1: acc=1, x=2  →  3
+Step 2: acc=3, x=3  →  6
+Step 3: acc=6, x=4  →  10
+Step 4: acc=10, x=5 →  15
+Result: 15</code></pre>
+
+            <h3>Real-World: Flatten a Nested Dictionary</h3>
+
+            <pre><code>from functools import reduce
+
+# Find the maximum value across all user balances
+users = [
+    {"name": "Alice", "balances": [100, 200, 50]},
+    {"name": "Bob",   "balances": [300, 150]},
+    {"name": "Carol", "balances": [500, 250, 100]},
+]
+
+# Sum all balances across all users
+total = reduce(
+    lambda acc, user: acc + sum(user["balances"]),
+    users,
+    0  # initial value
+)
+print(total)  # 1600</code></pre>
+
+            <h3>Real-World: Chain Lookups with reduce()</h3>
+
+            <p>Use <code>reduce()</code> to safely traverse nested dictionaries:</p>
+
+            <pre><code>from functools import reduce
+
+config = {
+    "database": {
+        "host": "db.example.com",
+        "port": 5432,
+        "credentials": {
+            "username": "admin",
+            "password": "secret123"
+        }
+    }
+}</code></pre>
+
+            <pre><code># Safe nested key access
+def get_nested(data, keys):
+    return reduce(lambda d, key: d.get(key, {}), keys, data)
+
+print(get_nested(config, ["database", "credentials", "username"]))
+# → 'admin'
+
+print(get_nested(config, ["database", "credentials", "token"]))
+# → {} (empty dict instead of KeyError)</code></pre>
+
+            <h2>map() + filter() + reduce() — Building Pipelines</h2>
+
+            <p>The real power comes from chaining these functions together to create data processing pipelines:</p>
+
+            <pre><code>sales = [
+    {"product": "Laptop",    "price": 999.99,  "qty": 2, "status": "confirmed"},
+    {"product": "Mouse",     "price": 29.99,   "qty": 10, "status": "confirmed"},
+    {"product": "Monitor",   "price": 499.99,  "qty": 1,  "status": "cancelled"},
+    {"product": "Keyboard",  "price": 79.99,   "qty": 5,  "status": "confirmed"},
+    {"product": "Headset",   "price": 149.99,  "qty": 3,  "status": "confirmed"},
+    {"product": "Webcam",    "price": 59.99,   "qty": 0,  "status": "confirmed"},
+]</code></pre>
+
+            <pre><code># Pipeline: filter confirmed → map to revenue → reduce to total
+from functools import reduce
+
+total_revenue = reduce(
+    lambda acc, item: acc + item["price"] * item["qty"],
+    filter(lambda s: s["status"] == "confirmed" and s["qty"] > 0, sales),
+    0
+)
+print(f"Total Revenue: ${total_revenue:.2f}")
+# → Total Revenue: $2788.76</code></pre>
+
+            <p>Same pipeline with more readable variable names:</p>
+
+            <pre><code>confirmed_orders = filter(lambda s: s["status"] == "confirmed", sales)
+valid_orders = filter(lambda s: s["qty"] > 0, confirmed_orders)
+revenues = map(lambda s: s["price"] * s["qty"], valid_orders)
+total = reduce(lambda acc, r: acc + r, revenues, 0)
+print(f"Total Revenue: ${total:.2f}")  # $2788.76</code></pre>
+
+            <h2>map/filter/reduce vs List Comprehensions</h2>
+
+            <p>Python list comprehensions can often replace <code>map()</code> and <code>filter()</code>. Here's how to choose:</p>
+
+            <pre><code># map() equivalent with list comprehension
+squares = [x**2 for x in range(10)]           # list comprehension
+squares = list(map(lambda x: x**2, range(10))) # map
+
+# filter() equivalent with list comprehension
+evens = [x for x in range(20) if x % 2 == 0]  # list comprehension
+evens = list(filter(lambda x: x % 2 == 0, range(20)))  # filter
+
+# Combined: filter + map
+result = [x**2 for x in range(20) if x % 2 == 0]       # comprehension
+result = list(map(lambda x: x**2, filter(lambda x: x % 2 == 0, range(20))))  # map + filter</code></pre>
+
+            <p><strong>Use list comprehensions when:</strong></p>
+            <ul>
+                <li>You need a list as output (most common)</li>
+                <li>The transformation is simple and readable</li>
+                <li>Combining filter and map in one step</li>
+            </ul>
+
+            <p><strong>Use map/filter/reduce when:</strong></p>
+            <ul>
+                <li>You're working with existing named functions</li>
+                <li>Building pipelines where laziness matters (no <code>list()</code> call needed)</li>
+                <li>Combining data from multiple sources</li>
+                <li>Working in a functional programming style</li>
+            </ul>
+
+            <h3>Performance: Laziness Matters</h3>
+
+            <p><code>map()</code> and <code>filter()</code> return lazy iterators in Python 3 — they don't compute until you iterate. This can save memory with large datasets:</p>
+
+            <pre><code># Only compute what you need — stop after first match
+def is_prime(n):
+    if n < 2: return False
+    for i in range(2, int(n**0.5) + 1):
+        if n % i == 0: return False
+    return True
+
+# map/filter: stops early, never processes remaining numbers
+first_prime = next(filter(is_prime, range(10**9)))
+print(first_prime)  # 2 (found instantly!)
+
+# List comprehension: builds the entire list in memory first (bad!)</code></pre>
+
+            <h2>Quick Reference Cheatsheet</h2>
+
+            <pre><code># map(func, iterable) → transform every item
+list(map(str.upper, ["hello", "world"]))  # ['HELLO', 'WORLD']
+
+# filter(func, iterable) → keep items where func(item) is True
+list(filter(lambda x: x > 5, [1, 3, 6, 8]))  # [6, 8]
+
+# reduce(func, iterable, initial) → collapse to single value
+from functools import reduce
+reduce(lambda a, b: a + b, [1, 2, 3], 0)  # 6
+
+# Chain them: filter → map → reduce
+total = reduce(
+    lambda a, b: a + b,
+    map(lambda x: x * 2,
+        filter(lambda x: x > 2, [1, 2, 3, 4, 5])
+    ),
+    0
+)
+# filter: [3, 4, 5] → map: [6, 8, 10] → reduce: 24</code></pre>
+
+            <h2>Practice Exercises</h2>
+
+            <p>Try these on your own:</p>
+
+            <ol>
+                <li><strong>Word lengths:</strong> Given <code>["hello", "hi", "world", "go"]</code>, use <code>map()</code> to get the length of each word.</li>
+                <li><strong>Even squares:</strong> Given <code>range(1, 11)</code>, use <code>filter()</code> to keep even numbers, then <code>map()</code> to square them.</li>
+                <li><strong>Longest word:</strong> Given <code>["python", "javascript", "go", "rust", "typescript"]</code>, use <code>reduce()</code> to find the longest word.</li>
+                <li><strong>Full pipeline:</strong> Given a list of student scores <code>[{"name": "A", "score": 85}, {"name": "B", "score": 42}, ...]</code>, calculate the average score of students who passed (score ≥ 60).</li>
+            </ol>
+
+            <p>Solutions:</p>
+
+            <pre><code># 1. Word lengths
+words = ["hello", "hi", "world", "go"]
+lengths = list(map(len, words))
+print(lengths)  # [5, 2, 5, 2]
+
+# 2. Even squares
+even_squares = list(map(lambda x: x**2, filter(lambda x: x % 2 == 0, range(1, 11))))
+print(even_squares)  # [4, 16, 36, 64, 100]
+
+# 3. Longest word
+words = ["python", "javascript", "go", "rust", "typescript"]
+longest = reduce(lambda a, b: a if len(a) > len(b) else b, words)
+print(longest)  # 'typescript'
+
+# 4. Full pipeline
+students = [
+    {"name": "A", "score": 85}, {"name": "B", "score": 42},
+    {"name": "C", "score": 78}, {"name": "D", "score": 91},
+    {"name": "E", "score": 55},
+]
+passed = filter(lambda s: s["score"] >= 60, students)
+scores = map(lambda s: s["score"], passed)
+avg = reduce(lambda a, b: a + b, scores, 0) / len(list(scores))
+# (Better: use a list to count, or sum/len)
+passed_list = list(filter(lambda s: s["score"] >= 60, students))
+avg = sum(s["score"] for s in passed_list) / len(passed_list)
+print(f"Average of passed: {avg:.1f}")  # 84.7</code></pre>
+
+            <h2>Summary</h2>
+
+            <p><code>map()</code>, <code>filter()</code>, and <code>reduce()</code> are powerful tools in your Python toolbox:</p>
+
+            <ul>
+                <li><strong><code>map()</code></strong> — Transform every item in an iterable</li>
+                <li><strong><code>filter()</code></strong> — Keep only items matching a condition</li>
+                <li><strong><code>reduce()</code></strong> — Collapse an iterable into a single value</li>
+            </ul>
+
+            <p>They shine when processing data pipelines, cleaning API responses, and performing aggregations. While list comprehensions are more Pythonic for simple cases, map/filter/reduce give you lazy evaluation and a functional style that scales well for complex data processing. Master both approaches and choose the right tool for each job.</p>
+
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo Wong · Built with curiosity and Coffee</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528">GitHub</a>
+                <a href="https://hugow.dev">hugow.dev</a>
+                <a href="/sitemap.xml">Sitemap</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-mode');
+            themeToggle.textContent = '☀';
+        }
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            themeToggle.textContent = isLight ? '☀' : '◐';
+        });
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + "%";
+        });
+    </script>
+</body>
+</html>

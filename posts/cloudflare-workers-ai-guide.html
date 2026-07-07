@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloudflare Workers AI: Run Machine Learning Models at the Edge | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn how to use Cloudflare Workers AI to run machine learning models at the edge. Text generation, image classification, embeddings, and real-world examples with zero infrastructure.">
+    <meta name="keywords" content="cloudflare workers, workers ai, machine learning, edge computing, text generation, embeddings, image classification">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <article class="post-content">
+            <span class="tag cloudflare">Cloudflare</span>
+            <span class="tag web">Web Dev</span>
+
+            <h1>Cloudflare Workers AI: Run Machine Learning Models at the Edge</h1>
+
+            <p class="post-meta">
+                <span class="post-date">July 5, 2026</span>
+                <span class="read-time">11 min read</span>
+            </p>
+
+            <hr>
+
+            <p>Cloudflare Workers AI lets you run machine learning inference on Cloudflare's global edge network. No GPUs to provision, no model servers to maintain — just call an API from a Worker and get results in milliseconds from a data center near your user. The free tier includes 10,000 requests per day, which is enough to prototype and even run small production workloads.</p>
+
+            <h2>How Workers AI Works</h2>
+
+            <p>Instead of deploying a model to your own server, Cloudflare hosts the models on their edge infrastructure. You send input data, get predictions back. The models run on specialized hardware distributed across 300+ cities worldwide.</p>
+
+            <p>Supported tasks include:</p>
+
+            <ul>
+                <li><strong>Text generation</strong> — LLMs like Llama, Mistral, and Aya</li>
+                <li><strong>Text embeddings</strong> — Convert text to vectors for search</li>
+                <li><strong>Image classification</strong> — Label images with pretrained models</li>
+                <li><strong>Object detection</strong> — Find and locate objects in images</li>
+                <li><strong>Text-to-image</strong> — Generate images from text prompts</li>
+                <li><strong>Speech-to-text</strong> — Transcribe audio</li>
+            </ul>
+
+            <h2>Setting Up Your First Workers AI Project</h2>
+
+            <h3>Install Wrangler (Cloudflare's CLI)</h3>
+
+            <div class="code-block">
+                <pre><code># Install Wrangler if you haven't:
+npm install -g wrangler
+
+# Login to Cloudflare:
+wrangler login</code></pre>
+            </div>
+
+            <h3>Initialize a New Worker</h3>
+
+            <div class="code-block">
+                <pre><code># Create a new project:
+npm create cloudflare@latest my-ai-worker
+cd my-ai-worker
+
+# Install dependencies:
+npm install</code></pre>
+            </div>
+
+            <h3>Configure wrangler.toml</h3>
+
+            <div class="code-block">
+                <pre><code>[ai]
+binding = "AI"</code></pre>
+            </div>
+
+            <h2>Text Generation with Llama</h2>
+
+            <p>Here's how to use Workers AI for text generation. The most popular models are Meta's Llama and Mistral AI's models:</p>
+
+            <div class="code-block">
+                <pre><code>// src/index.ts
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    const url = new URL(request.url);
+
+    if (url.pathname === "/generate" && request.method === "POST") {
+      const { prompt, model, maxTokens } = await request.json();
+
+      const result = await env.AI.run(
+        model || "@cf/meta/llama-3-8b-instruct",
+        {
+          messages: [
+            { role: "system", content: "You are a helpful assistant." },
+            { role: "user", content: prompt }
+          ],
+          max_tokens: maxTokens || 256,
+          temperature: 0.7
+        }
+      );
+
+      return Response.json({ result });
+    }
+
+    return new Response("POST /generate with { prompt, model, maxTokens }");
+  }
+};
+
+// Type definition:
+interface Env {
+  AI: Ai;
+}</code></pre>
+            </div>
+
+            <p>Deploy it with a single command:</p>
+
+            <div class="code-block">
+                <pre><code>npm run deploy
+
+# Then test it:
+curl https://my-ai-worker.yourname.workers.dev/generate \
+  -H "Content-Type: application/json" \
+  -d '{"prompt": "Explain quantum computing in one paragraph", "maxTokens": 128}'</code></pre>
+            </div>
+
+            <h2>Text Embeddings for Semantic Search</h2>
+
+            <p>Embeddings convert text into numerical vectors. Similar text produces similar vectors, which enables semantic search — finding content by meaning, not just keywords.</p>
+
+            <div class="code-block">
+                <pre><code>// Generate embeddings
+const embeddings = await env.AI.run(
+  "@cf/baai/bge-small-en-v1.5",
+  {
+    texts: [
+      "What is the weather like today?",
+      "How do I fix a memory leak?",
+      "Cloudflare Workers documentation"
+    ]
+  }
+);
+
+console.log(embeddings.embeddings[0]);
+// [0.023, -0.045, 0.012, ...] (384 dimensions)</code></pre>
+            </div>
+
+            <p>Here's a complete semantic search API:</p>
+
+            <div class="code-block">
+                <pre><code>// src/index.ts — Semantic Search Worker
+interface Env {
+  AI: Ai;
+  KB: KVNamespace;  // Store embeddings in Workers KV
+}
+
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    const url = new URL(request.url);
+
+    // Add a document to the knowledge base
+    if (url.pathname === "/add" && request.method === "POST") {
+      const { text } = await request.json();
+      const embedding = await env.AI.run("@cf/baai/bge-small-en-v1.5", {
+        texts: [text]
+      });
+
+      const id = crypto.randomUUID();
+      await env.KB.put(id, JSON.stringify({
+        text,
+        vector: embedding.embeddings[0]
+      }));
+
+      return Response.json({ id });
+    }
+
+    // Search the knowledge base
+    if (url.pathname === "/search" && request.method === "POST") {
+      const { query, limit = 5 } = await request.json();
+      
+      // Get query embedding
+      const queryEmb = await env.AI.run("@cf/baai/bge-small-en-v1.5", {
+        texts: [query]
+      });
+      const queryVector = queryEmb.embeddings[0];
+
+      // Fetch all documents and compute similarity
+      const list = await env.KB.list();
+      const results = [];
+
+      for (const doc of list.keys) {
+        const data = JSON.parse(await env.KB.get(doc.name));
+        const similarity = cosineSimilarity(queryVector, data.vector);
+        results.push({ id: doc.name, text: data.text, score: similarity });
+      }
+
+      results.sort((a, b) => b.score - a.score);
+      return Response.json({ results: results.slice(0, limit) });
+    }
+
+    return new Response("POST /add with { text } | POST /search with { query, limit }");
+  }
+};
+
+// Cosine similarity helper
+function cosineSimilarity(a: number[], b: number[]): number {
+  const dot = a.reduce((sum, x, i) => sum + x * b[i], 0);
+  const magA = Math.sqrt(a.reduce((sum, x) => sum + x * x, 0));
+  const magB = Math.sqrt(b.reduce((sum, x) => sum + x * x, 0));
+  return dot / (magA * magB);
+}</code></pre>
+            </div>
+
+            <h2>Image Classification</h2>
+
+            <p>Workers AI can classify images in real-time. Use cases include content moderation, auto-tagging, and input validation:</p>
+
+            <div class="code-block">
+                <pre><code>// Classify an uploaded image
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    if (request.method === "POST") {
+      const body = await request.arrayBuffer();
+      
+      const result = await env.AI.run(
+        "@cf/facebook/resnet-50",
+        { image: [...new Uint8Array(body)] }
+      );
+
+      // result: [{ label: "tabby cat", probability: 0.94 }, ...]
+      return Response.json({
+        prediction: result[0].label,
+        confidence: result[0].probability,
+        all: result
+      });
+    }
+
+    return new Response("POST image data to classify");
+  }
+};</code></pre>
+            </div>
+
+            <h2>Real-World Project: Smart Content Moderator</h2>
+
+            <p>Let's build a content moderation pipeline that checks both text and images:</p>
+
+            <div class="code-block">
+                <pre><code>// src/moderator.ts
+interface Env {
+  AI: Ai;
+  MODERATION_LOG: KVNamespace;
+}
+
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    if (request.method !== "POST") {
+      return new Response("POST /moderate with { text?, image? }", {
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
+    const { text, image } = await request.json();
+    const violations = [];
+
+    // Text moderation: check sentiment + toxicity
+    if (text) {
+      const analysis = await env.AI.run(
+        "@cf/meta/llama-3-8b-instruct",
+        {
+          messages: [{
+            role: "user",
+            content: `Analyze this text for toxicity, hate speech, 
+              harassment, or spam. Respond with JSON:
+              {"toxic": boolean, "reason": string, "confidence": number}
+              
+              Text: ${text}`
+          }],
+          max_tokens: 128
+        }
+      );
+
+      const result = JSON.parse(analysis.response);
+      if (result.toxic) {
+        violations.push({
+          type: "text",
+          reason: result.reason,
+          confidence: result.confidence
+        });
+      }
+    }
+
+    // Image moderation: classify the image
+    if (image) {
+      const decoded = Uint8Array.from(
+        atob(image.replace("data:image/png;base64,", "")),
+        c => c.charCodeAt(0)
+      );
+
+      const classification = await env.AI.run(
+        "@cf/facebook/efficientnet-lite0",
+        { image: [...decoded] }
+      );
+
+      // Flag unexpected image types based on your use case
+      const unexpected = classification.filter(
+        c => c.label.includes("adult") || c.label.includes("weapon")
+      );
+      
+      if (unexpected.length > 0) {
+        violations.push({
+          type: "image",
+          labels: unexpected,
+          confidence: unexpected[0].probability
+        });
+      }
+    }
+
+    // Log the moderation decision
+    await env.MODERATION_LOG.put(
+      crypto.randomUUID(),
+      JSON.stringify({ text, violations, timestamp: new Date().toISOString() })
+    );
+
+    return Response.json({
+      approved: violations.length === 0,
+      violations
+    });
+  }
+};</code></pre>
+            </div>
+
+            <h2>Cost and Performance</h2>
+
+            <table>
+                <tr>
+                    <th>Model</th>
+                    <th>Use Case</th>
+                    <th>Latency (p99)</th>
+                    <th>Free Tier</th>
+                </tr>
+                <tr>
+                    <td>@cf/meta/llama-3-8b-instruct</td>
+                    <td>Text generation</td>
+                    <td>~2-5s</td>
+                    <td>10K req/day</td>
+                </tr>
+                <tr>
+                    <td>@cf/mistral/mistral-7b-instruct</td>
+                    <td>Text generation</td>
+                    <td>~2-4s</td>
+                    <td>10K req/day</td>
+                </tr>
+                <tr>
+                    <td>@cf/baai/bge-small-en-v1.5</td>
+                    <td>Embeddings</td>
+                    <td>~50-200ms</td>
+                    <td>10K req/day</td>
+                </tr>
+                <tr>
+                    <td>@cf/facebook/resnet-50</td>
+                    <td>Image classification</td>
+                    <td>~100-300ms</td>
+                    <td>10K req/day</td>
+                </tr>
+            </table>
+
+            <h2>Combining Workers AI with Other Cloudflare Products</h2>
+
+            <h3>Workers AI + Workers KV = Persistent Memory</h3>
+
+            <div class="code-block">
+                <pre><code>// Chatbot with conversation history in KV
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    const { userId, message } = await request.json();
+
+    // Load previous conversation
+    const history = await env.KV.get(`${userId}:history`) || "[]";
+    const chat = JSON.parse(history);
+    
+    chat.push({ role: "user", content: message });
+
+    // Generate response
+    const result = await env.AI.run("@cf/meta/llama-3-8b-instruct", {
+      messages: [
+        { role: "system", content: "You are a helpful assistant." },
+        ...chat.slice(-10)  // Last 10 messages for context
+      ],
+      max_tokens: 256
+    });
+
+    // Save updated history
+    chat.push({ role: "assistant", content: result.response });
+    await env.KV.put(`${userId}:history`, JSON.stringify(chat));
+
+    return Response.json({ reply: result.response });
+  }
+};</code></pre>
+            </div>
+
+            <h3>Workers AI + D1 = Structured Knowledge Base</h3>
+
+            <div class="code-block">
+                <pre><code>// Store embeddings with metadata in D1
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    const { text, category } = await request.json();
+
+    // Generate embedding
+    const embedding = await env.AI.run("@cf/baai/bge-small-en-v1.5", {
+      texts: [text]
+    });
+
+    // Store in D1 database
+    const vectorString = JSON.stringify(embedding.embeddings[0]);
+    await env.DB.prepare(
+      "INSERT INTO documents (text, category, embedding) VALUES (?, ?, ?)"
+    ).bind(text, category, vectorString).run();
+
+    return Response.json({ status: "indexed" });
+  }
+};</code></pre>
+            </div>
+
+            <h2>Deployment and Monitoring</h2>
+
+            <div class="code-block">
+                <pre><code># Deploy your Worker:
+npx wrangler deploy
+
+# Check usage:
+npx wrangler usage
+
+# Set up analytics dashboard (Cloudflare Dashboard > Workers > Analytics)
+# Monitor: requests, errors, latency, AI token usage</code></pre>
+            </div>
+
+            <h2>Best Practices</h2>
+
+            <ul>
+                <li><strong>Cache embeddings</strong> — Don't regenerate embeddings for static content. Store in Workers KV and reuse.</li>
+                <li><strong>Set temperature carefully</strong> — Low (0.1-0.3) for factual tasks, high (0.7-0.9) for creative tasks.</li>
+                <li><strong>Limit max_tokens</strong> — Prevent runaway costs and latency by setting reasonable token limits.</li>
+                <li><strong>Handle model unavailability</strong> — Workers AI models can be temporarily busy. Add retry logic with exponential backoff.</li>
+                <li><strong>Sanitize inputs</strong> — Never pass raw user input directly to LLM prompts without sanitization (prompt injection risk).</li>
+                <li><strong>Use edge caching</strong> — For repetitive queries (e.g., same FAQ), cache the AI response at the edge.</li>
+            </ul>
+
+            <h2>Conclusion</h2>
+
+            <p>Cloudflare Workers AI makes machine learning accessible without infrastructure overhead. The global edge network ensures low latency, the free tier lets you experiment at no cost, and the integration with Workers KV, D1, and Queues means you can build complete AI-powered applications on Cloudflare's platform.</p>
+
+            <p>Start with embeddings for search, experiment with text generation for chatbots, and explore image classification for content pipelines. The only limit is your imagination — and 10,000 free requests per day to get started.</p>
+
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo Wong · Built with curiosity and Coffee</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528">GitHub</a>
+                <a href="https://hugow.dev">hugow.dev</a>
+                <a href="../sitemap.xml">Sitemap</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-mode');
+            themeToggle.textContent = '☀';
+        }
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            themeToggle.textContent = isLight ? '☀' : '◐';
+        });
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + "%";
+        });
+    </script>
+</body>
+</html>

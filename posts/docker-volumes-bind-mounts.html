@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docker Volumes and Bind Mounts: Persist Data Beyond Container Lifecycles | Hugo's Dev Notes</title>
+    <meta name="description" content="Master Docker volumes, bind mounts, and tmpfs mounts. Learn how to persist data, share files between host and container, and manage data in Docker Compose. Beginner-friendly with working examples.">
+    <meta name="keywords" content="docker volumes, docker bind mounts, docker data persistence, docker compose volumes, docker tmpfs">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+
+        <article class="post-content">
+            <span class="tag devops">DevOps</span>
+            <h1>Docker Volumes and Bind Mounts: Persist Data Beyond Container Lifecycles</h1>
+            <time>July 4, 2026 · 9 min read</time>
+
+            <p>Here's a harsh Docker reality: when a container stops, everything inside it disappears. Logs, databases, uploaded files — all gone. Unless you use volumes or bind mounts. This guide walks you through every approach to data persistence in Docker, from simple bind mounts to production-ready named volumes.</p>
+
+            <h2>Why Data Persistence Matters</h2>
+
+            <p>Containers are <strong>ephemeral by design</strong>. The writable container layer exists only as long as the container lives. Once you run <code>docker rm</code>, that layer is destroyed. This is intentional — it keeps containers lightweight and reproducible. But databases, config files, and user uploads need to survive container restarts.</p>
+
+            <h2>The Three Types of Mounts</h2>
+
+            <p>Docker offers three ways to persist or share data:</p>
+            <ul>
+                <li><strong>Volumes</strong> — Managed by Docker, stored in <code>/var/lib/docker/volumes/</code>. Best for production.</li>
+                <li><strong>Bind mounts</strong> — Map a specific host path into the container. Great for local development.</li>
+                <li><strong>tmpfs mounts</strong> — Stored in host memory only. Ephemeral, never written to disk. Good for sensitive data.</li>
+            </ul>
+
+            <h2>Docker Volumes: The Production-Ready Choice</h2>
+
+            <p>Volumes are Docker's recommended way to persist data. Docker manages them, making them portable across machines and easy to back up.</p>
+
+            <h3>Creating a Named Volume</h3>
+            <pre><code># Create a volume manually
+docker volume create my_db_data
+
+# List all volumes
+docker volume ls
+
+# Inspect a volume (see where it lives on disk)
+docker volume inspect my_db_data
+
+# Remove a volume
+docker volume rm my_db_data</code></pre>
+
+            <h3>Using a Volume with Docker Run</h3>
+            <pre><code># Run PostgreSQL with a persistent volume
+docker run -d \
+  --name postgres \
+  -e POSTGRES_PASSWORD=secret123 \
+  -v my_db_data:/var/lib/postgresql/data \
+  postgres:16
+
+# Even if you remove the container, data survives:
+docker rm -f postgres
+docker run -d \
+  --name postgres \
+  -e POSTGRES_PASSWORD=secret123 \
+  -v my_db_data:/var/lib/postgresql/data \
+  postgres:16
+
+# Your databases are still there! 🎉</code></pre>
+
+            <p>The <code>-v</code> flag uses the format <code>VOLUME_NAME:CONTAINER_PATH</code>. Docker automatically creates the volume if it doesn't exist. The container path <code>/var/lib/postgresql/data</code> is where PostgreSQL stores its data files.</p>
+
+            <h3>Volumes with Docker Compose</h3>
+            <p>In docker-compose.yml, volumes are declared at the top level:</p>
+            <pre><code># docker-compose.yml
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD: secret123
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+
+volumes:
+  db_data:    # Named volume for PostgreSQL
+  redis_data: # Named volume for Redis</code></pre>
+
+            <p>Running <code>docker compose up -d</code> creates both volumes automatically. They persist across <code>docker compose down</code> — only <code>docker compose down -v</code> removes them.</p>
+
+            <h2>Bind Mounts: Developer's Best Friend</h2>
+
+            <p>Bind mounts map a specific file or directory from your host machine into the container. This is the default way to do hot-reload development.</p>
+
+            <h3>Development Workflow with Bind Mounts</h3>
+            <pre><code># Mount your entire project directory
+docker run -d \
+  --name myapp \
+  -v $(pwd):/app \
+  -w /app \
+  python:3.12-slim \
+  python app.py
+
+# Edit app.py on your host → see changes instantly in container</code></pre>
+
+            <p>The <code>$(pwd)</code> maps your current directory to <code>/app</code> inside the container. The <code>-w /app</code> sets the working directory. Every file change on your host is immediately reflected in the container — no rebuild needed.</p>
+
+            <h3>Bind Mount in Docker Compose</h3>
+            <pre><code>services:
+  web:
+    build: .
+    volumes:
+      - ./src:/app/src        # Mount only the source directory
+      - ./config:/app/config  # Mount config separately
+    ports:
+      - "8000:8000"</code></pre>
+
+            <p>Bind mount paths starting with <code>.</code> or <code>/</code> are treated as host paths. Relative paths are resolved from the <code>docker-compose.yml</code> location.</p>
+
+            <h3>Read-Only Bind Mounts</h3>
+            <p>Prevent containers from modifying host files by adding <code>:ro</code>:</p>
+            <pre><code># Mount config as read-only
+docker run -d \
+  --name nginx \
+  -v /etc/nginx/conf.d:/etc/nginx/conf.d:ro \
+  nginx:latest
+
+# Container can read configs but cannot modify host files</code></pre>
+
+            <h2>tmpfs Mounts: In-Memory Storage</h2>
+
+            <p>tmpfs mounts store data in the host's memory. They never hit disk and disappear when the container stops. Perfect for temporary files, session data, or sensitive info.</p>
+
+            <pre><code># Mount /tmp as tmpfs
+docker run -d \
+  --name app \
+  --tmpfs /tmp:rw,noexec,nosuid,size=100m \
+  python:3.12-slim
+
+# In docker-compose.yml:
+services:
+  app:
+    image: python:3.12-slim
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=100m</code></pre>
+
+            <h2>Volumes vs Bind Mounts: When to Use Which</h2>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Factor</th>
+                        <th>Volumes</th>
+                        <th>Bind Mounts</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Managed by Docker</td>
+                        <td>✅ Yes</td>
+                        <td>❌ No</td>
+                    </tr>
+                    <tr>
+                        <td>Works on Windows/Mac/Linux</td>
+                        <td>✅ Yes</td>
+                        <td>⚠️ Path quirks</td>
+                    </tr>
+                    <tr>
+                        <td>Easy to back up</td>
+                        <td>✅ Yes</td>
+                        <td>❌ Manual</td>
+                    </tr>
+                    <tr>
+                        <td>Hot-reload development</td>
+                        <td>❌ Slow for many files</td>
+                        <td>✅ Instant</td>
+                    </tr>
+                    <tr>
+                        <td>Production databases</td>
+                        <td>✅ Recommended</td>
+                        <td>❌ Not recommended</td>
+                    </tr>
+                    <tr>
+                        <td>Performance (Linux)</td>
+                        <td>✅ Native</td>
+                        <td>✅ Native</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p><strong>Rule of thumb:</strong> Use volumes for production data (databases, uploads). Use bind mounts for development (source code, configs). Use tmpfs for temporary or sensitive data.</p>
+
+            <h2>Backing Up and Restoring Volumes</h2>
+
+            <p>Docker volumes are just directories on the host. You can back them up with standard tools:</p>
+
+            <pre><code># Backup a volume using a temporary container
+docker run --rm \
+  -v my_db_data:/data:ro \
+  -v $(pwd):/backup \
+  alpine \
+  tar czf /backup/db-backup.tar.gz -C /data .
+
+# Restore from backup
+docker run --rm \
+  -v my_db_data:/data \
+  -v $(pwd):/backup:ro \
+  alpine \
+  sh -c "cd /data && tar xzf /backup/db-backup.tar.gz"</code></pre>
+
+            <p>This technique works with any volume — just change the volume name and backup path. Run it as a cron job for automated backups.</p>
+
+            <h2>Volume Drivers: Storage Beyond Local Disk</h2>
+
+            <p>By default, Docker uses the <code>local</code> volume driver. But you can install plugins for cloud storage:</p>
+
+            <pre><code># Create a volume with a custom driver
+docker volume create \
+  -d flocker \
+  --opt size=100 \
+  my_flocker_volume
+
+# Use it with your container
+docker run -d \
+  --name postgres \
+  -v my_flocker_volume:/var/lib/postgresql/data \
+  postgres:16</code></pre>
+
+            <p>Popular drivers include Portworx, Flocker, and CSI drivers for AWS EBS, GCP Persistent Disks, and Azure Disks. These let you share volumes across machines in a cluster.</p>
+
+            <h2>Common Gotchas</h2>
+
+            <h3>Permission Issues</h3>
+            <p>If your container can't write to a bind-mounted directory, check ownership:</p>
+            <pre><code># Fix permissions inside the container
+docker run --rm -v $(pwd):/app alpine chown 1000:1000 /app
+
+# Or specify the user in your Dockerfile
+USER 1000</code></pre>
+
+            <h3>Docker Creates Directories Instead of Mounting</h3>
+            <p>If the container path already exists as a directory, Docker fills the volume contents into it — it doesn't replace it. This can cause confusion:</p>
+            <pre><code># Bad: /data already exists in the image with files
+docker run -v my_vol:/data nginx  # Volume contents merged with existing
+
+# Good: mount into a clean directory
+docker run -v my_vol:/custom/data nginx</code></pre>
+
+            <h3>Volume Doesn't Exist, Docker Creates It Anyway</h3>
+            <p>When you use <code>-v name:/path</code> and <code>name</code> isn't an absolute path, Docker creates a volume named <code>name</code>. This is often unexpected:</p>
+            <pre><code># This creates a VOLUME called "mydata", not a bind mount!
+docker run -v mydata:/app nginx
+
+# This is a bind mount (absolute path)
+docker run -v /home/user/mydata:/app nginx</code></pre>
+
+            <p>Using Docker Compose avoids this ambiguity — named volumes must be declared in the <code>volumes:</code> section.</p>
+
+            <h2>Real-World Example: Full Stack App</h2>
+
+            <p>Here's a complete docker-compose.yml showing all three mount types:</p>
+
+            <pre><code>services:
+  # Database: named volume for persistence
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: myapp
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # App server: bind mount for development
+  web:
+    build: .
+    volumes:
+      - ./app:/app        # Source code (bind mount)
+      - ./uploads:/uploads # User uploads (bind mount)
+    environment:
+      DATABASE_URL: postgresql://admin:${DB_PASSWORD}@postgres:5432/myapp
+    tmpfs:
+      - /tmp:noexec,size=50m  # Temp files in memory
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # Backup runner: mounts database volume as read-only
+  backup:
+    image: alpine
+    volumes:
+      - pg_data:/source:ro     # Read-only access to DB data
+      - ./backups:/backup      # Store backups on host
+    command: >
+      sh -c "sleep 3600 &&
+             tar czf /backup/db-$(date +%Y%m%d).tar.gz -C /source ."</code></pre>
+
+            <h2>Summary</h2>
+
+            <ul>
+                <li><strong>Volumes</strong> are Docker-managed, portable, and ideal for production data</li>
+                <li><strong>Bind mounts</strong> map host paths into containers, perfect for development</li>
+                <li><strong>tmpfs mounts</strong> keep data in memory — great for sensitive or temporary files</li>
+                <li>Always use named volumes for databases in production</li>
+                <li>Use bind mounts with source code for instant hot-reload</li>
+                <li>Back up volumes with <code>docker run</code> + <code>tar</code></li>
+            </ul>
+
+            <p>Understanding these three mount types is the key to building reliable, data-driven Docker applications. Start with volumes for your databases, bind mounts for your code, and you'll never lose data when a container restarts.</p>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes. Built with curiosity.</p>
+        </div>
+    </footer>
+
+    <script src="../theme.js"></script>
+</body>
+</html>

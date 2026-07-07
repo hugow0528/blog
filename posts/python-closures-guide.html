@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Closures: Functions That Remember — Practical Guide | Hugo's Dev Notes</title>
+    <meta name="description" content="Master Python closures — functions that remember values from their enclosing scope. Practical examples for callbacks, decorators, data hiding, and stateful functions.">
+    <meta name="keywords" content="python closures, python scope, nested functions, closure python, functional programming">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn active">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+        
+        <article class="post-content">
+            <span class="tag python">Python</span>
+            <h1>Python Closures: Functions That Remember — Practical Guide for Beginners</h1>
+            <time>July 5, 2026 · 9 min read</time>
+
+            <p>A closure is one of Python's most powerful — and misunderstood — features. It's a function that remembers the environment in which it was created. Think of it as a function with a backpack: it carries variables from its parent scope, even after the parent function has finished running.</p>
+
+            <p>Closures are everywhere in real Python code. They power decorators, callbacks, factory functions, and stateful computations. Once you understand them, you'll see patterns you couldn't before.</p>
+
+            <h2>What Is a Closure?</h2>
+
+            <p>A closure happens when three conditions are met:</p>
+            <ul>
+                <li>There's a <strong>nested function</strong> (a function inside another function)</li>
+                <li>The nested function <strong>references a variable</strong> from the enclosing (outer) function</li>
+                <li>The outer function <strong>returns</strong> the nested function</li>
+            </ul>
+
+            <p>When all three are true, the nested function "closes over" the variables from its parent scope — hence the name "closure."</p>
+
+            <h2>Your First Closure</h2>
+
+            <pre><code>def make_greeting(greet_word):
+    """Factory function that creates a greeting function"""
+    
+    def greet(name):
+        """This inner function remembers greet_word"""
+        return f"{greet_word}, {name}!"
+    
+    return greet  # Return the function itself (no parentheses)
+
+# Create specific greeting functions
+say_hello = make_greeting("Hello")
+say_hi = make_greeting("Hi")
+say_hey = make_greeting("Hey there")
+
+# Use them
+print(say_hello("Alice"))  # Hello, Alice!
+print(say_hi("Bob"))       # Hi, Bob!
+print(say_hey("Charlie"))  # Hey there, Charlie!</code></pre>
+
+            <p>Notice what happened: <code>make_greeting</code> finished executing, but the <code>greet_word</code> variable didn't disappear. Each returned function (<code>say_hello</code>, <code>say_hi</code>, <code>say_hey</code>) carries its own copy of <code>greet_word</code>. They have their own independent state.</p>
+
+            <h2>How Closures Remember: The <code>__closure__</code> Attribute</h2>
+
+            <p>You can inspect a closure's captured variables:</p>
+
+            <pre><code>def make_multiplier(factor):
+    def multiply(number):
+        return number * factor
+    return multiply
+
+double = make_multiplier(2)
+triple = make_multiplier(3)
+
+# Inspect what each closure captured
+print(double.__closure__[0].cell_contents)  # 2
+print(triple.__closure__[0].cell_contents)  # 3
+
+# They work independently
+print(double(5))  # 10
+print(triple(5))  # 15</code></pre>
+
+            <h2>Real-World Use #1: Callbacks with Pre-Configured Behavior</h2>
+
+            <p>Callbacks are functions passed to other functions to be called later. Closures let you pre-configure them without passing extra arguments everywhere:</p>
+
+            <pre><code>import time
+
+def make_logger(prefix, log_file):
+    """Create a logger that writes to a specific file with a prefix"""
+    
+    def log(message):
+        timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+        with open(log_file, "a") as f:
+            f.write(f"[{timestamp}] {prefix}: {message}\n")
+        print(f"Logged: {prefix} - {message}")
+    
+    return log
+
+# Create specialized loggers
+api_logger = make_logger("API", "api.log")
+auth_logger = make_logger("AUTH", "auth.log")
+db_logger = make_logger("DB", "database.log")
+
+# Use them throughout your app
+api_logger("Received GET /users")
+auth_logger("User login failed: invalid password")
+db_logger("Query took 2.3 seconds")</code></pre>
+
+            <p>Without closures, you'd have to pass the prefix and filename every time. The closure bundles the configuration with the function.</p>
+
+            <h2>Real-World Use #2: Rate Limiter</h2>
+
+            <p>Closures are perfect for stateful utilities like rate limiters:</p>
+
+            <pre><code>import time
+
+def make_rate_limiter(max_calls, period_seconds):
+    """Create a rate limiter that allows max_calls per period"""
+    calls = []
+    
+    def limiter(func):
+        def wrapper(*args, **kwargs):
+            now = time.time()
+            # Remove old calls outside the time window
+            calls[:] = [t for t in calls if now - t < period_seconds]
+            
+            if len(calls) >= max_calls:
+                wait_time = period_seconds - (now - calls[0])
+                print(f"⏸️ Rate limited! Wait {wait_time:.1f}s")
+                return None
+            
+            calls.append(now)
+            return func(*args, **kwargs)
+        
+        return wrapper
+    return limiter
+
+# Create a limiter: 3 API calls per 10 seconds
+rate_limit = make_rate_limiter(3, 10)
+
+@rate_limit
+def fetch_data(url):
+    print(f"✅ Fetching {url}")
+    return f"Data from {url}"
+
+# Test it
+fetch_data("https://api.example.com/users")  # ✅
+fetch_data("https://api.example.com/posts")  # ✅
+fetch_data("https://api.example.com/data")   # ✅
+fetch_data("https://api.example.com/more")   # ⏸️ Rate limited!</code></pre>
+
+            <h2>Real-World Use #3: Caching / Memoization</h2>
+
+            <p>Build a simple memoization decorator using closures — store previously computed results:</p>
+
+            <pre><code>def make_memoize():
+    """Create a memoization decorator using a closure"""
+    cache = {}
+    
+    def memoize(func):
+        def wrapper(*args):
+            if args not in cache:
+                print(f"  Computing {func.__name__}({args})...")
+                cache[args] = func(*args)
+            else:
+                print(f"  Cache hit for {func.__name__}({args})")
+            return cache[args]
+        return wrapper
+    return memoize
+
+# Apply memoization
+memo = make_memoize()
+
+@memo
+def fibonacci(n):
+    if n <= 1:
+        return n
+    return fibonacci(n - 1) + fibonacci(n - 2)
+
+# First call computes everything
+print(fibonacci(10))  # 55 (computes each value)
+
+# Second call uses cache
+print(fibonacci(10))  # 55 (all cache hits!)
+print(fibonacci(5))   # 5 (all cache hits from previous computation)</code></pre>
+
+            <h2>Real-World Use #4: Database Query Builder</h2>
+
+            <p>Build reusable query functions that remember their base configuration:</p>
+
+            <pre><code>def make_query_builder(table, db_connection):
+    """Create query functions for a specific table"""
+    
+    def select(columns="*", where=None, limit=None):
+        query = f"SELECT {columns} FROM {table}"
+        if where:
+            query += f" WHERE {where}"
+        if limit:
+            query += f" LIMIT {limit}"
+        return query
+    
+    def insert(data_dict):
+        columns = ", ".join(data_dict.keys())
+        values = ", ".join([f"'{v}'" for v in data_dict.values()])
+        return f"INSERT INTO {table} ({columns}) VALUES ({values})"
+    
+    def update(data_dict, where):
+        assignments = ", ".join([f"{k} = '{v}'" for k, v in data_dict.items()])
+        return f"UPDATE {table} SET {assignments} WHERE {where}"
+    
+    return {"select": select, "insert": insert, "update": update}
+
+# Create table-specific builders
+users_q = make_query_builder("users", None)
+products_q = make_query_builder("products", None)
+
+# Use them
+print(users_q.select("name, email", where="age > 18", limit=10))
+# SELECT name, email FROM users WHERE age > 18 LIMIT 10
+
+print(users_q.insert({"name": "Hugo", "email": "hugo@example.com"}))
+# INSERT INTO users (name, email) VALUES ('Hugo', 'hugo@example.com')
+
+print(products_q.select(limit=5))
+# SELECT * FROM products LIMIT 5</code></pre>
+
+            <h2>Closures vs Classes: When to Use What</h2>
+
+            <p>Closures and classes both encapsulate state, but they fit different situations:</p>
+
+            <pre><code># Closure approach — simple, single-purpose
+def make_counter():
+    count = 0
+    def increment():
+        nonlocal count
+        count += 1
+        return count
+    return increment
+
+counter = make_counter()
+print(counter())  # 1
+print(counter())  # 2
+
+# Class approach — complex, multi-purpose
+class Counter:
+    def __init__(self):
+        self.count = 0
+    
+    def increment(self):
+        self.count += 1
+        return self.count
+    
+    def reset(self):
+        self.count = 0
+    
+    def get(self):
+        return self.count
+
+counter = Counter()
+print(counter.increment())  # 1
+counter.reset()
+print(counter.get())        # 0</code></pre>
+
+            <p><strong>Use closures when:</strong> You need a simple, single-purpose function with hidden state (decorators, callbacks, factories).</p>
+            <p><strong>Use classes when:</strong> You need multiple methods, public/protected state, or complex behavior.</p>
+
+            <h2>The <code>nonlocal</code> Keyword</h2>
+
+            <p>By default, closures can <em>read</em> but not <em>modify</em> enclosing variables. Use <code>nonlocal</code> to modify them:</p>
+
+            <pre><code>def make_bank_account(initial_balance):
+    balance = initial_balance
+    
+    def deposit(amount):
+        nonlocal balance  # Declare we want to modify 'balance'
+        balance += amount
+        return balance
+    
+    def withdraw(amount):
+        nonlocal balance
+        if amount > balance:
+            raise ValueError("Insufficient funds")
+        balance -= amount
+        return balance
+    
+    def get_balance():
+        return balance
+    
+    return {"deposit": deposit, "withdraw": withdraw, "balance": get_balance}
+
+account = make_bank_account(1000)
+print(account["deposit"](500))    # 1500
+print(account["withdraw"](200))   # 1300
+print(account["balance"]())       # 1300
+# account["withdraw"](2000)       # ValueError: Insufficient funds</code></pre>
+
+            <p>Without <code>nonlocal</code>, Python would create a new local variable instead of modifying the enclosing one. This is a common source of bugs.</p>
+
+            <h2>Closures in Production: The Retry Pattern</h2>
+
+            <p>One of the most common production patterns — retrying failed API calls:</p>
+
+            <pre><code>import time
+import random
+
+def make_retry(max_attempts=3, base_delay=1, max_delay=30):
+    """Create a retry decorator with exponential backoff"""
+    
+    def retry(func):
+        def wrapper(*args, **kwargs):
+            last_error = None
+            for attempt in range(1, max_attempts + 1):
+                try:
+                    return func(*args, **kwargs)
+                except Exception as e:
+                    last_error = e
+                    delay = min(base_delay * (2 ** (attempt - 1)), max_delay)
+                    # Add jitter to avoid thundering herd
+                    jitter = random.uniform(0, delay * 0.5)
+                    wait = delay + jitter
+                    print(f"⚠️ Attempt {attempt}/{max_attempts} failed: {e}")
+                    print(f"   Retrying in {wait:.1f}s...")
+                    time.sleep(wait)
+            raise RuntimeError(f"All {max_attempts} attempts failed") from last_error
+        return wrapper
+    return retry
+
+# Usage
+api_retry = make_retry(max_attempts=5, base_delay=0.5)
+
+@api_retry
+def call_unreliable_api(endpoint):
+    # Simulates flaky API
+    import random
+    if random.random() < 0.7:
+        raise ConnectionError("Connection timed out")
+    return f"Success from {endpoint}"
+
+result = call_unreliable_api("/users")
+print(result)  # Eventually returns "Success from /users"</code></pre>
+
+            <h2>Common Pitfalls</h2>
+
+            <h3>Lazy Evaluation in Loops</h3>
+
+            <pre><code># BUG: All functions capture the same variable
+funcs = []
+for i in range(3):
+    funcs.append(lambda: i)
+
+print([f() for f in funcs])  # [2, 2, 2] — NOT [0, 1, 2]!
+
+# FIX: Capture the value at each iteration
+funcs = []
+for i in range(3):
+    funcs.append(lambda x=i: x)  # Default argument captures value
+
+print([f() for f in funcs])  # [0, 1, 2] — correct!</code></pre>
+
+            <h3>Mutable Default Arguments in Closures</h3>
+
+            <pre><code># BUG: Shared mutable list across all instances
+def make_accumulator():
+    results = []
+    def add(value):
+        results.append(value)
+        return results
+    return add
+
+# FIX: Each call to make_accumulator creates its own list — this is fine!
+# The bug happens when you use default args instead:
+def buggy_accumulator(value, results=[]):  # Shared list!
+    results.append(value)
+    return results
+
+print(buggy_accumulator(1))  # [1]
+print(buggy_accumulator(2))  # [1, 2] — unexpected! Shared list</code></pre>
+
+            <h2>Summary</h2>
+
+            <p>Closures are functions that carry their environment with them. Key takeaways:</p>
+            <ul>
+                <li><strong>Three conditions:</strong> nested function, references outer variable, outer returns inner</li>
+                <li><strong>Use cases:</strong> callbacks, decorators, factories, caching, stateful utilities</li>
+                <li><strong>Use <code>nonlocal</code></strong> to modify enclosing variables</li>
+                <li><strong>Avoid loop capture bugs</strong> with default arguments</li>
+                <li><strong>Simpler than classes</strong> for single-purpose stateful functions</li>
+            </ul>
+
+            <blockquote>
+                <strong>Practice tip:</strong> Build a URL shortener using closures. Create a <code>make_shortener()</code> function that returns <code>shorten(url)</code> and <code>expand(short_id)</code> functions, each sharing an internal mapping dictionary.
+            </blockquote>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Hugo's Dev Notes. Built with vibe coding.</p>
+        </div>
+    </footer>
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        if (themeToggle) {{
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            if (savedTheme === 'light') {{
+                document.body.classList.add('light-mode');
+                themeToggle.textContent = '☀';
+            }}
+            themeToggle.addEventListener('click', () => {{
+                document.body.classList.toggle('light-mode');
+                const isLight = document.body.classList.contains('light-mode');
+                localStorage.setItem('theme', isLight ? 'light' : 'dark');
+                themeToggle.textContent = isLight ? '☀' : '◐';
+            }});
+        }}
+        window.addEventListener('scroll', () => {{
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            const bar = document.getElementById('progressBar');
+            if (bar) bar.style.width = scrolled + "%";
+        }});
+    </script>
+</body>
+</html>

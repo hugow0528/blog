@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Git Bisect: Binary Search Through Your Commit History | Hugo's Dev Notes</title>
+    <meta name="description" content="Find the exact commit that introduced a bug using git bisect. Binary search through your git history to track down regressions efficiently with practical examples.">
+    <meta name="keywords" content="git bisect, git binary search, find bug commit, git regression, debug git history">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn active">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+        
+        <article class="post-content">
+            <span class="tag devops">DevOps</span>
+            <h1>Git Bisect: Binary Search Through Your Commit History</h1>
+            <time>July 5, 2026 · 9 min read</time>
+
+            <p>A bug appeared in production. The feature worked last week, but today it's broken. You have 83 commits between the working version and the broken one. Which commit introduced the regression?</p>
+
+            <p>Checking each commit one by one would take forever. Git has a built-in superpower for this: <strong><code>git bisect</code></strong>. It uses binary search to find the exact commit that introduced a bug in logarithmic time — 83 commits down to the culprit in about 7 steps.</p>
+
+            <p>That's not magic — it's math. <code>log₂(83) ≈ 6.4</code>. Git bisect cuts your search space in half each iteration. Instead of 83 checks, you need at most 7.</p>
+
+            <h2>How Git Bisect Works</h2>
+
+            <p>The algorithm is simple:</p>
+
+            <ol>
+                <li>You tell Git which commit is <strong>good</strong> (working) and which is <strong>bad</strong> (broken)</li>
+                <li>Git checks out a commit roughly halfway between them</li>
+                <li>You test and tell Git whether it's good or bad</li>
+                <li>Git halves the remaining range and repeats</li>
+                <li>When the range is one commit, Git names it as the first bad commit</li>
+            </ol>
+
+            <p>Think of it like the "Guess the Number" game, where Git guesses and you answer "too high" or "too low." Git just happens to be incredibly fast at narrowing down.</p>
+
+            <h2>Manual Bisect Step by Step</h2>
+
+            <p>Let's walk through a real scenario. You know the bug was introduced somewhere in the last 2 weeks. Let's start:</p>
+
+            <pre><code># Step 1: Start bisect
+git bisect start
+
+# Step 2: Mark current (broken) state as bad
+git bisect bad
+
+# Step 3: Mark a known-good commit as good
+# Could be a tag, a specific commit hash, or a branch
+git bisect good v1.2.0
+# or: git bisect good abc1234
+# or: git bisect good main~20</code></pre>
+
+            <p>Git immediately checks out a commit in the middle:</p>
+
+            <pre><code>git bisect start
+git bisect bad
+git bisect good v1.2.0
+
+Bisecting: 41 revisions left to test after this (roughly 6 steps)
+[7f3a9b2e8c1d] Add pagination to user list API</code></pre>
+
+            <p>Git says "41 revisions left, roughly 6 steps." That means from 83 commits, we're already down to a 6-step process. Now you test your code at this commit:</p>
+
+            <pre><code># Run your test or check the feature
+python -m pytest tests/test_user_api.py
+# or: curl http://localhost:8000/api/users | jq .</code></pre>
+
+            <p>If the test passes (feature works):</p>
+
+            <pre><code>git bisect good</code></pre>
+
+            <p>If the test fails (feature broken):</p>
+
+            <pre><code>git bisect bad</code></pre>
+
+            <p>Git moves to the next midpoint:</p>
+
+            <pre><code>Bisecting: 20 revisions left to test after this (roughly 4 steps)
+[2e1b4c7d8a9f] Refactor authentication middleware</code></pre>
+
+            <p>Repeat until Git finds the culprit:</p>
+
+            <pre><code>git bisect good    # or bad
+git bisect good    # or bad
+git bisect bad     # or good
+git bisect good    # or bad
+git bisect bad     # or good
+git bisect bad
+
+# Git narrows it down...
+Bisecting: 0 revisions left to test after this (roughly 0 steps)
+[3c9d5e7f1a2b] Fix date formatting in user profile
+
+git bisect good
+
+3c9d5e7f1a2b is the first bad commit
+commit 3c9d5e7f1a2b
+Author: Dev Person &lt;dev@example.com&gt;
+Date:   Mon Jun 28 14:22:03 2026
+
+    Fix date formatting in user profile
+    
+    The change to utils.format_date() accidentally broke
+    the comparison logic in the date range filter...</code></pre>
+
+            <p>There it is. The exact commit. You can now see the diff, understand the mistake, and create a proper fix.</p>
+
+            <h2>Clean Up After Bisect</h2>
+
+            <p>When bisect is done, always return to your original branch:</p>
+
+            <pre><code>git bisect reset</code></pre>
+
+            <p>This restores your working directory to the branch and commit you were on before starting bisect. Forgetting this step is the #1 beginner mistake — you'll think you're on main but you're actually on some random commit in the middle of history.</p>
+
+            <h2>Automated Bisect with a Test Script</h2>
+
+            <p>The manual process works, but running tests after each checkout is tedious. Git bisect can automate this with <code>git bisect run</code>:</p>
+
+            <pre><code>git bisect start
+git bisect bad
+git bisect good v1.2.0
+
+# Run automatically with a test command
+# Exit code 0 = good, 1-125 = bad, 125 = skip
+git bisect run python -m pytest tests/test_user_api.py</code></pre>
+
+            <p>That's it. Git will:</p>
+
+            <ol>
+                <li>Checkout each midpoint commit</li>
+                <li>Run your test command</li>
+                <li>Interpret the exit code (0 = good, non-zero = bad)</li>
+                <li>Continue bisecting automatically</li>
+                <li>Report the first bad commit</li>
+                <li>Reset back to your original branch</li>
+            </ol>
+
+            <p>The entire process takes seconds for most projects. Here's the full output:</p>
+
+            <pre><code>git bisect run python -m pytest tests/test_user_api.py
+
+running 'python -m pytest tests/test_user_api.py'
+Bisecting: 41 revisions left to test after this (roughly 6 steps)
+[7f3a9b2e8c1d] Add pagination...
+running 'python -m pytest tests/test_user_api.py'
+Bisecting: 20 revisions left to test after this (roughly 4 steps)
+...
+Bisecting: 0 revisions left to test after this (roughly 0 steps)
+[3c9d5e7f1a2b] Fix date formatting...
+running 'python -m pytest tests/test_user_api.py'
+3c9d5e7f1a2b is the first bad commit
+commit 3c9d5e7f1a2b
+Author: Dev Person &lt;dev@example.com&gt;
+...
+bisect found first bad commit</code></pre>
+
+            <h2>Advanced: Shell Script for Complex Tests</h2>
+
+            <p>Some bugs require more than a single test command. You might need to install dependencies, build the project, or run a server. Create a shell script:</p>
+
+            <pre><code>#!/bin/bash
+# scripts/bisect_test.sh
+
+# Install dependencies for this commit
+pip install -r requirements.txt
+
+# Build if needed
+# npm run build  (for frontend projects)
+
+# Run the test
+python -m pytest tests/test_user_api.py -x
+# The exit code of this command determines good/bad</code></pre>
+
+            <pre><code>chmod +x scripts/bisect_test.sh
+git bisect run ./scripts/bisect_test.sh</code></pre>
+
+            <h2>Exit Code Rules</h2>
+
+            <p>When using <code>git bisect run</code>, the exit code of your command determines Git's behavior:</p>
+
+            <pre><code>Exit code 0   → commit is GOOD
+Exit code 1-125 → commit is BAD
+Exit code 125  → SKIP this commit (can't test it)</code></pre>
+
+            <p>Use <code>Skip</code> when a commit won't even compile or has missing dependencies. Git will work around it:</p>
+
+            <pre><code>#!/bin/bash
+# scripts/bisect_smart.sh
+set -e
+
+# Try to install deps
+if ! pip install -r requirements.txt 2>/dev/null; then
+    echo "Cannot install deps, skipping"
+    exit 125  # Skip
+fi
+
+# Try to run tests
+python -m pytest tests/test_user_api.py -x
+exit_code=$?
+
+if [ $exit_code -eq 0 ]; then
+    exit 0  # Good
+else
+    exit 1  # Bad
+fi</code></pre>
+
+            <h2>Real-World Example: Finding a Performance Regression</h2>
+
+            <p>Bisect isn't just for bugs — it works for performance regressions too. Let's say your API went from 50ms to 500ms response time:</p>
+
+            <pre><code>#!/bin/bash
+# scripts/bisect_perf.sh
+
+# Install deps
+pip install -r requirements.txt
+
+# Start server in background
+python app.py &amp;
+SERVER_PID=$!
+sleep 2
+
+# Measure response time
+RESPONSE_TIME=$(curl -s -o /dev/null -w "%{time_total}" \
+    http://localhost:8000/api/users)
+
+# Kill server
+kill $SERVER_PID 2>/dev/null
+
+# If response takes more than 200ms, it's bad
+echo "Response time: ${RESPONSE_TIME}s"
+if (( $(echo "$RESPONSE_TIME &gt; 0.2" | bc -l) )); then
+    echo "SLOW - marking as bad"
+    exit 1
+else
+    echo "FAST - marking as good"
+    exit 0
+fi</code></pre>
+
+            <pre><code>git bisect run bash scripts/bisect_perf.sh</code></pre>
+
+            <p>Git finds the exact commit where performance degraded. Maybe it was a change from <code>SELECT *</code> to fetching all records, or adding a synchronous HTTP call in the request path.</p>
+
+            <h2>Common Gotchas</h2>
+
+            <h3>1. Dependencies Changed Between Commits</h3>
+            <p>If <code>requirements.txt</code> changed, your bisect test might fail for the wrong reason. Always reinstall dependencies at each step (as shown in the scripts above).</p>
+
+            <h3>2. The Bug Only Happens After Merge</h3>
+            <p>Some bugs appear only when two branches merge. In this case, bisect might not find a single "bad" commit because the bug doesn't exist on either branch alone. Try bisecting a specific branch that contains the regression.</p>
+
+            <h3>3. Forgetting <code>git bisect reset</code></h3>
+            <p>This puts you in a detached HEAD state. You can still commit, but those commits won't belong to any branch. Always reset when done.</p>
+
+            <h3>4. The Range Is Too Broad</h3>
+            <p>If you bisect from a year ago, Git has to handle thousands of commits. Use a narrower range when you roughly know when the bug appeared:</p>
+
+            <pre><code># Bisect only the last 30 commits
+git bisect start HEAD HEAD~30
+git bisect bad HEAD
+git bisect good HEAD~30</code></pre>
+
+            <h2>Pro Tips</h2>
+
+            <ul>
+                <li><strong>Use tags as good markers</strong>: Release tags (v1.0.0, v1.1.0) are reliable "known good" points. They represent tested, deployed code.</li>
+                <li><strong>Combine with <code>git log --oneline</code></strong>: Before starting, review recent commits to pick a smart "good" point: <code>git log --oneline -30</code></li>
+                <li><strong>Bisect multiple bugs</strong>: If you found commit A caused bug 1 and commit B caused bug 2, you can bisect again from the same starting point.</li>
+                <li><strong>Use <code>--first-parent</code></strong>: To follow only the main branch history, skipping feature branch noise: <code>git bisect start --first-parent</code></li>
+            </ul>
+
+            <h2>Summary</h2>
+
+            <p>Git bisect is one of those tools you'll never use... until you need it desperately. Then it becomes your best friend.</p>
+
+            <p>The workflow is simple:</p>
+
+            <pre><code>git bisect start
+git bisect bad           # current state is broken
+git bisect good v1.2.0   # this tag was working
+git bisect run ./test.sh # automated testing
+git bisect reset         # return to normal</code></pre>
+
+            <p>83 commits narrowed to 1 in 7 steps. That's the power of binary search. Next time a bug appears, don't guess — bisect.</p>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo Wong · Built with curiosity and Coffee</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528">GitHub</a>
+                <a href="https://hugow.dev">hugow.dev</a>
+                <a href="/sitemap.xml">Sitemap</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-mode');
+            themeToggle.textContent = '☀';
+        }
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            themeToggle.textContent = isLight ? '☀' : '◐';
+        });
+
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + "%";
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Git Branching Strategies for Teams: Git Flow, Trunk-Based, GitHub Flow &amp; When to Use Each</title>
+    <meta name="description" content="Compare Git branching strategies — Git Flow, Trunk-Based Development, GitHub Flow, and GitLab Flow. Learn when to use each, with real-world team examples and visual workflow diagrams.">
+    <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/git-branching-strategies-for-teams.html">
+    <meta property="og:title" content="Git Branching Strategies for Teams">
+    <meta property="og:description" content="Compare Git Flow, Trunk-Based, GitHub Flow, and GitLab Flow. Find the right strategy for your team.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.hugow.dev/posts/git-branching-strategies-for-teams.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../devops.html" class="nav-btn active">DevOps</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="post-content">
+        <span class="tag devops">DevOps</span>
+
+        <h1>Git Branching Strategies for Teams: Git Flow, Trunk-Based, GitHub Flow &amp; When to Use Each</h1>
+
+        <div class="post-meta">
+            <span class="post-date">July 6, 2026</span>
+            <span class="read-time">10 min read</span>
+        </div>
+
+        <p>If you've ever joined a team and wondered, "Why do we have a <code>develop</code> branch, a <code>release-v2.3</code> branch, AND a <code>hotfix-login-bug</code> branch?" — you've experienced a Git branching strategy in the wild. Without a clear strategy, your repository turns into spaghetti. Too strict, and your team slows to a crawl. The right strategy depends on your release cadence, team size, and whether you ship daily or quarterly.</p>
+
+        <p>This guide compares the four most popular strategies — <strong>GitHub Flow</strong>, <strong>Git Flow</strong>, <strong>Trunk-Based Development</strong>, and <strong>GitLab Flow</strong> — with practical examples and honest pros and cons for each.</p>
+
+        <h2>1. GitHub Flow: Simple, Fast, For Continuous Delivery</h2>
+
+        <p>Created by GitHub themselves, this is the simplest strategy. It has two rules:</p>
+
+        <ol>
+            <li><code>main</code> is always deployable</li>
+            <li>Create a branch from <code>main</code>, PR back to <code>main</code>, deploy</li>
+        </ol>
+
+        <pre><code># GitHub Flow workflow
+git checkout main
+git pull origin main
+git checkout -b feature/add-search
+
+# ... make changes, commit ...
+git push origin feature/add-search
+# → Open Pull Request on GitHub
+# → Team reviews, CI passes
+# → Merge to main
+# → Auto-deployed to production</code></pre>
+
+        <p><strong>Branches:</strong> <code>main</code> + short-lived feature branches.<br>
+        <strong>Best for:</strong> Web apps with CI/CD that deploy frequently (daily or multiple times per day).<br>
+        <strong>Example teams:</strong> Startups, SaaS products, internal tools.</p>
+
+        <h3>Pros and Cons</h3>
+
+        <p><strong>✅ Pros:</strong> Dead simple to explain to new hires. No merge conflicts from long-lived branches. Every merge is a potential release. Works great with feature flags.</p>
+
+        <p><strong>❌ Cons:</strong> No concept of versions — if you need to support v1.2 and v2.0 simultaneously, you're out of luck. Nothing prevents a broken commit from reaching <code>main</code> (rely on CI).</p>
+
+        <h2>2. Git Flow: The Classic, For Scheduled Releases</h2>
+
+        <p>Proposed by Vincent Driessen in 2010, Git Flow uses <strong>six</strong> branches with specific purposes. It was designed for desktop software that releases every few weeks or months.</p>
+
+        <pre><code># Git Flow branch structure:
+# main         ← stable releases only
+# develop      ← integration branch (next release)
+# feature/*    ← new features, branched from develop
+# release/*    ← preparing a release, branched from develop
+# hotfix/*     ← urgent fixes, branched from main
+# bugfix/*     ← optional, for non-urgent fixes from develop</code></pre>
+
+        <p>Here's a typical Git Flow release cycle:</p>
+
+        <pre><code># 1. Start developing a feature
+git checkout develop
+git checkout -b feature/user-auth
+# ... code, commit ...
+git checkout develop
+git merge feature/user-auth --no-ff
+git branch -d feature/user-auth
+
+# 2. Prepare a release (v2.0)
+git checkout -b release/v2.0 develop
+# ... fix final bugs, bump version ...
+git tag -a v2.0 -m "Release v2.0"
+
+# 3. Merge release to main AND develop
+git checkout main
+git merge release/v2.0 --no-ff
+git checkout develop
+git merge release/v2.0 --no-ff
+git branch -d release/v2.0
+
+# 4. Hotfix for production issue
+git checkout -b hotfix/crash-on-login main
+# ... fix ...
+git checkout main
+git merge hotfix/crash-on-login --no-ff
+git tag -a v2.0.1 -m "Hotfix: crash on login"
+git checkout develop
+git merge hotfix/crash-on-login --no-ff
+git branch -d hotfix/crash-on-login</code></pre>
+
+        <p><strong>Best for:</strong> Desktop apps, mobile apps, any product with scheduled releases and version numbers.<br>
+        <strong>Example teams:</strong> Adobe, Microsoft Office, game studios.</p>
+
+        <h3>Pros and Cons</h3>
+
+        <p><strong>✅ Pros:</strong> Clean separation between development and production code. Easy to track what's in each release. Hotfixes don't risk including unfinished features.</p>
+
+        <p><strong>❌ Cons:</strong> Complex — newcomers struggle with six branch types. <code>develop</code> can diverge significantly from <code>main</code>, causing painful merges. Slow feedback loop — a feature might sit on <code>develop</code> for weeks before anyone sees it.</p>
+
+        <h2>3. Trunk-Based Development: The Google/Netflix Approach</h2>
+
+        <p>Trunk-based development is what companies like Google, Netflix, and Meta use to ship code hundreds of times per day. The core idea: <strong>every developer merges to the main branch at least once per day</strong>. Branches live for hours, not weeks.</p>
+
+        <pre><code># Trunk-Based workflow
+git checkout main
+git pull origin main
+
+# Make your change in small commits
+git checkout -b feat/update-api-endpoint
+git commit -m "add input validation"
+git push origin feat/update-api-endpoint
+# → PR, review, merge within hours
+
+# If your feature is risky, use a feature flag
+# in your code (not a git branch):
+if settings.is_enabled("new-checkout-flow"):
+    return new_checkout_page()
+else:
+    return old_checkout_page()</code></pre>
+
+        <p><strong>Rules:</strong></p>
+
+        <ul>
+            <li>Merge to <code>main</code> at least daily (often multiple times per day)</li>
+            <li>Branches should be short-lived (hours, not days)</li>
+            <li>Use <strong>feature flags</strong> for incomplete or risky features</li>
+            <li>Never push directly to <code>main</code> — always via PR with CI checks</li>
+            <li>Keep PRs small (under 400 lines of code is a common rule)</li>
+        </ul>
+
+        <p><strong>Best for:</strong> Teams with strong CI/CD, automated testing, and feature flag infrastructure.<br>
+        <strong>Example teams:</strong> Google, Netflix, Stripe, Amazon.</p>
+
+        <h3>Pros and Cons</h3>
+
+        <p><strong>✅ Pros:</strong> Virtually no merge conflicts (you integrate constantly). Fast feedback — your code is in production within hours. Simple mental model. Automated tests catch regressions immediately.</p>
+
+        <p><strong>❌ Cons:</strong> Requires serious CI/CD infrastructure. Feature flags add complexity to the codebase. Can feel scary — what if you break production? (Answer: automated rollbacks and canary deployments fix this.)</p>
+
+        <h2>4. GitLab Flow: A Middle Ground with Environments</h2>
+
+        <p>GitLab Flow combines the best ideas from GitHub Flow and Git Flow, but organizes around <strong>environments</strong> instead of branch types. Each branch maps to an environment:</p>
+
+        <pre><code># GitLab Flow branch-to-environment mapping:
+# main              → Production
+# staging           → Staging/QA (optional, branched from main)
+# release/*         → UAT (User Acceptance Testing)
+# feature/* or epic/* → Development/preview environments</code></pre>
+
+        <p>For SaaS products with long-lived releases:</p>
+
+        <pre><code># Long-lived release branch for a major version
+git checkout -b release/v3 main
+# ... develop v3 features over months ...
+git push origin release/v3
+# → Automatic deployment to v3-preview environment
+# → Customers opt-in to v3 via their dashboard
+
+# Meanwhile, v2 is still on main
+# Hotfix for v2:
+git checkout -b hotfix/v2-fix main
+# ... fix ...
+# → PR to main → deploys to staging → deploys to production</code></pre>
+
+        <p><strong>Best for:</strong> SaaS products with multiple versions, hardware/software combinations, or on-premise deployments.<br>
+        <strong>Example teams:</strong> GitLab itself, companies selling to enterprises with long upgrade cycles.</p>
+
+        <h3>Pros and Cons</h3>
+
+        <p><strong>✅ Pros:</strong> Supports multiple release tracks without complexity. Environments make it clear what state each branch is in. Simpler than Git Flow for most use cases.</p>
+
+        <p><strong>❌ Cons:</strong> Requires environment infrastructure (staging, UAT servers). Can feel over-engineered for simple projects. Long-lived release branches still create merge pain.</p>
+
+        <h2>Comparison Table</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Strategy</th>
+                    <th>Branches</th>
+                    <th>Release Cadence</th>
+                    <th>Team Size</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>GitHub Flow</td>
+                    <td>2 (main + feature)</td>
+                    <td>Continuous</td>
+                    <td>Any</td>
+                </tr>
+                <tr>
+                    <td>Git Flow</td>
+                    <td>6+ types</td>
+                    <td>Scheduled (weeks/months)</td>
+                    <td>Medium-Large</td>
+                </tr>
+                <tr>
+                    <td>Trunk-Based</td>
+                    <td>1 (main) + tiny PRs</td>
+                    <td>Many times/day</td>
+                    <td>Any (with good CI)</td>
+                </tr>
+                <tr>
+                    <td>GitLab Flow</td>
+                    <td>Environment-based</td>
+                    <td>Flexible</td>
+                    <td>Medium-Large</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>How to Choose</h2>
+
+        <p>Here's a simple decision tree:</p>
+
+        <ul>
+            <li><strong>Deploy to production more than once a day?</strong> → Trunk-Based Development</li>
+            <li><strong>Deploy a few times a week with CI/CD?</strong> → GitHub Flow</li>
+            <li><strong>Release scheduled versions every few weeks?</strong> → Git Flow</li>
+            <li><strong>Run a SaaS with multiple customer-facing versions?</strong> → GitLab Flow</li>
+            <li><strong>Just starting out, not sure?</strong> → GitHub Flow. You can always add complexity later.</li>
+        </ul>
+
+        <h2>Golden Rules for Any Strategy</h2>
+
+        <p>Regardless of which strategy you pick, these rules prevent 90% of Git pain:</p>
+
+        <ol>
+            <li><strong>Keep PRs small.</strong> Under 400 lines. Reviewer fatigue is real — huge PRs get rubber-stamped or sit for days.</li>
+            <li><strong>Never force-push to shared branches.</strong> Rewrite history only on your personal feature branch before the first review.</li>
+            <li><strong>Require CI to pass before merging.</strong> Tests, linting, security scanning — automated gates beat human memory.</li>
+            <li><strong>Delete merged branches immediately.</strong> <code>git branch --merged main | grep -v main | xargs git branch -d</code> keeps things clean.</li>
+            <li><strong>Write meaningful commit messages.</strong> "fix bug" tells you nothing. "fix: resolve null pointer in user auth on empty token" tells you everything.</li>
+            <li><strong>Use <code>--no-ff</code> merges for features.</strong> It preserves the fact that a feature existed as a group of changes, making it easy to revert the whole thing.</li>
+        </ol>
+
+        <h2>Quick Start: Set Up GitHub Flow Today</h2>
+
+        <p>Here's how to implement GitHub Flow in your existing repo right now:</p>
+
+        <pre><code># 1. Protect main branch (on GitHub)
+# Settings → Branches → Branch protection rules
+# → Require pull request reviews (1+ approval)
+# → Require status checks to pass
+# → Require linear history (optional, keeps history clean)
+
+# 2. Create your first feature branch
+git checkout -b feature/dark-mode
+# ... make changes ...
+git add .
+git commit -m "feat: add dark mode toggle in settings page"
+git push origin feature/dark-mode
+
+# 3. Open PR on GitHub, get review, merge
+# 4. Delete the branch
+git checkout main
+git pull origin main
+git branch -d feature/dark-mode</code></pre>
+
+        <p>The beauty of GitHub Flow is that you can start today with zero setup. The protection rules on GitHub enforce the strategy — no one can accidentally push broken code to <code>main</code>.</p>
+
+        <h2>Common Mistakes to Avoid</h2>
+
+        <p><strong>Mistake 1: Using Git Flow for a web app that deploys daily.</strong> Git Flow adds ceremony that slows down fast teams. Your <code>develop</code> branch becomes a graveyard of half-finished features.</p>
+
+        <p><strong>Mistake 2: Trunk-based without tests.</strong> Trunk-based development amplifies your quality practices. Good tests? You ship faster than ever. No tests? You break production faster than ever. Start with GitHub Flow and build your test suite first.</p>
+
+        <p><strong>Mistake 3: Forgetting to sync with main.</strong> If your feature branch has been open for 3+ days, rebase or merge <code>main</code> into it before requesting review. Otherwise your reviewer sees a diff that's half your changes and half someone else's.</p>
+
+        <pre><code># Sync your feature branch with main before review
+git checkout feature/add-search
+git fetch origin
+git rebase origin/main
+# Resolve any conflicts, then:
+git push --force-with-lease origin feature/add-search</code></pre>
+
+        <p>Choose a strategy that matches how your team ships software, not how someone on a blog post shipped software. Start simple, measure what hurts, then add structure where it actually helps.</p>
+
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Hugo's Dev Notes. Built with ☕ and type hints.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Reading progress bar
+        window.onscroll = function() {
+            let winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            let height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            let scrolled = (winScroll / height) * 100;
+            let bar = document.getElementById("progressBar");
+            if (bar) bar.style.width = scrolled + "%";
+        };
+
+        // Theme toggle
+        let toggle = document.getElementById("themeToggle");
+        if (toggle) {
+            toggle.addEventListener("click", () => {
+                document.body.classList.toggle("light-theme");
+                let isLight = document.body.classList.contains("light-theme");
+                localStorage.setItem("theme", isLight ? "light" : "dark");
+            });
+            if (localStorage.getItem("theme") === "light") {
+                document.body.classList.add("light-theme");
+            }
+        }
+    </script>
+</body>
+</html>

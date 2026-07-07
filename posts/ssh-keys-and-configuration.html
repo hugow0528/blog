@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSH Keys and Configuration: Connect to Servers Securely — Complete Guide</title>
+    <meta name="description" content="Master SSH key generation, ssh_config profiles, agent forwarding, and security hardening. Stop typing passwords with working examples for GitHub, servers, and CI/CD.">
+    <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/ssh-keys-and-configuration.html">
+    <meta property="og:title" content="SSH Keys and Configuration: Connect to Servers Securely">
+    <meta property="og:description" content="Master SSH keys, ssh_config profiles, and security hardening for servers and GitHub.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.hugow.dev/posts/ssh-keys-and-configuration.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn active">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="post-content">
+        <span class="tag security">Security</span><span class="tag devops">DevOps</span>
+
+        <h1>SSH Keys and Configuration: Connect to Servers Securely — Complete Guide</h1>
+
+        <div class="post-meta">
+            <span class="post-date">July 6, 2026</span>
+            <span class="read-time">10 min read</span>
+        </div>
+
+        <p>If you're still typing passwords to log into servers or connect to GitHub, SSH keys are the most impactful productivity upgrade you can make. They're faster, more secure, and enable automation that passwords simply can't support.</p>
+
+        <p>This guide walks you through generating SSH keys, configuring shortcuts with <code>~/.ssh/config</code>, setting up agent forwarding, and hardening your setup for everyday development work.</p>
+
+        <h2>How SSH Keys Work</h2>
+
+        <p>SSH uses asymmetric cryptography — a pair of keys where one is public and one is private:</p>
+
+        <ul>
+            <li><strong>Private key</strong> — stays on your computer, never shared. Think of it as an ultra-strong password.</li>
+            <li><strong>Public key</strong> — placed on servers, GitHub, etc. It can verify your identity but can't be used to derive your private key.</li>
+        </ul>
+
+        <p>When you connect, the server sends a challenge encrypted with your public key. Only your private key can solve it. No password needed.</p>
+
+        <h2>Generate Your First SSH Key</h2>
+
+        <p>Check if you already have keys:</p>
+
+        <pre><code># Check for existing keys
+ls -la ~/.ssh/
+
+# If you see id_ed25519 or id_rsa, you already have keys</code></pre>
+
+        <p>Generate a new Ed25519 key (modern, fast, and secure — preferred over RSA for most use cases):</p>
+
+        <pre><code># Generate Ed25519 key with your email as comment
+ssh-keygen -t ed25519 -C "your@email.com"
+
+# Output:
+# Generating public/private ed25519 key pair.
+# Enter file in which to save the key (/home/you/.ssh/id_ed25519): [press Enter]
+# Enter passphrase (empty for no passphrase): [type a strong passphrase]
+# Enter same passphrase again: [retype]
+# Your identification has been saved in /home/you/.ssh/id_ed25519
+# Your public key has been saved in /home/you/.ssh/id_ed25519.pub</code></pre>
+
+        <p>If your system is older and doesn't support Ed25519, use RSA with a strong key length:</p>
+
+        <pre><code># RSA alternative (2048 bit minimum, 4096 for extra security)
+ssh-keygen -t rsa -b 4096 -C "your@email.com"</code></pre>
+
+        <h2>Add Your Public Key to GitHub</h2>
+
+        <p>Copy your public key and add it to GitHub:</p>
+
+        <pre><code># Copy public key to clipboard
+cat ~/.ssh/id_ed25519.pub
+
+# Then on GitHub:
+# 1. Go to Settings → SSH and GPG keys → New SSH key
+# 2. Title: "My Laptop"
+# 3. Paste the key content
+# 4. Click "Add SSH key"</code></pre>
+
+        <p>Test the connection:</p>
+
+        <pre><code>ssh -T git@github.com
+
+# Success output:
+# Hi hugow0528! You've successfully authenticated, but GitHub
+# does not provide shell access.</code></pre>
+
+        <h2>The Power of ~/.ssh/config</h2>
+
+        <p>This is where SSH becomes genuinely convenient. Create a config file to define shortcuts for every server you connect to:</p>
+
+        <pre><code># Create or edit the config file
+nano ~/.ssh/config
+
+# Set correct permissions (SSH won't work without them)
+chmod 600 ~/.ssh/config</code></pre>
+
+        <p>Here's a practical config file:</p>
+
+        <pre><code># ~/.ssh/config
+
+# GitHub — use a specific key instead of the default
+Host github.com
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/id_ed25519
+    IdentitiesOnly yes
+
+# Production server shortcut
+Host prod
+    HostName 203.0.113.50
+    User deploy
+    Port 22
+    IdentityFile ~/.ssh/id_ed25519
+    ServerAliveInterval 60
+    ServerAliveCountMax 3
+
+# Staging server
+Host staging
+    HostName staging.example.com
+    User ubuntu
+    Port 2222
+    IdentityFile ~/.ssh/staging_key
+    ForwardAgent yes
+
+# Cloudflare Tunnel for internal tools
+Host internal-app
+    HostName tunnel.example.com
+    User admin
+    IdentityFile ~/.ssh/id_ed25519
+
+# Wildcard pattern — all AWS instances
+Host ec2-*
+    User ec2-user
+    IdentityFile ~/.ssh/aws_key
+    ServerAliveInterval 30</code></pre>
+
+        <p>Now connect with simple names instead of full details:</p>
+
+        <pre><code># Instead of: ssh -i ~/.ssh/id_ed25519 -p 22 deploy@203.0.113.50
+ssh prod                    # Connects to production
+ssh staging                 # Connects to staging
+scp file.txt prod:/tmp/     # Copy file to production
+ssh prod "systemctl status nginx"  # Run a remote command</code></pre>
+
+        <h2>SSH Agent: Never Type Your Passphrase Again (Per Session)</h2>
+
+        <p>If you used a passphrase (recommended), you'll be asked every time you connect. The SSH agent caches it for your login session:</p>
+
+        <pre><code># Start the agent (usually already running)
+eval "$(ssh-agent -s)"
+
+# Add your key to the agent
+ssh-add ~/.ssh/id_ed25519
+
+# Now connect — no passphrase needed for the rest of this session
+ssh prod</code></pre>
+
+        <p>On Linux, add <code>ssh-agent</code> to your shell profile so it starts automatically. On macOS, the system handles this via the keychain. On Windows, use the built-in OpenSSH client with the "OpenSSH Authentication Agent" service.</p>
+
+        <h2>SSH Agent Forwarding</h2>
+
+        <p>Agent forwarding lets you use your local keys from a remote server — useful when you need to clone a private GitHub repo from a deployment server:</p>
+
+        <pre><code># Enable in your config
+Host staging
+    ForwardAgent yes
+
+# Then from your staging server:
+ssh staging
+git clone git@github.com:private/repo.git  # Works! Uses YOUR local keys</code></pre>
+
+        <p><strong>Security note:</strong> Only enable agent forwarding on servers you trust completely. A compromised server with agent forwarding can use your keys to access other systems.</p>
+
+        <h2>SSH for Docker and DevOps Workflows</h2>
+
+        <p>SSH is essential for deployment pipelines. Here are common patterns:</p>
+
+        <pre><code># Deploy with a one-liner
+ssh prod "cd /var/www/app && git pull && docker-compose up -d"
+
+# Copy your Docker Compose file and deploy
+scp docker-compose.yml prod:/var/www/app/
+ssh prod "cd /var/www/app && docker-compose up -d --build"
+
+# Check server status remotely
+ssh prod "docker ps && df -h && uptime"
+
+# Port forwarding — access a database running on your server
+ssh -L 5432:localhost:5432 prod
+# Now connect to localhost:5432 and it routes to the remote database</code></pre>
+
+        <h2>Security Hardening Checklist</h2>
+
+        <p>Protect your SSH setup with these practices:</p>
+
+        <pre><code># 1. Set correct file permissions
+chmod 700 ~/.ssh/
+chmod 600 ~/.ssh/id_ed25519
+chmod 644 ~/.ssh/id_ed25519.pub
+chmod 600 ~/.ssh/config
+
+# 2. Use a strong passphrase
+# When generating keys, always add a passphrase
+ssh-keygen -t ed25519 -C "you@email.com"
+# → Enter a passphrase with 12+ characters
+
+# 3. Restrict SSH on the server side (in /etc/ssh/sshd_config)
+PasswordAuthentication no          # Disable password login
+PermitRootLogin no                 # Never log in as root
+PubkeyAuthentication yes           # Require key-based auth
+MaxAuthTries 3                     # Limit brute force attempts
+
+# 4. Disable unused key types
+PubkeyAcceptedAlgorithms ssh-ed25519,ssh-rsa
+
+# 5. Use allowlist for users (optional)
+AllowUsers deploy admin</code></pre>
+
+        <p>After editing <code>/etc/ssh/sshd_config</code>, reload the SSH service:</p>
+
+        <pre><code># Reload SSH daemon
+sudo systemctl reload sshd</code></pre>
+
+        <h2>Multiple Keys for Different Accounts</h2>
+
+        <p>Separate keys for work and personal accounts keeps things organized:</p>
+
+        <pre><code># Generate separate keys
+ssh-keygen -t ed25519 -C "personal@email.com" -f ~/.ssh/id_ed25519_personal
+ssh-keygen -t ed25519 -C "work@company.com" -f ~/.ssh/id_ed25519_work
+
+# Configure in ~/.ssh/config
+Host github.com
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/id_ed25519_personal
+
+Host gitlab.company.com
+    HostName gitlab.company.com
+    User git
+    IdentityFile ~/.ssh/id_ed25519_work</code></pre>
+
+        <h2>Troubleshooting</h2>
+
+        <p>Common issues and fixes:</p>
+
+        <pre><code># Debug connection problems — shows exactly what's happening
+ssh -v prod        # Verbose
+ssh -vv prod       # More verbose
+ssh -vvv prod      # Maximum detail
+
+# Check if a specific key is being used
+ssh -i ~/.ssh/id_ed25519 -T git@github.com
+
+# Test if the server accepts your key
+ssh -T deploy@203.0.113.50
+
+# Common errors:
+# Permission denied (publickey) → Wrong key or not added to server
+# Agent admitted failure to sign → Run: ssh-add ~/.ssh/id_ed25519
+# Bad owner or permissions → Run: chmod 600 ~/.ssh/id_ed25519
+# Connection timed out → Check hostname, port, and firewall</code></pre>
+
+        <h2>Best Practices Summary</h2>
+
+        <ul>
+            <li><strong>Use Ed25519 keys</strong> — faster, more secure, and shorter than RSA</li>
+            <li><strong>Always use a passphrase</strong> — your private key file is worth protecting</li>
+            <li><strong>Use <code>~/.ssh/config</code></strong> for every server — saves typing and reduces errors</li>
+            <li><strong>Separate keys per purpose</strong> — personal, work, production, staging</li>
+            <li><strong>Set correct permissions</strong> — SSH silently ignores keys with wrong permissions</li>
+            <li><strong>Disable password auth on servers</strong> — keys only, no exceptions</li>
+            <li><strong>Use <code>ssh -v</code> for debugging</strong> — verbose mode reveals the root cause of connection issues</li>
+        </ul>
+
+        <p>SSH is one of those tools that, once configured properly, you never think about again. Your server logins become one command, your GitHub pushes are seamless, and your deployment scripts actually work. Spend 20 minutes setting it up today and save hours over the coming years.</p>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Hugo's Dev Notes. Built with Cloudflare Workers &amp; Tunnel.</p>
+        </div>
+    </footer>
+
+    <script>
+        const toggle = document.getElementById('themeToggle');
+        const saved = localStorage.getItem('theme');
+        if (saved === 'light') document.body.classList.add('light-theme');
+        toggle?.addEventListener('click', () => {
+            document.body.classList.toggle('light-theme');
+            localStorage.setItem('theme', document.body.classList.contains('light-theme') ? 'light' : 'dark');
+        });
+        window.addEventListener('scroll', () => {
+            const bar = document.getElementById('progressBar');
+            if (bar) {
+                const pct = window.scrollY / (document.body.scrollHeight - window.innerHeight) * 100;
+                bar.style.width = pct + '%';
+            }
+        });
+    </script>
+</body>
+</html>

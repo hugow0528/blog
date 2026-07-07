@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Walrus Operator (:=): Assign Inside Expressions — Clean, Pythonic Code</title>
+    <meta name="description" content="Master Python's walrus operator (:=) for assigning values inside expressions. Reduce boilerplate, write cleaner loops, and understand when NOT to use it. Working code examples included.">
+    <meta name="keywords" content="python walrus operator, assignment expression, Python 3.8, := operator, python tutorial">
+    <meta name="author" content="Hugo Wong">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-content">
+            <span class="tag python">Python</span>
+            <h1>Python Walrus Operator (<code>:=</code>): Assign Inside Expressions</h1>
+            <div class="post-meta">
+                <span class="post-date">July 3, 2026</span>
+                <span class="read-time">8 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+
+            <p>Python 3.8 introduced the <strong>walrus operator</strong> (<code>:=</code>) — named for its resemblance to a walrus's eyes and tusks. It lets you assign values to variables <em>within</em> an expression, not as a separate statement. This might sound like a small change, but it opens up genuinely useful patterns that make your code cleaner and sometimes faster.</p>
+
+            <p>Before walrus, you had to write:</p>
+
+<pre><code>data = get_data()
+if data:
+    process(data)
+</code></pre>
+
+            <p>With the walrus operator:</p>
+
+<pre><code>if data := get_data():
+    process(data)
+</code></pre>
+
+            <p>Two lines become one. Let's explore where this actually helps, where it doesn't, and the patterns you'll use in real code.</p>
+
+            <h2>Basic Syntax</h2>
+
+            <p>The walrus operator follows the pattern <code>(variable := expression)</code>. The parentheses are required except at the start of a compound statement.</p>
+
+<pre><code># Assign and check in one step
+if (length := len(my_list)) > 10:
+    print(f"List is too long: {length} items")
+
+# Without walrus (3 lines):
+length = len(my_list)
+if length > 10:
+    print(f"List is too long: {length} items")
+</code></pre>
+
+            <p>The key insight: <code>:=</code> evaluates the expression, assigns the result to the variable, <em>and returns the value</em> so it can be used in the surrounding expression.</p>
+
+            <h2>Pattern 1: Reading from Files or Streams</h2>
+
+            <p>This is the canonical use case from PEP 572. Reading chunks from a file or network stream until you get empty data:</p>
+
+<pre><code># Without walrus — awkward repetition
+chunk = file.read(8192)
+while chunk:
+    process(chunk)
+    chunk = file.read(8192)
+
+# With walrus — clean and readable
+while chunk := file.read(8192):
+    process(chunk)
+</code></pre>
+
+            <p>No repeated variable name. No duplicated <code>file.read(8192)</code> call. The assignment happens once per iteration, and the loop condition checks the result.</p>
+
+            <h2>Pattern 2: Regular Expression Matching</h2>
+
+            <p>Extracting data from regex matches is another common pattern:</p>
+
+<pre><code>import re
+
+# Without walrus
+text = "Order #12345 placed on 2026-07-03"
+match = re.search(r"Order #(\d+)", text)
+if match:
+    order_id = match.group(1)
+    print(f"Found order: {order_id}")
+
+# With walrus — match and extract in one line
+if (match := re.search(r"Order #(\d+)", text)):
+    print(f"Found order: {match.group(1)}")
+
+# Or extract directly into a variable
+if (order_id := re.search(r"Order #(\d+)", text).group(1)):
+    print(f"Order ID: {order_id}")
+</code></pre>
+
+            <h2>Pattern 3: List Comprehensions with Filtering</h2>
+
+            <p>When you need to compute a value for filtering <em>and</em> use it in the output:</p>
+
+<pre><code>import re
+
+# Data: list of strings containing user info
+entries = [
+    "hugo:admin:25",
+    "alice:viewer:30",
+    "bob:admin:45",
+    "carol:editor:22",
+]
+
+# Without walrus — compute role twice
+admins = [
+    entry.split(":")[1]
+    for entry in entries
+    if entry.split(":")[1] == "admin"
+]
+
+# With walrus — compute once, use twice
+admins = [
+    role for entry in entries
+    if (role := entry.split(":")[1]) == "admin"
+]
+# Result: ['admin', 'admin']
+</code></pre>
+
+            <p>The walrus operator saves computing <code>entry.split(":")[1]</code> twice per entry. For simple cases this doesn't matter, but for expensive computations (database lookups, API calls, complex calculations), the savings are real.</p>
+
+            <h2>Pattern 4: Interactive Input Loops</h2>
+
+            <p>Build a simple REPL or command prompt that runs until the user types "quit":</p>
+
+<pre><code># Without walrus
+command = input(">>> ")
+while command != "quit":
+    print(f"Running: {command}")
+    command = input(">>> ")
+
+# With walrus
+while (command := input(">>> ")) != "quit":
+    print(f"Running: {command}")
+</code></pre>
+
+            <h2>Pattern 5: Caching Expensive Function Results</h2>
+
+            <p>When a function is expensive and you need the result in multiple places:</p>
+
+<pre><code>import time
+
+def expensive_computation(x):
+    time.sleep(0.1)  # Simulate heavy work
+    return x * 2
+
+# Without walrus — call twice (0.2 seconds total)
+x = 42
+if expensive_computation(x) > 50:
+    print(f"Result: {expensive_computation(x)}")
+
+# With walrus — call once (0.1 seconds)
+if (result := expensive_computation(x)) > 50:
+    print(f"Result: {result}")
+</code></pre>
+
+            <h2>When NOT to Use the Walrus Operator</h2>
+
+            <p>The walrus operator is powerful, but more power doesn't always mean better code. Avoid it when:</p>
+
+            <h3>1. It Makes Code Harder to Read</h3>
+
+<pre><code># Don't do this — too clever
+if (result := complex_function(a, b, c)) and (other := another_function(result)) > 0:
+    do_something(result, other)
+
+# This is clearer:
+result = complex_function(a, b, c)
+if result:
+    other = another_function(result)
+    if other > 0:
+        do_something(result, other)
+</code></pre>
+
+            <h3>2. The Variable Is Used Only Once</h3>
+
+<pre><code># Walrus adds no value here
+print((total := sum(numbers)))
+
+# Just assign normally
+total = sum(numbers)
+print(total)
+</code></pre>
+
+            <h3>3. In Function Arguments (Not Allowed!)</h3>
+
+<pre><code># SyntaxError! Walrus not allowed in default arguments
+def process(data, result := None):
+    ...
+
+# Use None as default instead
+def process(data, result=None):
+    ...
+</code></pre>
+
+            <h2>Real-World Example: Log File Parser</h2>
+
+            <p>Let's combine several walrus patterns into a practical tool:</p>
+
+<pre><code>import re
+from datetime import datetime
+
+def parse_log_file(filepath):
+    """Parse a log file and extract error entries with timestamps."""
+    errors = []
+    pattern = re.compile(
+        r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) \[(ERROR)\] (.+)"
+    )
+
+    with open(filepath) as f:
+        while line := f.readline():
+            if match := pattern.match(line):
+                timestamp_str, _, message = match.groups()
+                timestamp = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S")
+                errors.append({
+                    "timestamp": timestamp,
+                    "message": message.strip(),
+                })
+
+    return errors
+
+# Usage
+errors = parse_log_file("app.log")
+for error in errors:
+    print(f"[{error['timestamp']}] {error['message']}")
+</code></pre>
+
+            <p>Two walrus operators in the loop: one for reading lines (the classic file-reading pattern), one for regex matching (the extraction pattern). The code reads naturally — process each line, skip it if it doesn't match the error pattern.</p>
+
+            <h2>Scope Behavior</h2>
+
+            <p>Important: the walrus operator leaks the variable into the enclosing scope. Be careful with comprehensions:</p>
+
+<pre><code># WARNING: i leaks into the outer scope!
+result = [i for item in items if (i := process(item)) > 0]
+print(i)  # This works — i is the last assigned value
+
+# Use a regular loop if you don't want this
+results = []
+for item in items:
+    i = process(item)
+    if i > 0:
+        results.append(i)
+# i still leaks, but at least the logic is clearer
+</code></pre>
+
+            <h2>Summary</h2>
+
+            <p>The walrus operator shines in these situations:</p>
+
+            <ul>
+                <li><strong>Loop conditions</strong> where you need to read/assign then check</li>
+                <li><strong>Regex matching</strong> where you need the match object</li>
+                <li><strong>Comprehensions</strong> where a computed value is used for both filtering and output</li>
+                <li><strong>Expensive computations</strong> where you want to evaluate once but check the result</li>
+            </ul>
+
+            <p>Use it when it reduces repetition. Avoid it when it makes code harder to understand. The best Python code is clear first, clever second.</p>
+
+            <div class="post-nav">
+                <a href="python-decorators-generators.html" class="post-nav-prev">← Python Decorators &amp; Generators</a>
+                <a href="python-context-managers.html" class="post-nav-next">Python Context Managers →</a>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo Wong · Built with curiosity and Coffee</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528">GitHub</a>
+                <a href="https://hugow.dev">hugow.dev</a>
+                <a href="/sitemap.xml">Sitemap</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-mode');
+            themeToggle.textContent = '☀';
+        }
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            themeToggle.textContent = isLight ? '☀' : '◐';
+        });
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + "%";
+        });
+    </script>
+</body>
+</html>

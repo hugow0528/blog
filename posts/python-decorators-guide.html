@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Decorators: The Complete Guide — Functions That Modify Functions | Hugo's Dev Notes</title>
+    <meta name="description" content="Master Python decorators from scratch. Learn how to create @decorators, stack them, pass arguments, preserve metadata, and build real-world patterns like logging, caching, retry logic, and access control.">
+    <meta name="keywords" content="python decorators, python tutorial, decorator pattern, function wrapping, functools, python advanced">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-decorators-guide.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+            </nav>
+        </div>
+    </header>
+
+    <article class="post-content container">
+        <span class="tag python">Python</span>
+        <h1>Python Decorators: The Complete Guide — Functions That Modify Functions</h1>
+        <div class="post-meta">
+            <span class="post-date">July 4, 2026</span>
+            <span class="read-time">12 min read</span>
+        </div>
+
+        <hr>
+
+        <p>You've probably seen Python decorators before — those mysterious lines starting with <code>@</code> sitting right above function definitions:</p>
+
+        <pre><code>@my_decorator
+def my_function():
+    print("Hello!")</code></pre>
+
+        <p>Decorators are one of Python's most powerful features. They let you modify or extend the behavior of a function or class <strong>without changing its source code</strong>. They're used everywhere: in web frameworks like Flask and FastAPI, in testing libraries, in caching systems, and in access control.</p>
+
+        <p>This guide walks you through decorators from the ground up — from understanding <em>why</em> they work to building production-grade decorators with arguments, logging, retry logic, and caching.</p>
+
+        <h2>What Exactly Is a Decorator?</h2>
+
+        <p>At its core, a decorator is just a <strong>function that takes another function as input and returns a modified version of it</strong>. That's it. No magic — just functions working with functions.</p>
+
+        <p>Python treats functions as <strong>first-class objects</strong>. This means you can:</p>
+        <ul>
+            <li>Pass a function as an argument to another function</li>
+            <li>Return a function from another function</li>
+            <li>Assign a function to a variable</li>
+            <li>Nest functions inside other functions</li>
+        </ul>
+
+        <p>Decorators rely on all four of these capabilities. Let's build one from scratch.</p>
+
+        <h2>Your First Decorator (No @ Syntax Yet)</h2>
+
+        <p>Before we use the <code>@</code> syntax, let's see what's happening under the hood. Here's a simple decorator that prints a message before and after a function runs:</p>
+
+        <pre><code>def simple_decorator(func):
+    def wrapper():
+        print(f"→ Calling: {func.__name__}")
+        result = func()
+        print(f"← Done: {func.__name__}")
+        return result
+    return wrapper
+
+def say_hello():
+    print("Hello, world!")
+
+# Without the @ syntax:
+decorated_hello = simple_decorator(say_hello)
+decorated_hello()
+
+# With the @ syntax (exactly the same thing):
+@simple_decorator
+def say_goodbye():
+    print("Goodbye!")
+
+say_goodbye()</code></pre>
+
+        <p>Both calls produce:</p>
+
+        <pre><code>→ Calling: say_hello
+Hello, world!
+← Done: say_hello
+
+→ Calling: say_goodbye
+Goodbye!
+← Done: say_goodbye</code></pre>
+
+        <p>See what happened? <code>@simple_decorator</code> is just shorthand for <code>say_goodbye = simple_decorator(say_goodbye)</code>. The <code>@</code> symbol applies the decorator immediately when the function is defined.</p>
+
+        <h2>Preserving Function Metadata with functools.wraps</h2>
+
+        <p>Our first decorator has a subtle problem. When you wrap a function, the wrapper replaces the original — so <code>__name__</code>, <code>__doc__</code>, and other attributes are lost:</p>
+
+        <pre><code>@simple_decorator
+def add(a, b):
+    """Add two numbers together."""
+    return a + b
+
+print(add.__name__)  # "wrapper" — not "add"!
+print(add.__doc__)   # None — our docstring is gone!</code></pre>
+
+        <p>Python's <code>functools.wraps</code> decorator fixes this by copying the metadata from the original function to the wrapper:</p>
+
+        <pre><code>from functools import wraps
+
+def simple_decorator(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        print(f"→ Calling: {func.__name__}")
+        result = func(*args, **kwargs)
+        print(f"← Done: {func.__name__}")
+        return result
+    return wrapper
+
+@simple_decorator
+def add(a, b):
+    """Add two numbers together."""
+    return a + b
+
+print(add.__name__)  # "add" ✓
+print(add.__doc__)   # "Add two numbers together." ✓</code></pre>
+
+        <p><strong>Always use <code>@wraps</code> in your decorators.</strong> It's the professional standard and prevents bugs in frameworks that rely on function metadata.</p>
+
+        <h2>Decorators That Accept Arguments</h2>
+
+        <p>What if you want to configure a decorator? For example, a retry decorator where you specify how many times to retry:</p>
+
+        <pre><code>@retry(times=3)  # passes argument!
+def fetch_data():
+    ...</code></pre>
+
+        <p>When a decorator has arguments, it needs an <strong>extra layer</strong> — a function that returns the actual decorator:</p>
+
+        <pre><code>import time
+from functools import wraps
+
+def retry(times=3, delay=1):
+    """Retry a function N times with a delay between attempts."""
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            last_exception = None
+            for attempt in range(1, times + 1):
+                try:
+                    return func(*args, **kwargs)
+                except Exception as e:
+                    last_exception = e
+                    if attempt < times:
+                        print(f"Attempt {attempt}/{times} failed: {e}. "
+                              f"Retrying in {delay}s...")
+                        time.sleep(delay)
+                    else:
+                        print(f"All {times} attempts failed.")
+            raise last_exception
+        return wrapper
+    return decorator
+
+# Usage examples:
+@retry(times=5, delay=2)
+def unreliable_api_call():
+    import random
+    if random.random() < 0.7:  # 70% chance of failure
+        raise ConnectionError("Server is busy")
+    return "Success!"
+
+@retry(times=2)  # uses default delay=1
+def fetch_user():
+    raise TimeoutError("Request timed out")
+    return {"name": "Hugo"}
+
+# Try it:
+result = unreliable_api_call()
+print(result)</code></pre>
+
+        <p>The three-layer structure is:</p>
+        <ol>
+            <li><code>retry(times, delay)</code> — receives decorator arguments, returns...</li>
+            <li><code>decorator(func)</code> — receives the function, returns...</li>
+            <li><code>wrapper(*args, **kwargs)</code> — replaces the original function at runtime</li>
+        </ol>
+
+        <h2>Real-World Decorator: Timing and Profiling</h2>
+
+        <p>One of the most practical decorators measures how long functions take to execute:</p>
+
+        <pre><code>import time
+from functools import wraps
+
+def timer(func):
+    """Measure execution time of a function."""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        start = time.perf_counter()
+        result = func(*args, **kwargs)
+        elapsed = time.perf_counter() - start
+        print(f"⏱ {func.__name__} took {elapsed:.4f}s")
+        return result
+    return wrapper
+
+@timer
+def process_large_file(filename):
+    """Simulate processing a large file."""
+    with open(filename, 'r') as f:
+        data = f.read()
+    return len(data)
+
+@timer
+def sort_numbers(numbers):
+    """Sort a list of numbers."""
+    return sorted(numbers)
+
+# Usage:
+result = sort_numbers(list(range(1000000, 0, -1)))
+print(f"Sorted {len(result)} numbers")</code></pre>
+
+        <p>This is invaluable for finding performance bottlenecks. Just drop <code>@timer</code> above any function and you instantly know how long it runs.</p>
+
+        <h2>Real-World Decorator: Simple Caching (Memoization)</h2>
+
+        <p>Caching expensive function results is a common pattern. Python has <code>@functools.cache</code> built-in, but building your own teaches the decorator pattern:</p>
+
+        <pre><code>from functools import wraps
+
+def memoize(func):
+    """Cache function results based on arguments."""
+    cache = {}
+    @wraps(func)
+    def wrapper(*args):
+        if args not in cache:
+            cache[args] = func(*args)
+            print(f"  [computed] {func.__name__}{args}")
+        else:
+            print(f"  [cached]   {func.__name__}{args}")
+        return cache[args]
+    return wrapper
+
+@memoize
+def fibonacci(n):
+    """Calculate the nth Fibonacci number (recursive)."""
+    if n &lt;= 1:
+        return n
+    return fibonacci(n - 1) + fibonacci(n - 2)
+
+# Without caching, fibonacci(30) makes ~2.6 million calls
+# With caching, each value is computed exactly once
+for i in range(1, 11):
+    print(f"fib({i}) = {fibonacci(i)}")</code></pre>
+
+        <p>Output:</p>
+        <pre><code>  [computed] fibonacci(0)
+  [computed] fibonacci(1)
+  [computed] fibonacci(2)
+  [computed] fibonacci(3)
+  [cached]   fibonacci(1)
+  [cached]   fibonacci(2)
+...
+fib(10) = 55</code></pre>
+
+        <h2>Real-World Decorator: Access Control</h2>
+
+        <p>Decorators shine for enforcing permissions. Here's a simple role-based access control example:</p>
+
+        <pre><code>from functools import wraps
+
+# Simple role check decorator
+def require_role(required_role):
+    """Restrict function access to users with a specific role."""
+    def decorator(func):
+        @wraps(func)
+        def wrapper(user, *args, **kwargs):
+            if user.get("role") != required_role:
+                raise PermissionError(
+                    f"Access denied. Requires '{required_role}' role, "
+                    f"but user '{user['name']}' has '{user.get('role')}'."
+                )
+            return func(user, *args, **kwargs)
+        return wrapper
+    return decorator
+
+# Define protected functions
+@require_role("admin")
+def delete_user(admin, target_id):
+    print(f"Admin {admin['name']} deleted user {target_id}")
+    return True
+
+@require_role("editor")
+def publish_article(editor, article_id):
+    print(f"Editor {editor['name']} published article {article_id}")
+    return True
+
+# Test with different users:
+admin = {"name": "Hugo", "role": "admin"}
+regular_user = {"name": "Alice", "role": "viewer"}
+
+# This works:
+delete_user(admin, 42)
+# Output: Admin Hugo deleted user 42
+
+# This raises PermissionError:
+try:
+    delete_user(regular_user, 42)
+except PermissionError as e:
+    print(f"Blocked: {e}")
+# Output: Blocked: Access denied. Requires 'admin' role,
+#         but user 'Alice' has 'viewer'.</code></pre>
+
+        <h2>Stacking Multiple Decorators</h2>
+
+        <p>You can apply multiple decorators to a single function. They execute from <strong>bottom to top</strong> (the one closest to the function runs first):</p>
+
+        <pre><code>@timer
+@retry(times=3)
+@require_role("admin")
+def critical_operation(user):
+    """This function is timed, retried, and role-checked."""
+    print("  → Executing critical operation...")
+    return "done"
+
+# Execution order:
+# 1. require_role runs first (checks user)
+# 2. retry wraps around that (handles failures)
+# 3. timer wraps around everything (measures total time)</code></pre>
+
+        <p>Think of it like wrapping a gift: the innermost decorator is applied first, then each outer layer wraps around the result.</p>
+
+        <h2>Class-Based Decorators</h2>
+
+        <p>For more complex decorators, you can use a class with <code>__call__</code>:</p>
+
+        <pre><code>class LogCalls:
+    """Track how many times a function is called."""
+    def __init__(self, func):
+        self.func = func
+        self.call_count = 0
+        self.last_result = None
+
+    def __call__(self, *args, **kwargs):
+        self.call_count += 1
+        result = self.func(*args, **kwargs)
+        self.last_result = result
+        print(f"  [{self.func.__name__}] call #{self.call_count}")
+        return result
+
+@LogCalls
+def search_database(query):
+    """Simulate a database search."""
+    return [f"result for {query}"]
+
+# Usage:
+search_database("python")
+search_database("decorators")
+print(f"Total calls: {search_database.call_count}")
+# Output:
+#   [search_database] call #1
+#   [search_database] call #2
+# Total calls: 2</code></pre>
+
+        <p>Class-based decorators are great when you need to maintain state (like call counts, caches, or history) across multiple invocations.</p>
+
+        <h2>Common Pitfalls</h2>
+
+        <h3>1. Forgetting to return the result</h3>
+        <p>Always return <code>func(*args, **kwargs)</code> from your wrapper. If you don't, the decorated function returns <code>None</code>.</p>
+
+        <h3>2. Losing *args and **kwargs</h3>
+        <p>Always use <code>*args, **kwargs</code> in your wrapper signature. Otherwise, the decorator breaks when the decorated function takes arguments.</p>
+
+        <h3>3. Forgetting @wraps</h3>
+        <p>Without <code>@wraps</code>, debugging tools, documentation generators, and frameworks may fail because they can't find the original function's name or docstring.</p>
+
+        <h2>Summary Cheat Sheet</h2>
+
+        <pre><code># Basic decorator
+def decorator(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        # Before
+        result = func(*args, **kwargs)
+        # After
+        return result
+    return wrapper
+
+# Decorator with arguments
+def decorator(arg1, arg2):
+    def _decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+        return wrapper
+    return _decorator
+
+# Usage
+@decorator
+def my_func():
+    pass
+
+@decorator("value", 42)
+def my_func2():
+    pass</code></pre>
+
+        <h2>Next Steps</h2>
+        <p>Decorators are used heavily in Flask routes (<code>@app.route</code>), FastAPI endpoints (<code>@app.get</code>), pytest fixtures (<code>@pytest.fixture</code>), and Django permissions (<code>@login_required</code>). Now that you understand the pattern, reading other people's decorators becomes straightforward.</p>
+        <p>Try building your own: a decorator that validates input types, one that rate-limits API calls, or one that automatically retries on specific exception types. The decorator pattern is one of those Python features that starts simple and grows with you.</p>
+
+    </article>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Hugo's Dev Notes. Built with curiosity and caffeine.</p>
+        </div>
+    </footer>
+
+    <script src="../theme.js"></script>
+    <script src="../progress.js"></script>
+</body>
+</html>

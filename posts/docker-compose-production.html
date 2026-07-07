@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docker Compose for Production: Healthchecks, Logging, Restart Policies & Resource Limits | Hugo's Dev Notes</title>
+    <meta name="description" content="Deploy Docker Compose stacks to production with confidence. Learn healthchecks, restart policies, logging drivers, resource limits, secrets management, and monitoring. Complete docker-compose.yml examples.">
+    <meta name="keywords" content="docker compose production, docker healthchecks, docker restart policy, docker logging, docker resource limits, docker secrets, docker compose deployment">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/docker-compose-production.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+
+        <article class="post-content">
+            <span class="tag devops">DevOps</span>
+            <span class="tag security">Security</span>
+            <h1>Docker Compose for Production: Healthchecks, Logging, Restart Policies &amp; Resource Limits</h1>
+            <time>July 4, 2026 · 11 min read</time>
+
+            <p>Your Docker Compose stack works great in development. But production demands more: automatic recovery when containers crash, resource limits to prevent a runaway process from killing the host, log rotation so your disk doesn't fill up, health monitoring so you know when things are down, and secrets management so credentials never end up in plain text.</p>
+
+            <p>This guide walks through every production-grade feature of <code>docker-compose.yml</code> with a real-world example that ties everything together. We'll go from a basic dev stack to a hardened production configuration step by step.</p>
+
+            <h2>1. Start: A Basic Development Stack</h2>
+
+            <p>Here's a typical development setup — functional but not production-ready:</p>
+
+            <pre><code># docker-compose.yml (dev version)
+version: "3.9"
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgres://user:password@db:5432/myapp
+      - SECRET_KEY=mysecretkey123
+    depends_on:
+      - db
+      - redis
+
+  db:
+    image: postgres:16
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=myapp
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+
+volumes:
+  db_data:</code></pre>
+
+            <p>What's wrong with this for production?</p>
+            <ul>
+                <li><strong>No healthchecks</strong> — Docker doesn't know if services are actually responding</li>
+                <li><strong>No restart policy</strong> — if a container crashes, it stays dead</li>
+                <li><strong>No resource limits</strong> — a memory leak will OOM the entire server</li>
+                <li><strong>Secrets in plain text</strong> — credentials are visible in environment variables</li>
+                <li><strong>No log rotation</strong> — logs grow forever until disk is full</li>
+                <li><strong>No network isolation</strong> — all containers on the same default network</li>
+                <li><strong>No read-only filesystems</strong> — a compromised container can write anywhere</li>
+                <li><strong>No update strategy</strong> — zero-downtime deployments aren't possible</li>
+            </ul>
+
+            <p>Let's fix every one of these.</p>
+
+            <h2>2. Healthchecks — Know When Your Services Are Actually Working</h2>
+
+            <p>A container can be "running" but completely broken. Healthchecks let Docker probe each service and restart it if it's unresponsive:</p>
+
+            <pre><code>services:
+  app:
+    build: .
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  db:
+    image: postgres:16
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 15s
+      timeout: 5s
+      retries: 5</code></pre>
+
+            <p>Each parameter explained:</p>
+            <ul>
+                <li><strong><code>test</code></strong> — the command to run. Exit 0 = healthy, exit 1 = unhealthy</li>
+                <li><strong><code>interval</code></strong> — how often to check (default: 30s)</li>
+                <li><strong><code>timeout</code></strong> — max time for the check command (default: 30s)</li>
+                <li><strong><code>retries</code></strong> — failures before marking unhealthy (default: 3)</li>
+                <li><strong><code>start_period</code></strong> — grace period at startup (service isn't checked during this window)</li>
+            </ul>
+
+            <p><strong>Key insight:</strong> <code>start_period</code> is critical. Without it, your database container might fail the first few healthchecks while it's initializing, get marked unhealthy, restart, and enter a crash loop. Set <code>start_period</code> longer than your service's typical startup time.</p>
+
+            <h3>Check Health Status</h3>
+
+            <pre><code># See health status of all containers
+docker compose ps
+
+# Check a specific container's health
+docker inspect --format='{{.State.Health.Status}}' myapp_app_1
+# → healthy | unhealthy | starting | none
+
+# Get detailed health logs
+docker inspect --format='{{json .State.Health}}' myapp_app_1 | python -m json.tool</code></pre>
+
+            <h2>3. Restart Policies — Automatic Recovery</h2>
+
+            <p>When a container exits, should Docker restart it? Restart policies control this:</p>
+
+            <pre><code>services:
+  app:
+    restart: unless-stopped
+
+  db:
+    restart: unless-stopped
+
+  redis:
+    restart: unless-stopped</code></pre>
+
+            <p><strong>Restart policy options:</strong></p>
+            <ul>
+                <li><code>no</code> — never restart (default)</li>
+                <li><code>always</code> — always restart, even if the exit code indicates success</li>
+                <li><code>on-failure[:max-retries]</code> — restart only on non-zero exit, optionally with a max retry count</li>
+                <li><code>unless-stopped</code> — always restart unless someone explicitly stopped it (recommended for production)</li>
+            </ul>
+
+            <p>For production, <code>unless-stopped</code> is usually the right choice. It recovers from crashes and reboots but respects manual stop commands.</p>
+
+            <h2>4. Resource Limits — Prevent Runaway Processes</h2>
+
+            <p>Without limits, a single container can consume all CPU or memory on your host, taking down every other service. Set hard boundaries:</p>
+
+            <pre><code>services:
+  app:
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 128M
+
+  db:
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 1G
+        reservations:
+          cpus: "0.5"
+          memory: 256M
+
+  redis:
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+        reservations:
+          cpus: "0.1"
+          memory: 64M</code></pre>
+
+            <p><strong>Notes:</strong></p>
+            <ul>
+                <li><code>limits</code> are hard caps — Docker kills the container if exceeded (OOMKilled)</li>
+                <li><code>reservations</code> are minimums guaranteed to be available</li>
+                <li>CPU values: <code>"0.5"</code> = half a core, <code>"2.0"</code> = two full cores</li>
+                <li>Memory: <code>256M</code>, <code>1G</code>, <code>2G</code> etc.</li>
+                <li>For Docker Compose <code>run</code> (not Swarm), use the <code>mem_limit</code> / <code>cpus</code> top-level keys instead of <code>deploy.resources</code> if you get errors</li>
+            </ul>
+
+            <p><strong>Alternative (Docker Compose v2 / Compose standalone):</strong></p>
+
+            <pre><code>services:
+  app:
+    mem_limit: 512m
+    memswap_limit: 512m  # no swap = hard limit
+    cpus: 1.0</code></pre>
+
+            <h2>5. Logging — Don't Let Logs Fill Your Disk</h2>
+
+            <p>By default, Docker stores all container logs on disk with no rotation. A single verbose service can fill a 100 GB disk in hours. Configure the JSON file logging driver with rotation:</p>
+
+            <pre><code>services:
+  app:
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+        compress: "true"
+        tag: "{{.Name}}/{{.ID}}"
+
+  db:
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+        compress: "true"
+
+  redis:
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "3"
+        compress: "true"</code></pre>
+
+            <p><strong>Options explained:</strong></p>
+            <ul>
+                <li><code>max-size</code> — rotate after this size (e.g., "10m" = 10 megabytes)</li>
+                <li><code>max-file</code> — keep this many log files</li>
+                <li><code>compress</code> — gzip rotated logs to save disk space</li>
+                <li><code>tag</code> — customize the log tag format</li>
+            </ul>
+
+            <p><strong>For centralized logging</strong> (e.g., sending to a log aggregator), you can use alternative drivers:</p>
+
+            <pre><code># Send logs to syslog
+logging:
+  driver: syslog
+  options:
+    syslog-address: "tcp://log-server:514"
+    tag: "{{.Name}}"
+
+# Send logs to Loki (Grafana)
+logging:
+  driver: gelf
+  options:
+    gelf-address: "tcp://loki:3514"
+    tag: "{{.Name}}"</code></pre>
+
+            <h2>6. Secrets Management — Never Hardcode Credentials</h2>
+
+            <p>Environment variables are visible in <code>docker inspect</code> and can leak in logs. Use Docker secrets instead:</p>
+
+            <pre><code># First, create secret files (these go in .gitignore!)
+echo "my-really-secure-password" > ./secrets/postgres_password.txt
+echo "super-secret-api-key-abc123" > ./secrets/secret_key.txt</code></pre>
+
+            <pre><code># docker-compose.yml
+version: "3.9"
+services:
+  app:
+    build: .
+    secrets:
+      - secret_key
+      - db_password
+    # Use secrets as environment variables
+    environment:
+      - DATABASE_URL=postgres://user:/run/secrets/db_password@db:5432/myapp
+      # Or read the file directly in your app code
+
+  db:
+    image: postgres:16
+    secrets:
+      - db_password
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_DB=myapp
+    # Postgres can read password from file
+    # command: ["postgres", "-c", "password_file=/run/secrets/db_password"]
+
+  redis:
+    image: redis:7-alpine
+    # No password needed for Redis in internal network
+
+secrets:
+  secret_key:
+    file: ./secrets/secret_key.txt
+  db_password:
+    file: ./secrets/postgres_password.txt</code></pre>
+
+            <p>Inside the container, secrets are mounted at <code>/run/secrets/secret_name</code> as files with <code>0400</code> permissions (read-only, owner only). Your application reads them like any file:</p>
+
+            <pre><code># In your Python app
+with open("/run/secrets/db_password") as f:
+    db_password = f.read().strip()
+
+with open("/run/secrets/secret_key") as f:
+    secret_key = f.read().strip()</code></pre>
+
+            <h2>7. Network Isolation — Don't Let Everything Talk to Everything</h2>
+
+            <p>By default, all services share the same network. In production, restrict communication:</p>
+
+            <pre><code>networks:
+  frontend:
+    driver: bridge
+  backend:
+    driver: bridge
+    internal: true  # no internet access
+
+services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - frontend
+    depends_on:
+      - app
+
+  app:
+    build: .
+    networks:
+      - frontend
+      - backend
+    # App talks to both web (frontend) and database (backend)
+
+  db:
+    image: postgres:16
+    networks:
+      - backend
+    # Database has NO internet access - only app can reach it
+
+  redis:
+    image: redis:7-alpine
+    networks:
+      - backend
+    # Redis also isolated to backend only</code></pre>
+
+            <p>With <code>internal: true</code> on the backend network, the database and Redis <strong>cannot access the internet</strong> — even if compromised, they can't exfiltrate data or call home. Only the app and nginx touch the frontend network.</p>
+
+            <h2>8. Read-Only Filesystem — Defense in Depth</h2>
+
+            <p>By default, containers have full read-write access to their filesystem. Lock it down:</p>
+
+            <pre><code>services:
+  app:
+    read_only: true
+    # Allow writes only to specific directories
+    tmpfs:
+      - /tmp:size=64M
+      - /var/run:size=16M
+    # If your app needs to write files
+    volumes:
+      - app_uploads:/app/uploads
+      - app_cache:/tmp/cache
+
+  redis:
+    read_only: true
+    tmpfs:
+      - /tmp:size=32M
+      - /data:size=128M  # Redis RDB snapshots</code></pre>
+
+            <p>With <code>read_only: true</code>, the container's filesystem cannot be modified. If an attacker exploits your app, they can't install tools, modify configs, or drop persistence mechanisms. <code>tmpfs</code> mounts create temporary RAM-based filesystems for directories that legitimately need to write.</p>
+
+            <h2>9. Complete Production docker-compose.yml</h2>
+
+            <p>Putting it all together:</p>
+
+            <pre><code># docker-compose.prod.yml
+version: "3.9"
+
+services:
+  nginx:
+    image: nginx:1.25-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    read_only: true
+    restart: unless-stopped
+    networks:
+      - frontend
+    depends_on:
+      app:
+        condition: service_healthy
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+        compress: "true"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 128M
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    restart: unless-stopped
+    read_only: true
+    networks:
+      - frontend
+      - backend
+    secrets:
+      - secret_key
+      - db_password
+      - redis_password
+    environment:
+      - DATABASE_URL=postgres://user@db:5432/myapp
+      - REDIS_URL=redis://:default@redis:6379/0
+      - PYTHON_ENV=production
+      - WORKERS=4
+    tmpfs:
+      - /tmp:size=64M
+    volumes:
+      - app_uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+        compress: "true"
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 128M
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    networks:
+      - backend
+    secrets:
+      - db_password
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_DB=myapp
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    command: ["postgres", "-c", "password_file=/run/secrets/db_password"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d myapp"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+        compress: "true"
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 1G
+        reservations:
+          cpus: "0.5"
+          memory: 256M
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    read_only: true
+    networks:
+      - backend
+    command: ["redis-server", "--requirepass", "$(cat /run/secrets/redis_password)", "--maxmemory", "128mb", "--maxmemory-policy", "allkeys-lru"]
+    tmpfs:
+      - /data:size=128M
+    secrets:
+      - redis_password
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "$(cat /run/secrets/redis_password)", "ping"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "3"
+        compress: "true"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+        reservations:
+          cpus: "0.1"
+          memory: 64M
+
+networks:
+  frontend:
+    driver: bridge
+  backend:
+    driver: bridge
+    internal: true
+
+volumes:
+  db_data:
+    driver: local
+  app_uploads:
+    driver: local
+
+secrets:
+  secret_key:
+    file: ./secrets/secret_key.txt
+  db_password:
+    file: ./secrets/postgres_password.txt
+  redis_password:
+    file: ./secrets/redis_password.txt</code></pre>
+
+            <h2>10. Deploying and Managing</h2>
+
+            <pre><code># Start the production stack
+docker compose -f docker-compose.prod.yml up -d
+
+# Check health of all services
+docker compose -f docker-compose.prod.yml ps
+
+# View combined logs (with follow)
+docker compose -f docker-compose.prod.yml logs -f --tail=100
+
+# Update to new code (zero downtime if healthchecks pass)
+docker compose -f docker-compose.prod.yml up -d --build --no-deps app
+
+# Graceful shutdown (waits for healthchecks to go unhealthy)
+docker compose -f docker-compose.prod.yml down
+
+# Monitor resource usage
+docker stats</code></pre>
+
+            <h2>11. Production Checklist</h2>
+
+            <p>Before deploying to production, verify:</p>
+
+            <pre><code>✅ Healthchecks configured for every service
+✅ Restart policies set (unless-stopped recommended)
+✅ Resource limits defined (CPU + memory)
+✅ Log rotation enabled (max-size + max-file)
+✅ Secrets used instead of hardcoded passwords
+✅ Network isolation (frontend vs backend)
+✅ Read-only filesystems where possible
+✅ depends_on with healthcheck conditions
+✅ Non-root user in Dockerfile (USER directive)
+✅ Specific image tags (not "latest")
+✅ TLS/SSL configured (nginx reverse proxy)
+✅ Backup strategy for volumes (database snapshots)
+✅ Monitoring/alerting set up (Prometheus, health check dashboards)
+✅ .gitignore excludes secrets/ directory</code></pre>
+
+            <h2>Summary</h2>
+
+            <p>A production-ready Docker Compose stack is built layer by layer. Start with the basics — your containers work. Then add healthchecks so you know when they're broken. Add restart policies so they recover automatically. Add resource limits so one container can't starve the others. Add logging configuration so your disk survives. Add secrets so credentials stay safe. Add networks so compromise doesn't spread.</p>
+
+            <p>Each layer independently makes your stack more resilient. Together, they turn a dev toy into production infrastructure that runs reliably for months without intervention.</p>
+
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo Wong · Built with curiosity and Coffee</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528">GitHub</a>
+                <a href="https://hugow.dev">hugow.dev</a>
+                <a href="/sitemap.xml">Sitemap</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-mode');
+            themeToggle.textContent = '☀';
+        }
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            themeToggle.textContent = isLight ? '☀' : '◐';
+        });
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + "%";
+        });
+    </script>
+</body>
+</html>

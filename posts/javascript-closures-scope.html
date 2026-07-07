@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JavaScript Closures and Scope: The Concept Every JS Developer Must Master</title>
+    <meta name="description" content="Master JavaScript closures and scope — lexical scoping, variable visibility, closures in loops, modules, and memory leaks. Clear examples from beginner to advanced with real-world patterns.">
+    <meta name="keywords" content="javascript closures, scope chain, lexical scoping, javascript tutorial, closures in loops, javascript modules">
+    <meta name="author" content="Hugo Wong">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Web Dev</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-content">
+            <span class="tag web">Web Dev</span>
+            <h1>JavaScript Closures and Scope: The Concept Every Developer Must Master</h1>
+            <div class="post-meta">
+                <span class="post-date">July 3, 2026</span>
+                <span class="read-time">9 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+
+            <p>Interviewers ask about closures. Senior developers use closures every day. Build tools rely on closures. Yet closures remain one of the most misunderstood concepts in JavaScript. This guide will make them click — once and for all.</p>
+
+            <p>A <strong>closure</strong> is a function that retains access to variables from its parent scope, even after the parent function has finished executing. That's the textbook definition. Let's see what that actually means in practice.</p>
+
+            <h2>Scope Basics: Where Variables Live</h2>
+
+            <p>JavaScript has <strong>lexical scoping</strong> (also called static scoping). The scope of a variable is determined by where it's written in the code — not by where or when it's called.</p>
+
+<pre><code>// Global scope — accessible everywhere
+const globalVar = "I'm global";
+
+function outer() {
+    // outer's scope — accessible in outer and inner
+    const outerVar = "I'm in outer";
+
+    function inner() {
+        // inner's scope — accessible only here
+        const innerVar = "I'm in inner";
+
+        console.log(globalVar);  // ✅ Works — global is accessible
+        console.log(outerVar);   // ✅ Works — parent scope is accessible
+        console.log(innerVar);   // ✅ Works — local scope
+    }
+
+    console.log(innerVar);  // ❌ ReferenceError — inner's scope is not accessible here
+}
+
+outer();
+console.log(outerVar);  // ❌ ReferenceError — outer's scope is not accessible here
+</code></pre>
+
+            <p>The rule: a function can always access variables in its own scope and all parent scopes. It can <em>never</em> access variables from child scopes.</p>
+
+            <h2>var vs let vs const: Block Scope Matters</h2>
+
+            <p>Before ES6 (2015), JavaScript had only <code>var</code>, which creates <strong>function scope</strong>. ES6 added <code>let</code> and <code>const</code>, which create <strong>block scope</strong>.</p>
+
+<pre><code>// var is function-scoped (ignores blocks)
+function example() {
+    if (true) {
+        var x = 10;
+        let y = 20;
+        const z = 30;
+    }
+    console.log(x);  // ✅ 10 — var ignores the if block
+    console.log(y);  // ❌ ReferenceError — let is block-scoped
+    console.log(z);  // ❌ ReferenceError — const is block-scoped
+}
+
+// let and const are also subject to TDZ (Temporal Dead Zone)
+console.log(a);  // ❌ ReferenceError (not "undefined") — TDZ
+let a = 5;
+
+console.log(b);  // ✅ undefined — var is hoisted and initialized
+var b = 5;
+</code></pre>
+
+            <p>The Temporal Dead Zone (TDZ) means you can't access <code>let</code>/<code>const</code> variables before their declaration line, even though they're "hoisted." <code>var</code> is hoisted and initialized to <code>undefined</code>, so no TDZ error — just unexpected <code>undefined</code> values.</p>
+
+            <h2>What Is a Closure? (With Examples)</h2>
+
+            <p>A closure happens when an inner function <em>remembers</em> variables from its parent scope, even after the parent has returned.</p>
+
+<pre><code>function createCounter() {
+    let count = 0;  // This variable "closes over" the inner functions
+
+    return {
+        increment: () => {
+            count++;
+            return count;
+        },
+        decrement: () => {
+            count--;
+            return count;
+        },
+        getCount: () => count,
+    };
+}
+
+const counter = createCounter();
+console.log(counter.increment());  // 1
+console.log(counter.increment());  // 2
+console.log(counter.decrement());  // 1
+console.log(counter.getCount());   // 1
+
+// Nobody can access 'count' directly — it's private!
+console.log(counter.count);        // undefined
+</code></pre>
+
+            <p>This is the <strong>module pattern</strong>. The variable <code>count</code> lives in a closure — protected from external access but fully available to the returned functions. This is how you create <em>private state</em> in JavaScript.</p>
+
+            <h2>Real-World Pattern: Event Handlers</h2>
+
+            <p>Closures are everywhere in event-driven JavaScript:</p>
+
+<pre><code>function setupButtons() {
+    let clickCount = 0;
+
+    const buttons = document.querySelectorAll('.my-button');
+
+    buttons.forEach(button => {
+        button.addEventListener('click', () => {
+            clickCount++;
+            console.log(`Button clicked ${clickCount} times total`);
+        });
+    });
+
+    // clickCount keeps growing — it's in the closure of all handlers
+}
+
+setupButtons();
+</code></pre>
+
+            <p>The <code>clickCount</code> variable survives long after <code>setupButtons()</code> returns. Every click handler shares the same <code>clickCount</code> because they all close over the same scope.</p>
+
+            <h2>The Classic "Loop Closure" Bug</h2>
+
+            <p>This is the most famous closure gotcha:</p>
+
+<pre><code>// ❌ THE BUG: All timeouts log 3
+for (var i = 0; i < 3; i++) {
+    setTimeout(() => {
+        console.log(i);  // 3, 3, 3 (NOT 0, 1, 2)
+    }, 100);
+}
+
+// ✅ FIX 1: Use let (block scope creates new i each iteration)
+for (let i = 0; i < 3; i++) {
+    setTimeout(() => {
+        console.log(i);  // 0, 1, 2
+    }, 100);
+}
+
+// ✅ FIX 2: Use an IIFE (Immediately Invoked Function Expression) with var
+for (var i = 0; i < 3; i++) {
+    (function(j) {
+        setTimeout(() => {
+            console.log(j);  // 0, 1, 2
+        }, 100);
+    })(i);  // Pass i as a parameter — creates a new scope each iteration
+}
+</code></pre>
+
+            <p>Why does <code>var</code> fail? Because <code>var i</code> is function-scoped — there's only ONE variable <code>i</code>. By the time the timeouts fire, the loop has finished and <code>i</code> equals 3. With <code>let</code>, each iteration gets its OWN <code>i</code> variable — the closure captures the right one.</p>
+
+            <h2>Real-World Pattern: Function Factories</h2>
+
+            <p>Create specialized functions by "baking in" configuration:</p>
+
+<pre><code>function createMultiplier(factor) {
+    return function(number) {
+        return number * factor;
+    };
+}
+
+const double = createMultiplier(2);
+const triple = createMultiplier(3);
+const half = createMultiplier(0.5);
+
+console.log(double(10));  // 20
+console.log(triple(10));  // 30
+console.log(half(10));    // 5
+</code></pre>
+
+            <p>Each returned function remembers its own <code>factor</code>. This is essentially how functional programming's <strong>currying</strong> works.</p>
+
+            <h2>Real-World Pattern: Memoization</h2>
+
+            <p>Closures are perfect for caching — keeping a private cache that only the function can access:</p>
+
+<pre><code>function memoize(fn) {
+    const cache = new Map();  // Private cache — nobody else can access this
+
+    return function(...args) {
+        const key = JSON.stringify(args);
+        if (cache.has(key)) {
+            console.log("Cache hit!");
+            return cache.get(key);
+        }
+        console.log("Computing...");
+        const result = fn(...args);
+        cache.set(key, result);
+        return result;
+    };
+}
+
+// Create a memoized version of an expensive function
+const slowAdd = (a, b) => {
+    // Simulate expensive computation
+    let sum = 0;
+    for (let i = 0; i < 1000000; i++) sum++;
+    return a + b;
+};
+
+const fastAdd = memoize(slowAdd);
+console.log(fastAdd(2, 3));  // Computing... 5
+console.log(fastAdd(2, 3));  // Cache hit! 5
+console.log(fastAdd(2, 4));  // Computing... 6
+</code></pre>
+
+            <p>The <code>cache</code> is private — only the memoized function can read or write it. No global variables, no object properties that can be modified externally.</p>
+
+            <h2>Real-World Pattern: Data Hiding / Encapsulation</h2>
+
+            <p>Before classes had private fields (# syntax), closures were the primary way to hide data:</p>
+
+<pre><code>function createBankAccount(initialBalance) {
+    let balance = initialBalance;  // Private — not accessible from outside
+
+    return {
+        deposit(amount) {
+            if (amount <= 0) throw new Error("Deposit must be positive");
+            balance += amount;
+            return balance;
+        },
+        withdraw(amount) {
+            if (amount > balance) throw new Error("Insufficient funds");
+            balance -= amount;
+            return balance;
+        },
+        getBalance() {
+            return balance;
+        },
+    };
+}
+
+const account = createBankAccount(100);
+account.deposit(50);   // 150
+account.withdraw(30);  // 120
+console.log(account.balance);  // undefined — can't access directly!
+
+// Compare with the modern private field syntax (ES2022)
+class BankAccount {
+    #balance = 0;  // Private field (ES2022+)
+
+    constructor(initial) { this.#balance = initial; }
+    deposit(amount) { this.#balance += amount; }
+    withdraw(amount) {
+        if (amount > this.#balance) throw new Error("Insufficient funds");
+        this.#balance -= amount;
+    }
+    getBalance() { return this.#balance; }
+}
+</code></pre>
+
+            <h2>Closures and Memory Leaks</h2>
+
+            <p>Closures keep references alive. If a closure references a large object, that object won't be garbage collected as long as the closure exists:</p>
+
+<pre><code>function setupEventHandler() {
+    const largeData = new Array(1000000).fill("data");
+
+    document.getElementById("button").addEventListener("click", () => {
+        // This closure references largeData
+        console.log(`Data size: ${largeData.length}`);
+    });
+    // largeData stays in memory as long as the event listener exists
+}
+
+// ✅ FIX: Only reference what you need
+function setupEventHandlerClean() {
+    const largeData = new Array(1000000).fill("data");
+
+    // Extract just the value you need
+    const dataSize = largeData.length;
+
+    document.getElementById("button").addEventListener("click", () => {
+        console.log(`Data size: ${dataSize}`);  // Only closes over the number
+    });
+    // largeData can now be garbage collected
+}
+</code></pre>
+
+            <p>Always be mindful of what your closures capture. Remove event listeners when you're done:</p>
+
+<pre><code>function setupWithCleanup() {
+    const handler = () => { /* ... */ };
+    const button = document.getElementById("button");
+
+    button.addEventListener("click", handler);
+
+    // Return a cleanup function
+    return () => {
+        button.removeEventListener("click", handler);
+    };
+}
+
+const cleanup = setupWithCleanup();
+// Later, when the component is removed:
+cleanup();
+</code></pre>
+
+            <h2>Common Interview Question</h2>
+
+            <p>"What does this print?"</p>
+
+<pre><code>function outer() {
+    let num = 0;
+    const inner = () => {
+        num++;
+        return num;
+    };
+    return inner;
+}
+
+const fn = outer();
+console.log(fn());  // 1
+console.log(fn());  // 2
+console.log(fn());  // 3
+
+const fn2 = outer();
+console.log(fn2());  // 1 (new closure, new num)
+console.log(fn());   // 4 (original closure, original num)
+</code></pre>
+
+            <p>Each call to <code>outer()</code> creates a <strong>new</strong> closure with its own <code>num</code>. <code>fn</code> and <code>fn2</code> have separate <code>num</code> variables — they don't share state.</p>
+
+            <h2>Summary</h2>
+
+            <p>Closures are one of JavaScript's most powerful features. They enable:</p>
+
+            <ul>
+                <li><strong>Private state</strong> — data that only certain functions can access</li>
+                <li><strong>Function factories</strong> — creating specialized functions with baked-in configuration</li>
+                <li><strong>Memoization</strong> — caching expensive computations</li>
+                <li><strong>Event handlers</strong> — maintaining state across events</li>
+                <li><strong>Modules</strong> — the foundation of JavaScript's module system</li>
+            </ul>
+
+            <p>Key takeaways:</p>
+
+            <ul>
+                <li>Use <code>let</code> and <code>const</code>, not <code>var</code>, to avoid scope surprises</li>
+                <li>A closure captures variables by reference, not by value</li>
+                <li>Each function call creates a new closure with its own scope</li>
+                <li>Be aware of memory — closures prevent garbage collection</li>
+                <li>Closures are the mechanism behind JavaScript modules, callbacks, and event handling</li>
+            </ul>
+
+            <div class="post-nav">
+                <a href="javascript-es6-features.html" class="post-nav-prev">← JavaScript ES6+ Features</a>
+                <a href="javascript-dom-manipulation.html" class="post-nav-next">JavaScript DOM Manipulation →</a>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo Wong · Built with curiosity and Coffee</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528">GitHub</a>
+                <a href="https://hugow.dev">hugow.dev</a>
+                <a href="/sitemap.xml">Sitemap</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-mode');
+            themeToggle.textContent = '☀';
+        }
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            themeToggle.textContent = isLight ? '☀' : '◐';
+        });
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + "%";
+        });
+    </script>
+</body>
+</html>

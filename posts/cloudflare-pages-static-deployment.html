@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloudflare Pages: Deploy Static Sites and JAMstack Apps in Minutes - Hugo's Dev Notes</title>
+    <meta name="description" content="Deploy static websites, React apps, and JAMstack sites with Cloudflare Pages. Connect GitHub, configure custom domains, set up CI/CD, and add serverless functions — all free.">
+    <meta name="keywords" content="cloudflare, pages, static site, deployment, JAMstack, GitHub, CI/CD, serverless, tutorial">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/cloudflare-pages-static-deployment.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <article class="post-content">
+        <span class="tag cloudflare">Cloudflare</span>
+        <h1>Cloudflare Pages: Deploy Static Sites and JAMstack Apps in Minutes</h1>
+        <div class="post-meta">
+            <span class="post-date">July 7, 2026</span>
+            <span class="read-time">9 min read</span>
+            <span class="post-badge">New</span>
+        </div>
+
+        <p>Cloudflare Pages is a serverless platform for deploying static websites and full-stack JAMstack applications. Connect your GitHub repository, and Cloudflare automatically builds and deploys your site every time you push code. No servers to manage, no deployment scripts to write — just push and go.</p>
+
+        <p>Best of all, it's generous with the free tier: 500 builds per month, 500K requests per day, and automatic HTTPS with a global CDN. In this guide, we'll walk through everything from your first deployment to advanced configuration.</p>
+
+        <h2>What Is Cloudflare Pages?</h2>
+
+        <p>Cloudflare Pages is a deployment platform that combines:</p>
+
+        <ul>
+            <li><strong>CI/CD pipeline</strong> — automatic builds triggered by git pushes</li>
+            <li><strong>Global CDN</strong> — your site served from 300+ data centers worldwide</li>
+            <li><strong>Serverless functions</strong> — add API endpoints without a backend</li>
+            <li><strong>Preview deployments</strong> — unique URLs for every pull request</li>
+            <li><strong>Automatic HTTPS</strong> — free SSL certificates with zero configuration</li>
+        </ul>
+
+        <p>It works with any static site generator: Hugo, Next.js, Gatsby, Eleventy, Jekyll, Docusaurus, Astro, or plain HTML/CSS/JS. If your build process outputs HTML, CSS, and JavaScript files, Pages can deploy it.</p>
+
+        <h2>Prerequisites</h2>
+
+        <ul>
+            <li>A <a href="https://dash.cloudflare.com/sign-up">Cloudflare account</a> (free)</li>
+            <li>A <a href="https://github.com">GitHub account</a></li>
+            <li>A project with static site output (HTML, CSS, JS files)</li>
+            <li>Git installed on your machine</li>
+        </ul>
+
+        <h2>Quick Start: Deploy Your First Site</h2>
+
+        <h3>Step 1: Create a Simple Static Site</h3>
+
+        <p>Let's start with a minimal project. Create a directory and add an <code>index.html</code>:</p>
+
+<pre><code>mkdir my-site
+cd my-site
+
+# Create index.html
+cat &gt; index.html &lt;&lt;'EOF'
+&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+    &lt;title&gt;My First Cloudflare Pages Site&lt;/title&gt;
+    &lt;style&gt;
+        body {
+            font-family: system-ui, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: #0a0a0a;
+            color: #e0e0e0;
+        }
+        h1 { color: #f5a623; }
+        .card {
+            background: #1a1a1a;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            border: 1px solid #333;
+        }
+    &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;h1&gt;Hello from Cloudflare Pages! &lt;/h1&gt;
+    &lt;div class="card"&gt;
+        &lt;p&gt;This site is deployed on Cloudflare's global network.&lt;/p&gt;
+        &lt;p&gt;Zero server configuration needed.&lt;/p&gt;
+    &lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+EOF
+</code></pre>
+
+        <h3>Step 2: Push to GitHub</h3>
+
+<pre><code># Initialize git repository
+git init
+git add .
+git commit -m "Initial commit"
+
+# Create a new repo on GitHub, then push
+git remote add origin git@github.com:YOUR_USERNAME/my-site.git
+git branch -M main
+git push -u origin main
+</code></pre>
+
+        <h3>Step 3: Connect to Cloudflare Pages</h3>
+
+        <ol>
+            <li>Log into your <a href="https://dash.cloudflare.com">Cloudflare Dashboard</a></li>
+            <li>Navigate to <strong>Workers &amp; Pages</strong> → <strong>Pages</strong></li>
+            <li>Click <strong>Create a project</strong></li>
+            <li>Select <strong>Connect to Git</strong></li>
+            <li>Choose your GitHub repository (<code>my-site</code>)</li>
+            <li>Fill in the project settings:
+                <ul>
+                    <li><strong>Project name</strong>: your-site (auto-generated from repo name)</li>
+                    <li><strong>Production branch</strong>: <code>main</code></li>
+                    <li><strong>Build command</strong>: Leave empty for plain HTML (or set <code>npm run build</code> for frameworks)</li>
+                    <li><strong>Build output directory</strong>: Leave empty for root directory (or set <code>dist</code>, <code>build</code>, <code>public</code> for frameworks)</li>
+                </ul>
+            </li>
+            <li>Click <strong>Save and Deploy</strong></li>
+        </ol>
+
+        <p>Cloudflare will build your site and provide a URL like <code>my-site-abc123.pages.dev</code>. Your site is live in under a minute.</p>
+
+        <h2>Framework-Specific Configuration</h2>
+
+        <p>Cloudflare Pages detects common frameworks automatically, but you can customize the build settings:</p>
+
+        <table class="reference-table">
+            <tr>
+                <th>Framework</th>
+                <th>Build Command</th>
+                <th>Output Directory</th>
+            </tr>
+            <tr>
+                <td>Next.js</td>
+                <td><code>npm run build</code></td>
+                <td><code>.next</code></td>
+            </tr>
+            <tr>
+                <td>Gatsby</td>
+                <td><code>npm run build</code></td>
+                <td><code>public</code></td>
+            </tr>
+            <tr>
+                <td>Hugo</td>
+                <td><code>hugo</code></td>
+                <td><code>public</code></td>
+            </tr>
+            <tr>
+                <td>Vite</td>
+                <td><code>npm run build</code></td>
+                <td><code>dist</code></td>
+            </tr>
+            <tr>
+                <td>Astro</td>
+                <td><code>npm run build</code></td>
+                <td><code>dist</code></td>
+            </tr>
+            <tr>
+                <td>Docusaurus</td>
+                <td><code>npm run build</code></td>
+                <td><code>build</code></td>
+            </tr>
+            <tr>
+                <td>Eleventy</td>
+                <td><code>npx @11ty/eleventy</code></td>
+                <td><code>_site</code></td>
+            </tr>
+            <tr>
+                <td>Jekyll</td>
+                <td><code>bundle exec jekyll build</code></td>
+                <td><code>_site</code></td>
+            </tr>
+            <tr>
+                <td>Plain HTML</td>
+                <td>(leave empty)</td>
+                <td>(leave empty)</td>
+            </tr>
+        </table>
+
+        <h2>Preview Deployments</h2>
+
+        <p>One of the best features of Cloudflare Pages is automatic preview deployments. Every pull request gets its own unique URL:</p>
+
+        <ul>
+            <li>Open a pull request on GitHub</li>
+            <li>Cloudflare automatically builds and deploys a preview</li>
+            <li>The preview URL looks like <code>deploy-preview-42--my-site.pages.dev</code></li>
+            <li>Cloudflare adds a comment to your PR with the preview link</li>
+            <li>Reviewers can click the link to see the exact changes</li>
+        </ul>
+
+        <p>This is incredibly useful for design reviews, feature testing, and stakeholder feedback. No manual deployment steps needed.</p>
+
+        <h2>Custom Domains</h2>
+
+        <p>Replace the <code>.pages.dev</code> URL with your own domain:</p>
+
+        <ol>
+            <li>In your Pages project, go to <strong>Custom domains</strong></li>
+            <li>Enter your domain (e.g., <code>www.yoursite.com</code>)</li>
+            <li>Cloudflare shows you the DNS records to create</li>
+            <li>If your domain is already on Cloudflare, the records are set automatically</li>
+            <li>If not, add a CNAME record pointing to your Pages URL</li>
+        </ol>
+
+        <p>Cloudflare automatically provisions and renews an SSL certificate for your custom domain — completely free.</p>
+
+        <h2>Environment Variables</h2>
+
+        <p>Store secrets and configuration separately from your code:</p>
+
+<pre><code># Set environment variables in the dashboard:
+# Pages project → Settings → Environment variables
+
+# Example: set a GitHub token for a build-time API call
+Name: GITHUB_TOKEN
+Value: ghp_xxxxxxxxxxxxxxxxxxxx
+Environment: Production (or all environments)
+
+# Access in your code at build time
+import os
+token = os.environ.get('GITHUB_TOKEN')
+</code></pre>
+
+        <p>You can also set them via the Cloudflare CLI:</p>
+
+<pre><code># Install Wrangler (Cloudflare's CLI)
+npm install -g wrangler
+
+# Set an environment variable
+npx wrangler pages secret put DATABASE_URL
+
+# It will prompt you to enter the value
+# The value is encrypted and never stored in plain text
+</code></pre>
+
+        <h3>Build-Time vs Runtime Variables</h3>
+
+        <p>Cloudflare Pages distinguishes between two types of environment variables:</p>
+
+        <ul>
+            <li><strong>Build-time variables</strong>: Available during the build process. Used by frameworks to generate static content. Accessible via <code>process.env</code> in Node-based frameworks.</li>
+            <li><strong>Runtime variables (bound to functions)</strong>: Available only in Workers and Pages Functions. Cannot be accessed during static builds. Set with the <code>--binding</code> flag for function-specific access.</li>
+        </ul>
+
+        <h2>Pages Functions (Serverless API Endpoints)</h2>
+
+        <p>Even though Pages is a static site platform, you can add serverless API endpoints using Pages Functions. Create a <code>functions</code> directory in your project root:</p>
+
+<pre><code># Project structure
+my-site/
+├── index.html
+├── functions/
+│   └── api/
+│       ├── greeting.js
+│       └── weather.js
+└── _routes.json
+</code></pre>
+
+        <p>Each file in the <code>functions</code> directory becomes an API endpoint:</p>
+
+<pre><code>// functions/api/greeting.js
+export async function onRequest(context) {
+    const name = context.url.searchParams.get('name') || 'World';
+
+    return new Response(JSON.stringify({
+        message: `Hello, ${name}!`,
+        timestamp: new Date().toISOString()
+    }), {
+        headers: { 'Content-Type': 'application/json' }
+    });
+}
+</code></pre>
+
+        <p>Now visit <code>https://your-site.pages.dev/api/greeting?name=Alice</code>:</p>
+
+<pre><code>{
+    "message": "Hello, Alice!",
+    "timestamp": "2026-07-07T12:00:00.000Z"
+}
+</code></pre>
+
+        <h3>Catching All Routes</h3>
+
+        <p>Use <code>[slug].js</code> to handle dynamic paths:</p>
+
+<pre><code>// functions/api/users/[id].js
+export async function onRequest({ params }) {
+    const userId = params.id;
+
+    // In production, query a database here
+    const users = {
+        '1': { name: 'Alice', role: 'admin' },
+        '2': { name: 'Bob', role: 'user' }
+    };
+
+    const user = users[userId] || { error: 'User not found' };
+
+    return new Response(JSON.stringify(user), {
+        headers: { 'Content-Type': 'application/json' }
+    });
+}
+</code></pre>
+
+        <p>Now <code>/api/users/1</code> returns Alice's data, and <code>/api/users/99</code> returns an error.</p>
+
+        <h3>Route Configuration with <code>_routes.json</code></h3>
+
+        <p>Control which paths are handled by functions and which serve static files:</p>
+
+<pre><code>// _routes.json
+{
+    "include": [
+        "/api/*"
+    ],
+    "exclude": [
+        "/api/public/*"
+    ]
+}
+</code></pre>
+
+        <p>This configuration routes all <code>/api/*</code> requests through Workers (for server-side processing) but excludes <code>/api/public/*</code> (served as static files).</p>
+
+        <h2>Redirects and Rewrites</h2>
+
+        <p>Configure redirects and rewrites with a <code>_redirects</code> file in your build output directory:</p>
+
+<pre><code># _redirects (place in your build output directory)
+
+# Permanent redirect (301)
+/old-page  /new-page  301
+
+# Temporary redirect (302)
+/temp  /alternative  302
+
+# Rewrite (200 — serve /about.html at /about URL)
+/about  /about.html  200
+
+# Wildcard redirect
+/blog/*  /posts/:splat  301
+
+# Force HTTPS (already default on Cloudflare)
+http://example.com/*  https://example.com/:splat  301
+</code></pre>
+
+        <h2>Deploy via CLI (Wrangler)</h2>
+
+        <p>For more control, use the Wrangler CLI instead of the dashboard:</p>
+
+<pre><code># Install Wrangler
+npm install -g wrangler
+
+# Login to Cloudflare
+npx wrangler login
+
+# Deploy directly from your project directory
+npx wrangler pages deploy ./dist --project-name=my-site
+
+# Set a custom domain
+npx wrangler pages domain create my-site hugo.dev
+
+# List deployments
+npx wrangler pages deployment list --project-name=my-site
+</code></pre>
+
+        <h2>Integration with Cloudflare Ecosystem</h2>
+
+        <p>Pages integrates seamlessly with other Cloudflare services:</p>
+
+        <ul>
+            <li><strong>Cloudflare Workers</strong>: Run serverless code alongside your static site</li>
+            <li><strong>D1 Database</strong>: Add SQL database to your Pages Functions</li>
+            <li><strong>KV Storage</strong>: Key-value storage for caches and configuration</li>
+            <li><strong>R2 Storage</strong>: Object storage for user uploads and media</li>
+            <li><strong>Cloudflare Access</strong>: Add authentication to internal tools</li>
+            <li><strong>Cloudflare Analytics</strong>: Built-in visitor and bandwidth analytics</li>
+            <li><strong>DNS</strong>: Manage your domain's DNS records in the same dashboard</li>
+            <li><strong>SSL/TLS</strong>: Automatic HTTPS with flexible, full, or strict modes</li>
+            <li><strong>Cloudflare Turnstile</strong>: Add bot protection to forms</li>
+        </ul>
+
+        <h2>Free Tier Limits</h2>
+
+        <table class="reference-table">
+            <tr>
+                <th>Resource</th>
+                <th>Free Tier</th>
+            </tr>
+            <tr>
+                <td>Builds per month</td>
+                <td>500</td>
+            </tr>
+            <tr>
+                <td>Build duration</td>
+                <td>15 minutes</td>
+            </tr>
+            <tr>
+                <td>Build size</td>
+                <td>250 MB</td>
+            </tr>
+            <tr>
+                <td>Requests per day</td>
+                <td>500,000</td>
+            </tr>
+            <tr>
+                <td>Bandwidth</td>
+                <td>Unlimited</td>
+            </tr>
+            <tr>
+                <td>Custom domains</td>
+                <td>Unlimited</td>
+            </tr>
+            <tr>
+                <td>SSL certificates</td>
+                <td>Free</td>
+            </tr>
+            <tr>
+                <td>Preview deployments</td>
+                <td>Unlimited</td>
+            </tr>
+        </table>
+
+        <p>The free tier is generous enough for most personal projects, portfolios, documentation sites, and even medium-traffic blogs.</p>
+
+        <h2>Summary</h2>
+
+        <p>Cloudflare Pages makes deploying static sites ridiculously easy:</p>
+
+        <ol>
+            <li>Push your code to GitHub</li>
+            <li>Connect the repository in the Cloudflare dashboard</li>
+            <li>Your site is live with automatic HTTPS and a global CDN</li>
+            <li>Add serverless functions for dynamic features</li>
+            <li>Customize with your own domain name</li>
+        </ol>
+
+        <p>From a simple HTML page to a full JAMstack application with API endpoints, databases, and authentication — Cloudflare Pages handles it all without any server management. Whether you're deploying a portfolio, a blog, or a documentation site, Pages is one of the fastest paths from code to production.</p>
+
+    </article>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo Wong · Built with curiosity and Coffee</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528">GitHub</a>
+                <a href="https://hugow.dev">hugow.dev</a>
+                <a href="../sitemap.xml">Sitemap</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-mode');
+            themeToggle.textContent = '☀';
+        }
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            themeToggle.textContent = isLight ? '☀' : '◐';
+        });
+
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + "%";
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docker Networking Explained: Bridge, Host, None, and Custom Networks for Beginners</title>
+    <meta name="description" content="Understand Docker networking from scratch. Learn bridge, host, and none network drivers, custom networks with DNS resolution, port mapping, and multi-container app communication with working examples.">
+    <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/docker-networking-explained.html">
+    <meta property="og:title" content="Docker Networking Explained: Bridge, Host, None, and Custom Networks">
+    <meta property="og:description" content="Understand Docker networking from scratch with practical examples.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.hugow.dev/posts/docker-networking-explained.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../devops.html" class="nav-btn active">DevOps</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="post-content">
+        <span class="tag devops">DevOps</span>
+
+        <h1>Docker Networking Explained: Bridge, Host, None, and Custom Networks for Beginners</h1>
+
+        <div class="post-meta">
+            <span class="post-date">July 6, 2026</span>
+            <span class="read-time">10 min read</span>
+        </div>
+
+        <p>Docker networking is one of those topics that seems mysterious until you understand the basics. How do containers talk to each other? How does the outside world reach a container? Why can one container "ping" another by name? This guide answers all of that with hands-on examples.</p>
+
+        <p>By the end, you'll understand Docker's built-in network drivers, how to create custom networks, DNS resolution between containers, and how to design network topologies for real applications.</p>
+
+        <h2>Docker's Three Built-in Networks</h2>
+
+        <p>When you install Docker, it creates three networks automatically:</p>
+
+        <pre><code>$ docker network ls
+NETWORK ID    NAME      DRIVER    SCOPE
+abc123        bridge    bridge    local
+def456        host      host      local
+ghi789        none      null      local</code></pre>
+
+        <h3>1. Bridge Network (default)</h3>
+
+        <p>When you run <code>docker run</code> without specifying a network, your container joins the <strong>bridge</strong> network. Each container gets its own private IP on a virtual network. The host can reach containers, but containers can't reach each other by name — only by IP.</p>
+
+        <pre><code># Two containers on the default bridge — can communicate by IP only
+docker run -d --name web nginx
+docker run -d --name db postgres
+
+# The web container CAN'T ping "db" by name:
+docker exec web ping db
+# ping: db: Name or service not known
+
+# But it CAN ping by IP:
+docker exec web ping 172.17.0.3
+# PING 172.17.0.3 — works!</code></pre>
+
+        <p>The default bridge network assigns IPs dynamically, so the IP changes every time you restart a container. That's why it's fragile for multi-container apps.</p>
+
+        <h3>2. Host Network</h3>
+
+        <p>With the host network driver, a container shares the host's network stack entirely. No isolation, no port mapping needed, maximum performance:</p>
+
+        <pre><code># Container uses the host's IP and ports directly
+docker run -d --network host nginx
+
+# Access nginx directly on the host IP, no port mapping:
+curl http://localhost:80</code></pre>
+
+        <p><strong>When to use host networking:</strong></p>
+        <ul>
+            <li>Performance-sensitive applications where NAT overhead matters</li>
+            <li>Monitoring agents that need to see all host traffic (Prometheus node exporter)</li>
+            <li>Applications that need access to the host's loopback interface</li>
+        </ul>
+        <p><strong>Downside:</strong> Port conflicts. You can't run two host-networked containers on the same port.</p>
+
+        <h3>3. None Network</h3>
+
+        <p>The <code>none</code> network gives a container no network interfaces. It's completely isolated — no external network, no DNS, nothing:</p>
+
+        <pre><code>docker run --network none alpine ping google.com
+# ping: bad address 'google.com' — no network at all</code></pre>
+
+        <p><strong>When to use none:</strong> Security-hardened containers that don't need network access, or containers where you'll set up custom networking via scripts.</p>
+
+        <h2>Custom Bridge Networks: The Game Changer</h2>
+
+        <p>Custom bridge networks solve the biggest problem with the default bridge: <strong>built-in DNS resolution</strong>. Containers on the same custom network can reach each other by container name.</p>
+
+        <pre><code># Step 1: Create a custom network
+docker network create myapp-net
+
+# Step 2: Run containers on that network
+docker run -d --name web --network myapp-net nginx
+docker run -d --name db --network myapp-net -e POSTGRES_PASSWORD=secret postgres
+
+# Step 3: The web container can now reach "db" by name!
+docker exec web ping db
+# PING db (172.18.0.2): 56 data bytes — works!
+
+# Even resolves in application code:
+docker exec web wget -qO- http://db:5432
+# Connection refused (expected — Postgres isn't on HTTP)
+# But the DNS resolution worked!</code></pre>
+
+        <h2>Real-World Example: Three-Tier Application</h2>
+
+        <p>Let's build a complete network topology with a frontend, API, and database:</p>
+
+        <pre><code># Create separate networks for isolation
+docker network create frontend-net
+docker network create backend-net
+
+# Database — only on backend network (can't be reached from outside)
+docker run -d \
+  --name postgres \
+  --network backend-net \
+  -e POSTGRES_PASSWORD=supersecret \
+  -e POSTGRES_DB=myapp \
+  postgres:16-alpine
+
+# API — on backend (to reach DB) AND frontend (to reach web server)
+docker run -d \
+  --name api \
+  --network backend-net \
+  --network frontend-net \
+  -p 8000:8000 \
+  python:3.12-slim \
+  python -m http.server 8000
+
+# Nginx frontend — on frontend network only
+docker run -d \
+  --name web \
+  --network frontend-net \
+  -p 80:80 \
+  nginx:alpine</code></pre>
+
+        <p>The network topology looks like this:</p>
+
+        <pre><code>Internet → web (80) → api (8000) → postgres (5432)
+              [frontend-net]   [backend-net]
+</code></pre>
+
+        <p>Key security benefit: The database is unreachable from the internet and even from the web container. Only the API can talk to it because only the API shares the <code>backend-net</code> network.</p>
+
+        <h2>Connecting Containers to Networks After Creation</h2>
+
+        <p>You can add or remove containers from networks without recreating them:</p>
+
+        <pre><code># Connect a running container to a network
+docker network connect backend-net some_other_container
+
+# Disconnect a container from a network
+docker network disconnect frontend-net some_other_container
+
+# A container can be on multiple networks:
+docker network connect backend-net web
+# Now "web" can reach containers on both networks</code></pre>
+
+        <h2>Port Mapping Strategies</h2>
+
+        <p>Understanding <code>-p</code> (publish) flag options gives you fine-grained control:</p>
+
+        <pre><code># Map host port 8080 to container port 80
+docker run -d -p 8080:80 nginx
+# Access at: http://localhost:8080
+
+# Bind to a specific host interface (safer — not exposed on all interfaces)
+docker run -d -p 127.0.0.1:8080:80 nginx
+# Access at: http://localhost:8080 (NOT accessible from other machines)
+
+# Publish all ports defined in the Dockerfile (EXPOSE)
+docker run -d -P myapp
+
+# Map to a random available port
+docker run -d -p 80 nginx
+docker port web  # Shows which random port was assigned</code></pre>
+
+        <h2>Docker Compose Networking</h2>
+
+        <p>Docker Compose automatically creates a network for your stack. All services on the same Compose file can reach each other by service name:</p>
+
+        <pre><code># docker-compose.yml
+services:
+  web:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+
+  api:
+    image: python:3.12-slim
+    ports:
+      - "127.0.0.1:8000:8000"  # Localhost only
+    depends_on:
+      - db
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: myapp
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    # No ports exposed — only reachable by other services
+
+volumes:
+  db-data:</code></pre>
+
+        <p>Run it all:</p>
+
+        <pre><code>docker compose up -d
+
+# API can reach "db" by service name
+# Web can reach "api" by service name
+# Outside world can only reach "web" on port 80 and "api" on port 8000 (localhost)</code></pre>
+
+        <h2>Network Inspection and Debugging</h2>
+
+        <p>Essential commands for troubleshooting:</p>
+
+        <pre><code># Inspect a network's configuration
+docker network inspect myapp-net
+
+# Get a container's IP address
+docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' web
+
+# Check DNS resolution from inside a container
+docker exec web nslookup db
+
+# Test connectivity
+docker exec web curl -s http://db:5432 || echo "Cannot connect to db"</code></pre>
+
+        <h2>Best Practices Summary</h2>
+
+        <ul>
+            <li><strong>Always use custom bridge networks</strong> instead of the default bridge — you get DNS resolution for free</li>
+            <li><strong>Separate frontend and backend</strong> with different networks for security isolation</li>
+            <li><strong>Don't expose database ports</strong> to the host — only API services should reach them</li>
+            <li><strong>Bind to 127.0.0.1</strong> when you only need local access (<code>-p 127.0.0.1:8000:8000</code>)</li>
+            <li><strong>Use service names as DNS</strong> in Compose — they're stable across restarts</li>
+            <li><strong>Avoid host networking in production</strong> unless you need raw performance — it removes isolation</li>
+        </ul>
+
+        <p>Docker networking is simpler than it looks: create a network, put containers on it, and they can talk by name. Everything else — port mapping, multi-network setups, security isolation — builds on that foundation.</p>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Hugo's Dev Notes. Built with Cloudflare Workers &amp; Tunnel.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Theme toggle
+        const toggle = document.getElementById('themeToggle');
+        const saved = localStorage.getItem('theme');
+        if (saved === 'light') document.body.classList.add('light-theme');
+        toggle?.addEventListener('click', () => {
+            document.body.classList.toggle('light-theme');
+            localStorage.setItem('theme', document.body.classList.contains('light-theme') ? 'light' : 'dark');
+        });
+        // Progress bar
+        window.addEventListener('scroll', () => {
+            const bar = document.getElementById('progressBar');
+            if (bar) {
+                const pct = window.scrollY / (document.body.scrollHeight - window.innerHeight) * 100;
+                bar.style.width = pct + '%';
+            }
+        });
+    </script>
+</body>
+</html>

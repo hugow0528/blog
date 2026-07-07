@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Pydantic: Data Validation That Just Works — Complete Guide | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn Pydantic for Python data validation. Models, field types, custom validators, serialization, and real-world patterns for FastAPI, config files, and data pipelines.">
+    <meta name="keywords" content="pydantic, python, data validation, models, serialization, FastAPI, pydantic v2, validators">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-pydantic-validation.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+
+        <article class="post-content">
+            <span class="tag python">Python</span>
+            <h1>Python Pydantic: Data Validation That Just Works — Complete Guide</h1>
+            <time>July 7, 2026 · 10 min read</time>
+
+            <p>Every Python application that accepts data from outside — user input, API responses, config files, database rows — needs validation. Without it, a single wrong data type can crash your entire application. Pydantic makes validation declarative, type-driven, and incredibly fast. It's the backbone of FastAPI and one of the most popular Python packages with over 200 million monthly downloads.</p>
+
+            <p>In this guide, you'll learn everything from basic models to advanced custom validators, nested schemas, serialization, and real-world patterns you'll use in production.</p>
+
+            <h2>What is Pydantic?</h2>
+
+            <p>Pydantic is a data validation library for Python. You define a <strong>model</strong> — essentially a class with type annotations — and Pydantic automatically validates any data you pass into it. If the data is wrong, you get a clear error message. If it's correct, you get a fully typed, validated object.</p>
+
+            <p>Here's the core idea in 3 lines:</p>
+
+            <pre><code>from pydantic import BaseModel
+
+class User(BaseModel):
+    name: str
+    age: int
+
+user = User(name="Hugo", age=28)
+print(user.name)  # Hugo
+print(user.age)   # 28</code></pre>
+
+            <p>Now try passing invalid data:</p>
+
+            <pre><code>User(name="Hugo", age="not a number")
+# pydantic.ValidationError: 1 validation error for User
+# age
+#   Input should be a valid integer, unable to parse string as an integer [type=int_parsing]</code></pre>
+
+            <p>That's it. No custom error checking code, no try/except blocks — Pydantic handles it automatically.</p>
+
+            <h2>Why Pydantic Over Manual Validation?</h2>
+
+            <p>Without Pydantic, your validation code looks like this:</p>
+
+            <pre><code>def validate_user(data):
+    if "name" not in data:
+        raise ValueError("name is required")
+    if not isinstance(data["name"], str):
+        raise ValueError("name must be a string")
+    if "age" not in data:
+        raise ValueError("age is required")
+    if not isinstance(data["age"], int):
+        raise ValueError("age must be an integer")
+    if data["age"] < 0:
+        raise ValueError("age must be positive")
+    return data
+
+data = validate_user({"name": "Hugo", "age": 28})</code></pre>
+
+            <p>With Pydantic, that entire function collapses into a model definition. The model is self-documenting, reusable, and integrates with IDEs, type checkers, and OpenAPI generators.</p>
+
+            <h2>Installation</h2>
+
+            <pre><code>pip install pydantic</code></pre>
+
+            <p>Pydantic v2 is the current version (released 2023). It's significantly faster than v1 and uses a different internal engine (Rust-based). Most examples online still show v1 syntax — make sure you're reading v2 documentation.</p>
+
+            <h2>Basic Model Types</h2>
+
+            <p>Pydantic understands all standard Python types plus many extras from the <code>typing</code> module:</p>
+
+            <pre><code>from pydantic import BaseModel, EmailStr
+from typing import Optional, List
+from datetime import datetime
+from decimal import Decimal
+
+class Product(BaseModel):
+    # Basic types
+    name: str
+    price: Decimal          # Use Decimal for money, never float!
+    in_stock: bool = True   # Default value
+
+    # Optional fields
+    description: Optional[str] = None
+    created_at: datetime = datetime.now()
+
+    # Collections
+    tags: List[str] = []
+    ratings: list[float] = []  # Python 3.9+ syntax works too
+
+    # Email validation (requires email-validator package)
+    contact_email: EmailStr
+
+# Valid product
+product = Product(
+    name="Mechanical Keyboard",
+    price=Decimal("89.99"),
+    contact_email="hugo@example.com",
+    tags=["peripherals", "mechanical"],
+    ratings=[4.5, 4.0, 5.0]
+)
+
+print(product.price)        # 89.99
+print(product.tags)         # ['peripherals', 'mechanical']
+print(product.in_stock)     # True (default)</code></pre>
+
+            <h2>Field Configuration with Field()</h2>
+
+            <p>The <code>Field()</code> function lets you add constraints, defaults, and metadata to individual fields:</p>
+
+            <pre><code>from pydantic import BaseModel, Field
+from typing import List
+
+class UserProfile(BaseModel):
+    username: str = Field(
+        min_length=3,
+        max_length=30,
+        description="Unique username for login",
+        examples=["hugo_w", "dev_guru"]
+    )
+    age: int = Field(ge=0, le=150)  # ge=greater or equal, le=less or equal
+    bio: str = Field(default="", max_length=500)
+    interests: List[str] = Field(default_factory=list, max_length=10)
+
+# Valid
+profile = UserProfile(username="hugo_w", age=28, bio="Developer")
+
+# Too short username
+UserProfile(username="hi", age=28)
+# ValidationError: 1 validation error for UserProfile
+# username
+#   String should have at least 3 characters [type=string_too_short]
+
+# Age out of range
+UserProfile(username="hugo_w", age=200)
+# ValidationError: 1 validation error for UserProfile
+# age
+#   Input should be less than or equal to 150 [type=less_than_equal]</code></pre>
+
+            <blockquote>
+                <p><strong>Tip:</strong> Always use <code>default_factory=list</code> instead of <code>default=[]</code> for mutable defaults. Using <code>default=[]</code> creates a single shared list instance across all model objects — a common Python gotcha.</p>
+            </blockquote>
+
+            <h2>Custom Validators</h2>
+
+            <p>When built-in constraints aren't enough, use the <code>@field_validator</code> decorator to write custom validation logic:</p>
+
+            <pre><code>from pydantic import BaseModel, Field, field_validator
+import re
+
+class UserRegistration(BaseModel):
+    username: str
+    email: str
+    password: str
+
+    @field_validator("username")
+    @classmethod
+    def username_alphanumeric(cls, v):
+        if not re.match(r"^[a-zA-Z0-9_]+$", v):
+            raise ValueError("Username must be alphanumeric or underscores")
+        return v
+
+    @field_validator("email")
+    @classmethod
+    def email_lowercase(cls, v):
+        return v.lower().strip()
+
+    @field_validator("password")
+    @classmethod
+    def password_strength(cls, v):
+        if len(v) < 8:
+            raise ValueError("Password must be at least 8 characters")
+        if not any(c.isupper() for c in v):
+            raise ValueError("Password must contain an uppercase letter")
+        if not any(c.isdigit() for c in v):
+            raise ValueError("Password must contain a digit")
+        return v
+
+# Valid registration
+user = UserRegistration(
+    username="hugo_dev",
+    email="Hugo@Example.COM",  # Gets normalized to lowercase
+    password="Secure1Pass"
+)
+print(user.email)  # hugo@example.com
+
+# Invalid password
+UserRegistration(username="hugo", email="a@b.com", password="weak")
+# ValidationError: Password must be at least 8 characters</code></pre>
+
+            <p>Validators can also access other field values using <code>@model_validator</code>:</p>
+
+            <pre><code>from pydantic import BaseModel, model_validator
+
+class DateRange(BaseModel):
+    start_date: str
+    end_date: str
+
+    @model_validator(mode="after")
+    def check_dates(self):
+        if self.start_date > self.end_date:
+            raise ValueError("start_date must be before end_date")
+        return self
+
+DateRange(start_date="2026-01-01", end_date="2026-12-31")  # OK
+DateRange(start_date="2026-12-31", end_date="2026-01-01")  # ValidationError</code></pre>
+
+            <h2>Nested Models</h2>
+
+            <p>Models can contain other models, creating complex nested structures:</p>
+
+            <pre><code>from pydantic import BaseModel, Field
+from typing import List, Optional
+from datetime import datetime
+
+class Address(BaseModel):
+    street: str
+    city: str
+    country: str = "US"
+    zip_code: str = Field(pattern=r"^\d{5}(-\d{4})?$")
+
+class Company(BaseModel):
+    name: str
+    founded: int = Field(ge=1800, le=datetime.now().year)
+
+class Employee(BaseModel):
+    name: str
+    email: str
+    address: Address
+    company: Company
+    skills: List[str] = []
+    manager: Optional["Employee"] = None
+
+# Create nested data
+employee = Employee(
+    name="Hugo Wong",
+    email="hugo@example.com",
+    address=Address(
+        street="123 Dev Lane",
+        city="San Francisco",
+        zip_code="94102"
+    ),
+    company=Company(name="TechCorp", founded=2020),
+    skills=["Python", "Docker", "Cloudflare"]
+)
+
+print(employee.company.name)    # TechCorp
+print(employee.address.city)    # San Francisco</code></pre>
+
+            <h2>Serialization: dict(), JSON, and More</h2>
+
+            <p>Pydantic models can be converted to dictionaries and JSON effortlessly:</p>
+
+            <pre><code>from pydantic import BaseModel
+from datetime import datetime
+
+class Post(BaseModel):
+    title: str
+    body: str
+    published_at: datetime = datetime.now()
+    draft: bool = False
+
+post = Post(title="Hello World", body="My first post")
+
+# To dictionary
+print(post.model_dump())
+# {'title': 'Hello World', 'body': 'My first post',
+#  'published_at': datetime(2026, 7, 7, ...), 'draft': False}
+
+# To JSON string
+print(post.model_dump_json())
+# {"title":"Hello World","body":"My first post",
+#  "published_at":"2026-07-07T12:00:00","draft":false}
+
+# Exclude fields
+print(post.model_dump(exclude={"body"}))
+# {'title': 'Hello World', 'published_at': ..., 'draft': False}
+
+# Include only certain fields
+print(post.model_dump(include={"title", "published_at"}))
+# {'title': 'Hello World', 'published_at': ...}</code></pre>
+
+            <h2>Config Classes and Settings</h2>
+
+            <p>One of Pydantic's killer features is <code>BaseSettings</code> for reading configuration from environment variables:</p>
+
+            <pre><code>from pydantic import BaseModel, Field
+from pydantic_settings import BaseSettings
+
+# pip install pydantic-settings
+
+class AppSettings(BaseSettings):
+    app_name: str = "MyApp"
+    debug: bool = False
+    database_url: str
+    api_key: str = Field(exclude=True)  # Don't include in dumps
+
+    # Read from .env file automatically
+    model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
+
+# Creates settings from environment variables
+settings = AppSettings()
+print(settings.app_name)    # MyApp (or value from env)
+print(settings.database_url) # From DATABASE_URL env var
+
+# .env file contents:
+# DATABASE_URL=postgresql://user:pass@localhost:5432/mydb
+# API_KEY=secret-key-123
+# DEBUG=true</code></pre>
+
+            <h2>Real-World Pattern: API Request/Response Models</h2>
+
+            <p>Here's how Pydantic models are used in production APIs:</p>
+
+            <pre><code>from pydantic import BaseModel, Field, field_validator
+from typing import List, Optional
+from enum import Enum
+
+class SortOrder(str, Enum):
+    ASC = "asc"
+    DESC = "desc"
+
+# Request model
+class ListProductsRequest(BaseModel):
+    page: int = Field(default=1, ge=1)
+    per_page: int = Field(default=20, ge=1, le=100)
+    search: Optional[str] = None
+    min_price: Optional[float] = Field(default=None, ge=0)
+    sort_by: str = "name"
+    sort_order: SortOrder = SortOrder.ASC
+
+# Response model
+class ProductResponse(BaseModel):
+    id: int
+    name: str
+    price: float
+    in_stock: bool
+
+class ProductsResponse(BaseModel):
+    products: List[ProductResponse]
+    total: int
+    page: int
+    per_page: int
+
+# Validate incoming request data
+request_data = {"search": "keyboard", "per_page": 50, "sort_order": "desc"}
+request = ListProductsRequest(**request_data)
+print(request.search)      # keyboard
+print(request.per_page)    # 50
+print(request.sort_order)  # SortOrder.DESC
+
+# Build response
+response = ProductsResponse(
+    products=[
+        ProductResponse(id=1, name="Mech Keyboard", price=89.99, in_stock=True)
+    ],
+    total=1,
+    page=1,
+    per_page=50
+)
+print(response.model_dump_json(indent=2))</code></pre>
+
+            <h2>Dataclass Compatibility</h2>
+
+            <p>Pydantic works with Python's built-in <code>dataclass</code> decorator:</p>
+
+            <pre><code>from pydantic.dataclasses import dataclass
+from pydantic import Field, ValidationError
+
+@dataclass
+class Product:
+    name: str
+    price: float = Field(ge=0)
+    category: str = "general"
+
+# Auto-validated!
+product = Product(name="Keyboard", price=89.99)
+
+# Invalid data raises error
+try:
+    Product(name="Keyboard", price=-10)
+except ValidationError as e:
+    print(e)
+    # 1 validation error for Product
+    # price
+    #   Input should be greater than or equal to 0</code></pre>
+
+            <h2>Common Pitfalls</h2>
+
+            <ul>
+                <li><strong>Floats for money:</strong> Always use <code>Decimal</code>, never <code>float</code>. Floating point arithmetic causes precision errors: <code>0.1 + 0.2 != 0.3</code>.</li>
+                <li><strong>Mutable defaults:</strong> Use <code>default_factory=list</code> or <code>default_factory=dict</code> instead of <code>default=[]</code> or <code>default={}</code>.</li>
+                <li><strong>Coercion:</strong> Pydantic v2 coerces types by default. <code>age: int</code> accepts the string <code>"28"</code> and converts it. Use <code>StrictInt</code> if you want to reject type mismatches.</li>
+                <li><strong>Optional vs default:</strong> <code>Optional[str] = None</code> means the field can be omitted or set to None. <code>str = "default"</code> means the field is required but has a fallback.</li>
+                <li><strong>model_dump vs model_dump_json:</strong> Use <code>model_dump()</code> for Python dictionaries and <code>model_dump_json()</code> for JSON strings. Don't use <code>json.dumps(model.dict())</code> — it will fail on datetime objects.</li>
+            </ul>
+
+            <h2>Summary</h2>
+
+            <table>
+                <tr>
+                    <th>Feature</th>
+                    <th>How</th>
+                </tr>
+                <tr>
+                    <td>Basic validation</td>
+                    <td>Type annotations on BaseModel fields</td>
+                </tr>
+                <tr>
+                    <td>Constraints</td>
+                    <td><code>Field(min_length=..., ge=...)</code></td>
+                </tr>
+                <tr>
+                    <td>Custom logic</td>
+                    <td><code>@field_validator</code> and <code>@model_validator</code></td>
+                </tr>
+                <tr>
+                    <td>Nested data</td>
+                    <td>Other models as field types</td>
+                </tr>
+                <tr>
+                    <td>Serialization</td>
+                    <td><code>model_dump()</code> and <code>model_dump_json()</code></td>
+                </tr>
+                <tr>
+                    <td>Config from env</td>
+                    <td><code>BaseSettings</code> from pydantic-settings</td>
+                </tr>
+            </table>
+
+            <p>Pydantic transforms data validation from a chore into a declarative, type-driven process. Once you start using it, you'll wonder how you ever wrote Python without it. It's the validation layer behind FastAPI, the settings manager for countless projects, and a solid foundation for any data pipeline.</p>
+
+            <p>Next up: want to see how Pydantic integrates with FastAPI for automatic API validation? Check out the <a href="posts/python-fastapi-tutorial.html">FastAPI Tutorial</a> for a complete working API.</p>
+
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo Wong · Built with curiosity and Coffee</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528">GitHub</a>
+                <a href="https://hugow.dev">hugow.dev</a>
+                <a href="/sitemap.xml">Sitemap</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-mode');
+            themeToggle.textContent = '☀';
+        }
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            themeToggle.textContent = isLight ? '☀' : '◐';
+        });
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + "%";
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON Web Tokens (JWT) Authentication in Python: Secure Login Without Sessions</title>
+    <meta name="description" content="Implement JWT authentication in Python with Flask and FastAPI. Learn token structure, signing, verification, refresh tokens, and security best practices.">
+    <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/jwt-authentication-python.html">
+    <meta property="og:title" content="JSON Web Tokens (JWT) Authentication in Python">
+    <meta property="og:description" content="Implement JWT authentication in Python. Learn token structure, signing, verification, and security patterns.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.hugow.dev/posts/jwt-authentication-python.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn active">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="post-content">
+        <span class="tag python">Python</span><span class="tag security">Security</span><span class="tag web">Web Dev</span>
+
+        <h1>JSON Web Tokens (JWT) Authentication in Python: Secure Login Without Sessions</h1>
+
+        <div class="post-meta">
+            <span class="post-date">July 6, 2026</span>
+            <span class="read-time">10 min read</span>
+        </div>
+
+        <p>Traditional web authentication uses server-side sessions — the server stores session data and sends a cookie to the browser. That works great for monolithic apps, but breaks down when you need to share authentication across multiple services, mobile apps, and microservices.</p>
+
+        <p>JSON Web Tokens (JWTs) solve this by putting authentication data directly in a cryptographically signed token. No server-side session storage needed. This guide walks you through JWT from scratch — how they work, how to implement them in Python with Flask and FastAPI, and the security pitfalls to avoid.</p>
+
+        <h2>How JWTs Work</h2>
+
+        <p>A JWT is just a string made of three parts separated by dots:</p>
+
+        <pre><code>eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIn0.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+ ^--HEADER---^  ^-------PAYLOAD-------^  ^-------SIGNATURE-------^</code></pre>
+
+        <p>Each part is <strong>Base64Url-encoded JSON</strong>:</p>
+
+        <h3>Header — Algorithm and Token Type</h3>
+
+        <pre><code>{
+  "alg": "HS256",   # Signing algorithm
+  "typ": "JWT"      # Token type
+}</code></pre>
+
+        <h3>Payload — Claims (Your Data)</h3>
+
+        <pre><code>{
+  "sub": "1234567890",   # Subject (user ID)
+  "name": "John Doe",    # Custom claim
+  "iat": 1516239022,     # Issued at timestamp
+  "exp": 1516242622      # Expiration timestamp
+}</code></pre>
+
+        <p><strong>Important:</strong> JWT payloads are <em>encoded, not encrypted</em>. Anyone can decode and read the payload. Never put passwords, credit card numbers, or PII in a JWT.</p>
+
+        <h3>Signature — Tamper Detection</h3>
+
+        <pre><code>HMACSHA256(
+  base64UrlEncode(header) + "." + base64UrlEncode(payload),
+  your-256-bit-secret
+)</code></pre>
+
+        <p>The signature ensures that nobody can modify the token without detection. If the signature doesn't match, the token is rejected.</p>
+
+        <h2>Decode a JWT in Python (No Framework)</h2>
+
+        <p>Let's start with raw Python to understand what's happening under the hood:</p>
+
+        <pre><code>import base64
+import json
+
+def decode_jwt_part(part: str) -> dict:
+    """Decode a single JWT part (header or payload)."""
+    # Add padding if needed (JWT uses unpadded Base64Url)
+    padded = part + "=" * (4 - len(part) % 4)
+    # Replace URL-safe characters
+    padded = padded.replace("-", "+").replace("_", "/")
+    decoded = base64.b64decode(padded)
+    return json.loads(decoded)
+
+# Example token
+token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.POstGetfAytaZS82wHcjoTyoqhMyxXiWdR7Nn7A29DNSl0EiXLdwJ6xC6AfgZWF1bOsS_TuYI3OG85AmiExREkrS6tDfTQ2B3WXlrr-wp5AokiRbz3_oB4OxG-W9llc2QcQSm8oQh3BcZ4KSC-dzFy1ZQ0Z7a0oUpEQ"
+
+parts = token.split(".")
+header = decode_jwt_part(parts[0])
+payload = decode_jwt_part(parts[1])
+
+print("Header:", header)
+# {'alg': 'HS256', 'typ': 'JWT'}
+
+print("Payload:", payload)
+# {'sub': '1234567890', 'name': 'John Doe', 'admin': True, 'iat': 1516239022}</code></pre>
+
+        <p>This is just <em>reading</em> the token. For real applications, use a proper library that verifies the signature.</p>
+
+        <h2>PyJWT Library: Create and Verify Tokens</h2>
+
+        <p><a href="https://pyjwt.readthedocs.io/" target="_blank">PyJWT</a> is the standard library for JWTs in Python:</p>
+
+        <pre><code>pip install PyJWT</code></pre>
+
+        <pre><code>import jwt
+import datetime
+
+SECRET_KEY = "your-super-secret-key-change-this-in-production"
+ALGORITHM = "HS256"
+
+def create_access_token(user_id: int, username: str, role: str = "user") -> str:
+    """Create a JWT access token with a 15-minute expiry."""
+    payload = {
+        "sub": str(user_id),           # User ID
+        "username": username,
+        "role": role,
+        "iat": datetime.datetime.utcnow(),       # Issued at
+        "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=15),  # Expires in 15 min
+    }
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+
+def verify_token(token: str) -> dict:
+    """Verify a JWT and return the decoded payload."""
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload
+    except jwt.ExpiredSignatureError:
+        print("Token has expired")
+        return None
+    except jwt.InvalidTokenError:
+        print("Invalid token")
+        return None
+
+# Usage
+token = create_access_token(user_id=42, username="alice", role="admin")
+print(token)
+
+decoded = verify_token(token)
+print(decoded)
+# {'sub': '42', 'username': 'alice', 'role': 'admin', 'iat': ..., 'exp': ...}</code></pre>
+
+        <h2>JWT Authentication with Flask</h2>
+
+        <p>Let's build a complete authentication flow with Flask:</p>
+
+        <pre><code>pip install flask PyJWT werkzeug</code></pre>
+
+        <pre><code>from flask import Flask, request, jsonify
+from werkzeug.security import generate_password_hash, check_password_hash
+from functools import wraps
+import jwt
+import datetime
+
+app = Flask(__name__)
+app.config["SECRET_KEY"] = "change-this-to-a-real-secret-in-production"
+
+# Fake user database
+USERS = {
+    "alice": {
+        "password": generate_password_hash("securepassword"),
+        "role": "admin"
+    }
+}
+
+def create_token(username: str) -> str:
+    """Create a JWT for an authenticated user."""
+    payload = {
+        "sub": username,
+        "iat": datetime.datetime.utcnow(),
+        "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=1),
+    }
+    return jwt.encode(payload, app.config["SECRET_KEY"], algorithm="HS256")
+
+def token_required(f):
+    """Decorator to protect routes with JWT authentication."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = None
+
+        # Get token from Authorization header
+        auth_header = request.headers.get("Authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            token = auth_header.split(" ")[1]
+
+        if not token:
+            return jsonify({"error": "Token is missing"}), 401
+
+        try:
+            data = jwt.decode(token, app.config["SECRET_KEY"], algorithms=["HS256"])
+            current_user = data["sub"]
+        except jwt.ExpiredSignatureError:
+            return jsonify({"error": "Token has expired"}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({"error": "Invalid token"}), 401
+
+        return f(current_user, *args, **kwargs)
+    return decorated
+
+@app.route("/login", methods=["POST"])
+def login():
+    data = request.get_json()
+    username = data.get("username")
+    password = data.get("password")
+
+    user = USERS.get(username)
+    if not user or not check_password_hash(user["password"], password):
+        return jsonify({"error": "Invalid credentials"}), 401
+
+    token = create_token(username)
+    return jsonify({"token": token, "user": username})
+
+@app.route("/protected")
+@token_required
+def protected(current_user):
+    return jsonify({"message": f"Hello {current_user}! This is a protected route."})
+
+@app.route("/admin")
+@token_required
+def admin(current_user):
+    if USERS[current_user]["role"] != "admin":
+        return jsonify({"error": "Admin access required"}), 403
+    return jsonify({"message": f"Welcome, admin {current_user}!"})
+
+if __name__ == "__main__":
+    app.run(debug=True)</code></pre>
+
+        <p>Test it with <code>curl</code>:</p>
+
+        <pre><code># Login to get a token
+curl -X POST http://localhost:5000/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "alice", "password": "securepassword"}'
+
+# Response: {"token": "eyJhbG...", "user": "alice"}
+
+# Access a protected route with the token
+curl http://localhost:5000/protected \
+  -H "Authorization: Bearer eyJhbG..."
+
+# Response: {"message": "Hello alice! This is a protected route."}</code></pre>
+
+        <h2>JWT Authentication with FastAPI</h2>
+
+        <p>FastAPI has built-in support for JWTs via <code>fastapi.security</code>:</p>
+
+        <pre><code>pip install fastapi uvicorn PyJWT passlib[bcrypt]</code></pre>
+
+        <pre><code>from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from jose import jwt, JWTError
+from passlib.context import CryptContext
+from datetime import datetime, timedelta
+from pydantic import BaseModel
+
+app = FastAPI()
+
+# Configuration
+SECRET_KEY = "your-secret-key"
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+# Password hashing
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+# Fake database
+class User(BaseModel):
+    username: str
+    hashed_password: str
+    role: str = "user"
+
+fake_users_db = {
+    "alice": {
+        "username": "alice",
+        "hashed_password": pwd_context.hash("securepassword"),
+        "role": "admin",
+    }
+}
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return pwd_context.verify(plain_password, hashed_password)
+
+def get_user(username: str) -> dict | None:
+    user = fake_users_db.get(username)
+    return user
+
+def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
+    to_encode = data.copy()
+    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=15))
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+async def get_current_user(token: str = Depends(oauth2_scheme)) -> dict:
+    """Extract and verify the current user from a JWT."""
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        if username is None:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+
+    user = get_user(username)
+    if user is None:
+        raise credentials_exception
+    return user
+
+@app.post("/token")
+async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    user = get_user(form_data.username)
+    if not user or not verify_password(form_data.password, user["hashed_password"]):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+        )
+
+    access_token = create_access_token(
+        data={"sub": user["username"]},
+        expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
+
+@app.get("/users/me")
+async def read_users_me(current_user: dict = Depends(get_current_user)):
+    return current_user
+
+@app.get("/admin/dashboard")
+async def admin_dashboard(current_user: dict = Depends(get_current_user)):
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized")
+    return {"message": f"Admin dashboard for {current_user['username']}"}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)</code></pre>
+
+        <p>FastAPI automatically generates Swagger UI at <code>http://localhost:8000/docs</code> with login support built in.</p>
+
+        <h2>Refresh Tokens: The Complete Flow</h2>
+
+        <p>Access tokens expire quickly (15-30 minutes). Refresh tokens let users get new access tokens without re-entering their password:</p>
+
+        <pre><code>import secrets
+
+# Generate a random refresh token
+REFRESH_TOKEN = secrets.token_urlsafe(32)
+REFRESH_TOKEN_EXPIRY = timedelta(days=7)
+
+# Store refresh tokens (in production: use Redis or a database)
+ACTIVE_REFRESH_TOKENS = {}
+
+def create_refresh_token() -> str:
+    """Create a long-lived refresh token."""
+    token = secrets.token_urlsafe(32)
+    ACTIVE_REFRESH_TOKENS[token] = {
+        "created": datetime.utcnow(),
+        "expires": datetime.utcnow() + REFRESH_TOKEN_EXPIRY,
+    }
+    return token
+
+def rotate_tokens(old_refresh_token: str) -> tuple[str, str]:
+    """Swap a refresh token for new refresh + access tokens."""
+    if old_refresh_token not in ACTIVE_REFRESH_TOKENS:
+        raise HTTPException(status_code=401, detail="Invalid refresh token")
+
+    token_info = ACTIVE_REFRESH_TOKENS.pop(old_refresh_token)
+    if token_info["expires"] < datetime.utcnow():
+        raise HTTPException(status_code=401, detail="Refresh token expired")
+
+    new_refresh = create_refresh_token()
+    new_access = create_access_token(data={"sub": "alice"})
+    return new_access, new_refresh</code></pre>
+
+        <h2>Security Best Practices for JWTs</h2>
+
+        <p>JWTs are powerful but come with real risks. Follow these rules:</p>
+
+        <h3>1. Use Strong Secrets</h3>
+
+        <pre><code>import secrets
+
+# ✅ Generate a strong secret
+SECRET_KEY = secrets.token_hex(32)
+# Example: 'a1b2c3d4e5f6...'
+
+# ❌ Never do this in production
+SECRET_KEY = "mysecret"  # Too weak!
+SECRET_KEY = "changeme"  # Default secrets get guessed</code></pre>
+
+        <h3>2. Always Set Expiration</h3>
+
+        <pre><code># ✅ Short-lived access tokens
+"exp": datetime.utcnow() + timedelta(minutes=15)
+
+# ❌ Tokens that never expire
+"exp": datetime.utcnow() + timedelta(days=365)  # Too long!
+# Missing "exp" claim entirely is even worse</code></pre>
+
+        <h3>3. Use HTTPS Everywhere</h3>
+
+        <p>JWTs travel in headers. Without HTTPS, anyone on the network can intercept them. Always use HTTPS and set the <code>Secure</code> flag on cookies.</p>
+
+        <h3>4. Choose the Right Algorithm</h3>
+
+        <pre><code># ✅ Use RS256 for distributed systems (asymmetric)
+jwt.encode(payload, private_key, algorithm="RS256")
+jwt.decode(token, public_key, algorithms=["RS256"])
+
+# ✅ Use HS256 for simple apps (symmetric)
+jwt.encode(payload, secret_key, algorithm="HS256")
+jwt.decode(token, secret_key, algorithms=["HS256"])
+
+# ❌ NEVER use "none" algorithm — it skips signature verification!
+# Some old libraries accepted this — always whitelist allowed algorithms</code></pre>
+
+        <h3>5. Store Tokens Securely</h3>
+
+        <pre><code># ✅ HttpOnly cookies (not accessible by JavaScript — prevents XSS theft)
+response.set_cookie(
+    "access_token", token,
+    httponly=True,    # JavaScript can't read this
+    secure=True,      # HTTPS only
+    samesite="Lax",   # CSRF protection
+    max_age=900       # 15 minutes
+)
+
+# ❌ localStorage (vulnerable to XSS attacks)
+# localStorage.setItem("token", token)
+
+# ❌ sessionStorage (same XSS risk, slightly better than localStorage)</code></pre>
+
+        <h3>6. Implement Token Blacklisting for Logout</h3>
+
+        <p>JWTs can't be revoked server-side because they're self-contained. Use a blacklist (or <code>blocklist</code> as it's called in some libraries):</p>
+
+        <pre><code>import redis
+
+# Use Redis for distributed token blacklisting
+redis_client = redis.Redis(host="localhost", port=6379)
+
+def blacklist_token(token: str) -> None:
+    """Add a token to the blocklist until it expires."""
+    payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+    exp = payload["exp"]
+    ttl = exp - int(datetime.utcnow().timestamp())
+    redis_client.setex(f"blacklist:{token}", ttl, "blacklisted")
+
+def is_token_blacklisted(token: str) -> bool:
+    return redis_client.exists(f"blacklist:{token}")</code></pre>
+
+        <h2>JWT vs. Sessions: When to Use Each</h2>
+
+        <p>JWTs aren't always the right choice. Here's a comparison:</p>
+
+        <pre><code>Feature          | JWT             | Server Sessions
+-----------------|-----------------|----------------
+Storage          | Client-side     | Server-side
+Scalability      | ✅ No server storage  | ❌ Needs shared session store
+Revocation       | ❌ Hard (need blocklist)  | ✅ Easy (delete session)
+Size             | ❌ Grows with data      | ✅ Fixed cookie size
+Cross-domain     | ✅ Great              | ❌ Complex cookie sharing
+Mobile/SPA       | ✅ Native support       | ⚠️ Need custom handling
+Complexity       | ⚠️ More setup          | ✅ Simpler</code></pre>
+
+        <p><strong>Choose JWTs when:</strong> building APIs, mobile apps, SPAs, or microservices.</p>
+        <p><strong>Choose sessions when:</strong> building traditional server-rendered web apps with straightforward login flows.</p>
+
+        <h2>Summary</h2>
+
+        <p>JWTs are the standard for token-based authentication in modern applications. Key takeaways:</p>
+
+        <ul>
+            <li>A JWT has three parts: header, payload, signature — all Base64Url-encoded</li>
+            <li>Use <code>PyJWT</code> (or <code>python-jose</code> for FastAPI) to create and verify tokens</li>
+            <li>Set short expiration times (15-30 min) and use refresh tokens for longer sessions</li>
+            <li>Store tokens in <code>HttpOnly</code> cookies, not localStorage</li>
+            <li>Always use HTTPS, strong secrets, and whitelist algorithms</li>
+            <li>Use a blocklist (Redis) if you need to revoke tokens</li>
+        </ul>
+
+        <p>JWT authentication gives you a scalable, stateless way to secure APIs and applications. Combined with proper security practices, it's one of the most reliable patterns in modern web development.</p>
+
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Hugo's Dev Notes. Built with ☕ and type hints.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Reading progress bar
+        window.onscroll = function() {
+            let winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            let height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            let scrolled = (winScroll / height) * 100;
+            let bar = document.getElementById("progressBar");
+            if (bar) bar.style.width = scrolled + "%";
+        };
+
+        // Theme toggle
+        let toggle = document.getElementById("themeToggle");
+        if (toggle) {
+            toggle.addEventListener("click", () => {
+                document.body.classList.toggle("light-theme");
+                let isLight = document.body.classList.contains("light-theme");
+                localStorage.setItem("theme", isLight ? "light" : "dark");
+            });
+            if (localStorage.getItem("theme") === "light") {
+                document.body.classList.add("light-theme");
+            }
+        }
+    </script>
+</body>
+</html>

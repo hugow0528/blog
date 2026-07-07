@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Actions Self-Hosted Runners: Faster CI/CD with Your Own Machines | Hugo's Dev Notes</title>
+    <meta name="description" content="Set up GitHub Actions self-hosted runners for faster, cheaper CI/CD. Docker-based runners, ARM architecture, GPU access, and enterprise security patterns.">
+    <meta name="keywords" content="github actions, self-hosted runner, CI/CD, docker, github actions runner">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn active">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+        
+        <article class="post-content">
+            <span class="tag devops">DevOps</span>
+            <h1>GitHub Actions Self-Hosted Runners: Run CI/CD on Your Own Machines</h1>
+            <time>July 5, 2026 · 10 min read</time>
+
+            <p>GitHub Actions gives you 2,000 free minutes per month for public repos and 500 for private. That's great for starting, but teams quickly outgrow it. Self-hosted runners solve this — you run GitHub Actions on your own hardware, unlimited minutes, full control over the environment.</p>
+
+            <p>This guide walks you through setting up self-hosted runners using Docker, configuring labels for targeted workflows, and hardening them for security.</p>
+
+            <h2>Why Use Self-Hosted Runners?</h2>
+
+            <ul>
+                <li><strong>Unlimited minutes:</strong> No cost per build — pay only for your server</li>
+                <li><strong>Custom hardware:</strong> GPUs for ML, ARM for cross-compilation, large memory for builds</li>
+                <li><strong>Pre-installed tools:</strong> Docker, kubectl, Terraform, proprietary SDKs — no setup steps needed</li>
+                <li><strong>Faster builds:</strong> Runs on your network, no cold starts, persistent caches</li>
+                <li><strong>Private network access:</strong> Reach internal services without exposing them to the internet</li>
+            </ul>
+
+            <h2>Quick Start: Docker-Based Runner</h2>
+
+            <p>The fastest way to get a self-hosted runner is with the official Docker image:</p>
+
+            <pre><code># Step 1: Get your registration token from GitHub
+# Go to: Repo Settings → Actions → Runners → New self-hosted runner
+# Copy the token shown (it expires in 1 hour)
+
+# Step 2: Run the container
+docker run -d \
+  --name github-runner \
+  --restart always \
+  -v runner_work:/__w \
+  -e RUNNER_TOKEN="ghs_your_token_here" \
+  -e RUNNER_ORG="" \
+  -e RUNNER_REPO="yourusername/yourrepo" \
+  -e RUNNER_NAME="my-docker-runner" \
+  -e RUNNER_RUN_WORKFLOW_HOOKS="true" \
+  ghcr.io/actions/runners:latest
+
+# Step 3: Check it's running
+docker logs -f github-runner
+# You should see: "Runner listener exited with 0. Waiting for work..."</code></pre>
+
+            <p>That's it. Your runner is now registered and waiting for jobs. Check GitHub Actions settings to see it listed under "Self-hosted runners."</p>
+
+            <h2>Docker Compose Setup for Multiple Runners</h2>
+
+            <p>In production, you'll want multiple runners with different labels. Docker Compose makes this clean:</p>
+
+            <pre><code># docker-compose.yml
+version: "3.8"
+
+services:
+  # General-purpose runner
+  runner-general:
+    image: ghcr.io/actions/runners:latest
+    container_name: runner-general
+    restart: always
+    volumes:
+      - runner-general-data:/__w
+    environment:
+      - RUNNER_TOKEN=${GITHUB_RUNNER_TOKEN}
+      - RUNNER_REPO=${GITHUB_REPO}
+      - RUNNER_NAME=runner-general
+      - RUNNER_LABELS=general,docker
+      - RUNNER_RUN_WORKFLOW_HOOKS=true
+    privileged: true  # Needed for Docker-in-Docker
+
+  # GPU runner for ML workloads
+  runner-gpu:
+    image: ghcr.io/actions/runners:latest
+    container_name: runner-gpu
+    restart: always
+    volumes:
+      - runner-gpu-data:/__w
+    environment:
+      - RUNNER_TOKEN=${GITHUB_RUNNER_TOKEN}
+      - RUNNER_REPO=${GITHUB_REPO}
+      - RUNNER_NAME=runner-gpu
+      - RUNNER_LABELS=gpu,nvidia,cuda
+      - RUNNER_RUN_WORKFLOW_HOOKS=true
+    runtime: nvidia  # Requires NVIDIA Container Toolkit
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    privileged: true
+
+  # ARM runner for cross-compilation
+  runner-arm:
+    image: ghcr.io/actions/runners:latest
+    container_name: runner-arm
+    restart: always
+    volumes:
+      - runner-arm-data:/__w
+    environment:
+      - RUNNER_TOKEN=${GITHUB_RUNNER_TOKEN}
+      - RUNNER_REPO=${GITHUB_REPO}
+      - RUNNER_NAME=runner-arm
+      - RUNNER_LABELS=arm,aarch64
+      - RUNNER_RUN_WORKFLOW_HOOKS=true
+    # Run with QEMU emulation on x86 host
+    platform: linux/arm64
+
+volumes:
+  runner-general-data:
+  runner-gpu-data:
+  runner-arm-data:</code></pre>
+
+            <pre><code># .env file (NEVER commit this to Git)
+GITHUB_RUNNER_TOKEN=ghs_your_actual_token_here
+GITHUB_REPO=yourusername/yourrepo</code></pre>
+
+            <pre><code># Start all runners
+docker compose up -d
+
+# Check status
+docker compose ps
+# Should show all 3 runners in "running" state</code></pre>
+
+            <h2>Using Labels in Your Workflows</h2>
+
+            <p>Labels let you direct specific jobs to specific runners:</p>
+
+            <pre><code># .github/workflows/test.yml
+name: Test Suite
+
+on: [push, pull_request]
+
+jobs:
+  # Runs on ANY self-hosted or GitHub runner
+  unit-tests:
+    runs-on: ubuntu-latest  # Uses GitHub-hosted
+
+  # Runs ONLY on your self-hosted runner
+  integration-tests:
+    runs-on: self-hosted  # Uses any self-hosted runner
+
+  # Runs ONLY on your GPU runner
+  train-model:
+    runs-on: [self-hosted, gpu, nvidia]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Train with GPU
+        run: |
+          nvidia-smi  # Verify GPU access
+          python train.py --device cuda
+
+  # Runs ONLY on ARM runner
+  build-arm:
+    runs-on: [self-hosted, arm]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build for ARM
+        run: |
+          docker buildx build \
+            --platform linux/arm64 \
+            -t myapp:arm64 .
+
+  # Runs on the general Docker-capable runner
+  docker-build:
+    runs-on: [self-hosted, docker]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and push
+        run: |
+          docker build -t myapp:latest .
+          docker push myapp:latest</code></pre>
+
+            <h2>Enterprise: Auto-Scaling with Kubernetes</h2>
+
+            <p>For large teams, manually managing runners doesn't scale. The GitHub Actions Runner Controller (ARC) auto-scales runners on Kubernetes based on queued workflows:</p>
+
+            <pre><code># Install ARC with Helm
+helm repo add actions-runner-controller https://actions-runner-controller.github.io/actions-runner-controller/
+helm install arc actions-runner-controller/actions-runner-controller \
+  --namespace actions-runner-system \
+  --create-namespace
+
+# Create a reusable runner deployment
+# runner-deployment.yaml
+apiVersion: actions.summerwind.dev/1.0.0-rc.1
+kind: HorizontalAutoScalingRunnerSet
+metadata:
+  name: autoscale-runners
+spec:
+  minRunners: 1
+  maxRunners: 10
+  scaleUpThreshold: 1
+  scaleDownThreshold: 1
+  scaleUpFactor: 2
+  scaleDownDelaySecondsAfterLastJob: 300
+  template:
+    spec:
+      repoUrl: https://github.com/yourusername/yourrepo
+      labels:
+        - auto-scaled
+      dockerdWithinRunnerContainer: true
+      containerMode:
+        docker:
+          memoryRequest: 4Gi
+          memoryLimit: 8Gi
+          cpuRequest: 2
+          cpuLimit: 4</code></pre>
+
+            <p>With this setup, when 5 jobs queue up simultaneously, ARC automatically spins up 4 more runners. When jobs complete, they scale back down after 5 minutes of inactivity. No manual intervention needed.</p>
+
+            <h2>Security Hardening Checklist</h2>
+
+            <p>Self-hosted runners have full access to your repository code and secrets. Secure them properly:</p>
+
+            <pre><code># 1. Use ephemeral runners — destroy after each job
+# In docker-compose, add this to each runner:
+environment:
+  - RUNNER_EPHEMERAL=true  # Auto-restarts after each job
+
+# 2. Run as non-root (Docker image default)
+# The official image already runs as 'runner' user
+
+# 3. Restrict network access
+# docker-compose.yml
+services:
+  runner:
+    networks:
+      - ci-network
+    # Block outgoing access except GitHub
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 65535
+        hard: 65535
+
+networks:
+  ci-network:
+    driver: bridge
+
+# 4. Pin runner image versions (don't use :latest in production)
+image: ghcr.io/actions/runners:2.319.0
+
+# 5. Enable ephemeral mode + non-root for maximum security
+environment:
+  - RUNNER_EPHEMERAL=true
+  - RUNNER_REQUIRE_JOB_TOKEN=true</code></pre>
+
+            <h3>Security: Public vs Private Repos</h3>
+
+            <p><strong>Important:</strong> Self-hosted runners run on YOUR infrastructure. If a malicious actor pushes code to a public repo with a fork-and-PR workflow, your runner executes their code. Mitigate this:</p>
+
+            <ul>
+                <li>Only trigger on pushes and PRs from your own repo (<code>pull_request_target</code> with caution)</li>
+                <li>Use separate runners for public repos</li>
+                <li>Enable ephemeral mode so runners don't persist between jobs</li>
+                <li>Use GitHub-hosted runners for public repos unless you have strong reasons not to</li>
+            </ul>
+
+            <h2>Cost Comparison</h2>
+
+            <p>When does self-hosted become cheaper than GitHub-hosted?</p>
+
+            <pre><code>GitHub Actions pricing (as of 2026):
+  - Public repos: 2,000 free minutes/month
+  - Private repos: 500 free minutes/month
+  - After free tier: ~$0.008 per minute ($4.80/hour)
+
+Self-hosted runner (digitalocean 4GB droplet):
+  - Server: $24/month
+  - Handles ~500 concurrent-ish builds/month
+  - ~$0.05 per build (vs $0.50+ on GitHub)
+  - Break-even: ~600 billable minutes/month
+
+If your team runs 3,000+ minutes/month,
+self-hosted saves ~$20-30/month and gets faster.</code></pre>
+
+            <h2>Maintenance: Updating Your Runner</h2>
+
+            <pre><code># Check current version
+docker exec github-runner action_runner/Config.sh --version
+
+# Update to latest (swap the image)
+docker pull ghcr.io/actions/runners:latest
+docker compose up -d --force-recreate
+
+# The runner briefly goes offline then reconnects
+# Any running jobs complete; queued jobs wait</code></pre>
+
+            <h2>Monitoring Your Runners</h2>
+
+            <pre><code># Check runner logs
+docker compose logs -f runner-general
+
+# Check resource usage
+docker stats
+
+# List all runners from GitHub CLI
+gh runner list
+
+# View runner details
+gh runner list --runner-group default
+
+# Check runner status (online/offline/busy)
+gh api /repos/OWNER/REPO/actions/runners | jq '.runners[] | {name: .name, status: .status, busy: .busy}'</code></pre>
+
+            <h2>Summary</h2>
+
+            <ul>
+                <li><strong>Quick start:</strong> Docker container with a GitHub token — 5 minutes to production</li>
+                <li><strong>Labels:</strong> Direct jobs to specific runners (GPU, ARM, Docker-capable)</li>
+                <li><strong>Auto-scaling:</strong> ARC on Kubernetes for large teams</li>
+                <li><strong>Security:</strong> Ephemeral mode, non-root, network isolation</li>
+                <li><strong>Cost:</strong> Cheaper than GitHub-hosted after ~600 billable minutes/month</li>
+            </ul>
+
+            <blockquote>
+                <strong>Practice tip:</strong> Set up a self-hosted runner on a free-tier VM (Oracle Cloud, Google Cloud free tier). Create a workflow that uses <code>runs-on: self-hosted</code> and verify it runs on your machine instead of GitHub's.
+            </blockquote>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Hugo's Dev Notes. Built with vibe coding.</p>
+        </div>
+    </footer>
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        if (themeToggle) {{
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            if (savedTheme === 'light') {{
+                document.body.classList.add('light-mode');
+                themeToggle.textContent = '☀';
+            }}
+            themeToggle.addEventListener('click', () => {{
+                document.body.classList.toggle('light-mode');
+                const isLight = document.body.classList.contains('light-mode');
+                localStorage.setItem('theme', isLight ? 'light' : 'dark');
+                themeToggle.textContent = isLight ? '☀' : '◐';
+            }});
+        }}
+        window.addEventListener('scroll', () => {{
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            const bar = document.getElementById('progressBar');
+            if (bar) bar.style.width = scrolled + "%";
+        }});
+    </script>
+</body>
+</html>

@@ -16,10 +16,12 @@ def push_file(path, content, message):
     payload = {"message": message, "content": base64.b64encode(content.encode()).decode(), "branch": branch}
     if sha: payload["sha"] = sha
     result = requests.put(url, headers=headers, json=payload)
-    status = result.status_code
-    if status not in [200, 201]:
-        print(f"  ⚠ {path}: HTTP {status} - {result.text[:200]}")
-    return status in [200, 201]
+    if result.status_code in [200, 201]:
+        print(f"  ✅ {path}")
+        return True
+    else:
+        print(f"  ❌ {path}: {result.status_code} - {result.text[:200]}")
+        return False
 
 files = []
 for root, dirs, filenames in os.walk(base_dir):
@@ -27,8 +29,10 @@ for root, dirs, filenames in os.walk(base_dir):
         if filename.endswith(('.html', '.css', '.xml', '.txt')):
             full_path = os.path.join(root, filename)
             rel_path = os.path.relpath(full_path, base_dir)
-            files.append((rel_path, open(full_path).read(), "Auto: New posts"))
+            with open(full_path, 'r') as f:
+                content = f.read()
+            files.append((rel_path, content, "Auto: New blog posts - Python closures & GitHub Actions runners"))
 
-print(f"Pushing {len(files)} files to GitHub...")
+print(f"Pushing {len(files)} files...\n")
 success = sum(1 for p, c, m in files if push_file(p, c, m))
-print(f"✅ Pushed {success}/{len(files)} files")
+print(f"\n✅ Pushed {success}/{len(files)} files")

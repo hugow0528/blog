@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Error Handling: try/except, raise, and Custom Exceptions — Beginner Guide</title>
+    <meta name="description" content="Master Python error handling with try/except, finally, raise, and custom exceptions. Practical examples for beginners with real-world patterns like graceful shutdowns, validation, and retry logic.">
+    <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-error-handling-patterns.html">
+    <meta property="og:title" content="Python Error Handling: try/except, raise, and Custom Exceptions">
+    <meta property="og:description" content="Master Python error handling with practical examples for beginners.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.hugow.dev/posts/python-error-handling-patterns.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../python.html" class="nav-btn active">Python</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="post-content">
+        <span class="tag python">Python</span>
+
+        <h1>Python Error Handling: try/except, raise, and Custom Exceptions — Beginner Guide</h1>
+
+        <div class="post-meta">
+            <span class="post-date">July 6, 2026</span>
+            <span class="read-time">9 min read</span>
+        </div>
+
+        <p>Every Python program encounters errors. A file might not exist, a network request might time out, or a user might type their age as "twenty-five" instead of 25. The difference between a beginner program and a production-grade one is how gracefully it handles these failures.</p>
+
+        <p>This guide walks you through Python's exception handling system from the ground up. We'll cover <code>try/except</code>, <code>finally</code>, <code>raise</code>, custom exceptions, and real-world patterns you'll use every day.</p>
+
+        <h2>Why Error Handling Matters</h2>
+
+        <p>Without error handling, a single unexpected value crashes your entire program:</p>
+
+        <pre><code># Without error handling — crashes on bad input
+age = input("Enter your age: ")
+print(f"Next year you'll be {int(age) + 1}")
+# User types "twenty" → ValueError: invalid literal for int()</code></pre>
+
+        <p>With error handling, your program stays alive and guides the user:</p>
+
+        <pre><code>age = input("Enter your age: ")
+try:
+    age_num = int(age)
+    print(f"Next year you'll be {age_num + 1}")
+except ValueError:
+    print(f"Invalid age: '{age}'. Please enter a number.")</code></pre>
+
+        <h2>The try/except Block</h2>
+
+        <p>The basic structure wraps risky code in <code>try</code> and catches specific errors with <code>except</code>:</p>
+
+        <pre><code>try:
+    # Code that might fail
+    result = 10 / 0
+except ZeroDivisionError as e:
+    # Handle the specific error
+    print(f"Error: {e}")  # Error: division by zero</code></pre>
+
+        <p>Catching specific exceptions is better than catching everything. It prevents you from hiding bugs:</p>
+
+        <pre><code># ❌ Bad — hides all errors including typos and logic bugs
+try:
+    do_something()
+except:
+    pass
+
+# ✅ Good — catches only what you expect
+try:
+    do_something()
+except (ValueError, TypeError) as e:
+    print(f"Input error: {e}")</code></pre>
+
+        <h2>Catching Multiple Exception Types</h2>
+
+        <p>You can handle different errors differently with multiple <code>except</code> blocks:</p>
+
+        <pre><code>def read_user_data(filename):
+    try:
+        with open(filename, 'r') as f:
+            data = json.load(f)
+        return data
+    except FileNotFoundError:
+        print(f"File '{filename}' not found. Creating default config...")
+        return {"theme": "dark", "language": "en"}
+    except json.JSONDecodeError as e:
+        print(f"Invalid JSON in '{filename}': {e}")
+        return None
+    except PermissionError:
+        print(f"No permission to read '{filename}'")
+        return None</code></pre>
+
+        <h2>The finally Clause</h2>
+
+        <p>The <code>finally</code> block always runs, whether an exception occurred or not. Use it for cleanup:</p>
+
+        <pre><code>def download_file(url, output_path):
+    response = None
+    try:
+        print("Downloading...")
+        response = requests.get(url, timeout=30)
+        response.raise_for_status()  # Raises exception for 4xx/5xx
+        with open(output_path, 'wb') as f:
+            f.write(response.content)
+        print(f"Saved to {output_path}")
+    except requests.exceptions.Timeout:
+        print("Download timed out")
+    except requests.exceptions.RequestException as e:
+        print(f"Download failed: {e}")
+    finally:
+        # Always runs — cleanup happens even if an exception occurred
+        if response is not None:
+            response.close()
+        print("Cleanup complete")</code></pre>
+
+        <h2>Raising Exceptions</h2>
+
+        <p>Use <code>raise</code> to signal that something went wrong. This is how libraries communicate problems to their callers:</p>
+
+        <pre><code>def divide(a, b):
+    if b == 0:
+        raise ValueError("Cannot divide by zero")
+    return a / b
+
+# Using the function
+try:
+    result = divide(10, 0)
+except ValueError as e:
+    print(e)  # Cannot divide by zero</code></pre>
+
+        <h2>Custom Exceptions</h2>
+
+        <p>Create your own exception types for domain-specific errors. This makes your API self-documenting:</p>
+
+        <pre><code># Define custom exceptions
+class ValidationError(Exception):
+    """Raised when input validation fails"""
+    pass
+
+class NotFoundError(Exception):
+    """Raised when a requested resource doesn't exist"""
+    def __init__(self, resource_type, resource_id):
+        self.resource_type = resource_type
+        self.resource_id = resource_id
+        super().__init__(f"{resource_type} with ID {resource_id} not found")
+
+# Use them in your code
+class UserStore:
+    def __init__(self):
+        self.users = {1: "Alice", 2: "Bob"}
+
+    def get_user(self, user_id):
+        if not isinstance(user_id, int):
+            raise ValidationError(f"user_id must be an integer, got {type(user_id).__name__}")
+        if user_id not in self.users:
+            raise NotFoundError("User", user_id)
+        return self.users[user_id]
+
+# Callers catch specific exceptions
+store = UserStore()
+try:
+    user = store.get_user(99)
+except ValidationError as e:
+    print(f"Bad input: {e}")
+except NotFoundError as e:
+    print(f"Missing: {e}")  # Missing: User with ID 99 not found</code></pre>
+
+        <h2>Real-World Pattern: Retry Logic</h2>
+
+        <p>Network requests fail sometimes. Here's a retry pattern with exponential backoff:</p>
+
+        <pre><code>import time
+import requests
+
+def fetch_with_retry(url, max_retries=3, base_delay=1):
+    """Fetch a URL with exponential backoff on failure"""
+    for attempt in range(1, max_retries + 1):
+        try:
+            response = requests.get(url, timeout=10)
+            response.raise_for_status()
+            return response.json()
+
+        except requests.exceptions.Timeout:
+            delay = base_delay * (2 ** (attempt - 1))
+            print(f"Timeout on attempt {attempt}/{max_retries}. Retrying in {delay}s...")
+            if attempt < max_retries:
+                time.sleep(delay)
+            else:
+                raise
+
+        except requests.exceptions.HTTPError as e:
+            # Don't retry on 4xx errors (client mistakes)
+            if e.response.status_code < 500:
+                raise
+            delay = base_delay * (2 ** (attempt - 1))
+            print(f"Server error {e.response.status_code} on attempt {attempt}. Retrying in {delay}s...")
+            if attempt < max_retries:
+                time.sleep(delay)
+            else:
+                raise
+
+# Usage
+data = fetch_with_retry("https://api.example.com/data")</code></pre>
+
+        <h2>Real-World Pattern: Context Manager for Database</h2>
+
+        <p>Combine exception handling with context managers for automatic resource cleanup:</p>
+
+        <pre><code>import sqlite3
+
+class DatabaseConnection:
+    def __init__(self, db_path):
+        self.db_path = db_path
+        self.conn = None
+
+    def __enter__(self):
+        try:
+            self.conn = sqlite3.connect(self.db_path)
+            self.conn.row_factory = sqlite3.Row
+            print(f"Connected to {self.db_path}")
+            return self.conn
+        except sqlite3.Error as e:
+            print(f"Failed to connect: {e}")
+            raise
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.conn:
+            if exc_type is not None:
+                self.conn.rollback()  # Undo changes on error
+                print("Transaction rolled back")
+            else:
+                self.conn.commit()    # Save changes on success
+                print("Transaction committed")
+            self.conn.close()
+        return False  # Don't suppress exceptions
+
+# Usage — automatic commit/rollback
+with DatabaseConnection("myapp.db") as db:
+    db.execute("CREATE TABLE IF NOT EXISTS items (id INTEGER, name TEXT)")
+    db.execute("INSERT INTO items VALUES (?, ?)", (1, "Widget"))
+    # If any error occurs, changes are rolled back. If not, they're committed.</code></pre>
+
+        <h2>Best Practices Summary</h2>
+
+        <ul>
+            <li><strong>Catch specific exceptions</strong>, not bare <code>except:</code> — hiding bugs is worse than crashing</li>
+            <li><strong>Use custom exceptions</strong> for domain errors — they make your API self-documenting</li>
+            <li><strong>Use <code>finally</code> or context managers</strong> for cleanup — never leave resources dangling</li>
+            <li><strong>Fail fast</strong> — validate input at function boundaries, don't let bad data propagate</li>
+            <li><strong>Log, don't print</strong> in production code — use the <code>logging</code> module instead of <code>print()</code></li>
+            <li><strong>Preserve exception chains</strong> with <code>raise NewError() from original_error</code> when wrapping exceptions</li>
+        </ul>
+
+        <p>Mastering error handling is what separates scripts that work "on your machine" from applications that survive the real world. Start by adding <code>try/except</code> to any code that touches files, networks, or user input, and build from there.</p>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Hugo's Dev Notes. Built with Cloudflare Workers &amp; Tunnel.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Theme toggle
+        const toggle = document.getElementById('themeToggle');
+        const saved = localStorage.getItem('theme');
+        if (saved === 'light') document.body.classList.add('light-theme');
+        toggle?.addEventListener('click', () => {
+            document.body.classList.toggle('light-theme');
+            localStorage.setItem('theme', document.body.classList.contains('light-theme') ? 'light' : 'dark');
+        });
+        // Progress bar
+        window.addEventListener('scroll', () => {
+            const bar = document.getElementById('progressBar');
+            if (bar) {
+                const pct = window.scrollY / (document.body.scrollHeight - window.innerHeight) * 100;
+                bar.style.width = pct + '%';
+            }
+        });
+    </script>
+</body>
+</html>

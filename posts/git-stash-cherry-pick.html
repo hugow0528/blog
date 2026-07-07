@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Git Stash and Cherry-pick: Save Work and Pick Commits | Hugo's Dev Notes</title>
+    <meta name="description" content="Master Git stash for saving uncommitted work and Git cherry-pick for applying specific commits. Practical examples for context switching, hotfixes, and selective merging.">
+    <meta name="keywords" content="git stash, git cherry-pick, git workflow, save uncommitted changes, select commits, git tutorial">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn active">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+        
+        <article class="post-content">
+            <span class="tag devops">DevOps</span>
+            <h1>Git Stash and Cherry-pick: Save Work and Selectively Apply Commits</h1>
+            <time>July 5, 2026 · 8 min read</time>
+
+            <p>You're halfway through a feature when your manager says "production is broken, fix it now." You've made changes but aren't ready to commit — you can't switch branches with uncommitted work. Enter <code>git stash</code>. Then, after fixing the bug on a hotfix branch, you realize a useful commit from your feature branch could help — without merging the whole branch. Enter <code>git cherry-pick</code>.</p>
+
+            <p>These two commands are Git's Swiss Army knives for workflow flexibility. They solve real problems that happen to every developer, every day. Let's master them.</p>
+
+            <h2>Git Stash: Park Your Work Without Committing</h2>
+
+            <p><code>git stash</code> saves your uncommitted changes (both staged and unstaged) onto a temporary stack, then reverts your working directory to match the last commit. Think of it as a clipboard for your entire workspace.</p>
+
+            <h3>Basic Stash and Restore</h3>
+
+            <pre><code># You're working on a feature, files are modified
+$ git status
+On branch feature/login
+Changes not staged for commit:
+  modified:   app.py
+  modified:   templates/login.html
+
+# Save everything and clean your working directory
+$ git stash
+Saved working directory and index state On feature/login: WIP on feature/login: a1b2c3d Add login form
+
+# Your working directory is now clean
+$ git status
+On branch feature/login
+nothing to commit, working tree clean</code></pre>
+
+            <p>Now you can switch branches, pull changes, or whatever you need:</p>
+
+            <pre><code># Switch to fix the production bug
+$ git checkout main
+$ git checkout -b hotfix/fix-payment
+
+# ... fix the bug, commit, push ...
+
+# Go back to your feature
+$ git checkout feature/login
+
+# Restore your stashed changes
+$ git stash pop
+Dropped refs/stash@{0} (a1b2c3d...)
+
+# Your changes are back
+$ git status
+On branch feature/login
+Changes not staged for commit:
+  modified:   app.py
+  modified:   templates/login.html</code></pre>
+
+            <p><code>git stash pop</code> restores <em>and removes</em> the stash. <code>git stash apply</code> restores but <em>keeps</em> the stash (useful if you need to apply the same changes to multiple branches).</p>
+
+            <h3>Listing and Managing Stashes</h3>
+
+            <pre><code># See all your stashes (they form a stack)
+$ git stash list
+stash@{0}: WIP on feature/login: a1b2c3d Add login form
+stash@{1}: WIP on main: 9f8e7d6 Update dependencies
+stash@{2}: On main: experiment with dark theme
+
+# Apply a specific stash (not the most recent)
+$ git stash apply stash@{2}
+
+# Drop (delete) a specific stash
+$ git stash drop stash@{1}
+
+# Remove all stashes
+$ git stash clear</code></pre>
+
+            <h3>Stash with Messages</h3>
+
+            <p>Without messages, your stash list is a mystery. Always add context:</p>
+
+            <pre><code>$ git stash save "WIP: login form validation - need to add email format check"
+
+$ git stash list
+stash@{0}: WIP on feature/login: a1b2c3d WIP: login form validation - need to add email format check</code></pre>
+
+            <h3>Stash Only Staged Changes</h3>
+
+            <p>What if you want to stash only specific files? Use the <code>--keep-index</code> flag:</p>
+
+            <pre><code># You have 5 modified files
+# Stage the 2 you want to keep
+$ git add app.py config.py
+
+# Stash only the unstaged changes
+$ git stash --keep-index
+# app.py and config.py stay in your working directory
+# The other 3 files are stashed
+
+# Later, restore the stashed files
+$ git stash pop</code></pre>
+
+            <h3>Stash a New Branch (Keep the Work)</h3>
+
+            <p>Stash and immediately create a new branch from the stashed changes:</p>
+
+            <pre><code># You've been experimenting but it's not ready
+$ git stash branch experimental-branch
+Switched to a new branch 'experimental-branch'
+Dropped refs/stash@{0}
+
+# Your stashed changes are now committed on the new branch
+# You can continue working or delete the branch later
+$ git checkout main
+$ git branch -d experimental-branch  # if you don't need it</code></pre>
+
+            <h2>Git Cherry-pick: Steal a Single Commit</h2>
+
+            <p><code>git cherry-pick</code> takes a specific commit from one branch and applies it to your current branch — as if you wrote it there originally. It's perfect for picking useful commits without merging entire branches.</p>
+
+            <h3>Basic Cherry-pick</h3>
+
+            <pre><code># You're on main and want a commit from a feature branch
+$ git log feature/payment-api --oneline
+a1b2c3d (feature/payment-api) Add payment validation
+b3c4d5e Fix database connection timeout  ← we want this one
+c4d5e6f Initial payment API scaffolding
+
+# Cherry-pick that one fix
+$ git cherry-pick b3c4d5e
+[main d4e5f6a] Fix database connection timeout
+ Date: Mon Jul 5 10:30:00 2026 +0000
+ 1 file changed, 3 insertions(+), 1 deletion(-)</code></pre>
+
+            <p>The fix is now on <code>main</code> with a new commit hash. The original still exists on <code>feature/payment-api</code>.</p>
+
+            <h3>Cherry-pick Multiple Commits</h3>
+
+            <pre><code># Pick multiple specific commits
+$ git cherry-pick b3c4d5e c4d5e6f
+
+# Pick a range of commits (everything from a1 to b3, inclusive)
+$ git cherry-pick a1b2c3d^..b3c4d5e
+
+# Pick a range by commit message date or other criteria
+# (first find the hashes, then cherry-pick them)</code></pre>
+
+            <p>When cherry-picking a range, list them in chronological order (oldest first) to minimize conflicts.</p>
+
+            <h3>Real-World Scenario: Hotfix from Feature Branch</h3>
+
+            <pre><code># Scenario: You found a critical bug in your feature branch
+# and need to get just that fix into production NOW
+
+# 1. On your feature branch, commit the fix
+$ git checkout feature/user-dashboard
+$ # ... make the fix ...
+$ git add -A
+$ git commit -m "fix: resolve null pointer in user profile API"
+
+# 2. Copy the commit hash
+$ git log -1 --oneline
+f1e2d3c fix: resolve null pointer in user profile API
+
+# 3. Switch to main
+$ git checkout main
+
+# 4. Cherry-pick the fix
+$ git cherry-pick f1e2d3c
+[main a9b8c7d] fix: resolve null pointer in user profile API
+
+# 5. Push to production
+$ git push origin main</code></pre>
+
+            <p>The fix is now in production. When you eventually merge <code>feature/user-dashboard</code> into <code>main</code>, Git will recognize the cherry-picked commit as already present and skip it.</p>
+
+            <h3>Handling Cherry-pick Conflicts</h3>
+
+            <pre><code># Cherry-pick hits a conflict
+$ git cherry-pick abc123
+Auto-merging src/utils.py
+CONFLICT (content): Merge conflict in src/utils.py
+error: could not apply abc123... Add input validation
+
+# Option 1: Fix the conflict manually
+$ vim src/utils.py  # resolve conflict markers
+$ git add src/utils.py
+$ git cherry-pick --continue
+
+# Option 2: Abort and skip this commit
+$ git cherry-pick --abort
+
+# Option 3: Take the incoming changes (the cherry-picked version)
+$ git checkout --theirs src/utils.py
+$ git add src/utils.py
+$ git cherry-pick --continue</code></pre>
+
+            <h3>Cherry-pick Without Committing</h3>
+
+            <p>Apply the changes but don't create a commit yet (useful for reviewing or tweaking):</p>
+
+            <pre><code>$ git cherry-pick -n abc123
+# Changes applied to working directory but not committed
+# Review them, make tweaks, then commit yourself
+$ git status
+$ git commit -m "Apply input validation from feature branch"</code></pre>
+
+            <h2>Stash + Cherry-pick: Powerful Combinations</h2>
+
+            <h3>Stash, Cherry-pick, Then Restore</h3>
+
+            <pre><code># You're mid-feature, need to grab a fix from another branch
+$ git stash save "WIP: half-done feature work"
+$ git checkout other-branch
+$ git log --oneline -5
+# find the commit hash
+$ git cherry-pick abc123
+$ git checkout main
+$ git cherry-pick abc123
+$ git checkout feature/branch
+$ git stash pop</code></pre>
+
+            <h3>Stash as a Git Commit (for Later Cherry-pick)</h3>
+
+            <pre><code># You have experimental changes that might be useful later
+$ git stash save "experiment: new caching strategy"
+
+# Later, on a different branch where you want to try it
+$ git stash apply stash@{0}
+# Test it, if it works:
+$ git add -A
+$ git commit -m "feat: add new caching strategy"
+$ git stash drop stash@{0}
+
+# If it doesn't work:
+$ git reset --hard HEAD
+$ git stash drop stash@{0}</code></pre>
+
+            <h2>Common Mistakes and Pitfalls</h2>
+
+            <h3>Mistake 1: Forgetting About Stashes</h3>
+
+            <pre><code># You forgot you stashed work weeks ago
+$ git stash list
+stash@{0}: WIP on feature/auth: 3a2b1c WIP: JWT token refresh
+stash@{1}: WIP on main: 9z8y7x Experiment: new layout
+
+# These stashes are orphaned — no branch references them
+# Apply them to the right branch or delete them
+$ git stash drop stash@{0}
+$ git stash drop stash@{1}</code></pre>
+
+            <h3>Mistake 2: Cherry-picking in Wrong Order</h3>
+
+            <pre><code># Commits on feature branch:
+# A → B → C (C depends on changes from A and B)
+
+# Cherry-picking C without A and B first causes conflicts
+$ git cherry-pick C
+CONFLICT ...
+
+# Fix: cherry-pick in order
+$ git cherry-pick A
+$ git cherry-pick B
+$ git cherry-pick C</code></pre>
+
+            <h3>Mistake 3: Cherry-picking Then Merging</h3>
+
+            <p>If you cherry-pick a commit from a feature branch into main, and later merge that feature branch, the cherry-picked commit appears twice. Git <em>usually</em> detects this automatically and handles it. But if the cherry-picked commit was slightly modified (e.g., conflict resolution changed some lines), Git won't recognize it as the same commit — leading to duplicate changes.</p>
+
+            <p><strong>Solution:</strong> When merging, use <code>--no-commit</code> to review before finalizing:</p>
+
+            <pre><code>$ git merge feature/branch --no-commit
+$ git diff --cached  # review all changes
+$ git status          # check for duplicates
+# If clean, commit. If not, resolve manually.
+$ git commit</code></pre>
+
+            <h2>Best Practices</h2>
+
+            <ol>
+                <li><strong>Name your stashes</strong> — <code>git stash save "WIP: describe what you were doing"</code></li>
+                <li><strong>Clean up stashes regularly</strong> — run <code>git stash list</code> weekly, delete old ones</li>
+                <li><strong>Use cherry-pick sparingly</strong> — it's great for hotfixes and isolated commits, but don't use it to rebuild branch history. Use rebase for that.</li>
+                <li><strong>Cherry-pick in chronological order</strong> — oldest first to minimize conflicts</li>
+                <li><strong>Consider <code>git revert</code> instead of <code>git reset</code></strong> for shared branches — revert creates a new commit that undoes changes, preserving history</li>
+                <li><strong>Don't stash secrets or large files</strong> — stashes are local only; they won't be pushed to backup</li>
+            </ol>
+
+            <h2>Summary</h2>
+
+            <p><code>git stash</code> is your workspace clipboard — save work when you need to context-switch, restore it when you're ready. <code>git cherry-pick</code> is your surgical tool — grab exactly the commit you need without pulling in the whole branch.</p>
+
+            <ul>
+                <li><code>git stash</code> / <code>git stash pop</code> — save and restore quickly</li>
+                <li><code>git stash apply</code> — restore without deleting the stash</li>
+                <li><code>git stash list</code> / <code>git stash drop</code> — manage your stash stack</li>
+                <li><code>git stash --keep-index</code> — stash only unstaged changes</li>
+                <li><code>git cherry-pick &lt;hash&gt;</code> — apply a single commit</li>
+                <li><code>git cherry-pick -n &lt;hash&gt;</code> — apply without committing</li>
+                <li><code>git cherry-pick --abort</code> / <code>--continue</code> — handle conflicts</li>
+            </ul>
+
+            <p>Master these two commands, and your Git workflow becomes dramatically more flexible. No more forced commits, no more messy merges, no more "I'll finish that tomorrow" becoming "I forgot what I was doing."</p>
+
+        </article>
+    </main>
+
+    <footer class="site-footer">
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes. Built with curiosity.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Progress bar
+        window.addEventListener('scroll', () => {
+            const winScroll = document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + '%';
+        });
+
+        // Theme toggle
+        const toggle = document.getElementById('themeToggle');
+        toggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            localStorage.setItem('theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
+        });
+        if (localStorage.getItem('theme') === 'light') {
+            document.body.classList.add('light-mode');
+        }
+    </script>
+</body>
+</html>

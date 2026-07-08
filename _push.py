@@ -14,14 +14,13 @@ def push_file(path, content, message):
     resp = requests.get(url, headers=headers, params={"ref": branch})
     sha = resp.json().get("sha") if resp.status_code == 200 else None
     payload = {"message": message, "content": base64.b64encode(content.encode()).decode(), "branch": branch}
-    if sha: payload["sha"] = sha
-    result = requests.put(url, headers=headers, json=payload)
-    if result.status_code in [200, 201]:
-        print(f"  ✅ {path}")
-        return True
-    else:
-        print(f"  ❌ {path}: {result.status_code} - {result.text[:200]}")
-        return False
+    if sha:
+        payload["sha"] = sha
+    r = requests.put(url, headers=headers, json=payload)
+    status = r.status_code
+    ok = status in [200, 201]
+    print(f"  {'OK' if ok else 'FAIL'} {path} ({status})")
+    return ok
 
 files = []
 for root, dirs, filenames in os.walk(base_dir):
@@ -29,10 +28,8 @@ for root, dirs, filenames in os.walk(base_dir):
         if filename.endswith(('.html', '.css', '.xml', '.txt')):
             full_path = os.path.join(root, filename)
             rel_path = os.path.relpath(full_path, base_dir)
-            with open(full_path, 'r') as f:
-                content = f.read()
-            files.append((rel_path, content, "Auto: New blog posts - Python closures & GitHub Actions runners"))
+            files.append((rel_path, open(full_path).read(), "Auto: New posts"))
 
-print(f"Pushing {len(files)} files...\n")
+files.sort()
 success = sum(1 for p, c, m in files if push_file(p, c, m))
-print(f"\n✅ Pushed {success}/{len(files)} files")
+print(f"Pushed {success}/{len(files)} files")

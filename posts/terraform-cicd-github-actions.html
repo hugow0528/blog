@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terraform CI/CD with GitHub Actions: Automate Infrastructure as Code | Hugo's Dev Notes</title>
+    <meta name="description" content="Set up Terraform CI/CD pipelines with GitHub Actions. Automated linting, formatting, planning, approval gates, and safe deployments. Working workflow examples for team collaboration.">
+    <meta name="keywords" content="Terraform CI/CD, GitHub Actions, infrastructure as code, Terraform workflow, automated deployment">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/terraform-cicd-github-actions.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+        
+        <article class="post-content">
+            <span class="tag devops">DevOps</span><span class="tag cloudflare">Cloudflare</span>
+            <h1>Terraform CI/CD with GitHub Actions: Automate Infrastructure as Code</h1>
+            <time>July 8, 2026 · 11 min read</time>
+
+            <p>You've written Terraform code and run <code>terraform apply</code> from your laptop. But in a team, running Terraform manually is risky — someone might forget to run <code>plan</code>, skip reviews, or accidentally apply to production. A <strong>CI/CD pipeline</strong> automates the entire workflow: lint, format, plan, review, and deploy.</p>
+
+            <p>This guide walks through building a complete Terraform CI/CD pipeline with GitHub Actions. You'll get automated quality checks, human approval gates, and safe deployments — all from a single workflow file.</p>
+
+            <h2>The Terraform CI/CD Workflow</h2>
+
+            <p>Here's the standard workflow most teams use:</p>
+
+            <ol>
+                <li><strong>Pull request opened</strong> → lint + format + validate + plan</li>
+                <li><strong>Plan output posted as PR comment</strong> → team reviews changes</li>
+                <li><strong>Approval + merge to main</strong> → apply to production</li>
+            </ol>
+
+            <p>Let's build this step by step.</p>
+
+            <h2>Step 1: Project Structure</h2>
+
+            <p>Organize your Terraform repo like this:</p>
+
+            <pre><code>terraform/
+├── .github/
+│   └── workflows/
+│       └── terraform.yml
+├── main.tf
+├── variables.tf
+├── outputs.tf
+├── providers.tf
+└── .tflint.hcl
+</code></pre>
+
+            <h2>Step 2: The CI Workflow File</h2>
+
+            <p>Create <code>.github/workflows/terraform.yml</code>:</p>
+
+            <pre><code>name: Terraform CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+env:
+  TF_IN_AUTOMATION: "true"
+  TF_INPUT: "false"
+
+jobs:
+  # Job 1: Lint and validate on every PR
+  validate:
+    name: Validate Terraform
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.7.5"
+
+      - name: Terraform Format Check
+        id: fmt
+        run: terraform fmt -check -recursive
+        continue-on-error: true
+
+      - name: Terraform Init
+        run: terraform init -backend=false
+
+      - name: Terraform Validate
+        run: terraform validate -json
+
+      - name: Terraform Docs
+        uses: terraform-docs/terraform-docs-cli@v1
+        with:
+          configfile: .terraform-docs.yml
+          paths: "."
+</code></pre>
+
+            <p><strong>What this does:</strong></p>
+
+            <ul>
+                <li><code>terraform fmt -check</code> — ensures consistent formatting (fails if not formatted)</li>
+                <li><code>terraform init -backend=false</code> — initializes providers without remote state</li>
+                <li><code>terraform validate</code> — checks for syntax and type errors</li>
+                <li><code>terraform-docs</code> — auto-generates README documentation</li>
+            </ul>
+
+            <h2>Step 3: Generate and Post a Plan</h2>
+
+            <p>The most valuable part of Terraform CI is posting the plan output as a PR comment. Everyone can see exactly what will change before merging.</p>
+
+            <pre><code>  # Job 2: Plan and post to PR
+  plan:
+    name: Terraform Plan
+    needs: validate
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    environment:
+      name: staging
+      url: https://app.terraform.io/app
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.7.5"
+
+      - name: Terraform Init
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
+            -backend-config="key=${{ vars.TF_STATE_KEY }}" \
+            -backend-config="region=${{ vars.TF_STATE_REGION }}"
+
+      - name: Terraform Plan
+        id: plan
+        run: |
+          terraform plan \
+            -var-file=vars/staging.tfvars \
+            -no-color \
+            -out=tfplan
+
+      - name: Post Plan as PR Comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const planOutput = fs.readFileSync('tfplan', 'utf8');
+            
+            const truncated = planOutput.length > 60000
+              ? planOutput.substring(0, 60000) + '\n... plan truncated'
+              : planOutput;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## Terraform Plan\n\`\`\`\n${truncated}\n\`\`\``
+            });
+</code></pre>
+
+            <p><strong>Key details:</strong></p>
+
+            <ul>
+                <li>The <code>plan</code> job <strong>depends on</strong> <code>validate</code> — linting must pass first</li>
+                <li>Plan output is <strong>truncated</strong> to 60K characters (GitHub comment limit is 65K)</li>
+                <li>Using <code>-out=tfplan</code> saves the plan for later apply (safe — can't be modified)</li>
+                <li>Secrets and variables are used for backend configuration (never hardcoded)</li>
+            </ul>
+
+            <h2>Step 4: Apply on Merge to Main</h2>
+
+            <p>Now add the deployment job that runs when code is merged to main:</p>
+
+            <pre><code>  # Job 3: Apply on merge to main
+  apply:
+    name: Terraform Apply
+    needs: [validate, plan]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    environment:
+      name: production
+      url: https://app.terraform.io/app
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.7.5"
+
+      - name: Terraform Init
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
+            -backend-config="key=${{ vars.TF_STATE_KEY }}" \
+            -backend-config="region=${{ vars.TF_STATE_REGION }}"
+
+      - name: Terraform Apply
+        run: |
+          terraform apply \
+            -auto-approve \
+            -var-file=vars/production.tfvars
+
+      - name: Notify Slack on Success
+        if: success()
+        uses: slackapi/slack-github-action@v1
+        with:
+          channel-id: ${{ secrets.SLACK_CHANNEL_ID }}
+          slack-message: "✅ Terraform applied successfully to production"
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
+      - name: Notify Slack on Failure
+        if: failure()
+        uses: slackapi/slack-github-action@v1
+        with:
+          channel-id: ${{ secrets.SLACK_CHANNEL_ID }}
+          slack-message: "❌ Terraform apply failed — check the logs!"
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+</code></pre>
+
+            <h2>Step 5: GitHub Environments for Approval Gates</h2>
+
+            <p>The <code>environment</code> block is a powerful safety feature. In GitHub Settings → Environments:</p>
+
+            <ol>
+                <li>Go to <strong>Settings → Environments</strong></li>
+                <li>Create a <strong>production</strong> environment</li>
+                <li>Add <strong>Required reviewers</strong> (1 or more people)</li>
+                <li>Add <strong>Wait timer</strong> (e.g., 5 minutes cooldown)</li>
+            </ol>
+
+            <p>Now the apply job <strong>waits</strong> for a human to approve before running. No more accidental deploys!</p>
+
+            <h2>Step 6: Secret Management</h2>
+
+            <p>Terraform workflows need cloud credentials. Store them as GitHub Secrets:</p>
+
+            <pre><code># In GitHub: Settings → Secrets and variables → Actions
+# Add these repository secrets:
+TF_STATE_BUCKET         # S3 bucket for state
+TF_STATE_KEY            # State file path
+TF_STATE_REGION         # S3 region (us-east-1)
+AWS_ACCESS_KEY_ID       # AWS credentials
+AWS_SECRET_ACCESS_KEY   # AWS credentials
+AWS_REGION              # e.g., us-east-1
+SLACK_BOT_TOKEN         # For notifications
+SLACK_CHANNEL_ID        # e.g., C0123456789
+</code></pre>
+
+            <p><strong>Security note:</strong> Use OIDC (OpenID Connect) instead of static access keys when possible. Terraform 1.7+ supports OIDC natively for AWS, Azure, and GCP:</p>
+
+            <pre><code># providers.tf — use OIDC instead of access keys
+provider "aws" {
+  region = var.aws_region
+  
+  assume_role {
+    role_arn     = "arn:aws:iam::123456789:role/terraform-ci"
+    session_name = "github-actions"
+  }
+}
+</code></pre>
+
+            <h2>Step 7: TFLint for Advanced Checks</h2>
+
+            <p>Add <code>tflint</code> to catch provider-specific issues that <code>terraform validate</code> misses:</p>
+
+            <pre><code>      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: v0.50.3
+
+      - name: TFLint Init
+        run: tflint --init
+
+      - name: TFLint
+        run: tflint --config .tflint.hcl
+</code></pre>
+
+            <p>And create <code>.tflint.hcl</code> to configure rules:</p>
+
+            <pre><code>plugin "aws" {
+    enabled = true
+    version = "0.29.0"
+    source  = "github.com/terraform-linters/tflint-ruleset-aws"
+}
+
+rule "terraform_comment_syntax" {
+    enabled = true
+}
+
+rule "terraform_deprecated_index" {
+    enabled = true
+}
+
+rule "terraform_required_providers" {
+    enabled = true
+}
+</code></pre>
+
+            <h2>Putting It All Together</h2>
+
+            <p>Here's the complete workflow file that combines everything:</p>
+
+            <pre><code>name: Terraform CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  validate:
+    name: Lint &amp; Validate
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.7.5"
+      - run: terraform fmt -check -recursive
+      - run: terraform init -backend=false
+      - run: terraform validate -json
+
+  plan:
+    name: Plan
+    needs: validate
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.7.5"
+      - run: terraform init -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}"
+      - run: terraform plan -no-color -out=tfplan
+      - name: Post Plan
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## Terraform Plan\n\`\`\`\n${fs.readFileSync('tfplan','utf8').substring(0,60000)}\n\`\`\``
+            });
+
+  apply:
+    name: Apply
+    needs: [validate, plan]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.7.5"
+      - run: terraform init -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}"
+      - run: terraform apply -auto-approve
+</code></pre>
+
+            <h2>Summary</h2>
+
+            <p>A Terraform CI/CD pipeline transforms your infrastructure management from a risky manual process into a safe, repeatable workflow:</p>
+
+            <ol>
+                <li><strong>Lint + validate on PR</strong> — catch formatting and syntax errors early</li>
+                <li><strong>Post plan as PR comment</strong> — everyone reviews before merging</li>
+                <li><strong>GitHub Environments</strong> — require human approval for production deploys</li>
+                <li><strong>Secret management</strong> — use GitHub Secrets or OIDC, never hardcode</li>
+                <li><strong>Slack notifications</strong> — get alerts on success or failure</li>
+            </ol>
+
+            <p>Start with the basic validate + plan workflow, add TFLint when you're ready, and gradually build up to the full pipeline. The safety gates pay for themselves the first time they prevent an accidental production change.</p>
+
+            <p>Next up: learn about <a href="terraform-workspaces.html">Terraform workspaces for multi-environment setups</a>, or explore <a href="terraform-modules-reusability.html">Terraform modules for reusable infrastructure</a>.</p>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo Wong · Built with curiosity and Coffee</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528">GitHub</a>
+                <a href="https://hugow.dev">hugow.dev</a>
+                <a href="/sitemap.xml">Sitemap</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-mode');
+            themeToggle.textContent = '☀';
+        }
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            themeToggle.textContent = isLight ? '☀' : '◐';
+        });
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + "%";
+        });
+    </script>
+</body>
+</html>

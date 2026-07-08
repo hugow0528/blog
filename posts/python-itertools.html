@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python itertools: Efficient Iteration Patterns Every Developer Should Know | Hugo's Dev Notes</title>
+    <meta name="description" content="Master Python's itertools module — chain, groupby, product, permutations, combinations, islice, cycle, and more. Write cleaner, faster iteration code without manual loops...">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-itertools.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn active">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-content">
+            <span class="tag python">Python</span>
+            <h1>Python itertools: Efficient Iteration Patterns Every Developer Should Know</h1>
+            <div class="post-meta">
+                <span class="post-date">July 7, 2026</span>
+                <span class="read-time">10 min read</span>
+            </div>
+
+            <p>You've learned <code>for</code> loops. You know list comprehensions. Maybe you've even used <code>map()</code> and <code>filter()</code>. But there's a hidden gem in the Python standard library that can replace dozens of manual loops with a single function call: <strong><code>itertools</code></strong>.</p>
+
+            <p>The <code>itertools</code> module provides fast, memory-efficient tools for creating and combining iterators. It's the secret weapon of Pythonic code — used internally by CPython itself and in countless libraries like NumPy, pandas, and the standard library.</p>
+
+            <p>In this guide, you'll learn the most useful itertools functions through practical examples, from chaining iterables to generating combinations, grouping data, and creating infinite loops safely.</p>
+
+            <h2 id="why-itertools">Why itertools Instead of Loops?</h2>
+
+            <p>Before itertools, you'd write loops like this:</p>
+
+<pre><code># Without itertools: manual chaining of lists
+all_items = []
+for group in [list_a, list_b, list_c]:
+    for item in group:
+        all_items.append(item)
+
+# With itertools: one line
+all_items = list(itertools.chain(list_a, list_b, list_c))</code></pre>
+
+            <p>Itertools functions are implemented in C, so they're <strong>faster</strong> than equivalent Python loops. They're also <strong>lazy</strong> — they generate values on demand without building entire lists in memory. This means you can process datasets that wouldn't fit in RAM.</p>
+
+            <p>There are three categories of itertools functions:</p>
+
+            <ul>
+                <li><strong>Infinite iterators:</strong> cycle, count, repeat</li>
+                <li><strong>Combinatoric iterators:</strong> product, permutations, combinations</li>
+                <li><strong>Terminating iterators:</strong> chain, groupby, islice, zip_longest, and more</li>
+            </ul>
+
+            <h2 id="infinite">Infinite Iterators: Controlled Loops</h2>
+
+            <h3>count() — Endless Number Sequences</h3>
+
+            <p><code>count()</code> generates an infinite sequence starting from a number. Use it with <code>enumerate</code>-like behavior or as an ID generator:</p>
+
+<pre><code>import itertools
+
+# Auto-incrementing IDs
+id_gen = itertools.count(start=1000)
+print(next(id_gen))  # 1000
+print(next(id_gen))  # 1001
+print(next(id_gen))  # 1002
+
+# Use with zip to add automatic numbering
+names = ["Alice", "Bob", "Charlie"]
+for number, name in zip(itertools.count(1), names):
+    print(f"#{number}: {name}")
+# #1: Alice
+# #2: Bob
+# #3: Charlie</code></pre>
+
+            <h3>cycle() — Repeat Indefinitely</h3>
+
+            <p>Loop over an iterable forever. Great for rotating values:</p>
+
+<pre><code># Cycle through server pools
+servers = itertools.cycle(["server-1", "server-2", "server-3"])
+for _ in range(6):
+    print(next(servers))
+# server-1, server-2, server-3, server-1, server-2, server-3
+
+# Alternating theme
+themes = itertools.cycle(["light", "dark"])
+for _ in range(4):
+    print(next(themes))
+# light, dark, light, dark</code></pre>
+
+            <h3>repeat() — Duplicate Values Efficiently</h3>
+
+            <p>Repeat a value a specific number of times — used internally by <code>map()</code> and <code>product()</code>:</p>
+
+<pre><code>import itertools
+
+# Create a list of default values
+defaults = list(itertools.repeat("N/A", 5))
+# ['N/A', 'N/A', 'N/A', 'N/A', 'N/A']
+
+# Use with map for applying a constant argument
+prices = [10, 20, 30]
+tax_rate = 0.08
+total_prices = list(map(lambda p, t: round(p * (1 + t), 2), prices, itertools.repeat(tax_rate)))
+# [10.8, 21.6, 32.4]</code></pre>
+
+            <h2 id="terminating">Terminating Iterators: Practical Data Tools</h2>
+
+            <h3>chain() — Flatten Nested Iterables</h3>
+
+            <p><code>chain()</code> joins multiple iterables into one. <code>chain.from_iterable()</code> flattens a single nested iterable:</p>
+
+<pre><code>import itertools
+
+# Chain multiple lists
+evens = [0, 2, 4, 6]
+odds = [1, 3, 5, 7]
+all_numbers = list(itertools.chain(evens, odds))
+# [0, 2, 4, 6, 1, 3, 5, 7]
+
+# Flatten nested lists (one level)
+matrix = [[1, 2], [3, 4], [5, 6]]
+flat = list(itertools.chain.from_iterable(matrix))
+# [1, 2, 3, 4, 5, 6]
+
+# Real-world: merge API responses
+page1 = [{"id": 1, "name": "Alice"}, {"id": 2, "name": "Bob"}]
+page2 = [{"id": 3, "name": "Charlie"}]
+all_users = list(itertools.chain(page1, page2))</code></pre>
+
+            <h3>groupby() — Group Consecutive Items</h3>
+
+            <p><strong>Important:</strong> <code>groupby()</code> groups <em>consecutive</em> items. Sort your data first if order matters:</p>
+
+<pre><code>import itertools
+
+# Group by status — sort first!
+orders = [
+    ("Alice", "completed"), ("Bob", "pending"),
+    ("Charlie", "completed"), ("Diana", "pending"),
+    ("Eve", "completed"), ("Frank", "completed")
+]
+orders.sort(key=lambda x: x[1])
+
+for status, group in itertools.groupby(orders, key=lambda x: x[1]):
+    print(f"\n{status.upper()}:")
+    for name, _ in group:
+        print(f"  - {name}")
+# COMPLETED:
+#   - Alice
+#   - Charlie
+#   - Eve
+#   - Frank
+# PENDING:
+#   - Bob
+#   - Diana
+
+# Real-world: group log lines by level
+logs = ["ERROR: timeout", "ERROR: connection lost",
+        "INFO: started", "WARN: high memory",
+        "INFO: request received"]
+parsed = [(line.split(":")[0], line) for line in logs]
+parsed.sort(key=lambda x: x[0])
+
+for level, group in itertools.groupby(parsed, key=lambda x: x[0]):
+    count = sum(1 for _ in group)
+    print(f"{level}: {count} entries")</code></pre>
+
+            <h3>islice() — Slice Without Loading Everything</h3>
+
+            <p>Like list slicing but works on <em>any</em> iterator, including infinite ones:</p>
+
+<pre><code>import itertools
+
+# First 5 elements of an infinite counter
+first_five = list(itertools.islice(itertools.count(), 5))
+# [0, 1, 2, 3, 4]
+
+# Every other element (skip pattern)
+data = range(20)
+skipped = list(itertools.islice(data, 0, None, 2))
+# [0, 2, 4, 6, 8, 10, 12, 14, 16, 18]
+
+# Real-world: paginate a large file efficiently
+def read_chunk(filename, chunk_size=100):
+    with open(filename) as f:
+        while True:
+            chunk = list(itertools.islice(f, chunk_size))
+            if not chunk:
+                break
+            yield chunk  # process 100 lines at a time</code></pre>
+
+            <h3>zip_longest() — Zip with a Safety Net</h3>
+
+            <p>Regular <code>zip()</code> stops at the shortest iterable. <code>zip_longest()</code> fills missing values:</p>
+
+<pre><code>import itertools
+
+names = ["Alice", "Bob", "Charlie"]
+scores = [95, 87]
+
+# Regular zip stops at shortest
+list(zip(names, scores))
+# [('Alice', 95), ('Bob', 87)] — Charlie lost!
+
+# zip_longest fills missing values
+list(itertools.zip_longest(names, scores, fillvalue="N/A"))
+# [('Alice', 95), ('Bob', 87), ('Charlie', 'N/A')]
+
+# Real-world: merging misaligned data
+headers = ["name", "email", "age", "role"]
+row1 = ["Alice", "alice@example.com", "30"]  # missing role
+row2 = ["Bob", "bob@example.com", "25", "admin"]  # complete
+
+for row in [row1, row2]:
+    record = dict(itertools.zip_longest(headers, row, fillvalue="unknown"))
+    print(record)
+# {'name': 'Alice', 'email': 'alice@example.com', 'age': '30', 'role': 'unknown'}
+# {'name': 'Bob', 'email': 'bob@example.com', 'age': '25', 'role': 'admin'}</code></pre>
+
+            <h3>starmap() — Map with Unpacked Arguments</h3>
+
+<pre><code>import itertools
+
+# starmap unpacks each tuple as separate arguments
+pairs = [(1, 2), (3, 4), (5, 6)]
+results = list(itertools.starmap(lambda a, b: a + b, pairs))
+# [3, 7, 11]
+
+# Regular map would need an extra unpack step
+# results = list(map(lambda p: p[0] + p[1], pairs))</code></pre>
+
+            <h2 id="combinatoric">Combinatoric Iterators: All Possibilities</h2>
+
+            <h3>product() — Cartesian Products</h3>
+
+            <p>Generate all combinations with replacement — like nested for loops:</p>
+
+<pre><code>import itertools
+
+# All color-size combinations for an e-commerce site
+colors = ["red", "blue"]
+sizes = ["S", "M", "L"]
+variants = list(itertools.product(colors, sizes))
+# [('red', 'S'), ('red', 'M'), ('red', 'L'),
+#  ('blue', 'S'), ('blue', 'M'), ('blue', 'L')]
+
+# Password brute-force (educational: 2-digit code)
+digits = "0123456789"
+codes = list(itertools.product(digits, repeat=2))
+print(len(codes))  # 100 combinations
+print(codes[:5])   # [('0', '0'), ('0', '1'), ...]
+
+# Real-world: test all URL parameter combinations
+endpoints = ["/api/users", "/api/posts"]
+methods = ["GET", "POST"]
+test_cases = list(itertools.product(methods, endpoints))
+for method, endpoint in test_cases:
+    print(f"Testing {method} {endpoint}")</code></pre>
+
+            <h3>permutations() — Ordered Arrangements</h3>
+
+<pre><code>import itertools
+
+# All orderings of 3 items
+items = ["A", "B", "C"]
+perms = list(itertools.permutations(items))
+print(len(perms))   # 6 (3!)
+print(perms[:4])
+# [('A', 'B', 'C'), ('A', 'C', 'B'), ('B', 'A', 'C'), ('B', 'C', 'A')]
+
+# Pick 2 out of 4 (r parameter)
+team = ["Alice", "Bob", "Charlie", "Diana"]
+pairings = list(itertools.permutations(team, 2))
+print(f"Speaking orders: {len(pairings)}")  # 12 (P(4,2))</code></pre>
+
+            <h3>combinations() and combinations_with_replacement()</h3>
+
+<pre><code>import itertools
+
+# Choose 2 people for a committee from 4 (order doesn't matter)
+team = ["Alice", "Bob", "Charlie", "Diana"]
+committees = list(itertools.combinations(team, 2))
+print(len(committees))  # 6 (C(4,2))
+# ('Alice', 'Bob'), ('Alice', 'Charlie'), ...
+
+# Combinations with replacement (can pick same item twice)
+toppings = ["pepperoni", "mushrooms", "olives"]
+pizzas = list(itertools.combinations_with_replacement(toppings, 2))
+# ('pepperoni', 'pepperoni'), ('pepperoni', 'mushrooms'), ...
+
+# Real-world: generate test pairs for integration testing
+services = ["auth", "api", "db", "cache"]
+for service1, service2 in itertools.combinations(services, 2):
+    print(f"Testing {service1} <-> {service2}")</code></pre>
+
+            <h2 id="real-world">Real-World Patterns</h2>
+
+            <h3>Pattern 1: Sliding Window</h3>
+
+<pre><code>import itertools
+
+def sliding_window(iterable, n):
+    """Create an overlapping sliding window iterator."""
+    it = iter(iterable)
+    window = list(itertools.islice(it, n))
+    if len(window) == n:
+        yield tuple(window)
+    for item in it:
+        window.append(item)
+        window.pop(0)
+        yield tuple(window)
+
+data = [1, 2, 3, 4, 5, 6]
+for window in sliding_window(data, 3):
+    print(window)
+# (1, 2, 3), (2, 3, 4), (3, 4, 5), (4, 5, 6)
+
+# Average of sliding windows (moving average)
+averages = [sum(w) / len(w) for w in sliding_window(data, 3)]
+# [2.0, 3.0, 4.0, 5.0]</code></pre>
+
+            <h3>Pattern 2: Chunking / Batching</h3>
+
+<pre><code>import itertools
+
+def batch(iterable, size):
+    """Split an iterable into chunks of given size."""
+    it = iter(iterable)
+    while True:
+        chunk = list(itertools.islice(it, size))
+        if not chunk:
+            break
+        yield chunk
+
+items = list(range(10))
+for i, chunk in enumerate(batch(items, 3)):
+    print(f"Batch {i}: {chunk}")
+# Batch 0: [0, 1, 2]
+# Batch 1: [3, 4, 5]
+# Batch 2: [6, 7, 8]
+# Batch 3: [9]</code></pre>
+
+            <h3>Pattern 3: Run-Length Encoding</h3>
+
+<pre><code>import itertools
+
+def run_length_encode(data):
+    """Compress data by counting consecutive runs."""
+    return [(value, sum(1 for _ in group)) for value, group in itertools.groupby(data)]
+
+data = "AAABBBCCCDAA"
+encoded = run_length_encode(data)
+print(encoded)
+# [('A', 3), ('B', 3), ('C', 3), ('D', 1), ('A', 2)]
+
+# Decode it back
+decoded = "".join(value * count for value, count in encoded)
+print(decoded == data)  # True</code></pre>
+
+            <h3>Pattern 4: Flattening Arbitrary Nesting</h3>
+
+<pre><code>import itertools
+
+def flatten(nested):
+    """Flatten arbitrarily nested lists/tuples."""
+    for item in nested:
+        if isinstance(item, (list, tuple)):
+            yield from flatten(item)
+        else:
+            yield item
+
+deep = [1, [2, [3, 4]], [[5], 6], 7]
+print(list(flatten(deep)))
+# [1, 2, 3, 4, 5, 6, 7]</code></pre>
+
+            <h2 id="gotchas">Common Gotchas</h2>
+
+            <p><strong>1. Iterators are consumed once:</strong> An iterator yields values one time only. Convert to a list if you need to reuse:</p>
+
+<pre><code>import itertools
+
+counter = itertools.count(10)
+print(next(counter))  # 10
+print(next(counter))  # 11
+
+# DON'T do this:
+items = itertools.islice(counter, 3)
+list(items)  # consumes the iterator
+list(items)  # empty! already consumed
+
+# DO this instead:
+items = list(itertools.islice(counter, 3))  # materialize first</code></pre>
+
+            <p><strong>2. groupby() requires sorted data:</strong> It only groups consecutive matching items:</p>
+
+<pre><code>import itertools
+
+# Wrong: items not sorted
+data = ["A", "B", "A", "C"]
+groups = dict(itertools.groupby(data))
+print(groups)  # {'A': <iterator>, 'B': <iterator>, 'C': <iterator>}
+# But "A" appears twice and won't be grouped together!
+
+# Right: sort first
+data.sort()
+groups = {k: list(v) for k, v in itertools.groupby(data)}
+print(groups)  # {'A': ['A', 'A'], 'B': ['B'], 'C': ['C']}</code></pre>
+
+            <p><strong>3. Infinite iterators block forever:</strong> Always use <code>islice</code> or a <code>break</code> condition:</p>
+
+<pre><code>import itertools
+
+# Dangerous: runs forever
+# for i in itertools.count():
+#     print(i)
+
+# Safe: limit with islice
+for i in itertools.islice(itertools.count(), 10):
+    print(i)  # prints 0-9</code></pre>
+
+            <h2 id="summary">Summary Cheat Sheet</h2>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Function</th>
+                        <th>What It Does</th>
+                        <th>Common Use</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>chain()</code></td><td>Join iterables</td><td>Merge lists, flatten API pages</td></tr>
+                    <tr><td><code>groupby()</code></td><td>Group consecutive items</td><td>Log analysis, data grouping</td></tr>
+                    <tr><td><code>islice()</code></td><td>Slice any iterator</td><td>Pagination, first N items</td></tr>
+                    <tr><td><code>count()</code></td><td>Infinite counter</td><td>Auto-incrementing IDs</td></tr>
+                    <tr><td><code>cycle()</code></td><td>Infinite cycle</td><td>Round-robin, alternating values</td></tr>
+                    <tr><td><code>product()</code></td><td>Cartesian product</td><td>Test combinations, configs</td></tr>
+                    <tr><td><code>combinations()</code></td><td>Choose n from k</td><td>Committees, pair testing</td></tr>
+                    <tr><td><code>zip_longest()</code></td><td>Zip with fill values</td><td>Misaligned data, CSV parsing</td></tr>
+                    <tr><td><code>starmap()</code></td><td>Map with unpacking</td><td>Apply func to tuples</td></tr>
+                    <tr><td><code>repeat()</code></td><td>Repeat a value</td><td>Default values, map constant</td></tr>
+                </tbody>
+            </table>
+
+            <h2 id="practice">Practice Exercises</h2>
+
+            <ol>
+                <li>Use <code>chain()</code> to merge three lists of user dictionaries without creating a new list in memory.</li>
+                <li>Use <code>groupby()</code> to count occurrences of each letter in a sorted string.</li>
+                <li>Use <code>product()</code> to generate all possible 3-character passwords from <code>"abc"</code>.</li>
+                <li>Use <code>islice()</code> to read the first 100 lines of a 1GB log file.</li>
+                <li>Use <code>combinations()</code> to find all pairs in a team of 10 for code review assignments.</li>
+            </ol>
+
+            <p>The <code>itertools</code> module is one of those Python tools that separates beginners from confident developers. Start using <code>chain()</code> and <code>islice()</code> today — they alone can clean up half your loop-heavy code. Then explore the combinatoric functions when you need to generate test data or configuration permutations. Before long, you'll be writing iteration code that's shorter, faster, and more readable than anything you wrote with manual loops.</p>
+
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Hugo's Dev Notes. Built with curiosity and caffeine.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Reading progress bar
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + '%';
+        });
+        // Theme toggle
+        const toggle = document.getElementById('themeToggle');
+        if (toggle) {
+            const saved = localStorage.getItem('theme');
+            if (saved === 'light') document.documentElement.classList.add('light-theme');
+            toggle.addEventListener('click', () => {
+                document.documentElement.classList.toggle('light-theme');
+                localStorage.setItem('theme', document.documentElement.classList.contains('light-theme') ? 'light' : 'dark');
+            });
+        }
+    </script>
+</body>
+</html>

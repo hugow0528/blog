@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docker Healthchecks and Readiness Probes — Keep Your Containers Alive | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn Docker healthchecks, restart policies, and container orchestration readiness probes. Monitor container health, detect failures early, and build self-healing deployments with practical examples...">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/docker-healthchecks-readiness.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn active">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-content">
+            <span class="tag devops">DevOps</span>
+            <h1>Docker Healthchecks and Readiness Probes — Keep Your Containers Alive</h1>
+            <div class="post-meta">
+                <span class="post-date">July 7, 2026</span>
+                <span class="read-time">10 min read</span>
+            </div>
+
+            <p>Here's a scenario that catches every DevOps engineer at some point: your Docker container is <strong>running</strong>, but the application inside is <strong>dead</strong>. The process didn't crash — it's just hanging, looping infinitely, or waiting on a dead database connection. Docker reports "healthy" because the PID is alive, but users are getting 502 errors.</p>
+
+            <p>Docker healthchecks solve this. They let you define what "healthy" actually means for your application — not just "is the process running?" but "is the app responding correctly?"</p>
+
+            <p>In this guide, you'll learn how to add healthchecks to Dockerfiles and docker-compose.yml, configure restart policies, set up monitoring with Prometheus, and build self-healing deployments that survive failures automatically.</p>
+
+            <h2 id="why-healthchecks">Why Healthchecks Matter</h2>
+
+            <p>Without healthchecks, Docker assumes any running container is healthy. This causes three common problems:</p>
+
+            <ul>
+                <li><strong>Silent failures:</strong> A web server process is running but not listening on the correct port. Docker doesn't know.</li>
+                <li><strong>Cascading failures:</strong> A database container starts slowly. The app container connects before it's ready, fails, and keeps retrying in a broken state.</li>
+                <li><strong>Zombie containers:</strong> An app enters an infinite retry loop that never succeeds. It uses resources but serves no requests.</li>
+            </ul>
+
+            <p>With healthchecks, Docker can detect these states and trigger automatic recovery — restarting unhealthy containers, routing traffic away from broken instances, or alerting your team before users notice.</p>
+
+            <h2 id="dockerfile">Healthchecks in Dockerfiles</h2>
+
+            <p>The <code>HEALTHCHECK</code> instruction tells Docker how to verify your container is functioning:</p>
+
+            <pre><code># HEALTHCHECK instruction format
+HEALTHCHECK [OPTIONS] CMD command
+
+# Example: Check HTTP endpoint
+FROM python:3.12-slim
+WORKDIR /app
+COPY . .
+RUN pip install -r requirements.txt
+EXPOSE 8000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+CMD ["python", "app.py"]</code></pre>
+
+            <p>Let's break down the options:</p>
+
+            <table class="info-table">
+                <thead>
+                    <tr>
+                        <th>Option</th>
+                        <th>Default</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>--interval</code></td>
+                        <td>30s</td>
+                        <td>How often to run the check</td>
+                    </tr>
+                    <tr>
+                        <td><code>--timeout</code></td>
+                        <td>30s</td>
+                        <td>Max time to wait for the check command</td>
+                    </tr>
+                    <tr>
+                        <td><code>--start-period</code></td>
+                        <td>0s</td>
+                        <td>Grace period before starting checks (app startup time)</td>
+                    </tr>
+                    <tr>
+                        <td><code>--retries</code></td>
+                        <td>3</td>
+                        <td>Failures before marking unhealthy</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Common Healthcheck Patterns</h3>
+
+            <h4>Pattern 1: HTTP Health Endpoint</h4>
+
+            <pre><code># Dockerfile
+HEALTHCHECK --interval=15s --timeout=3s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+# Python app (FastAPI example)
+from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.get("/health")
+def health_check():
+    return {"status": "ok", "version": "1.0.0"}</code></pre>
+
+            <h4>Pattern 2: Database Connectivity Check</h4>
+
+            <pre><code># For a PostgreSQL container
+HEALTHCHECK --interval=10s --timeout=5s --start-period=30s --retries=5 \
+    CMD pg_isready -U postgres || exit 1
+
+# For a Redis container
+HEALTHCHECK --interval=10s --timeout=3s --start-period=5s --retries=3 \
+    CMD redis-cli ping | grep PONG || exit 1</code></pre>
+
+            <h4>Pattern 3: Application-Level Check with Python</h4>
+
+            <pre><code># healthcheck.py — a dedicated health check script
+import sys
+import httpx
+from app.database import get_db
+
+async def check_health():
+    healthy = True
+
+    # Check 1: Can we reach our own endpoint?
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.get("http://localhost:8000/api/status", timeout=3.0)
+            if resp.status_code != 200:
+                healthy = False
+    except Exception as e:
+        print(f"HTTP check failed: {e}")
+        healthy = False
+
+    # Check 2: Can we connect to the database?
+    try:
+        async with get_db() as db:
+            await db.execute("SELECT 1")
+    except Exception as e:
+        print(f"Database check failed: {e}")
+        healthy = False
+
+    # Check 3: Disk space (fail if less than 1GB free)
+    import shutil
+    total, used, free = shutil.disk_usage("/")
+    if free < 1_000_000_000:  # 1GB
+        print(f"Low disk space: {free / 1e9:.1f}GB free")
+        healthy = False
+
+    sys.exit(0 if healthy else 1)
+
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(check_health())
+
+# Dockerfile
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+    CMD python /app/healthcheck.py || exit 1</code></pre>
+
+            <h2 id="docker-compose">Healthchecks in Docker Compose</h2>
+
+            <p>Docker Compose lets you define healthchecks inline, making your entire stack self-aware:</p>
+
+            <pre><code># docker-compose.yml
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy  # Wait for DB healthcheck!
+      redis:
+        condition: service_healthy  # Wait for Redis healthcheck!
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: myapp
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: secure_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d myapp"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+
+volumes:
+  postgres_data:</code></pre>
+
+            <p>The <code>condition: service_healthy</code> directive is a game-changer. Your web container won't start until the database passes its healthcheck, eliminating the "connect before ready" race condition.</p>
+
+            <h2 id="restart-policies">Restart Policies</h2>
+
+            <p>Healthchecks tell Docker the state. Restart policies tell Docker what to <em>do</em> about it:</p>
+
+            <pre><code># In docker-compose.yml
+restart: "no"           # Never restart (default)
+restart: "always"       # Always restart, even after manual stop
+restart: "on-failure"   # Restart only if exit code != 0
+restart: "unless-stopped" # Restart unless manually stopped (RECOMMENDED)
+
+# On the command line
+docker run --restart unless-stopped myapp
+docker run --restart on-failure:5 myapp  # Max 5 restart attempts</code></pre>
+
+            <p><code>unless-stopped</code> is the best default for most services. The container restarts on crash, on reboot, and when Docker daemon restarts — but respects your explicit <code>docker stop</code> commands.</p>
+
+            <h2 id="monitoring">Monitoring Container Health</h2>
+
+            <p>Check current health status:</p>
+
+            <pre><code># List containers with health status
+docker ps --format "table {{.Names}}\t{{.Status}}"
+
+# Output:
+# NAMES         STATUS
+# web           Up 2 hours (healthy)
+# db            Up 2 hours (healthy)
+# redis         Up 1 hour (unhealthy)
+
+# Inspect detailed health logs
+docker inspect --format='{{json .State.Health}}' web
+
+# Tail health check logs
+docker inspect --format='{{range .LogFilePath}}{{.}}{{end}}' web
+# Or use Docker events stream
+docker events --filter 'health=healthy' --filter 'health=unhealthy'</code></pre>
+
+            <h2 id="prometheus">Prometheus Integration</h2>
+
+            <p>For production, export container health metrics to Prometheus:</p>
+
+            <pre><code># Add cadvisor for container metrics
+services:
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    ports:
+      - "8080:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    restart: unless-stopped
+
+# prometheus.yml
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']</code></pre>
+
+            <p>Query unhealthy containers in Prometheus:</p>
+
+            <pre><code># Containers in unhealthy state
+container_last_seen_healthy * on (container_id) group_right container_healthy == 0
+
+# Alert if container has been unhealthy for 5 minutes
+ALERT ContainerUnhealthy
+  IF container_last_seen_healthy == 0
+  FOR 5m
+  LABELS { severity = "critical" }
+  ANNOTATIONS {
+    summary = "Container {{ $labels.container_name }} is unhealthy",
+    description = "{{ $labels.container_name }} has been unhealthy for 5 minutes"
+  }</code></pre>
+
+            <h2 id="anti-patterns">Common Mistakes to Avoid</h2>
+
+            <ol>
+                <li><strong>Missing <code>--start-period</code>:</strong> Your app takes 20 seconds to start. Without start_period, the first healthcheck fails immediately, counting toward the retry limit. Always set this to match your app's startup time.</li>
+                <li><strong>Too-aggressive intervals:</strong> Checking every 5 seconds on a slow database generates unnecessary load. Use 15-30 seconds for most apps.</li>
+                <li><strong>Not installing curl in minimal images:</strong> <code>python:3.12-slim</code> doesn't include curl. Either use <code>python:3.12</code>, install curl in your Dockerfile, or use a Python-based healthcheck.</li>
+                <li><strong>Healthcheck only checks the process:</strong> <code>CMD pgrep python</code> passes even if Python is stuck in an infinite loop. Check the actual service — HTTP endpoint, database query, or port connectivity.</li>
+                <li><strong>Forgetting to handle SIGTERM:</strong> Without graceful shutdown handling, your app might lose in-flight requests during restart. Python's <code>signal</code> module or FastAPI's shutdown events handle this.</li>
+            </ol>
+
+            <h2 id="complete-example">Complete Production Example</h2>
+
+            <pre><code># Final docker-compose.yml for a production-ready stack
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://admin:secret@db:5432/myapp
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "/app/healthcheck.py"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 128M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: myapp
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: secret
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+
+volumes:
+  pgdata:</code></pre>
+
+            <h2 id="summary">Summary</h2>
+
+            <p>Docker healthchecks transform your containers from "running but maybe broken" to "proven healthy or automatically restarted." The key takeaways:</p>
+
+            <ul>
+                <li>Add <code>HEALTHCHECK</code> to every Dockerfile or compose service</li>
+                <li>Set <code>--start-period</code> to match your app's startup time</li>
+                <li>Use <code>condition: service_healthy</code> in depends_on for startup ordering</li>
+                <li>Pair with <code>restart: unless-stopped</code> for automatic recovery</li>
+                <li>Monitor with Prometheus for alerting and dashboards</li>
+                <li>Check the actual service, not just the process</li>
+            </ul>
+
+            <p>A healthy container is one that responds correctly to requests — not one that simply has a running PID. Make that the standard.</p>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo Wong · Built with curiosity and Coffee</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528">GitHub</a>
+                <a href="https://hugow.dev">hugow.dev</a>
+                <a href="/sitemap.xml">Sitemap</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-mode');
+            themeToggle.textContent = '☀';
+        }
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            themeToggle.textContent = isLight ? '☀' : '◐';
+        });
+
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + "%";
+        });
+    </script>
+</body>
+</html>

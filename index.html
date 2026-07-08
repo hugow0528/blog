@@ -97,12 +97,96 @@
 
         <!-- Filter Pills -->
         <div class="filter-bar">
-            <button class="filter-pill active" onclick="filterPosts('all', this)">All</button><button class="filter-pill" onclick="filterPosts('cloudflare', this)">☁️ Cloudflare <span class="count">19</span></button><button class="filter-pill" onclick="filterPosts('python', this)">🐍 Python <span class="count">43</span></button><button class="filter-pill" onclick="filterPosts('devops', this)">🐳 DevOps <span class="count">48</span></button><button class="filter-pill" onclick="filterPosts('security', this)">🔐 Security <span class="count">12</span></button><button class="filter-pill" onclick="filterPosts('vibe', this)">🤖 AI Coding <span class="count">7</span></button><button class="filter-pill" onclick="filterPosts('web', this)">💻 Web Dev <span class="count">11</span></button>
+            <button class="filter-pill active" onclick="filterPosts('all', this)">All</button><button class="filter-pill" onclick="filterPosts('cloudflare', this)">☁️ Cloudflare <span class="count">19</span></button><button class="filter-pill" onclick="filterPosts('python', this)">🐍 Python <span class="count">44</span></button><button class="filter-pill" onclick="filterPosts('devops', this)">🐳 DevOps <span class="count">48</span></button><button class="filter-pill" onclick="filterPosts('security', this)">🔐 Security <span class="count">13</span></button><button class="filter-pill" onclick="filterPosts('vibe', this)">🤖 AI Coding <span class="count">7</span></button><button class="filter-pill" onclick="filterPosts('web', this)">💻 Web Dev <span class="count">11</span></button>
         </div>
 
         <!-- Posts Grid -->
         <div class="posts" id="postsContainer">
 
+        <article class="post" data-tags="python,devops">
+            <div class="post-tags">
+                <span class="tag python">Python</span><span class="tag devops">DevOps</span>
+            </div>
+            <h2 class="post-title"><a href="posts/python-subprocess-module.html">Python subprocess Module: Run Shell Commands Safely — Complete Guide</a></h2>
+            <div class="post-excerpt">
+                <p>Master Python's subprocess module — subprocess.run(), Popen, piping output, timeouts, and safe execution patterns. Stop using os.system() and write secure automation scripts. From basic command execution to real-world Git automation and streaming log monitoring...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">July 8, 2026</span>
+                <span class="post-read-time">10 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+        </article>
+        <article class="post" data-tags="devops,cloudflare">
+            <div class="post-tags">
+                <span class="tag devops">DevOps</span><span class="tag cloudflare">Cloudflare</span>
+            </div>
+            <h2 class="post-title"><a href="posts/terraform-cicd-github-actions.html">Terraform CI/CD with GitHub Actions: Automate Infrastructure as Code</a></h2>
+            <div class="post-excerpt">
+                <p>Set up Terraform CI/CD pipelines with GitHub Actions. Automated linting, formatting, planning, approval gates, and safe deployments. Working workflow examples for team collaboration. From PR validation to production apply with Slack notifications...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">July 8, 2026</span>
+                <span class="post-read-time">11 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags">
+                <span class="tag python">Python</span>
+            </div>
+            <h2 class="post-title"><a href="posts/python-itertools.html">Python itertools: Efficient Iteration Patterns Every Developer Should Know</a></h2>
+            <div class="post-excerpt">
+                <p>Master Python's itertools module — chain, groupby, product, permutations, combinations, islice, cycle, and more. Write cleaner, faster iteration code without manual loops. Includes sliding windows, chunking/batching, run-length encoding, and real-world data processing patterns...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">July 7, 2026</span>
+                <span class="post-read-time">10 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+        </article>
+        <article class="post" data-tags="security,cloudflare">
+            <div class="post-tags">
+                <span class="tag security">Security</span><span class="tag cloudflare">Cloudflare</span>
+            </div>
+            <h2 class="post-title"><a href="posts/dns-dnssec-guide.html">DNS and DNSSEC: How the Internet's Phonebook Works and Stays Secure</a></h2>
+            <div class="post-excerpt">
+                <p>Understand how DNS resolves domain names to IP addresses, the lookup process step by step, essential DNS record types (A, CNAME, MX, TXT, NS, CAA), DNS security threats (spoofing, tunneling, amplification DDoS, domain takeover), DNSSEC cryptographic signatures, DoH/DoT encryption, and essential debugging tools...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">July 7, 2026</span>
+                <span class="post-read-time">11 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+        </article>
+        <article class="post" data-tags="web">
+            <div class="post-tags">
+                <span class="tag web">Web Dev</span>
+            </div>
+            <h2 class="post-title"><a href="posts/javascript-event-handling-delegation.html">JavaScript Event Handling &amp; Event Delegation — Complete Beginner's Guide</a></h2>
+            <div class="post-excerpt">
+                <p>Master JavaScript event handling, event bubbling, event delegation, and real-world patterns. Build interactive web apps with click handlers, keyboard shortcuts, live search with debouncing, dynamic navigation, and the golden delegation pattern. From basic addEventListener to production-grade event architecture...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">July 7, 2026</span>
+                <span class="post-read-time">11 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+        </article>
+        <article class="post" data-tags="devops">
+            <div class="post-tags">
+                <span class="tag devops">DevOps</span>
+            </div>
+            <h2 class="post-title"><a href="posts/docker-healthchecks-readiness.html">Docker Healthchecks and Readiness Probes — Keep Your Containers Alive</a></h2>
+            <div class="post-excerpt">
+                <p>Learn Docker healthchecks, restart policies, and readiness probes. Define what "healthy" really means for your apps — HTTP endpoints, database checks, custom scripts. Self-healing docker-compose stacks with service_healthy conditions, Prometheus monitoring, and production best practices...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">July 7, 2026</span>
+                <span class="post-read-time">10 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+        </article>
         <article class="post" data-tags="python">
             <div class="post-tags">
                 <span class="tag python">Python</span>

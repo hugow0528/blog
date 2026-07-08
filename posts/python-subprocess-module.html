@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python subprocess Module: Run Shell Commands Safely | Hugo's Dev Notes</title>
+    <meta name="description" content="Master Python's subprocess module — subprocess.run(), Popen, piping output, timeouts, and safe execution patterns. Stop using os.system() and write secure automation scripts.">
+    <meta name="keywords" content="Python subprocess, os.system alternative, shell commands Python, Popen, automation, scripting">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-subprocess-module.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+        
+        <article class="post-content">
+            <span class="tag python">Python</span><span class="tag devops">DevOps</span>
+            <h1>Python subprocess Module: Run Shell Commands Safely — Complete Guide</h1>
+            <time>July 8, 2026 · 10 min read</time>
+
+            <p>You've written Python scripts that manipulate files, process data, and call APIs. But what about running <strong>shell commands</strong> from Python? Maybe you need to run <code>git</code>, <code>docker</code>, <code>ffmpeg</code>, or any CLI tool as part of an automation pipeline.</p>
+
+            <p>The <code>subprocess</code> module is Python's built-in way to spawn new processes, connect to their input/output/error pipes, and obtain return codes. It replaces the older <code>os.system()</code>, <code>os.popen()</code>, and <code>commands</code> modules — and it's <em>much</em> safer and more powerful.</p>
+
+            <h2>Why Not os.system()?</h2>
+
+            <p>You might have seen <code>os.system("ls -la")</code> in old tutorials. Here's why you should avoid it:</p>
+
+            <ul>
+                <li><strong>No output capture</strong> — you can't read stdout or stderr</li>
+                <li><strong>Shell injection risk</strong> — passing user input is dangerously easy</li>
+                <li><strong>No error handling</strong> — return codes are lost unless you parse them</li>
+                <li><strong>Platform-dependent</strong> — doesn't work the same on Windows</li>
+            </ul>
+
+            <p><code>subprocess</code> solves all of these. Let's dive in.</p>
+
+            <h2>1. The Simple Way: subprocess.run()</h2>
+
+            <p>For 90% of use cases, <code>subprocess.run()</code> is all you need. It runs a command, waits for it to finish, and returns a <code>CompletedProcess</code> object.</p>
+
+            <pre><code>import subprocess
+
+# Basic command — capture output
+result = subprocess.run(
+    ["ls", "-la"],
+    capture_output=True,
+    text=True
+)
+
+print("Exit code:", result.returncode)
+print("Stdout:", result.stdout)
+print("Stderr:", result.stderr)
+</code></pre>
+
+            <p><strong>Key parameters:</strong></p>
+
+            <ul>
+                <li><code>capture_output=True</code> — captures both stdout and stderr (Python 3.7+)</li>
+                <li><code>text=True</code> — returns strings instead of bytes (Python 3.7+)</li>
+                <li><code>check=True</code> — raises <code>CalledProcessError</code> if exit code is non-zero</li>
+                <li><code>timeout=seconds</code> — kills the process if it takes too long</li>
+            </ul>
+
+            <h2>2. Always Pass Arguments as a List</h2>
+
+            <p>This is the most important security rule. <strong>Never</strong> pass a string with <code>shell=True</code> unless you absolutely must:</p>
+
+            <pre><code># ✅ SAFE — arguments are separate, no shell injection possible
+subprocess.run(["git", "commit", "-m", "fix: bug in login"])
+
+# ❌ DANGEROUS — user input could inject shell commands
+username = "hugo; rm -rf /"
+subprocess.run(f"git commit -m 'fix: {username}'", shell=True)
+
+# ✅ SAFE VERSION — even with user input
+subprocess.run(["git", "commit", "-m", f"fix: {username}"])
+</code></pre>
+
+            <p>When you pass a <strong>list</strong>, each element is a separate argument. No shell interpretation happens, so <code>;</code>, <code>|</code>, <code>&amp;</code>, and backticks are treated as literal characters.</p>
+
+            <h2>3. Error Handling with check=True</h2>
+
+            <p>Use <code>check=True</code> to automatically raise an exception when a command fails:</p>
+
+            <pre><code>import subprocess
+
+try:
+    result = subprocess.run(
+        ["python", "script_that_crashes.py"],
+        capture_output=True,
+        text=True,
+        check=True  # raises CalledProcessError on non-zero exit
+    )
+    print("Success:", result.stdout)
+except subprocess.CalledProcessError as e:
+    print(f"Command failed with exit code {e.returncode}")
+    print(f"Error output:\n{e.stderr}")
+except FileNotFoundError:
+    print("Command not found — is it installed?")
+</code></pre>
+
+            <p>This pattern is essential for scripts that depend on other tools. If <code>docker</code> or <code>ffmpeg</code> isn't installed, you'll get a clear error instead of silent failure.</p>
+
+            <h2>4. Running Commands with a Timeout</h2>
+
+            <p>Some commands can hang forever. Always set a timeout for external processes:</p>
+
+            <pre><code>import subprocess
+
+try:
+    result = subprocess.run(
+        ["docker", "pull", "nginx:latest"],
+        capture_output=True,
+        text=True,
+        timeout=120  # 2 minutes max
+    )
+    print("Image pulled successfully!")
+except subprocess.TimeoutExpired:
+    print("Download took too long — maybe check your network?")
+</code></pre>
+
+            <p><strong>Tip:</strong> For long-running commands (deployments, migrations), set timeouts based on your service-level objectives. A database migration that takes 10 minutes might be fine during maintenance but not during a deploy.</p>
+
+            <h2>5. Passing Input to Commands</h2>
+
+            <p>Some commands read from stdin. Use the <code>input</code> parameter:</p>
+
+            <pre><code>import subprocess
+
+# Send data to a command's stdin
+result = subprocess.run(
+    ["python", "-c", "import sys; print(sys.stdin.read().upper())"],
+    input="hello world\n",
+    capture_output=True,
+    text=True
+)
+
+print(result.stdout)  # HELLO WORLD\n
+</code></pre>
+
+            <p>This is useful for password prompts, yes/no confirmations, or piping structured data between commands:</p>
+
+            <pre><code># Read environment variables from a file
+result = subprocess.run(
+    ["cat", ".env"],
+    capture_output=True,
+    text=True
+)
+
+# Parse them
+env_vars = {}
+for line in result.stdout.strip().split("\n"):
+    if "=" in line and not line.startswith("#"):
+        key, value = line.split("=", 1)
+        env_vars[key.strip()] = value.strip()
+
+print(env_vars)
+</code></pre>
+
+            <h2>6. Real-World: Git Automation</h2>
+
+            <p>Here's a practical example — a Python script that automates a Git workflow:</p>
+
+            <pre><code>import subprocess
+import sys
+
+def run_git(*args, check=True):
+    """Run a git command and return stdout."""
+    result = subprocess.run(
+        ["git"] + list(args),
+        capture_output=True,
+        text=True,
+        check=check
+    )
+    return result.stdout.strip()
+
+def git_status_summary():
+    """Print a summary of current git status."""
+    # Get branch name
+    branch = run_git("branch", "--show-current")
+    
+    # Check for changes
+    changes = run_git("status", "--porcelain")
+    
+    # Count changes
+    staged = sum(1 for line in changes if line.startswith(("M ", "A ", "R ")))
+    unstaged = sum(1 for line in changes if line.startswith(" M") or line.startswith("??"))
+    
+    print(f"Branch: {branch}")
+    print(f"Staged changes: {staged}")
+    print(f"Unstaged changes: {unstaged}")
+    
+    if staged or unstaged:
+        print("⚠️  You have uncommitted changes!")
+    else:
+        print("✅ Working tree is clean")
+
+git_status_summary()
+</code></pre>
+
+            <h2>7. When You Need More Control: subprocess.Popen</h2>
+
+            <p><code>subprocess.run()</code> waits for the command to finish. But sometimes you need <strong>real-time output</strong> or want to interact with the process while it runs. That's where <code>Popen</code> comes in:</p>
+
+            <pre><code>import subprocess
+
+# Stream output in real-time
+process = subprocess.Popen(
+    ["tail", "-f", "/var/log/syslog"],
+    stdout=subprocess.PIPE,
+    stderr=subprocess.PIPE,
+    text=True
+)
+
+# Read line by line as it's produced
+for line in process.stdout:
+    if "ERROR" in line:
+        print(f"⚠️  {line.strip()}")
+    if process.poll() is not None:
+        break
+
+process.wait()
+</code></pre>
+
+            <p><strong>When to use Popen:</strong></p>
+
+            <ul>
+                <li>Streaming live output (log monitoring, download progress)</li>
+                <li>Interactive commands that need input during execution</li>
+                <li>Running multiple processes and connecting their pipes</li>
+            </ul>
+
+            <h2>8. Environment Variables</h2>
+
+            <p>Control the environment a subprocess runs in with the <code>env</code> parameter:</p>
+
+            <pre><code>import subprocess
+import os
+
+# Get current environment and add/modify variables
+env = os.environ.copy()
+env["NODE_ENV"] = "production"
+env["PORT"] = "8080"
+
+result = subprocess.run(
+    ["npm", "start"],
+    env=env,
+    capture_output=True,
+    text=True
+)
+
+print(result.stdout)
+</code></pre>
+
+            <p><strong>Warning:</strong> Always start from <code>os.environ.copy()</code>. If you pass a new dict, the subprocess won't have <code>PATH</code>, <code>HOME</code>, or any other system variables — and most commands will fail silently.</p>
+
+            <h2>9. Quick Reference: Common Patterns</h2>
+
+            <p>Here's a cheat sheet for everyday subprocess use:</p>
+
+            <pre><code>import subprocess
+
+# Run and get output
+output = subprocess.check_output(["git", "log", "--oneline", "-5"], text=True)
+
+# Run and ignore output
+subprocess.run(["docker", "prune", "-f"], check=True)
+
+# Run with timeout
+result = subprocess.run(
+    ["curl", "-s", "https://api.example.com"],
+    capture_output=True, text=True, timeout=30
+)
+
+# Run in a different directory
+result = subprocess.run(
+    ["python", "main.py"],
+    capture_output=True, text=True,
+    cwd="/path/to/project"
+)
+
+# Set working directory + environment
+result = subprocess.run(
+    ["npm", "test"],
+    capture_output=True, text=True, check=True,
+    cwd="./frontend",
+    env={**os.environ.copy(), "CI": "true"}
+)
+</code></pre>
+
+            <h2>Summary</h2>
+
+            <p>The <code>subprocess</code> module is Python's workhorse for running external commands. Remember the golden rules:</p>
+
+            <ol>
+                <li><strong>Use <code>subprocess.run()</code></strong> — it handles 90% of cases</li>
+                <li><strong>Always pass arguments as a list</strong> — never <code>shell=True</code> with user input</li>
+                <li><strong>Use <code>check=True</code></strong> — fail fast when commands error</li>
+                <li><strong>Set timeouts</strong> — prevent scripts from hanging forever</li>
+                <li><strong>Capture output</strong> — <code>capture_output=True, text=True</code> for debugging</li>
+                <li><strong>Use <code>os.environ.copy()</code></strong> — preserve the parent environment</li>
+            </ol>
+
+            <p>Next up: learn how to <a href="python-cli-tools-click-rich.html">build professional CLI tools with Click and Rich</a>, or explore <a href="python-logging-professional-debugging.html">professional logging</a> for production scripts.</p>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo Wong · Built with curiosity and Coffee</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528">GitHub</a>
+                <a href="https://hugow.dev">hugow.dev</a>
+                <a href="/sitemap.xml">Sitemap</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-mode');
+            themeToggle.textContent = '☀';
+        }
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            themeToggle.textContent = isLight ? '☀' : '◐';
+        });
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + "%";
+        });
+    </script>
+</body>
+</html>

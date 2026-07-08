@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JavaScript Event Handling &amp; Event Delegation — Complete Beginner's Guide | Hugo's Dev Notes</title>
+    <meta name="description" content="Master JavaScript event handling, event bubbling, event delegation, and real-world patterns. Build interactive web apps with click handlers, keyboard events, form validation, and more...">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/javascript-event-handling-delegation.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn active">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-content">
+            <span class="tag web">Web Dev</span>
+            <h1>JavaScript Event Handling &amp; Event Delegation — Complete Beginner's Guide</h1>
+            <div class="post-meta">
+                <span class="post-date">July 7, 2026</span>
+                <span class="read-time">11 min read</span>
+            </div>
+
+            <p>Every interactive website relies on events. A user clicks a button, types in a search box, scrolls down a page — JavaScript responds to these actions through event handling. But as your app grows, attaching individual event listeners to every element becomes slow, messy, and hard to maintain.</p>
+
+            <p>In this guide, you'll learn the complete picture: event types, event bubbling and capturing, the golden pattern called <strong>event delegation</strong>, and real-world implementations you can copy into your projects today.</p>
+
+            <h2 id="event-types">Common Event Types</h2>
+
+            <p>JavaScript supports dozens of event types. Here are the ones you'll use 95% of the time:</p>
+
+            <pre><code>// Mouse events
+element.addEventListener('click', handler);
+element.addEventListener('dblclick', handler);
+element.addEventListener('mouseenter', handler);
+element.addEventListener('mouseleave', handler);
+element.addEventListener('mousemove', handler);
+
+// Keyboard events
+element.addEventListener('keydown', handler);
+element.addEventListener('keyup', handler);
+
+// Form events
+element.addEventListener('submit', handler);
+element.addEventListener('change', handler);
+element.addEventListener('input', handler);
+
+// Window/document events
+window.addEventListener('load', handler);
+window.addEventListener('scroll', handler);
+window.addEventListener('resize', handler);
+
+// DOM events
+element.addEventListener('focus', handler);
+element.addEventListener('blur', handler);</code></pre>
+
+            <p>The <code>input</code> event fires on every keystroke, while <code>change</code> fires when the element loses focus. Use <code>input</code> for live search and <code>change</code> for form validation.</p>
+
+            <h2 id="three-ways">Three Ways to Attach Event Listeners</h2>
+
+            <h3>Method 1: Inline HTML (Avoid)</h3>
+
+            <pre><code>&lt;button onclick="handleClick()"&gt;Click&lt;/button&gt;</code></pre>
+
+            <p>Never use inline handlers in real projects. They mix HTML and JavaScript, pollute the global scope, and are impossible to remove or modify dynamically.</p>
+
+            <h3>Method 2: Property Assignment (Limited)</h3>
+
+            <pre><code>const button = document.querySelector('.btn');
+button.onclick = function(event) {
+    console.log('Clicked!', event.target);
+};
+
+// Problem: only ONE handler can be assigned
+button.onclick = function() {
+    console.log('This replaces the previous handler');
+};</code></pre>
+
+            <p>You can only assign one handler per event type. The second assignment overwrites the first.</p>
+
+            <h3>Method 3: addEventListener (Recommended)</h3>
+
+            <pre><code>const button = document.querySelector('.btn');
+
+// Multiple handlers on the same event
+button.addEventListener('click', function(e) {
+    console.log('Handler 1');
+});
+
+button.addEventListener('click', function(e) {
+    console.log('Handler 2');
+});
+
+// Both fire when clicked!
+
+// Remove a handler (must use named function)
+function myHandler(e) {
+    console.log('Will be removed');
+}
+button.addEventListener('click', myHandler);
+button.removeEventListener('click', myHandler);</code></pre>
+
+            <p><code>addEventListener</code> lets you attach multiple handlers, remove them later, and control event flow. This is the standard approach for all modern JavaScript.</p>
+
+            <h2 id="event-object">The Event Object</h2>
+
+            <p>Every event handler receives an <strong>Event object</strong> with useful properties:</p>
+
+            <pre><code>document.querySelector('.btn').addEventListener('click', function(event) {
+    console.log(event.type);       // 'click'
+    console.log(event.target);     // The element that was clicked
+    console.log(event.currentTarget); // The element the listener is on
+    console.log(event.clientX);    // Mouse X position (window-relative)
+    console.log(event.clientY);    // Mouse Y position (window-relative)
+    console.log(event.offsetX);    // Mouse X position (element-relative)
+    console.log(event.preventDefault()); // Stop default action
+    console.log(event.stopPropagation()); // Stop bubbling
+});
+
+// Keyboard event properties
+document.addEventListener('keydown', function(event) {
+    console.log(event.key);       // 'a', 'Enter', 'Escape', etc.
+    console.log(event.code);      // 'KeyA', 'Enter', 'Escape'
+    console.log(event.ctrlKey);   // true/false
+    console.log(event.shiftKey);  // true/false
+    console.log(event.altKey);    // true/false
+});</code></pre>
+
+            <h2 id="bubbling">Event Bubbling and Capturing</h2>
+
+            <p>When you click a nested element, the event travels through the DOM tree. There are two phases:</p>
+
+            <pre><code>// HTML: &lt;div id="parent"&gt;&lt;button id="child"&gt;Click&lt;/button&gt;&lt;/div&gt;
+
+const parent = document.getElementById('parent');
+const child = document.getElementById('child');
+
+// By default, event listeners use "bubbling" (capture = false)
+parent.addEventListener('click', () => {
+    console.log('Parent handler fires SECOND (bubbling up)');
+});
+
+child.addEventListener('click', () => {
+    console.log('Child handler fires FIRST');
+});
+
+// Click the button → "Child" prints, then "Parent"
+
+// Use capture phase to intercept BEFORE the target
+parent.addEventListener('click', () => {
+    console.log('This fires FIRST during capture phase');
+}, true); // true = capture phase</code></pre>
+
+            <p><strong>Event flow summary:</strong></p>
+            <ol>
+                <li><strong>Capture phase:</strong> Event travels from &lt;html&gt; down to the target (rarely used)</li>
+                <li><strong>Target phase:</strong> Event reaches the actual clicked element</li>
+                <li><strong>Bubbling phase:</strong> Event travels back up to &lt;html&gt; (default behavior)</li>
+            </ol>
+
+            <h2 id="delegation">Event Delegation: The Game Changer</h2>
+
+            <p>This is the most important pattern in this guide. Instead of attaching a listener to every single element, attach ONE listener to a parent and use <code>event.target</code> to figure out which child was clicked.</p>
+
+            <h3>Without Event Delegation (Bad)</h3>
+
+            <pre><code>// Imagine 1,000 todo items
+const todos = document.querySelectorAll('.todo-item');
+
+// 1,000 event listeners — memory hog!
+todos.forEach(todo => {
+    todo.addEventListener('click', function() {
+        this.classList.toggle('completed');
+    });
+});
+
+// Adding a new todo? You forgot to add the listener!
+const newTodo = document.createElement('div');
+newTodo.className = 'todo-item';
+newTodo.textContent = 'New task';
+document.querySelector('.todo-list').appendChild(newTodo);
+// Click handler doesn't work on this new item!</code></pre>
+
+            <h3>With Event Delegation (Good)</h3>
+
+            <pre><code>// ONE listener on the parent
+const todoList = document.querySelector('.todo-list');
+
+todoList.addEventListener('click', function(event) {
+    // Find the closest .todo-item ancestor
+    const todo = event.target.closest('.todo-item');
+
+    if (todo) {
+        todo.classList.toggle('completed');
+    }
+});
+
+// New todos automatically work! No extra code needed.
+const newTodo = document.createElement('div');
+newTodo.className = 'todo-item';
+newTodo.textContent = 'New task';
+todoList.appendChild(newTodo);</code></pre>
+
+            <h2 id="real-world">Real-World Examples</h2>
+
+            <h3>Example 1: Dynamic Navigation with Active State</h3>
+
+            <pre><code>const nav = document.querySelector('.main-nav');
+
+nav.addEventListener('click', function(event) {
+    const link = event.target.closest('a.nav-link');
+
+    if (link) {
+        event.preventDefault();
+
+        // Remove active class from all links
+        nav.querySelectorAll('.nav-link').forEach(l => {
+            l.classList.remove('active');
+        });
+
+        // Add active class to clicked link
+        link.classList.add('active');
+
+        // Navigate (or in a SPA, render the page)
+        console.log('Navigating to:', link.getAttribute('href'));
+    }
+});</code></pre>
+
+            <h3>Example 2: Delete Button in a Dynamic List</h3>
+
+            <pre><code>const container = document.getElementById('app-container');
+
+container.addEventListener('click', function(event) {
+    // Check if a delete button was clicked
+    if (event.target.classList.contains('delete-btn')) {
+        const item = event.target.closest('.list-item');
+        if (item && confirm('Delete this item?')) {
+            item.remove();
+        }
+    }
+
+    // Check if an edit button was clicked
+    if (event.target.classList.contains('edit-btn')) {
+        const item = event.target.closest('.list-item');
+        if (item) {
+            openEditor(item);
+        }
+    }
+
+    // Check if an increment button was clicked
+    if (event.target.classList.contains('increment')) {
+        const counter = event.target.closest('.counter-item');
+        if (counter) {
+            const display = counter.querySelector('.count');
+            display.textContent = parseInt(display.textContent) + 1;
+        }
+    }
+});</code></pre>
+
+            <p>One handler, multiple actions. Adding new button types means adding one more <code>if</code> block — no need to touch event registration code.</p>
+
+            <h3>Example 3: Live Search with Debouncing</h3>
+
+            <pre><code>// Debounce: wait until user stops typing for 300ms
+function debounce(func, delay) {
+    let timeout;
+    return function(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), delay);
+    };
+}
+
+const searchInput = document.getElementById('search');
+
+const performSearch = function(event) {
+    const query = event.target.value.trim();
+    if (query.length < 2) return;
+
+    fetch(`/api/search?q=${encodeURIComponent(query)}`)
+        .then(res => res.json())
+        .then(data => {
+            renderResults(data);
+        })
+        .catch(err => console.error('Search failed:', err));
+};
+
+searchInput.addEventListener('input', debounce(performSearch, 300));</code></pre>
+
+            <p>Without debouncing, every keystroke triggers a network request. With debouncing, the request fires only after the user pauses for 300 milliseconds.</p>
+
+            <h3>Example 4: Keyboard Shortcuts</h3>
+
+            <pre><code>document.addEventListener('keydown', function(event) {
+    // Ctrl/Cmd + K for search
+    if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
+        event.preventDefault();
+        document.getElementById('search-modal').showModal();
+    }
+
+    // Escape to close modals
+    if (event.key === 'Escape') {
+        const modal = document.querySelector('dialog[open]');
+        if (modal) modal.close();
+    }
+
+    // Enter to submit forms
+    if (event.key === 'Enter' && !event.shiftKey) {
+        const active = document.activeElement;
+        if (active && active.form) {
+            active.form.requestSubmit();
+        }
+    }
+});</code></pre>
+
+            <h2 id="best-practices">Best Practices Summary</h2>
+
+            <ol>
+                <li><strong>Always use <code>addEventListener</code></strong> — never inline handlers or property assignment</li>
+                <li><strong>Use event delegation for dynamic lists</strong> — one listener beats hundreds</li>
+                <li><strong>Use <code>event.target.closest()</code></strong> to find the right element</li>
+                <li><strong>Debounce scroll and input events</strong> — they fire very frequently</li>
+                <li><strong>Clean up listeners when removing elements</strong> — use <code>removeEventListener</code> or rely on garbage collection for detached DOM nodes</li>
+                <li><strong>Use <code>event.preventDefault()</code> sparingly</strong> — only when you truly need to override default behavior</li>
+                <li><strong>Name your handler functions</strong> — you need named references to remove listeners later</li>
+            </ol>
+
+            <h2 id="cheat-sheet">Quick Reference</h2>
+
+            <pre><code>// The pattern to remember
+parentElement.addEventListener('click', function(event) {
+    const target = event.target.closest('.selector');
+    if (target) {
+        // Do something with target
+    }
+});
+
+// Keyboard shortcut pattern
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        // Handle escape
+    }
+});
+
+// Debounced input pattern
+input.addEventListener('input', debounce(handler, 300));
+
+// Stop default form submission
+form.addEventListener('submit', function(event) {
+    event.preventDefault();
+    // Handle with fetch/AJAX instead
+});</code></pre>
+
+            <p>Master these patterns and you'll write cleaner, faster, more maintainable JavaScript. Event delegation alone will save you from dozens of future headaches when your UI becomes dynamic.</p>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo Wong · Built with curiosity and Coffee</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528">GitHub</a>
+                <a href="https://hugow.dev">hugow.dev</a>
+                <a href="/sitemap.xml">Sitemap</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-mode');
+            themeToggle.textContent = '☀';
+        }
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            themeToggle.textContent = isLight ? '☀' : '◐';
+        });
+
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + "%";
+        });
+    </script>
+</body>
+</html>

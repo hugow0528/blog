@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DNS and DNSSEC: How the Internet's Phonebook Works and Stays Secure | Hugo's Dev Notes</title>
+    <meta name="description" content="Understand how DNS resolves domain names to IP addresses, DNS record types (A, CNAME, MX, TXT), the lookup process step by step, and how DNSSEC adds cryptographic security to prevent spoofing...">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/dns-dnssec-guide.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn active">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-content">
+            <span class="tag security">Security</span>
+            <h1>DNS and DNSSEC: How the Internet's Phonebook Works and Stays Secure</h1>
+            <div class="post-meta">
+                <span class="post-date">July 7, 2026</span>
+                <span class="read-time">11 min read</span>
+            </div>
+
+            <p>You type <code>google.com</code> into your browser and within milliseconds, you're talking to a server at <code>142.250.190.46</code>. How did that happen? What if someone intercepted that translation and sent you to a fake site instead?</p>
+
+            <p>DNS (Domain Name System) is the internet's phonebook. DNSSEC (DNS Security Extensions) is the security layer that prevents the phonebook from being tampered with. Together, they're the unsung heroes of every single internet request you make — thousands of times per day.</p>
+
+            <p>In this guide, you'll learn how DNS lookups work from your browser to a root server, the most important DNS record types, common DNS attacks, and how DNSSEC adds cryptographic signatures to protect your traffic.</p>
+
+            <h2 id="what-is-dns">What Exactly Is DNS?</h2>
+
+            <p>At its core, DNS is a <strong>distributed database</strong> that maps human-readable domain names (like <code>example.com</code>) to machine-readable IP addresses (like <code>93.184.216.34</code>). Without DNS, you'd have to memorize IP addresses for every website.</p>
+
+            <p>DNS is hierarchical and decentralized. There's no single "DNS server" — instead, the system is split into zones, each managed by different organizations:</p>
+
+            <ul>
+                <li><strong>Root servers</strong> (13 logical servers worldwide) — point to TLD servers</li>
+                <li><strong>Top-Level Domain (TLD) servers</strong> — manage <code>.com</code>, <code>.org</code>, <code>.net</code>, etc.</li>
+                <li><strong>Authoritative name servers</strong> — hold the actual records for <code>example.com</code></li>
+                <li><strong>Recursive resolvers</strong> (like 8.8.8.8 or 1.1.1.1) — do the lookup work for your device</li>
+            </ul>
+
+            <h2 id="lookup-process">The DNS Lookup Process Step by Step</h2>
+
+            <p>Here's what happens when you visit <code>www.example.com</code>:</p>
+
+            <ol>
+                <li><strong>Browser cache:</strong> Your browser checks if it already knows the IP from a recent visit.</li>
+                <li><strong>OS cache:</strong> Your operating system checks its local DNS cache.</li>
+                <li><strong>Router cache:</strong> Some routers also cache DNS responses.</li>
+                <li><strong>Recursive resolver:</strong> If nothing cached, your device asks the DNS resolver (usually provided by your ISP or a public service like Cloudflare's 1.1.1.1).</li>
+                <li><strong>Root server:</strong> The resolver queries a root server, which says "I don't know, but ask the <code>.com</code> TLD server." Gets the TLD server's address.</li>
+                <li><strong>TLD server:</strong> The resolver asks the <code>.com</code> TLD server, which says "Ask the authoritative servers for <code>example.com</code>." Gets the authoritative server's address.</li>
+                <li><strong>Authoritative server:</strong> The resolver asks the authoritative server, which returns <code>www.example.com = 93.184.216.34</code>.</li>
+                <li><strong>Caching:</strong> The resolver caches the result (based on the TTL — Time to Live) and returns it to your browser.</li>
+            </ol>
+
+            <p>The whole process typically takes <strong>20-200 milliseconds</strong>, though cached lookups are nearly instant. The TTL value controls how long each resolver keeps the result before asking again — typically anywhere from 300 seconds (5 min) to 86400 seconds (24 hours).</p>
+
+            <p>You can watch this happen in real time with the <code>dig</code> command:</p>
+
+<pre><code># Trace a full DNS lookup
+$ dig +trace www.example.com
+
+# This shows every step from root to authoritative server
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 12345
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
+
+;; ANSWER SECTION:
+www.example.com.  300  IN  A  93.184.216.34
+
+;; Query time: 42 msec</code></pre>
+
+            <p>The <code>+trace</code> flag is especially useful for debugging — it shows every server consulted during the lookup.</p>
+
+            <h2 id="record-types">Essential DNS Record Types</h2>
+
+            <p>DNS stores different types of information in records. Here are the ones you'll encounter most:</p>
+
+            <h3>A Record (Address)</h3>
+            <p>Maps a domain to an IPv4 address:</p>
+
+<pre><code>example.com.    300    IN    A    93.184.216.34
+www.example.com. 300   IN    A    93.184.216.34</code></pre>
+
+            <h3>AAAA Record (IPv6 Address)</h3>
+            <p>Maps a domain to an IPv6 address:</p>
+
+<pre><code>example.com.    300    IN    AAAA    2606:2800:220:1:248:1893:25c8:1946</code></pre>
+
+            <h3>CNAME Record (Canonical Name)</h3>
+            <p>Creates an alias pointing to another domain name:</p>
+
+<pre><code>www.example.com.  300  IN  CNAME  example.com.
+shop.example.com. 300  IN  CNAME  store.shopify.com.</code></pre>
+
+            <p><strong>Important:</strong> You cannot put a CNAME at the root domain (apex). If <code>example.com</code> has a CNAME, you can't have MX, TXT, or other records at the same name. Use an A record or an ALIAS/ANAME record instead (Cloudflare supports this).</p>
+
+            <h3>MX Record (Mail Exchange)</h3>
+            <p>Specifies which servers handle email for the domain, with priority numbers (lower = higher priority):</p>
+
+<pre><code>example.com.  3600  IN  MX  10  mail.example.com.
+example.com.  3600  IN  MX  20  backup-mail.example.com.</code></pre>
+
+            <h3>TXT Record (Text)</h3>
+            <p>Stores arbitrary text — commonly used for SPF, DKIM, and domain verification:</p>
+
+<pre><code># SPF: "Only these servers can send email for us"
+example.com.  300  IN  TXT  "v=spf1 include:_spf.google.com ~all"
+
+# DKIM: Cryptographic signature for email
+default._domainkey.example.com. 300 IN TXT "v=DKIM1; k=rsa; p=MIGfMA0GCS..."
+
+# Domain verification (GitHub, Google, Cloudflare, etc.)
+example.com.  300  IN  TXT  "google-site-verification=abc123xyz"</code></pre>
+
+            <h3>NS Record (Name Server)</h3>
+            <p>Delegates a zone to specific name servers:</p>
+
+<pre><code>example.com.  86400  IN  NS  ns1.cloudflare.com.
+example.com.  86400  IN  NS  ns2.cloudflare.com.</code></pre>
+
+            <h3>CAA Record (Certificate Authority Authorization)</h3>
+            <p>Restricts which CAs can issue SSL certificates for your domain:</p>
+
+<pre><code>example.com.  300  IN  CAA  0 issue "letsencrypt.org"
+example.com.  300  IN  CAA  0 issuewild ";"  ; (no wildcard certs allowed)</code></pre>
+
+            <h2 id="dns-security">DNS Security Threats</h2>
+
+            <p>DNS was designed in the 1980s — before "security" was a primary concern. This means the original protocol has several vulnerabilities that attackers actively exploit.</p>
+
+            <h3>DNS Spoofing / Cache Poisoning</h3>
+
+            <p>An attacker sends forged DNS responses to a recursive resolver, tricking it into caching a fake IP address. When users visit <code>bank.com</code>, they're sent to the attacker's server instead.</p>
+
+<pre><code># Legitimate: bank.com → 203.0.113.50 (real bank server)
+# Poisoned:   bank.com → 198.51.100.99 (attacker's phishing site)
+
+# The user sees a convincing fake login page
+# All credentials typed go directly to the attacker</code></pre>
+
+            <p>This attack works because DNS uses <strong>UDP</strong> (connectionless) and historically had no way to verify response authenticity.</p>
+
+            <h3>DNS Tunneling</h3>
+
+            <p>Attackers encode stolen data inside DNS queries. Since most firewalls allow DNS traffic (port 53), this creates a covert channel:</p>
+
+<pre><code># Normal DNS query
+example.com. A
+
+# DNS tunneling — stolen data encoded in subdomains
+aGVsbG8gd29ybGQ.example.com. TXT  ; "hello world" in base64
+dXNlcm5hbWU6YWRtaW4.example.com. TXT  ; "username:admin" in base64</code></pre>
+
+            <p>DNS tunneling is particularly dangerous because it's nearly impossible to detect with basic firewall rules — it looks like legitimate DNS traffic.</p>
+
+            <h3>DNS Amplification DDoS</h3>
+
+            <p>Attackers spoof a victim's IP address and send small DNS queries to open resolvers. The resolvers send large DNS responses to the victim, amplifying the traffic by up to 50x:</p>
+
+            <pre><code>Attack:   40-byte query  →  [open resolver]
+Spoofed source: victim's IP
+Response: 3000-byte ANY query response  →  victim gets flooded
+Amplification factor: ~75x</code></pre>
+
+            <p>This can overwhelm a target's network bandwidth without the attacker sending much data themselves.</p>
+
+            <h3>Domain Takeover</h3>
+
+            <p>If a subdomain's DNS record points to a service that no longer exists (deprovisioned cloud service, removed GitHub Pages repo), an attacker can claim that service and host malicious content on your subdomain:</p>
+
+<pre><code># app.example.com → deleted-azure-site.azurewebsites.net
+# DNS still points there, but the Azure site is now available for anyone to register
+# Attacker registers it → now controls app.example.com</code></pre>
+
+            <h2 id="dnssec">DNSSEC: Cryptographic Protection for DNS</h2>
+
+            <p>DNSSEC (DNS Security Extensions) solves the authenticity problem. It adds <strong>cryptographic signatures</strong> to DNS records, allowing resolvers to verify that responses came from the legitimate zone owner and haven't been tampered with.</p>
+
+            <h3>How DNSSEC Works</h3>
+
+            <p>DNSSEC uses a chain of trust with public key cryptography. Here are the key concepts:</p>
+
+            <p><strong>1. Key pairs:</strong> Each DNS zone has two key pairs:</p>
+
+            <ul>
+                <li><strong>KSK (Key Signing Key):</strong> Signs the DNSKEY record. Changed rarely (yearly).</li>
+                <li><strong>ZSK (Zone Signing Key):</strong> Signs all other records. Changed more often (monthly).</li>
+            </ul>
+
+            <p><strong>2. RRSIG records:</strong> Every DNS record set gets a cryptographic signature:</p>
+
+<pre><code># The A record and its signature
+example.com.  300  IN  A    93.184.216.34
+
+# RRSIG proves this record hasn't been tampered with
+example.com.  300  IN  RRSIG  A 8 2 3600 20260807000000 20260707000000 12345 example.com. aB3dEf...
+
+# Fields: type-covered, algorithm, labels, orig-ttl, expiration, inception, key-tag, signer, signature</code></pre>
+
+            <p><strong>3. DS (Delegation Signer) records:</strong> Link child zones to parent zones, creating the chain of trust:</p>
+
+<pre><code>example.com.  86400  IN  DS  12345 8 2 ab3d...
+# This DS record lives in the .com TLD zone
+# It proves that example.com's DNSKEY belongs to the real example.com</code></pre>
+
+            <p><strong>4. The trust chain:</strong> Verification follows this path:</p>
+
+<pre><code>Root zone (built into your OS/browser)
+  → Signs .com TLD DNSKEY
+  → .com signs example.com DS record
+  → example.com signs all its records (A, MX, TXT, etc.)
+
+If ANY link in this chain fails, the response is rejected.</code></pre>
+
+            <h3>DNSSEC Validation in Practice</h3>
+
+            <p>Test if a domain has DNSSEC enabled:</p>
+
+<pre><code># Check DNSSEC signature
+$ dig +dnssec example.com
+
+;; ANSWER SECTION:
+example.com.  300  IN  A  93.184.216.34
+example.com.  300  IN  RRSIG  A 8 2 3600 ...  ; ← signature present
+
+;; AUTHORITY SECTION:
+example.com.  86400  IN  DNSKEY  256 ...  ; ← zone key
+
+# Check the chain of trust
+$ dig +dnssec +trace example.com
+# Shows signatures at every level: root → .com → example.com</code></pre>
+
+            <p><strong>Validating resolvers</strong> (like Cloudflare's 1.1.1.1, Google's 8.8.8.8, Quad9) automatically verify DNSSEC signatures and reject invalid responses. No configuration needed on your end — just use a validating resolver.</p>
+
+            <h3>Enabling DNSSEC on Your Domain</h3>
+
+            <p>If you use Cloudflare, DNSSEC is one click:</p>
+
+            <ol>
+                <li>Go to your Cloudflare dashboard</li>
+                <li>Navigate to SSL/TLS → DNSSEC</li>
+                <li>Toggle "On" and confirm</li>
+                <li>Cloudflare automatically generates keys and uploads the DS record to your registrar</li>
+            </ol>
+
+            <p>For self-hosted DNS, the process is more involved. Here's the basic flow using BIND:</p>
+
+<pre><code># Generate KSK and ZSK
+$ dnssec-keygen -a RSASHA256 -b 2048 -n ZONE example.com
+$ dnssec-keygen -a RSASHA256 -b 2048 -f KSK -n ZONE example.com
+
+# Sign the zone
+$ dnssec-signzone -A -3 example.com.db Kexample.com.+008+12345.key Kexample.com.+008+67890.key
+
+# Upload the DS record to your registrar
+$ grep DNSKEY example.com.db | head -1
+# Copy the key tag, algorithm, digest type, and digest to your registrar's DNSSEC panel</code></pre>
+
+            <h3>Common DNSSEC Errors</h3>
+
+            <p>DNSSEC can be frustrating when things break. Here are common problems:</p>
+
+            <ul>
+                <li><strong>NXDOMAIN (bogus):</strong> The signature is expired or the DS record doesn't match the DNSKEY. The domain appears broken to all validating resolvers.</li>
+                <li><strong>Key rollover issues:</strong> Forgetting to publish the new key before the old one expires causes a gap. Solution: overlap old and new keys for at least 2 weeks.</li>
+                <li><strong>DS mismatch:</strong> The DS record at the parent doesn't match the DNSKEY at the child. Always verify with <code>delv</code> (DNSSEC-aware dig) before changing keys.</li>
+            </ul>
+
+            <p><strong>Pro tip:</strong> Use <code>delv +trace example.com</code> instead of <code>dig +trace</code> to see validation errors as they happen. This is the debugging gold standard for DNSSEC issues.</p>
+
+            <h2 id="dns-over-https">DNS-over-HTTPS and DNS-over-TLS</h2>
+
+            <p>DNSSEC protects against forged responses, but it doesn't protect against <strong>eavesdropping</strong>. Your ISP or anyone on your network can still see which domains you're looking up. DNS-over-HTTPS (DoH) and DNS-over-TLS (DoT) solve this by encrypting DNS queries:</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Protocol</th>
+                        <th>Port</th>
+                        <th>Encryption</th>
+                        <th>Pros</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>DoH</strong></td>
+                        <td>443</td>
+                        <td>HTTPS/TLS</td>
+                        <td>Looks like normal web traffic, hard to block</td>
+                    </tr>
+                    <tr>
+                        <td><strong>DoT</strong></td>
+                        <td>853</td>
+                        <td>TLS</td>
+                        <td>Standard port, easy to configure at firewall level</td>
+                    </tr>
+                    <tr>
+                        <td><strong>DoQ</strong></td>
+                        <td>853</td>
+                        <td>QUIC/TLS</td>
+                        <td>Low latency, multiplexing, future-proof</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p>Enable DoH in your browser (Chrome/Edge/Firefox all support it) or configure it system-wide. Modern operating systems support it natively — macOS, Windows 11, and recent Linux distros all have DoH settings.</p>
+
+            <h2 id="dns-tools">Essential DNS Debugging Tools</h2>
+
+            <p>Every developer and ops person should know these commands:</p>
+
+<pre><code># dig: The gold standard for DNS queries
+dig example.com A                 # A record
+dig example.com ANY               # All records
+dig @8.8.8.8 example.com          # Query specific resolver
+dig +short example.com            # Bare IP, no extra output
+dig +trace example.com            # Full resolution chain
+dig +dnssec example.com           # Include DNSSEC signatures
+
+# nslookup: Simpler, older alternative
+nslookup example.com
+
+# host: Quick lookup
+host example.com
+
+# delv: DNSSEC-aware debugging (like dig + validation)
+delv +dnssec +trace example.com
+
+# Python: Query DNS programmatically
+import dns.resolver
+answers = dns.resolver.resolve('example.com', 'A')
+for rdata in answers:
+    print(rdata.ip_address)</code></pre>
+
+            <h2 id="dns-best-practices">DNS Best Practices</h2>
+
+            <ol>
+                <li><strong>Use DNSSEC</strong> on every domain you control. It's one click with most modern DNS providers.</li>
+                <li><strong>Use DoH/DoT</strong> to encrypt your DNS queries and prevent ISP tracking.</li>
+                <li><strong>Set appropriate TTLs:</strong> 300 seconds for records that change often, 86400 for records that rarely change. Lower TTL before making changes, raise after.</li>
+                <li><strong>Monitor DNS health</strong> with tools like UptimeRobot or your DNS provider's dashboard. DNS is your single point of failure — if it breaks, nothing works.</li>
+                <li><strong>Audit subdomains regularly</strong> to prevent domain takeover. Remove DNS records for decommissioned services immediately.</li>
+                <li><strong>Add CAA records</strong> to restrict certificate issuance to your chosen CA.</li>
+                <li><strong>Use split-horizon DNS</strong> for internal services. Your internal API at <code>api.example.com</code> should resolve differently from inside your network vs. the public internet.</li>
+            </ol>
+
+            <h2 id="python-dns">DNS in Python: Automating DNS Tasks</h2>
+
+            <p>The <code>dnspython</code> library lets you query and manipulate DNS programmatically:</p>
+
+<pre><code># pip install dnspython
+
+import dns.resolver
+
+# Query A records
+def get_ip(domain):
+    try:
+        answers = dns.resolver.resolve(domain, 'A')
+        return [rdata.ip_address for rdata in answers]
+    except dns.resolver.NXDOMAIN:
+        return None
+
+print(get_ip("google.com"))
+# ['142.250.190.46']
+
+# Check DNSSEC support
+def check_dnssec(domain):
+    resolver = dns.resolver.Resolver()
+    resolver.use_edns(0, dns.flags.DO, 4096)  # Enable DNSSEC
+    try:
+        answers = resolver.resolve(domain, 'A')
+        has_rrsig = any(rdata.rdtype.name == 'RRSIG' for rdata in answers.response.answer[0])
+        return has_rrsig
+    except Exception as e:
+        return str(e)
+
+# Batch check multiple domains
+domains = ["google.com", "example.com", "github.com"]
+for domain in domains:
+    ips = get_ip(domain)
+    dnssec = check_dnssec(domain)
+    print(f"{domain}: IPs={ips}, DNSSEC={dnssec}")</code></pre>
+
+            <h2 id="summary">Summary</h2>
+
+            <p>DNS is the invisible infrastructure that makes the internet work. When it's functioning correctly, you never think about it. When it breaks, nothing works. Understanding DNS — the lookup process, record types, and security extensions like DNSSEC — is essential for anyone who deploys services, manages domains, or cares about web security.</p>
+
+            <p>Start with these three actions today:</p>
+
+            <ol>
+                <li><strong>Enable DNSSEC</strong> on your domain (one click with Cloudflare or your registrar)</li>
+                <li><strong>Switch to a validating DoH resolver</strong> like Cloudflare's 1.1.1.1 or Quad9's 9.9.9.9</li>
+                <li><strong>Add a CAA record</strong> to control who can issue certificates for your domain</li>
+            </ol>
+
+            <p>These three changes dramatically improve your domain's security posture with almost zero effort. The internet is a shared system — when you secure your DNS, you make it better for everyone.</p>
+
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Hugo's Dev Notes. Built with curiosity and caffeine.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Reading progress bar
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + '%';
+        });
+        // Theme toggle
+        const toggle = document.getElementById('themeToggle');
+        if (toggle) {
+            const saved = localStorage.getItem('theme');
+            if (saved === 'light') document.documentElement.classList.add('light-theme');
+            toggle.addEventListener('click', () => {
+                document.documentElement.classList.toggle('light-theme');
+                localStorage.setItem('theme', document.documentElement.classList.contains('light-theme') ? 'light' : 'dark');
+            });
+        }
+    </script>
+</body>
+</html>

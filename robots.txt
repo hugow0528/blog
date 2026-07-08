@@ -1,13 +1,22 @@
 # https://blog.hugow.dev/robots.txt
+# Allow all search engines to crawl the entire site
+
 User-agent: *
 Allow: /
 
-# Sitemap
-Sitemap: https://blog.hugow.dev/sitemap.xml
+# Google-specific directives
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0
 
-# Crawl delays
+# Bing
+User-agent: Bingbot
+Allow: /
 Crawl-delay: 1
 
-# Disallow admin/private paths
+# Sitemap location
+Sitemap: https://blog.hugow.dev/sitemap.xml
+
+# Disallow non-public paths
 Disallow: /admin/
 Disallow: /private/

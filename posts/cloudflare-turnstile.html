@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloudflare Turnstile: Invisible CAPTCHA That Actually Works — Hugo's Dev Notes</title>
+    <meta name="description" content="Set up Cloudflare Turnstile on your website — the privacy-friendly alternative to reCAPTCHA. Step-by-step guide with HTML, JavaScript, and server-side validation examples.">
+    <meta name="keywords" content="cloudflare turnstile, captcha, recaptcha alternative, bot protection, form protection, cloudflare tutorial">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/cloudflare-turnstile.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post">
+            <header class="post-header">
+                <div class="post-tags">
+                    <span class="tag cloudflare">Cloudflare</span>
+                    <span class="tag security">Security</span>
+                    <span class="tag web">Web Dev</span>
+                </div>
+                <h1>Cloudflare Turnstile: Invisible CAPTCHA That Actually Works</h1>
+                <div class="post-meta">
+                    <span class="post-date">July 8, 2026</span>
+                    <span class="read-time">9 min read</span>
+                </div>
+            </header>
+
+            <div class="post-content">
+                <p>Google reCAPTCHA is everywhere, but it's also slow, privacy-invasive, and annoying. Cloudflare Turnstile is the modern alternative — it's <strong>invisible by default</strong>, <strong>privacy-respecting</strong>, <strong>free</strong>, and integrates in minutes. Here's how to set it up on any website.</p>
+
+                <h2>What Is Cloudflare Turnstile?</h2>
+                <p>Turnstile is a smart CAPTCHA alternative that uses risk analysis instead of puzzles. Instead of asking users to identify crosswalks or type distorted text, Turnstile analyzes:</p>
+                <ul>
+                    <li>Browser behavior patterns</li>
+                    <li>IP reputation from Cloudflare's global network</li>
+                    <li>Historical data from millions of requests</li>
+                </ul>
+                <p>The result? <strong>95% of real users pass instantly</strong> with zero interaction. The rest see a quick widget — no distorted text, no image grids. And unlike reCAPTCHA, Turnstile doesn't track users across websites for advertising.</p>
+
+                <h2>Step 1: Create a Turnstile Site</h2>
+                <ol>
+                    <li>Go to <strong>dash.cloudflare.com</strong> → Security → Turnstile</li>
+                    <li>Click <strong>Add site</strong></li>
+                    <li>Enter your site name and domain(s)</li>
+                    <li>Choose your widget mode (recommended: <strong>Non-interactive</strong>)</li>
+                </ol>
+                <p>You'll get two keys:</p>
+                <pre><code># Widget key (client-side, goes in your HTML)
+sitekey = "1x00000000000000000000AA"
+
+# Secret key (server-side, for validation)
+secret  = "1x0000000000000000000000000000000AA"</code></pre>
+
+                <div class="callout">
+                    <h3>🔐 Secret Key is Secret</h3>
+                    <p>Never expose your secret key in client-side code. It belongs in your server's environment variables only.</p>
+                </div>
+
+                <h2>Step 2: Add the Widget to Your HTML</h2>
+                <p>Include the Turnstile script and a placeholder div in your form:</p>
+
+                <pre><code>&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+    &lt;title&gt;Protected Form&lt;/title&gt;
+    &lt;script src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+            defer&gt;&lt;/script&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;form id="contactForm" action="/submit" method="POST"&gt;
+        &lt;label for="name"&gt;Name:&lt;/label&gt;
+        &lt;input type="text" id="name" name="name" required&gt;
+
+        &lt;label for="email"&gt;Email:&lt;/label&gt;
+        &lt;input type="email" id="email" name="email" required&gt;
+
+        &lt;label for="message"&gt;Message:&lt;/label&gt;
+        &lt;textarea id="message" name="message" required&gt;&lt;/textarea&gt;
+
+        <!-- Turnstile Widget -->
+        &lt;div class="cf-turnstile"
+             data-sitekey="1x00000000000000000000AA"&gt;
+        &lt;/div&gt;
+
+        &lt;button type="submit"&gt;Send&lt;/button&gt;
+    &lt;/form&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+
+                <p>That's literally it for the frontend. When the page loads, Turnstile renders a small widget that silently verifies the user is human.</p>
+
+                <h2>Widget Modes</h2>
+                <p>Turnstile supports different interaction modes via <code>data-action</code> and <code>data-callback</code>:</p>
+
+                <pre><code><!-- Non-interactive (default) — passes silently for 95% of users -->
+&lt;div class="cf-turnstile" data-sitekey="YOUR_SITEKEY"&gt;&lt;/div&gt;
+
+<!-- Interactive — always shows a widget -->
+&lt;div class="cf-turnstile" data-sitekey="YOUR_SITEKEY"
+     data-theme="dark"&gt;&lt;/div&gt;
+
+<!-- With callback for dynamic forms -->
+&lt;div class="cf-turnstile"
+     data-sitekey="YOUR_SITEKEY"
+     data-callback="onTurnstileSuccess"&gt;
+&lt;/div&gt;
+
+&lt;script&gt;
+function onTurnstileSuccess(token) {
+    // Token is ready — enable submit button or auto-submit
+    document.getElementById("submitBtn").disabled = false;
+}
+&lt;/script&gt;</code></pre>
+
+                <h2>Step 3: Validate on Your Server (Python/Flask)</h2>
+                <p>The token from Turnstile must be validated server-side by posting to Cloudflare's verify endpoint:</p>
+
+                <pre><code>from flask import Flask, request, jsonify
+import requests
+
+app = Flask(__name__)
+TURNSTILE_SECRET = "1x0000000000000000000000000000000AA"  # From .env in production!
+
+@app.route("/submit", methods=["POST"])
+def submit():
+    # Get the Turnstile token from form data
+    token = request.form.get("cf-turnstile-response")
+
+    if not token:
+        return jsonify({"error": "Missing Turnstile token"}), 400
+
+    # Validate with Cloudflare
+    result = requests.post(
+        "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+        data={
+            "secret": TURNSTILE_SECRET,
+            "response": token,
+            "remoteip": request.remote_addr,  # Optional but recommended
+        }
+    ).json()
+
+    print("Turnstile response:", result)
+    # {"success": true, "challenge_ts": "...", "hostname": "..."}
+
+    if not result.get("success"):
+        errors = result.get("error-codes", [])
+        return jsonify({"error": "Bot detected", "codes": errors}), 403
+
+    # Turnstile passed — process the form
+    name = request.form.get("name")
+    email = request.form.get("email")
+    message = request.form.get("message")
+
+    return jsonify({
+        "status": "success",
+        "message": f"Thanks {name}! We'll contact you at {email}."
+    })
+
+if __name__ == "__main__":
+    app.run(debug=True)</code></pre>
+
+                <h2>Validate with FastAPI</h2>
+                <pre><code>from fastapi import FastAPI, Form, HTTPException
+from pydantic import BaseModel
+import httpx
+
+app = FastAPI()
+TURNSTILE_SECRET = "YOUR_SECRET_KEY"
+
+class FormSubmission(BaseModel):
+    name: str
+    email: str
+    message: str
+
+@app.post("/submit")
+async def submit(
+    name: str = Form(...),
+    email: str = Form(...),
+    message: str = Form(...),
+    cf_turnstile_response: str = Form(...),
+):
+    async with httpx.AsyncClient() as client:
+        result = await client.post(
+            "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+            data={
+                "secret": TURNSTILE_SECRET,
+                "response": cf_turnstile_response,
+            }
+        )
+        data = result.json()
+
+    if not data.get("success"):
+        raise HTTPException(status_code=403, detail="Bot detected")
+
+    return {"status": "success", "name": name}</code></pre>
+
+                <h2>Validate with JavaScript/Node.js</h2>
+                <pre><code>// Using Node.js with express
+const express = require('express');
+const fetch = require('node-fetch');
+const app = express();
+
+app.use(express.urlencoded({ extended: true }));
+
+const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET;
+
+app.post('/submit', async (req, res) => {
+    const token = req.body['cf-turnstile-response'];
+
+    if (!token) {
+        return res.status(400).json({ error: 'Missing token' });
+    }
+
+    const result = await fetch(
+        'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+        {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+                secret: TURNSTILE_SECRET,
+                response: token,
+            })
+        }
+    ).then(r => r.json());
+
+    if (!result.success) {
+        return res.status(403).json({ error: 'Bot detected' });
+    }
+
+    // Valid! Process the form
+    res.json({ status: 'success' });
+});
+
+app.listen(3000);</code></pre>
+
+                <h2>Common Error Codes</h2>
+                <p>When validation fails, Cloudflare returns error codes:</p>
+
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Error Code</th>
+                            <th>Meaning</th>
+                            <th>Fix</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>missing-input-response</code></td>
+                            <td>No token submitted</td>
+                            <td>Check form has the widget and submits the hidden field</td>
+                        </tr>
+                        <tr>
+                            <td><code>missing-input-secret</code></td>
+                            <td>No secret key sent</td>
+                            <td>Verify your server has the secret configured</td>
+                        </tr>
+                        <tr>
+                            <td><code>invalid-input-secret</code></td>
+                            <td>Wrong secret key</td>
+                            <td>Double-check the secret from dashboard</td>
+                        </tr>
+                        <tr>
+                            <td><code>invalid-input-response</code></td>
+                            <td>Token is malformed</td>
+                            <td>Ensure the form sends the right field name</td>
+                        </tr>
+                        <tr>
+                            <td><code>timeout-or-duplicate</code></td>
+                            <td>Token expired or reused</td>
+                            <td>Tokens expire in 300s; don't reuse tokens</td>
+                        </tr>
+                        <tr>
+                            <td><code>bad-request</code></td>
+                            <td>Misconfigured request</td>
+                            <td>Check URL encoding and parameters</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h2>Advanced: Multiple Widgets on One Page</h2>
+                <p>If you need Turnstile on multiple forms, use explicit rendering:</p>
+
+                <pre><code>&lt;script src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+        defer&gt;&lt;/script&gt;
+
+&lt;div id="widget1"&gt;&lt;/div&gt;
+&lt;div id="widget2"&gt;&lt;/div&gt;
+
+&lt;script&gt;
+// Render widgets explicitly
+window.addEventListener('load', () => {
+    turnstile.render('#widget1', {
+        sitekey: 'YOUR_SITEKEY',
+        callback: (token) => {
+            console.log('Widget 1 token:', token);
+        }
+    });
+
+    turnstile.render('#widget2', {
+        sitekey: 'YOUR_SITEKEY',
+        callback: (token) => {
+            console.log('Widget 2 token:', token);
+        }
+    });
+});
+
+// Clear a widget after form submit
+turnstile.reset('widget1');
+&lt;/script&gt;</code></pre>
+
+                <h2>Turnstile vs reCAPTCHA: Quick Comparison</h2>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Feature</th>
+                            <th>Turnstile</th>
+                            <th>reCAPTCHA v3</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>User interaction</td>
+                            <td>Invisible (95% of time)</td>
+                            <td>Invisible score</td>
+                        </tr>
+                        <tr>
+                            <td>Privacy</td>
+                            <td>No cross-site tracking</td>
+                            <td>Tracks across Google network</td>
+                        </tr>
+                        <tr>
+                            <td>GDPR compliance</td>
+                            <td>Built-in</td>
+                            <td>Requires consent</td>
+                        </tr>
+                        <tr>
+                            <td>Price</td>
+                            <td>Free, unlimited</td>
+                            <td>Free, unlimited</td>
+                        </tr>
+                        <tr>
+                            <td>Setup time</td>
+                            <td>~5 minutes</td>
+                            <td>~10 minutes</td>
+                        </tr>
+                        <tr>
+                            <td>Accuracy</td>
+                            <td>Excellent</td>
+                            <td>Good</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h2>Best Practices</h2>
+                <ul>
+                    <li><strong>Always validate server-side</strong> — never trust the client alone</li>
+                    <li><strong>Include remote IP</strong> in verification for better accuracy</li>
+                    <li><strong>Log failure reasons</strong> using <code>error-codes</code> from responses</li>
+                    <li><strong>Use environment variables</strong> for the secret key</li>
+                    <li><strong>Don't reuse tokens</strong> — each token is single-use</li>
+                    <li><strong>Handle timeouts gracefully</strong> — tokens expire after 300 seconds</li>
+                </ul>
+
+                <h2>Summary</h2>
+                <ul>
+                    <li>Cloudflare Turnstile is a <strong>free, privacy-friendly CAPTCHA alternative</strong></li>
+                    <li>Setup takes <strong>3 steps</strong>: create site, add widget, validate server-side</li>
+                    <li>95% of real users pass <strong>without any interaction</strong></li>
+                    <li>Validate tokens at <code>challenges.cloudflare.com/turnstile/v0/siteverify</code></li>
+                    <li>Always include the user's IP address for better accuracy</li>
+                    <li>Error codes help debug common configuration issues</li>
+                </ul>
+
+                <p>Turnstile makes bot protection feel invisible to real users while being effective against automated attacks. It's the kind of tool that makes you wonder why we ever settled for "click all the traffic lights."</p>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes. Built with ☕ and code.</p>
+        </div>
+    </footer>
+
+    <script>
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + "%";
+        });
+        const toggle = document.getElementById('themeToggle');
+        toggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark');
+        });
+    </script>
+</body>
+</html>

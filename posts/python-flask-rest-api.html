@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Building RESTful APIs with Python Flask — Complete Beginner's Guide</title>
+    <meta name="description" content="Build a complete REST API with Python Flask from scratch. CRUD operations, request validation, error handling, authentication, and deployment. Real code examples for beginners.">
+    <meta name="keywords" content="Python Flask, REST API, Flask tutorial, RESTful API Python, web API, Flask CRUD, Flask beginner">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-flask-rest-api.html">
+    <link rel="stylesheet" href="../style.css">
+
+    <!-- SEO Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "headline": "Building RESTful APIs with Python Flask — Complete Beginner's Guide",
+      "description": "Build a complete REST API with Python Flask from scratch. CRUD operations, request validation, error handling, and deployment. Real code examples for beginners.",
+      "datePublished": "2026-07-08",
+      "dateModified": "2026-07-08",
+      "author": {"@type": "Person", "name": "Hugo Wong"},
+      "publisher": {"@type": "Organization", "name": "Hugo's Dev Notes", "url": "https://blog.hugow.dev"},
+      "keywords": "Python, Web Dev"
+    }
+    </script>
+
+    <!-- Social Meta -->
+    <meta property="og:title" content="Building RESTful APIs with Python Flask — Complete Beginner's Guide">
+    <meta property="og:description" content="Build a complete REST API with Python Flask from scratch. CRUD operations, request validation, error handling, and deployment.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.hugow.dev/posts/python-flask-rest-api.html">
+    <meta property="og:site_name" content="Hugo's Dev Notes">
+    <meta property="article:published_time" content="2026-07-08">
+    <meta property="article:modified_time" content="2026-07-08">
+    <meta property="article:section" content="python">
+    <meta property="article:tag" content="Python, Web Dev">
+    
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Building RESTful APIs with Python Flask — Complete Beginner's Guide">
+    <meta name="twitter:description" content="Build a complete REST API with Python Flask from scratch. CRUD operations, request validation, error handling, and deployment.">
+    
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+        
+        <article class="post-content">
+            <span class="tag python">Python</span><span class="tag web">Web Dev</span>
+            <h1>Building RESTful APIs with Python Flask — Complete Beginner's Guide</h1>
+            <time>July 8, 2026 · 12 min read</time>
+
+            <p>You know Python basics — variables, functions, loops. Now you want to build something the internet can talk to: a <strong>REST API</strong>. Maybe you're building a backend for a React app, exposing data to mobile devices, or creating a microservice.</p>
+
+            <p>Flask is the perfect framework to start. It's lightweight, has a gentle learning curve, and doesn't hide what's happening under the hood. In this tutorial, we'll build a <strong>complete task management API</strong> from scratch — with routes, request validation, error handling, and database storage.</p>
+
+            <h2>What is a REST API?</h2>
+
+            <p>REST (Representational State Transfer) is an architectural style for designing networked applications. In practice, it means your API uses <strong>HTTP methods</strong> to perform actions on resources:</p>
+
+            <pre><code>GET    /tasks        → Get all tasks
+POST   /tasks        → Create a new task
+GET    /tasks/1      → Get task #1
+PUT    /tasks/1      → Update task #1
+DELETE /tasks/1      → Delete task #1
+</code></pre>
+
+            <p>Each URL identifies a <strong>resource</strong> (a task), and the HTTP method defines the <strong>action</strong>. The API returns <strong>JSON</strong> responses with appropriate <strong>status codes</strong>.</p>
+
+            <h2>1. Install Flask</h2>
+
+            <p>Start with a clean virtual environment:</p>
+
+            <pre><code># Create a project directory
+mkdir task-api && cd task-api
+
+# Create and activate a virtual environment
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install Flask
+pip install flask
+
+# Verify installation
+python -c "import flask; print(flask.__version__)"
+</code></pre>
+
+            <h2>2. Your First Flask Route</h2>
+
+            <p>Create <code>app.py</code>:</p>
+
+            <pre><code>from flask import Flask
+
+app = Flask(__name__)
+
+@app.route("/")
+def hello():
+    return {"message": "Task API is running!"}
+
+if __name__ == "__main__":
+    app.run(debug=True)
+</code></pre>
+
+            <p>Run it:</p>
+
+            <pre><code>python app.py
+# * Running on http://127.0.0.1:5000
+
+# Test with curl or your browser:
+curl http://127.0.0.1:5000
+# {"message":"Task API is running!"}
+</code></pre>
+
+            <p>That's it — you just built a web server in 10 lines. Flask's <code>@app.route()</code> decorator maps a URL path to a Python function. The function returns a response, which Flask converts to JSON automatically when you return a dictionary.</p>
+
+            <h2>3. In-Memory Task Storage</h2>
+
+            <p>Let's build the full CRUD API. We'll use a list to store tasks in memory (later we'll add SQLite):</p>
+
+            <pre><code>from flask import Flask, request, jsonify
+
+app = Flask(__name__)
+
+# In-memory storage
+tasks = []
+next_id = 1
+
+# GET /tasks — List all tasks
+@app.route("/tasks", methods=["GET"])
+def get_tasks():
+    return jsonify({"tasks": tasks}), 200
+
+# POST /tasks — Create a new task
+@app.route("/tasks", methods=["POST"])
+def create_task():
+    global next_id
+    data = request.get_json()
+
+    # Validate required fields
+    if not data or not data.get("title"):
+        return jsonify({"error": "Title is required"}), 400
+
+    task = {
+        "id": next_id,
+        "title": data["title"],
+        "description": data.get("description", ""),
+        "completed": False
+    }
+    tasks.append(task)
+    next_id += 1
+
+    return jsonify({"task": task}), 201
+
+# GET /tasks/&lt;id&gt; — Get a single task
+@app.route("/tasks/&lt;int:task_id&gt;", methods=["GET"])
+def get_task(task_id):
+    task = next((t for t in tasks if t["id"] == task_id), None)
+    if not task:
+        return jsonify({"error": "Task not found"}), 404
+    return jsonify({"task": task}), 200
+
+# PUT /tasks/&lt;id&gt; — Update a task
+@app.route("/tasks/&lt;int:task_id&gt;", methods=["PUT"])
+def update_task(task_id):
+    task = next((t for t in tasks if t["id"] == task_id), None)
+    if not task:
+        return jsonify({"error": "Task not found"}), 404
+
+    data = request.get_json()
+    if data.get("title"):
+        task["title"] = data["title"]
+    if "description" in data:
+        task["description"] = data["description"]
+    if "completed" in data:
+        task["completed"] = data["completed"]
+
+    return jsonify({"task": task}), 200
+
+# DELETE /tasks/&lt;id&gt; — Delete a task
+@app.route("/tasks/&lt;int:task_id&gt;", methods=["DELETE"])
+def delete_task(task_id):
+    global tasks
+    task = next((t for t in tasks if t["id"] == task_id), None)
+    if not task:
+        return jsonify({"error": "Task not found"}), 404
+
+    tasks = [t for t in tasks if t["id"] != task_id]
+    return jsonify({"message": "Task deleted"}), 200
+
+if __name__ == "__main__":
+    app.run(debug=True)
+</code></pre>
+
+            <p>Test the full API with curl:</p>
+
+            <pre><code># Create a task
+curl -X POST http://127.0.0.1:5000/tasks \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Learn Flask", "description": "Build a REST API"}'
+
+# Get all tasks
+curl http://127.0.0.1:5000/tasks
+
+# Get one task
+curl http://127.0.0.1:5000/tasks/1
+
+# Update a task
+curl -X PUT http://127.0.0.1:5000/tasks/1 \
+  -H "Content-Type: application/json" \
+  -d '{"completed": true}'
+
+# Delete a task
+curl -X DELETE http://127.0.0.1:5000/tasks/1
+</code></pre>
+
+            <h2>4. Add SQLite Database</h2>
+
+            <p>In-memory storage disappears when the server restarts. Let's add SQLite — Python's built-in database:</p>
+
+            <pre><code>import sqlite3
+from flask import Flask, request, jsonify, g
+
+app = Flask(__name__)
+DATABASE = "tasks.db"
+
+def get_db():
+    """Get database connection for current request."""
+    if "db" not in g:
+        g.db = sqlite3.connect(DATABASE)
+        g.db.row_factory = sqlite3.Row  # Access columns by name
+    return g.db
+
+@app.teardown_appcontext
+def close_db(exception):
+    """Close database connection at end of request."""
+    db = g.pop("db", None)
+    if db is not None:
+        db.close()
+
+def init_db():
+    """Create the tasks table if it doesn't exist."""
+    db = get_db()
+    db.execute("""
+        CREATE TABLE IF NOT EXISTS tasks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            completed INTEGER DEFAULT 0
+        )
+    """)
+    db.commit()
+
+# Initialize on startup
+with app.app_context():
+    init_db()
+
+# Updated routes using the database
+@app.route("/tasks", methods=["GET"])
+def get_tasks():
+    db = get_db()
+    rows = db.execute("SELECT * FROM tasks ORDER BY id DESC").fetchall()
+    tasks = [dict(row) for row in rows]
+    # Convert completed: 0/1 → False/True
+    for t in tasks:
+        t["completed"] = bool(t["completed"])
+    return jsonify({"tasks": tasks}), 200
+
+@app.route("/tasks", methods=["POST"])
+def create_task():
+    data = request.get_json()
+    if not data or not data.get("title"):
+        return jsonify({"error": "Title is required"}), 400
+
+    db = get_db()
+    cursor = db.execute(
+        "INSERT INTO tasks (title, description, completed) VALUES (?, ?, ?)",
+        (data["title"], data.get("description", ""), 0)
+    )
+    db.commit()
+
+    task = db.execute("SELECT * FROM tasks WHERE id = ?", (cursor.lastrowid,)).fetchone()
+    task = dict(task)
+    task["completed"] = bool(task["completed"])
+    return jsonify({"task": task}), 201
+
+@app.route("/tasks/&lt;int:task_id&gt;", methods=["GET"])
+def get_task(task_id):
+    db = get_db()
+    task = db.execute("SELECT * FROM tasks WHERE id = ?", (task_id,)).fetchone()
+    if not task:
+        return jsonify({"error": "Task not found"}), 404
+    task = dict(task)
+    task["completed"] = bool(task["completed"])
+    return jsonify({"task": task}), 200
+
+@app.route("/tasks/&lt;int:task_id&gt;", methods=["PUT"])
+def update_task(task_id):
+    db = get_db()
+    task = db.execute("SELECT * FROM tasks WHERE id = ?", (task_id,)).fetchone()
+    if not task:
+        return jsonify({"error": "Task not found"}), 404
+
+    data = request.get_json()
+    updates = []
+    values = []
+
+    if "title" in data:
+        updates.append("title = ?")
+        values.append(data["title"])
+    if "description" in data:
+        updates.append("description = ?")
+        values.append(data["description"])
+    if "completed" in data:
+        updates.append("completed = ?")
+        values.append(1 if data["completed"] else 0)
+
+    if updates:
+        values.append(task_id)
+        db.execute(f"UPDATE tasks SET {', '.join(updates)} WHERE id = ?", values)
+        db.commit()
+
+    task = db.execute("SELECT * FROM tasks WHERE id = ?", (task_id,)).fetchone()
+    task = dict(task)
+    task["completed"] = bool(task["completed"])
+    return jsonify({"task": task}), 200
+
+@app.route("/tasks/&lt;int:task_id&gt;", methods=["DELETE"])
+def delete_task(task_id):
+    db = get_db()
+    task = db.execute("SELECT * FROM tasks WHERE id = ?", (task_id,)).fetchone()
+    if not task:
+        return jsonify({"error": "Task not found"}), 404
+
+    db.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
+    db.commit()
+    return jsonify({"message": "Task deleted"}), 200
+
+if __name__ == "__main__":
+    app.run(debug=True)
+</code></pre>
+
+            <p><strong>Why parameterized queries?</strong> Notice <code>WHERE id = ?</code> instead of string formatting. This prevents <strong>SQL injection</strong> — a critical security vulnerability. Never use f-strings or concatenation to build SQL queries with user input.</p>
+
+            <h2>5. Error Handling</h2>
+
+            <p>Handle errors gracefully with Flask's error handlers:</p>
+
+            <pre><code>@app.errorhandler(404)
+def not_found(error):
+    return jsonify({"error": "Resource not found"}), 404
+
+@app.errorhandler(405)
+def method_not_allowed(error):
+    return jsonify({"error": "Method not allowed"}), 405
+
+@app.errorhandler(500)
+def internal_error(error):
+    return jsonify({"error": "Internal server error"}), 500
+</code></pre>
+
+            <p>You can also create a custom validation utility:</p>
+
+            <pre><code>def validate_task_data(data, required_fields):
+    """Validate incoming task data and return errors."""
+    errors = []
+    if not data:
+        return ["No JSON body provided"]
+    for field in required_fields:
+        if field not in data or not data[field]:
+            errors.append(f"Missing required field: {field}")
+    if data.get("title") and len(data["title"]) > 200:
+        errors.append("Title must be 200 characters or less")
+    return errors
+
+# Usage in a route
+@app.route("/tasks", methods=["POST"])
+def create_task():
+    data = request.get_json()
+    errors = validate_task_data(data, ["title"])
+    if errors:
+        return jsonify({"errors": errors}), 400
+    # ... create task ...
+</code></pre>
+
+            <h2>6. Query Parameters: Filtering and Pagination</h2>
+
+            <p>Make your API more useful by adding filters:</p>
+
+            <pre><code>@app.route("/tasks", methods=["GET"])
+def get_tasks():
+    db = get_db()
+
+    # Filtering
+    status = request.args.get("status")
+    completed = request.args.get("completed")
+
+    query = "SELECT * FROM tasks WHERE 1=1"
+    params = []
+
+    if status:
+        query += " AND title LIKE ?"
+        params.append(f"%{status}%")
+    if completed is not None:
+        query += " AND completed = ?"
+        params.append(1 if completed == "true" else 0)
+
+    # Pagination
+    page = int(request.args.get("page", 1))
+    per_page = int(request.args.get("per_page", 20))
+    offset = (page - 1) * per_page
+
+    query += " ORDER BY id DESC LIMIT ? OFFSET ?"
+    params.extend([per_page, offset])
+
+    tasks = [dict(row) for row in db.execute(query, params).fetchall()]
+
+    # Total count for pagination info
+    count = db.execute("SELECT COUNT(*) FROM tasks").fetchone()[0]
+
+    return jsonify({
+        "tasks": tasks,
+        "page": page,
+        "per_page": per_page,
+        "total": count,
+        "pages": (count + per_page - 1) // per_page
+    }), 200
+</code></pre>
+
+            <p>Now you can call:</p>
+
+            <pre><code># Filter incomplete tasks, page 2, 10 per page
+curl "http://127.0.0.1:5000/tasks?completed=false&page=2&amp;per_page=10"
+</code></pre>
+
+            <h2>7. Project Structure for Larger APIs</h2>
+
+            <p>As your API grows, organize it into files:</p>
+
+            <pre><code>task-api/
+├── app.py              # Application factory
+├── config.py           # Configuration
+├── database.py         # Database setup
+├── models.py           # Data models
+├── routes/
+│   ├── __init__.py
+│   └── tasks.py        # Task routes (Blueprint)
+├── tests/
+│   └── test_tasks.py
+└── requirements.txt
+</code></pre>
+
+            <p>Use <strong>Flask Blueprints</strong> to organize routes:</p>
+
+            <pre><code># routes/tasks.py
+from flask import Blueprint
+
+tasks_bp = Blueprint("tasks", __name__)
+
+@tasks_bp.route("/tasks", methods=["GET"])
+def get_tasks():
+    return {"tasks": []}
+
+# app.py
+from routes.tasks import tasks_bp
+
+app = Flask(__name__)
+app.register_blueprint(tasks_bp)
+</code></pre>
+
+            <h2>8. Testing Your API</h2>
+
+            <p>Flask includes a test client. No need to run the server:</p>
+
+            <pre><code>import unittest
+from app import app
+
+class TaskAPITestCase(unittest.TestCase):
+    def setUp(self):
+        app.config["TESTING"] = True
+        app.config["DATABASE"] = ":memory:"  # Use in-memory DB for tests
+        self.client = app.test_client()
+
+    def test_create_task(self):
+        response = self.client.post("/tasks", json={
+            "title": "Test task",
+            "description": "Testing the API"
+        })
+        self.assertEqual(response.status_code, 201)
+        data = response.get_json()
+        self.assertEqual(data["task"]["title"], "Test task")
+
+    def test_get_tasks(self):
+        response = self.client.get("/tasks")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("tasks", response.get_json())
+
+    def test_get_missing_task(self):
+        response = self.client.get("/tasks/999")
+        self.assertEqual(response.status_code, 404)
+
+    def test_create_task_no_title(self):
+        response = self.client.post("/tasks", json={"description": "No title"})
+        self.assertEqual(response.status_code, 400)
+
+if __name__ == "__main__":
+    unittest.main()
+</code></pre>
+
+            <pre><code># Run tests
+python -m unittest
+# ..
+# OK (2 tests)
+</code></pre>
+
+            <h2>9. Run in Production</h2>
+
+            <p>Flask's built-in server is for development only. Use <strong>Gunicorn</strong> for production:</p>
+
+            <pre><code># Install Gunicorn
+pip install gunicorn
+
+# Run with Gunicorn
+gunicorn --bind 0.0.0.0:8000 --workers 4 app:app
+
+# Or via Docker
+# Dockerfile
+FROM python:3.12-slim
+WORKDIR /app
+COPY . .
+RUN pip install --no-cache-dir -r requirements.txt
+EXPOSE 8000
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "4", "app:app"]
+
+# Build and run
+docker build -t task-api .
+docker run -p 8000:8000 task-api
+</code></pre>
+
+            <h2>Summary</h2>
+
+            <p>You've built a complete REST API with Flask covering:</p>
+
+            <ul>
+                <li>✅ CRUD routes with proper HTTP methods</li>
+                <li>✅ JSON request/response handling</li>
+                <li>✅ Request validation and error messages</li>
+                <li>✅ SQLite database with parameterized queries</li>
+                <li>✅ Filtering, search, and pagination</li>
+                <li>✅ Unit testing with Flask's test client</li>
+                <li>✅ Production deployment with Gunicorn</li>
+            </ul>
+
+            <p><strong>Next steps:</strong> Add authentication (see <a href="jwt-authentication-python.html">JWT authentication</a>), explore <a href="http-rest-api-guide.html">HTTP and REST API design principles</a>, or learn to <a href="docker-basics.html">containerize your API with Docker</a>.</p>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo Wong · Built with curiosity and Coffee</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528">GitHub</a>
+                <a href="https://hugow.dev">hugow.dev</a>
+                <a href="/sitemap.xml">Sitemap</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-mode');
+            themeToggle.textContent = '☀';
+        }
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            themeToggle.textContent = isLight ? '☀' : '◐';
+        });
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + "%";
+        });
+    </script>
+</body>
+</html>

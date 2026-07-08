@@ -15,8 +15,8 @@ def push_file(path, content, message):
     sha = resp.json().get("sha") if resp.status_code == 200 else None
     payload = {"message": message, "content": base64.b64encode(content.encode()).decode(), "branch": branch}
     if sha: payload["sha"] = sha
-    r = requests.put(url, headers=headers, json=payload)
-    return r.status_code in [200, 201]
+    result = requests.put(url, headers=headers, json=payload)
+    return result.status_code in [200, 201]
 
 files = []
 for root, dirs, filenames in os.walk(base_dir):
@@ -27,16 +27,10 @@ for root, dirs, filenames in os.walk(base_dir):
             files.append((rel_path, open(full_path).read(), "Auto: New posts"))
 
 success = 0
-failed = []
 for p, c, m in files:
     result = push_file(p, c, m)
-    if result:
-        success += 1
-        print(f"OK {p}")
-    else:
-        failed.append(p)
-        print(f"FAIL {p}")
+    status = "OK" if result else "FAIL"
+    print(f"{status} {p}")
+    if result: success += 1
 
 print(f"\nPushed {success}/{len(files)} files")
-if failed:
-    print(f"Failed: {failed}")

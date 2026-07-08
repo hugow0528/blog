@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Generators and Iterators: Memory-Efficient Data Processing — Hugo's Dev Notes</title>
+    <meta name="description" content="Master Python generators and iterators for memory-efficient data processing. Learn yield, generator expressions, itertools patterns, and real-world examples for large datasets.">
+    <meta name="keywords" content="python generators, iterators, yield, generator expressions, memory efficient, python tutorial, data processing">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-generators-iterators.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post">
+            <header class="post-header">
+                <div class="post-tags">
+                    <span class="tag python">Python</span>
+                </div>
+                <h1>Python Generators and Iterators: Memory-Efficient Data Processing</h1>
+                <div class="post-meta">
+                    <span class="post-date">July 8, 2026</span>
+                    <span class="read-time">10 min read</span>
+                </div>
+            </header>
+
+            <div class="post-content">
+                <p>If you've ever written a Python program that crashes with a <code>MemoryError</code> while processing a large file, you've hit the wall that generators were built to solve. This guide will take you from "What's an iterator?" to writing production-grade memory-efficient data pipelines.</p>
+
+                <h2>What Is an Iterator?</h2>
+                <p>In Python, an <strong>iterator</strong> is any object that implements two methods: <code>__iter__()</code> and <code>__next__()</code>. You've been using iterators all along — lists, strings, and dictionaries are all <em>iterable</em>, meaning you can create an iterator from them:</p>
+
+                <pre><code># Everything with __iter__() is iterable
+my_list = [1, 2, 3, 4, 5]
+iterator = iter(my_list)  # Create an iterator
+
+print(next(iterator))  # 1
+print(next(iterator))  # 2
+print(next(iterator))  # 3
+
+# When exhausted, raises StopIteration
+# print(next(iterator))  # StopIteration!</code></pre>
+
+                <p>The key insight: iterators produce values <strong>one at a time</strong>. They don't load everything into memory upfront. This is the foundation of memory-efficient Python.</p>
+
+                <h2>Building Your Own Iterator Class</h2>
+                <p>Let's create a custom iterator that generates Fibonacci numbers. Without iterators, you'd need to precompute and store every number in a list:</p>
+
+                <pre><code>class Fibonacci:
+    """An iterator that generates Fibonacci numbers up to a limit."""
+
+    def __init__(self, limit):
+        self.limit = limit
+        self.a, self.b = 0, 1
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.a > self.limit:
+            raise StopIteration
+        current = self.a
+        self.a, self.b = self.b, self.a + self.b
+        return current
+
+# Use it in a for loop
+for num in Fibonacci(100):
+    print(num, end=" ")
+# Output: 0 1 1 2 3 5 8 13 21 34 55 89</code></pre>
+
+                <p>This works, but it's verbose. Python gives us a much simpler way: <strong>generators</strong>.</p>
+
+                <h2>Generators: The Easy Way to Create Iterators</h2>
+                <p>A <strong>generator</strong> is a function that uses <code>yield</code> instead of <code>return</code>. When you call a generator function, it doesn't execute — it returns a generator object. Each <code>next()</code> call resumes execution from where it left off:</p>
+
+                <pre><code>def fibonacci(limit):
+    """Generate Fibonacci numbers up to a limit."""
+    a, b = 0, 1
+    while a <= limit:
+        yield a
+        a, b = b, a + b
+
+# Same result, half the code
+for num in fibonacci(100):
+    print(num, end=" ")
+# Output: 0 1 1 2 3 5 8 13 21 34 55 89</code></pre>
+
+                <p>See what happened? <code>yield</code> <strong>pauses</strong> the function, returns a value, and saves all local variables. The next call picks up right after the <code>yield</code>. This is called <strong>lazy evaluation</strong> — values are computed only when needed.</p>
+
+                <h2>Why Generators Save Memory</h2>
+                <p>Let's compare memory usage with a real example — reading a large log file:</p>
+
+                <pre><code># ❌ BAD: Loads entire file into memory
+def read_logs_bad(filepath):
+    with open(filepath) as f:
+        return f.readlines()  # Loads ALL lines into a list
+
+logs = read_logs_bad("server.log")  # 10GB file? MemoryError!
+
+# ✅ GOOD: Reads one line at a time
+def read_logs_good(filepath):
+    with open(filepath) as f:
+        for line in f:
+            yield line.strip()
+
+# Process 10GB file with minimal memory
+for log in read_logs_good("server.log"):
+    if "ERROR" in log:
+        print(log)</code></pre>
+
+                <p>The generator version uses <strong>constant memory</strong> regardless of file size. The list version needs memory proportional to the file size. For a 10GB log file, that's the difference between "works fine" and "crashes immediately."</p>
+
+                <h2>Generator Expressions</h2>
+                <p>Just like list comprehensions <code>[x*2 for x in range(10)]</code>, Python has <strong>generator expressions</strong> using parentheses instead of brackets:</p>
+
+                <pre><code># List comprehension — creates entire list in memory
+squares_list = [x**2 for x in range(1000000)]  # ~8MB in memory
+
+# Generator expression — produces values one at a time
+squares_gen = (x**2 for x in range(1000000))  # ~280 bytes in memory
+
+# You can still iterate over both the same way
+total = sum(squares_gen)  # Works! sum() consumes the generator
+
+# Chaining generator expressions
+even_squares = (x for x in (n**2 for n in range(1000)) if x % 2 == 0)</code></pre>
+
+                <p>Use generator expressions whenever you don't need to store all values at once. Common patterns:</p>
+
+                <pre><code># Replace filter + map with a generator expression
+names = ["alice", "BOB", "charlie", "DAVID", "eve"]
+upper_names = (name.upper() for name in names if len(name) > 3)
+
+# Replace intermediate lists
+total = sum(float(line) for line in open("prices.txt") if line.strip())
+
+# Use with any function that accepts iterables
+sorted_names = sorted((name for name in names if name.startswith("a")))
+unique_items = set((x for x in big_data if x is not None))
+any_match = any(user.is_admin for user in users)</code></pre>
+
+                <h2>Real-World Pattern: Data Pipeline with Generators</h2>
+                <p>Generators shine when you chain them together into a <strong>data processing pipeline</strong>. Each stage processes one item at a time:</p>
+
+                <pre><code>import csv
+
+def read_csv(filepath):
+    """Stage 1: Read rows from CSV file."""
+    with open(filepath, newline="") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            yield row
+
+def filter_errors(rows):
+    """Stage 2: Filter only error entries."""
+    for row in rows:
+        if row.get("level") == "ERROR":
+            yield row
+
+def extract_messages(rows):
+    """Stage 3: Extract just the message field."""
+    for row in rows:
+        yield row["message"].strip()
+
+def format_output(messages):
+    """Stage 4: Format for output."""
+    for i, msg in enumerate(messages, 1):
+        yield f"[{i}] {msg}"
+
+# Chain the pipeline — memory efficient!
+errors = (
+    read_csv("server.log.csv")
+    | filter_errors
+    | extract_messages
+    | format_output
+)
+
+# Actually, Python doesn't support | for functions,
+# so we compose them manually:
+
+pipeline = format_output(
+    extract_messages(
+        filter_errors(
+            read_csv("server.log.csv")
+        )
+    )
+)
+
+for formatted_error in pipeline:
+    print(formatted_error)</code></pre>
+
+                <p>Notice: <strong>no intermediate lists</strong> are created. Each value flows through the pipeline one at a time. A 1GB CSV file is processed with less than 1MB of memory.</p>
+
+                <h2>Generator Tricks You Should Know</h2>
+
+                <h3>1. Sending Values Into Generators</h3>
+                <pre><code>def echo():
+    """A generator that echoes received values."""
+    while True:
+        received = yield "ready"
+        print(f"Echo: {received}")
+
+gen = echo()
+print(next(gen))        # ready
+gen.send("hello")       # Echo: hello
+gen.send("world")       # Echo: world</code></pre>
+
+                <h3>2. Generator Delegation with yield from</h3>
+                <pre><code>def sub_generator():
+    yield "A"
+    yield "B"
+    yield "C"
+
+def main_generator():
+    yield "Start"
+    yield from sub_generator()  # Delegate to sub-generator
+    yield "End"
+
+for value in main_generator():
+    print(value)
+# Start, A, B, C, End</code></pre>
+
+                <h3>3. Using itertools with Generators</h3>
+                <pre><code>from itertools import islice, tee, chain
+
+# Take first N items from an infinite generator
+def infinite_count():
+    n = 1
+    while True:
+        yield n
+        n += 1
+
+first_10 = list(islice(infinite_count(), 10))
+# [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+# Split a generator into multiple copies
+gen = (x**2 for x in range(5))
+gen1, gen2 = tee(gen)
+print(list(gen1))  # [0, 1, 4, 9, 16]
+print(list(gen2))  # [0, 1, 4, 9, 16]
+
+# Chain multiple generators together
+names = chain(["alice", "bob"], ["charlie", "david"])
+# Produces: alice, bob, charlie, david</code></pre>
+
+                <h2>Common Pitfalls</h2>
+
+                <h3>1. Consumed Generators Can't Be Reused</h3>
+                <pre><code>gen = (x**2 for x in range(5))
+print(list(gen))  # [0, 1, 4, 9, 16]
+print(list(gen))  # [] — generator is exhausted!
+
+# Fix: recreate the generator or convert to list if you need reuse
+gen = (x**2 for x in range(5))
+squares = list(gen)  # Convert if you need to iterate multiple times</code></pre>
+
+                <h3>2. Don't Overuse Generators</h3>
+                <pre><code># Use a list when you need: indexing, len(), multiple iterations, slicing
+data = [x**2 for x in range(100)]  # Small data? Just use a list
+print(data[5])   # Indexing works
+print(len(data)) # Length works
+print(data[-1])  # Slicing works
+
+# Use a generator when: processing large data, piping to another function,
+# or you only iterate once</code></pre>
+
+                <h2>When to Use Generators: Quick Decision Guide</h2>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Use Generator When...</th>
+                            <th>Use List When...</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Processing large files (>100MB)</td>
+                            <td>Data fits easily in memory</td>
+                        </tr>
+                        <tr>
+                            <td>You only iterate once</td>
+                            <td>You need random access (indexing)</td>
+                        </tr>
+                        <tr>
+                            <td>Streaming data (APIs, networks)</td>
+                            <td>You need len() or slicing</td>
+                        </tr>
+                        <tr>
+                            <td>Chaining processing stages</td>
+                            <td>You iterate multiple times</td>
+                        </tr>
+                        <tr>
+                            <td>Memory is a concern</td>
+                            <td>Simplicity matters more</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h2>Summary</h2>
+                <ul>
+                    <li><strong>Iterators</strong> implement <code>__iter__()</code> and <code>__next__()</code> to produce values one at a time</li>
+                    <li><strong>Generators</strong> use <code>yield</code> to create iterators with minimal code</li>
+                    <li><strong>Generator expressions</strong> are the lazy equivalent of list comprehensions</li>
+                    <li>Chain generators into <strong>pipelines</strong> for memory-efficient data processing</li>
+                    <li>Generators are <strong>exhaustible</strong> — once consumed, they're done</li>
+                    <li>Use generators for <strong>large data</strong>, lists for <strong>small data</strong> you need to revisit</li>
+                </ul>
+
+                <p>Generators are one of Python's most powerful features for writing efficient code. Next time you reach for a list comprehension to process something large, pause and ask: "Do I really need all these values in memory at once?" Chances are, a generator will do the job with a fraction of the memory.</p>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes. Built with ☕ and code.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Reading progress bar
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + "%";
+        });
+
+        // Theme toggle
+        const toggle = document.getElementById('themeToggle');
+        toggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark');
+        });
+    </script>
+</body>
+</html>

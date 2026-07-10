@@ -3,9 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Penetration Testing Basics: A Beginner's Guide to Ethical Hacking | Hugo's Dev Notes</title>
-    <meta name="description" content="Learn penetration testing from scratch — what it is, the methodology, tools like Nmap and Nikto, and how to practice legally. Beginner-friendly cybersecurity guide with real examples.">
-    <meta name="keywords" content="penetration testing, ethical hacking, network security, Nmap, Nikto, OWASP, cybersecurity, vulnerability scanning, bug bounty">
+    <title>Penetration Testing Basics: Hack Your Own Apps Safely | Hugo's Dev Notes</title>
     <link rel="canonical" href="https://blog.hugow.dev/posts/penetration-testing-basics.html">
     <link rel="stylesheet" href="../style.css">
 
@@ -14,287 +12,521 @@
     {
       "@context": "https://schema.org",
       "@type": "BlogPosting",
-      "headline": "Penetration Testing Basics: A Beginner's Guide to Ethical Hacking",
-      "description": "Learn penetration testing from scratch — what it is, the methodology, tools like Nmap and Nikto, and how to practice legally. Beginner-friendly cybersecurity guide with real examples.",
-      "datePublished": "2026-06-22",
-      "dateModified": "2026-06-22",
+      "headline": "Penetration Testing Basics: How to Hack Your Own Applications Safely",
+      "description": "Learn ethical hacking fundamentals — reconnaissance, scanning, vulnerability analysis, exploitation, and reporting. Hands-on tools including nmap, Nikto, and Burp Suite. &copy; 2026 Hugo's Dev Notes.",
+      "datePublished": "2026-07-09",
+      "dateModified": "2026-07-09",
       "author": {"@type": "Person", "name": "Hugo Wong"},
       "publisher": {"@type": "Organization", "name": "Hugo's Dev Notes", "url": "https://blog.hugow.dev"},
-      "mainEntityOfPage": "{"@id": "https://blog.hugow.dev/posts/penetration-testing-basics.html")}",
-      "keywords": "Security"
+      "keywords": "penetration testing, ethical hacking, cybersecurity, nmap, vulnerability scanning"
     }
     </script>
 
     <!-- Social Meta -->
-    <!-- Open Graph -->
-    <meta property="og:title" content="Penetration Testing Basics: A Beginner's Guide to Ethical Hacking">
-    <meta property="og:description" content="Learn penetration testing from scratch — what it is, the methodology, tools like Nmap and Nikto, and how to practice legally. Beginner-friendly cybersecurity gu">
+    <meta property="og:title" content="Penetration Testing Basics: Hack Your Own Apps Safely">
+    <meta property="og:description" content="Learn ethical hacking fundamentals — reconnaissance, scanning, vulnerability analysis, exploitation, and reporting. Hands-on tools including nmap, Nikto, and Burp Suite.">
     <meta property="og:type" content="article">
     <meta property="og:url" content="https://blog.hugow.dev/posts/penetration-testing-basics.html">
     <meta property="og:site_name" content="Hugo's Dev Notes">
-    <meta property="article:published_time" content="2026-06-22">
-    <meta property="article:modified_time" content="2026-06-22">
+    <meta property="article:published_time" content="2026-07-09">
+    <meta property="article:modified_time" content="2026-07-09">
     <meta property="article:section" content="security">
-    <meta property="article:tag" content="Security">
-    
-    <!-- Twitter Card -->
+    <meta property="article:tag" content="Penetration Testing">
+
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Penetration Testing Basics: A Beginner's Guide to Ethical Hacking">
-    <meta name="twitter:description" content="Learn penetration testing from scratch — what it is, the methodology, tools like Nmap and Nikto, and how to practice legally. Beginner-friendly cybersecurity gu">
-    
+    <meta name="twitter:title" content="Penetration Testing Basics: Hack Your Own Apps Safely">
+    <meta name="twitter:description" content="Learn ethical hacking fundamentals — reconnaissance, scanning, vulnerability analysis, exploitation, and reporting.">
 </head>
 <body>
     <div class="progress-bar" id="progressBar"></div>
-        <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
 
     <header>
         <div class="container">
             <div class="logo">
-                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
                 <p class="subtitle">Cloudflare · Python · AI Coding</p>
             </div>
             <nav>
-                <a href="../index.html" class="nav-btn">🏠 Home</a>
-                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
-                <a href="../python.html" class="nav-btn">🐍 Python</a>
-                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn active">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
             </nav>
         </div>
     </header>
 
     <main class="container">
         <a href="../index.html" class="back-link">← Back to posts</a>
-        
+
         <article class="post-content">
             <span class="tag security">Security</span>
-            <h1>Penetration Testing Basics: A Beginner's Guide to Ethical Hacking</h1>
-            <time>June 22, 2026 · 12 min read</time>
+            <h1>Penetration Testing Basics: How to Hack Your Own Applications Safely</h1>
+            <time>July 9, 2026 · 12 min read</time>
 
-            <p>Ever wondered how security professionals find weaknesses in systems before hackers exploit them? Penetration testing (or "pentesting") is the practice of simulating real-world attacks on computers, networks, and web applications to discover and fix vulnerabilities. It's one of the most valuable skills in cybersecurity — and it's entirely legal when done with permission.</p>
+            <p>Penetration testing — also called ethical hacking or "pentesting" — is the practice of deliberately trying to break into your own systems to find security weaknesses before malicious attackers do. Think of it as hiring a burglar to test your locks, so you know exactly which ones need reinforcing.</p>
 
-            <p>In this guide, we'll walk through what penetration testing is, the standard methodology, the tools you need, and how to start practicing legally with hands-on examples.</p>
+            <p>Whether you're a developer, sysadmin, or security beginner, understanding the pentesting process will make you write more secure code and configure safer infrastructure. This guide walks through the five phases of penetration testing with hands-on examples using real, freely available tools.</p>
 
-            <h2>What Is Penetration Testing?</h2>
+            <h2>The Five Phases of Penetration Testing</h2>
 
-            <p>Penetration testing is an authorized, simulated cyber attack against a system to evaluate its security. Unlike vulnerability scanning (which automatically detects known issues), pentesting involves creative, manual techniques that mimic how real attackers think and operate.</p>
+            <p>Every professional penetration test follows a structured methodology. The most common framework includes five phases:</p>
 
-            <p>Think of it like hiring a master locksmith to test your home security. They try every possible entry point, report what works, and help you lock those doors before a burglar finds them.</p>
+            <ol>
+                <li><strong>Reconnaissance</strong> — Gather information about the target</li>
+                <li><strong>Scanning</strong> — Discover open ports, services, and vulnerabilities</li>
+                <li><strong>Gaining Access</strong> — Exploit found vulnerabilities</li>
+                <li><strong>Maintaining Access</strong> — Test persistence mechanisms</li>
+                <li><strong>Covering Tracks &amp; Reporting</strong> — Clean up and document findings</li>
+            </ol>
 
             <blockquote>
-                <strong>Golden rule:</strong> Never test a system you don't own or have written permission to test. Unauthorized access is a crime in most countries.
+                <strong>Golden rule:</strong> Never test a system you don't own or have written permission to test. Unauthorized access is illegal everywhere. Practice only on your own labs or platforms designed for learning (TryHackMe, HackTheBox, OverTheWire).
             </blockquote>
 
-            <h2>The Penetration Testing Methodology</h2>
+            <h2>Phase 1: Reconnaissance (Information Gathering)</h2>
 
-            <p>Professional pentesters follow a structured methodology. The most widely used framework has five phases:</p>
+            <p>Reconnaissance is about collecting as much information as possible about your target. The more you know, the easier it becomes to find weak points. There are two types:</p>
 
-            <pre><code>Phase 1: Reconnaissance   — Gather information about the target
-Phase 2: Scanning         — Discover open ports, services, and vulnerabilities
-Phase 3: Exploitation     — Attempt to breach security controls
-Phase 4: Post-Exploitation — See what you can access once inside
-Phase 5: Reporting       — Document everything for the client</code></pre>
+            <h3>Passive Reconnaissance</h3>
+            <p>Gathering info without touching the target's systems — everything comes from public sources.</p>
 
-            <h3>Phase 1: Reconnaissance</h3>
-
-            <p>This is the intelligence-gathering stage. You want to know everything about the target — domain names, IP addresses, technologies used, employees, social media, DNS records, and more. There are two types:</p>
-
-            <ul>
-                <li><strong>Passive recon</strong> — gathering info without touching the target (Google searches, WHOIS lookups, Shodan)</li>
-                <li><strong>Active recon</strong> — directly interacting with the target (ping sweeps, port scans)</li>
-            </ul>
-
-            <p>A simple passive recon using command-line tools:</p>
-
-            <pre><code># WHOIS lookup — who owns the domain?
+            <pre><code># Who owns this domain?
 whois example.com
 
-# DNS lookup — what records exist?
-nslookup example.com
+# What DNS records exist?
 dig example.com ANY
 
-# Find subdomains
-host -l example.com ns1.example.com</code></pre>
+# Find subdomains using public data
+subfinder -d example.com
 
-            <h3>Phase 2: Scanning</h3>
+# Search for leaked credentials
+# (Check Have I Been Pwned or BreachDirectory)</code></pre>
 
-            <p>Now that you know what you're dealing with, it's time to scan. The #1 tool here is <strong>Nmap</strong> (Network Mapper), which discovers hosts and services on a network.</p>
+            <h3>Active Reconnaissance</h3>
+            <p>Directly interacting with the target to gather information. This is more detectable but more accurate.</p>
 
-            <pre><code># Basic scan — find open ports
-nmap 192.168.1.1
+            <pre><code># Enumerate open ports (quick scan)
+nmap -sV -T4 --top-ports 100 192.168.1.100
 
-# Scan with service version detection
-nmap -sV 192.168.1.1
+# Full scan with OS detection
+nmap -A -T4 192.168.1.100
 
-# Scan with OS detection
-nmap -O 192.168.1.1
+# Scan entire subnet
+nmap -sn 192.168.1.0/24
 
-# Full scan of all 65535 ports
-nmap -p- 192.168.1.1
+# Detect specific services in detail
+nmap -sC -p 80,443,22,3306 example.com</code></pre>
 
-# Aggressive scan (combines several techniques)
-nmap -A 192.168.1.1
+            <p>Here's what a typical <code>nmap</code> output looks like and how to read it:</p>
 
-# Scan an entire subnet
-nmap 192.168.1.0/24</code></pre>
+            <pre><code>PORT     STATE  SERVICE  VERSION
+22/tcp   open   ssh      OpenSSH 8.9p1 Ubuntu
+80/tcp   open   http     Apache httpd 2.4.54
+443/tcp  open   ssl/http Apache httpd 2.4.54
+3306/tcp open   mysql    MySQL 8.0.32
+8080/tcp open   http     Node.js Express
 
-            <p>For web applications specifically, <strong>Nikto</strong> is a popular web server scanner:</p>
+# Translation: This server runs SSH, Apache web server,
+# MySQL database (exposed! bad practice), and an
+# application on port 8080. That's 5 attack surfaces.</code></pre>
 
-            <pre><code># Scan a web server for vulnerabilities
-nikto -h http://example.com
+            <h2>Phase 2: Scanning for Vulnerabilities</h2>
 
-# Scan with SSL check
+            <p>Once you know what services are running, the next step is checking for known vulnerabilities in those services. Automated vulnerability scanners make this easier.</p>
+
+            <h3>Web Application Scanning with Nikto</h3>
+
+            <pre><code># Install (Kali Linux / Parrot OS)
+sudo apt install nikto
+
+# Scan a web application
+nikto -h https://example.com
+
+# Scan with specific SSL check
 nikto -h https://example.com -ssl
 
 # Save results to file
-nikto -h http://example.com -o report.txt -Format txt</code></pre>
+nikto -h https://example.com -o report.txt -Format txt</code></pre>
 
-            <h3>Phase 3: Exploitation</h3>
+            <p>Nikto checks for common issues like outdated software versions, misconfigured headers, default admin pages, and known CVEs (Common Vulnerabilities and Exposures).</p>
 
-            <p>This is where pentesters attempt to exploit the vulnerabilities they found. For web application testing, <strong>Burp Suite</strong> is the go-to tool — it acts as a proxy between your browser and the target, letting you inspect and modify every HTTP request and response. Professional pentesters also use frameworks like <strong>Metasploit</strong> for exploit development and <strong>sqlmap</strong> for automated SQL injection testing.</p>
+            <h3>Directory Enumeration</h3>
 
-            <h3>Phase 4: Post-Exploitation</h3>
+            <p>Web apps often have hidden pages or directories that aren't linked from the main site. These can expose admin panels, API endpoints, or sensitive files.</p>
 
-            <p>Once inside, you assess the damage: What data is accessible? Can you escalate privileges? Can you move laterally to other systems? This phase helps understand the real impact of a breach.</p>
+            <pre><code># Gobuster - directory brute force
+gobuster dir -u https://example.com -w /usr/share/wordlists/dirb/common.txt
 
-            <pre><code># After gaining a shell, common checks:
+# ffuf - faster alternative
+ffuf -u https://example.com/FUZZ -w /usr/share/wordlists/dirb/common.txt
 
-# Who am I?
-whoami
+# Find specific file types
+gobuster dir -u https://example.com -w common.txt -x php,html,txt,json,env</code></pre>
 
-# What privileges?
-id
+            <h3>Manual Security Header Check</h3>
 
-# What's running?
-ps aux
+            <p>Always check your web app's security headers. Missing headers are an easy win for attackers.</p>
 
-# What users exist?
-cat /etc/passwd
+            <pre><code># Python script to check security headers
+import requests
 
-# Any configuration or key files in common locations?
-ls -la /var/www/ && ls -la /home/</code></pre>
+url = "https://example.com"
+headers = requests.get(url).headers
 
-            <h3>Phase 5: Reporting</h3>
+security_headers = {
+    "Strict-Transport-Security": "Forces HTTPS connections",
+    "Content-Security-Policy": "Blocks unauthorized scripts",
+    "X-Content-Type-Options": "Prevents MIME type sniffing",
+    "X-Frame-Options": "Prevents clickjacking",
+    "X-XSS-Protection": "Legacy XSS protection",
+    "Referrer-Policy": "Controls referrer information",
+    "Permissions-Policy": "Restricts browser features",
+    "Cache-Control": "Controls caching behavior"
+}
 
-            <p>A pentest without a report is useless. Your report should include:</p>
+print("Security Header Report:")
+print("-" * 50)
+for header, description in security_headers.items():
+    status = "✅" if header in headers else "❌"
+    print(f"{status} {header}: {description}")</code></pre>
+
+            <h2>Phase 3: Gaining Access (Exploitation)</h2>
+
+            <p>This phase involves actually exploiting the vulnerabilities you found. In ethical hacking, you stop as soon as you prove access — you don't go deeper than necessary.</p>
+
+            <h3>Common Web Vulnerabilities</h3>
+
+            <p>The OWASP Top 10 lists the most critical web security risks. Here are the ones beginners encounter most:</p>
+
+            <h4>1. SQL Injection</h4>
+
+            <p>Occurs when user input is directly inserted into SQL queries without sanitization.</p>
+
+            <pre><code># ❌ VULNERABLE - Python Flask example
+@app.route('/login')
+def login():
+    username = request.args.get('username')
+    query = f"SELECT * FROM users WHERE name = '{username}'"
+    # Attacker sends: username = admin'--
+    # Query becomes: SELECT * FROM users WHERE name = 'admin'--'
+    # The -- comments out the rest, bypassing authentication!
+    results = db.execute(query)
+
+# ✅ SECURE - Parameterized query
+@app.route('/login')
+def login():
+    username = request.args.get('username')
+    # Parameters are properly escaped
+    results = db.execute(
+        "SELECT * FROM users WHERE name = ?",
+        (username,)
+    )</code></pre>
+
+            <h4>2. Cross-Site Scripting (XSS)</h4>
+
+            <p>Occurs when user input is rendered as HTML/JavaScript without escaping.</p>
+
+            <pre><code># ❌ VULNERABLE
+@app.route('/search')
+def search():
+    query = request.args.get('q', '')
+    return f'&lt;h1&gt;Results for: {query}&lt;/h1&gt;'
+    # Attacker sends: ?q=&lt;script&gt;alert('XSS')&lt;/script&gt;
+
+# ✅ SECURE - Escape HTML output
+from markupsafe import escape
+
+@app.route('/search')
+def search():
+    query = request.args.get('q', '')
+    return f'&lt;h1&gt;Results for: {escape(query)}&lt;/h1&gt;'
+    # Output: Results for: &lt;script&gt;alert('XSS')&lt;/script&gt;
+    # Displayed as text, not executed as code</code></pre>
+
+            <h4>3. Broken Authentication</h4>
+
+            <pre><code># ❌ VULNERABLE - Weak password requirements
+def register(username, password):
+    # No validation! User can set password as "1"
+    hash_password(password)
+    save_user(username, hash_password)
+
+# ✅ SECURE - Password validation
+import re
+
+PASSWORD_PATTERN = re.compile(
+    r'^(?=.*[a-z])'       # at least one lowercase
+    r'(?=.*[A-Z])'       # at least one uppercase
+    r'(?=.*\d)'          # at least one digit
+    r'(?=.*[@$!%*?&amp;])'  # at least one special char
+    r'.{8,}$'             # at least 8 characters
+)
+
+def validate_password(password):
+    if not PASSWORD_PATTERN.match(password):
+        raise ValueError(
+            "Password must be 8+ chars with upper, "
+            "lower, digit, and special character"
+        )</code></pre>
+
+            <h3>Using Burp Suite (Free Community Edition)</h3>
+
+            <p>Burp Suite is the most popular web application security testing tool. The community edition is free and sufficient for learning.</p>
+
+            <pre><code># Configure browser to use Burp as proxy:
+# 1. Open Burp Suite → Proxy → Options
+# 2. Note the listener address (usually 127.0.0.1:8080)
+# 3. Set browser proxy to 127.0.0.1:8080
+# 4. Install Burp's CA certificate for HTTPS interception
+
+# Key features to explore:
+# - Proxy: Intercept and modify HTTP requests in real-time
+# - Repeater: Manually resend modified requests
+# - Intruder: Automated fuzzing and brute force attacks
+# - Scanner: Identify vulnerabilities (Pro only)
+# - Decoder: Encode/decode data in various formats</code></pre>
+
+            <h2>Phase 4: Maintaining Access</h2>
+
+            <p>In a real pentest, you'd test whether an attacker could establish persistent access. For learning, you can simulate this with simple techniques:</p>
+
+            <h3>Check for Backdoors</h3>
+
+            <pre><code># Look for unauthorized cron jobs
+crontab -l
+sudo cat /etc/crontab
+
+# Check for unknown SSH keys
+cat ~/.ssh/authorized_keys
+
+# Look for suspicious processes
+ps aux | grep -i backdoor
+netstat -tlnp  # check for unusual listening ports
+
+# Check for recently modified files
+find /var/www -mtime -7 -type f
+find /etc -mtime -7 -type f</code></pre>
+
+            <h3>Test Default Credentials</h3>
+
+            <pre><code># Many services ship with default credentials
+# Common defaults to check:
+
+# WordPress: admin / admin or admin / password
+# MySQL: root / (blank)
+# Tomcat: admin / admin
+# Redis: no password by default
+# Elasticsearch: elastic / changeme
+
+# Python script to test common credentials
+import requests
+
+def test_default_credentials(url, username, password):
+    try:
+        response = requests.get(url, auth=(username, password), timeout=5)
+        if response.status_code == 200:
+            print(f"⚠️  DEFAULT ACCESS: {username}:{password}")
+            return True
+    except requests.RequestException:
+        pass
+    return False
+
+# Test common combinations
+defaults = [
+    ("admin", "admin"),
+    ("admin", "password"),
+    ("root", "toor"),
+    ("user", "user"),
+]
+
+for user, pwd in defaults:
+    test_default_credentials(
+        "http://192.168.1.100:8080/admin",
+        user, pwd
+    )</code></pre>
+
+            <h2>Phase 5: Reporting</h2>
+
+            <p>A penetration test is worthless without a clear report. Every finding should include:</p>
 
             <ul>
-                <li><strong>Executive summary</strong> — high-level findings for management</li>
-                <li><strong>Technical details</strong> — step-by-step reproduction for engineers</li>
-                <li><strong>Risk ratings</strong> — Critical, High, Medium, Low, Informational</li>
-                <li><strong>Remediation steps</strong> — how to fix each issue</li>
-                <li><strong>Score</strong> — overall security posture assessment</li>
+                <li><strong>Vulnerability name</strong> — e.g., "SQL Injection on Login Form"</li>
+                <li><strong>Severity</strong> — Critical, High, Medium, Low, Informational</li>
+                <li><strong>Proof of concept</strong> — The exact steps to reproduce</li>
+                <li><strong>Impact</strong> — What could an attacker do with this?</li>
+                <li><strong>Remediation</strong> — How to fix it (with code examples)</li>
             </ul>
 
-            <h2>Common Vulnerability Categories</h2>
+            <pre><code># Example report entry:
+## [HIGH] SQL Injection on /api/users endpoint
 
-            <p>Understanding what to look for is as important as the tools. Here are the most common categories:</p>
+**Location:** GET /api/users?id=1
+**Severity:** HIGH (CVSS 8.6)
 
-            <h3>OWASP Top 10 (Web Applications)</h3>
+**Proof of Concept:**
+1. Send request: GET /api/users?id=1' UNION SELECT password FROM admin--
+2. Server returns admin password in JSON response
+
+**Impact:** Full database access, including admin credentials
+**CVSS Vector:** CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:N
+
+**Remediation:**
+Use parameterized queries in all database operations:
+    cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
+
+**Status:** Pending Fix</code></pre>
+
+            <h2>Build a Home Lab for Practice</h2>
+
+            <p>You need safe environments to practice. Here's how to set one up with Docker:</p>
+
+            <pre><code># docker-compose.yml for a security lab
+version: '3.8'
+services:
+  # OWASP Juice Shop - intentionally vulnerable web app
+  juice-shop:
+    image: bkimminich/juice-shop
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+  # OWASP WebGoat - interactive security lessons
+  webgoat:
+    image: webgoat/webgoat
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+  # DVWA - Damn Vulnerable Web Application
+  dvwa:
+    image: vulnerables/web-dvwa
+    ports:
+      - "8888:80"
+    environment:
+      - DB_PASSWORD=p@ssw0rd
+    restart: unless-stopped
+
+  # Metasploitable2 - vulnerable VM for practice
+  metasploitable:
+    image: cibuilds/metasploitable2
+    ports:
+      - "2222:22"
+      - "4444:4444"
+      - "8000:80"
+      - "33060:3306"</code></pre>
+
+            <pre><code># Start your lab
+docker compose up -d
+
+# Verify everything is running
+docker compose ps
+
+# Now practice!
+# - Juice Shop (port 3000): Browse and exploit vulnerabilities
+# - WebGoat (port 8080): Follow guided security lessons
+# - DVWA (port 8888): Practice OWASP Top 10 attacks
+# - Metasploitable (port 2222): Practice network penetration</code></pre>
+
+            <h2>Essential Free Tools Cheat Sheet</h2>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tool</th>
+                        <th>Category</th>
+                        <th>What It Does</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>nmap</code></td><td>Port Scanner</td><td>Discover open ports and services</td></tr>
+                    <tr><td><code>nikto</code></td><td>Web Scanner</td><td>Find web server vulnerabilities</td></tr>
+                    <tr><td><code>gobuster</code></td><td>Directory Brute</td><td>Find hidden directories and files</td></tr>
+                    <tr><td><code>sqlmap</code></td><td>SQL Injection</td><td>Automate SQL injection attacks</td></tr>
+                    <tr><td><code>burpsuite</code></td><td>Web Proxy</td><td>Intercept and modify web traffic</td></tr>
+                    <tr><td><code>john</code></td><td>Password Cracker</td><td>Crack password hashes</td></tr>
+                    <tr><td><code>hydra</code></td><td>Brute Force</td><td>Brute force login forms and SSH</td></tr>
+                    <tr><td><code>wireshark</code></td><td>Packet Capture</td><td>Analyze network traffic</td></tr>
+                    <tr><td><code>gitleaks</code></td><td>Secret Scanner</td><td>Find API keys in Git repos</td></tr>
+                </tbody>
+            </table>
+
+            <h2>Legal and Ethical Considerations</h2>
+
+            <p>Before you start pentesting, understand the rules:</p>
 
             <ul>
-                <li><strong>A01 — Broken Access Control</strong> — users accessing resources they shouldn't</li>
-                <li><strong>A02 — Cryptographic Failures</strong> — sensitive data exposed due to weak encryption</li>
-                <li><strong>A03 — Injection</strong> — SQL injection, command injection, XSS</li>
-                <li><strong>A04 — Insecure Design</strong> — missing security by design principles</li>
-                <li><strong>A05 — Security Misconfiguration</strong> — default passwords, open ports, verbose errors</li>
+                <li><strong>Get written permission</strong> — A "verbal yes" isn't enough. Have a signed engagement letter.</li>
+                <li><strong>Define scope</strong> — Which systems? What tests? Time limits?</li>
+                <li><strong>Don't harm production</strong> — Never run destructive tests on live systems.</li>
+                <li><strong>Protect your data</strong> — If you find real credentials, treat them confidentially.</li>
+                <li><strong>Report responsibly</strong> — Share findings only with authorized parties.</li>
+                <li><strong>Know your local laws</strong> — Computer fraud laws vary by country but unauthorized access is nearly always criminal.</li>
             </ul>
 
-            <h2>Legal Ways to Practice</h2>
+            <h2>Recommended Learning Paths</h2>
 
-            <p>You need legal targets to practice. Here are great options:</p>
+            <h3>Free Resources</h3>
+            <ul>
+                <li><strong>PortSwigger Web Security Academy</strong> — Free, comprehensive web hacking lab (from the Burp Suite creators)</li>
+                <li><strong>TryHackMe</strong> — Guided rooms with free tier, great for beginners</li>
+                <li><strong>HackTheBox</strong> — CTF-style challenges, starts free</li>
+                <li><strong>OverTheWire</strong> — Wargames for learning security fundamentals through games</li>
+                <li><strong>PentesterLab</strong> — Free exercises covering real vulnerabilities</li>
+            </ul>
 
-            <ol>
-                <li><strong>TryHackMe</strong> (tryhackme.com) — guided learning rooms with legal vulnerable machines</li>
-                <li><strong>HackTheBox</strong> (hackthebox.com) — realistic vulnerable machines to pwn</li>
-                <li><strong>OWASP Juice Shop</strong> — intentionally vulnerable web app you can run locally</li>
-                <li><strong>PortSwigger Web Security Academy</strong> — free labs for every OWASP category</li>
-                <li><strong>CTF competitions</strong> — Capture The Flag events with legal challenges</li>
-                <li><strong>Bug Bounty programs</strong> — HackerOne, Bugcrowd let you test companies legally for rewards</li>
-            </ol>
+            <h3>Certifications to Consider</h3>
+            <ul>
+                <li><strong>eJPT</strong> (eLearnSecurity Junior Pentester) — Hands-on, beginner-friendly</li>
+                <li><strong>CompTIA PenTest+</strong> — Good foundational cert</li>
+                <li><strong>OSCP</strong> (Offensive Security Certified Professional) — Gold standard, intense</li>
+            </ul>
 
-            <h2>Building Your First Lab</h2>
+            <h2>Next Steps</h2>
 
-            <p>Set up a safe, legal environment on your own computer:</p>
-
-            <pre><code># Install common security tools on Ubuntu/Debian
-sudo apt update
-sudo apt install -y nmap nikto burpsuite
-
-# Or run Kali Linux in a VM (VirtualBox/VMware)
-
-# Download an intentionally vulnerable web app
-git clone https://github.com/juice-shop/juice-shop
-cd juice-shop && npm install && npm start
-
-# Now scan your local lab
-nmap -sV -p- localhost:3000
-nikto -h http://localhost:3000</code></pre>
-
-            <h2>Essential Tools Summary</h2>
-
-            <pre><code>Recon:     theHarvester, Maltego, Shodan, WHOIS
-Scanning:  Nmap, Nikto, OpenVAS, Nessus
-Exploit:   Metasploit, sqlmap, Burp Suite, Curl
-Web:       OWASP ZAP, Burp Suite, ffuf, Gobuster
-Wireless:  Aircrack-ng, Wireshark
-Social Eng: SET, GoPhish
-Reporting: Dradis, Pentera</code></pre>
-
-            <h2>Next Steps for Beginners</h2>
-
-            <p>Here's a realistic learning path:</p>
-
-            <ol>
-                <li>Start with <strong>TryHackMe</strong> — complete the "Pre Security" and "Jr Penetration Tester" paths</li>
-                <li>Learn <strong>Linux command line</strong> — it's the backbone of security tools</li>
-                <li>Study <strong>networking fundamentals</strong> — TCP/IP, DNS, HTTP, ports, protocols</li>
-                <li>Practice with <strong>PortSwigger Academy</strong> for web app security</li>
-                <li>Consider certifications: <strong>CompTIA Security+</strong>, then <strong>eJPT</strong> or <strong>OSCP</strong></li>
-            </ol>
+            <ul>
+                <li>Set up your <a href="docker-compose-local-dev.html">Docker security lab</a> with the compose file above</li>
+                <li>Practice with <a href="owasp-top10-web-security.html">OWASP Top 10</a> vulnerabilities</li>
+                <li>Learn <a href="xss-csrf-protection-python.html">how to protect against XSS and CSRF</a> in Python</li>
+                <li>Explore <a href="https-tls-basics.html">HTTPS and TLS</a> fundamentals</li>
+            </ul>
 
             <blockquote>
-                Penetration testing is a journey, not a destination. New vulnerabilities are discovered every day. Stay curious, stay ethical, and keep practicing.
+                <strong>Practice tip:</strong> Start with TryHackMe's "Complete Beginner" path. It takes about 20 hours and will teach you everything from Linux basics to your first SQL injection. No prior security knowledge needed.
             </blockquote>
-
-            <p>Ready to explore more security topics? Check out our guide on <a href="https-tls-basics.html">How HTTPS and TLS Work</a> to understand the encryption that protects your connections.</p>
-
         </article>
     </main>
 
     <footer>
         <div class="container">
-            <p>© 2026 Hugo's Dev Notes | Built with ❤️ & AI</p>
-            <div class="footer-links">
-                <a href="https://github.com/hugow0528" target="_blank">GitHub</a>
-                <a href="https://blog.hugow.dev/sitemap.xml">Sitemap</a>
-                <a href="https://blog.hugow.dev/robots.txt">Robots</a>
-            </div>
+            <p>&copy; 2026 Hugo's Dev Notes. Built with vibe coding.</p>
         </div>
     </footer>
     <script>
-        // Theme toggle
         const themeToggle = document.getElementById('themeToggle');
-        if (themeToggle) {{
+        if (themeToggle) {
             const savedTheme = localStorage.getItem('theme') || 'dark';
-            if (savedTheme === 'light') {{
+            if (savedTheme === 'light') {
                 document.body.classList.add('light-mode');
                 themeToggle.textContent = '☀';
-            }}
-            themeToggle.addEventListener('click', () => {{
+            }
+            themeToggle.addEventListener('click', () => {
                 document.body.classList.toggle('light-mode');
                 const isLight = document.body.classList.contains('light-mode');
                 localStorage.setItem('theme', isLight ? 'light' : 'dark');
                 themeToggle.textContent = isLight ? '☀' : '◐';
-            }});
-        }}
-        // Progress bar
-        window.addEventListener('scroll', () => {{
+            });
+        }
+        window.addEventListener('scroll', () => {
             const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
             const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
             const scrolled = (winScroll / height) * 100;
             const bar = document.getElementById('progressBar');
             if (bar) bar.style.width = scrolled + "%";
-        }});
+        });
     </script>
 </body>
 </html>

@@ -1,8 +1,14 @@
+#!/usr/bin/env python3
 import os
 import base64
 import requests
 
-with open('/home/admin/.gh_token', 'r') as f:
+token_path = os.path.expanduser("~/.gh_token")
+if not os.path.exists(token_path):
+    print(f"Token file not found at {token_path}")
+    exit(1)
+
+with open(token_path, "r") as f:
     token = f.read().strip()
 
 headers = {"Authorization": f"token {token}", "Accept": "application/vnd.github+json"}
@@ -14,23 +20,25 @@ def push_file(path, content, message):
     resp = requests.get(url, headers=headers, params={"ref": branch})
     sha = resp.json().get("sha") if resp.status_code == 200 else None
     payload = {"message": message, "content": base64.b64encode(content.encode()).decode(), "branch": branch}
-    if sha: payload["sha"] = sha
-    result = requests.put(url, headers=headers, json=payload)
-    return result.status_code in [200, 201]
+    if sha:
+        payload["sha"] = sha
+    r = requests.put(url, headers=headers, json=payload)
+    ok = r.status_code in (200, 201)
+    status = "OK" if ok else f"FAIL {r.status_code}"
+    print(f"  {status}: {path}")
+    return ok
 
 files = []
 for root, dirs, filenames in os.walk(base_dir):
+    dirs[:] = [d for d in dirs if d != '.git']
     for filename in filenames:
-        if filename.endswith(('.html', '.css', '.xml', '.txt')):
+        if filename.endswith((".html", ".css", ".xml", ".txt")):
             full_path = os.path.join(root, filename)
             rel_path = os.path.relpath(full_path, base_dir)
-            files.append((rel_path, open(full_path).read(), "Auto: New posts"))
+            with open(full_path, "r") as f:
+                content = f.read()
+            files.append((rel_path, content, "Auto: New blog posts"))
 
-success = 0
-for p, c, m in files:
-    result = push_file(p, c, m)
-    status = "OK" if result else "FAIL"
-    print(f"{status} {p}")
-    if result: success += 1
-
-print(f"\nPushed {success}/{len(files)} files")
+print(f"Pushing {len(files)} files to {owner}/{repo}...")
+success = sum(1 for p, c, m in files if push_file(p, c, m))
+print(f"\nDone! {success}/{len(files)} files pushed successfully.")

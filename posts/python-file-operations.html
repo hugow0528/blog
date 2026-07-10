@@ -3,433 +3,374 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Python File Operations: Read, Write, and Manage Files | Hugo's Dev Notes</title>
-    <meta name="description" content="Learn Python file operations from scratch — reading, writing, appending, CSV, JSON, and safe file handling with context managers. Beginner-friendly tutorial with working code examples.">
-    <meta name="keywords" content="Python file operations, read file, write file, CSV, JSON, open(), with statement, pathlib, file handling, Python beginner">
+    <title>Python File Operations: Read, Write, Create & Manage Files — Complete Beginner's Guide | Hugo's Dev Notes</title>
     <link rel="canonical" href="https://blog.hugow.dev/posts/python-file-operations.html">
     <link rel="stylesheet" href="../style.css">
 
-    <!-- SEO Structured Data -->
+    <meta name="description" content="Master Python file operations — reading, writing, appending, creating directories, checking existence, reading line by line, and safe file handling. Working examples for every concept.">
+    <meta name="keywords" content="python file operations, python read file, python write file, python directory, open(), with statement, pathlib">
+    <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="Python File Operations: Read, Write, Create & Manage Files">
+    <meta property="og:description" content="Master Python file operations — reading, writing, appending, creating directories, and safe file handling. Working examples for every concept.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.hugow.dev/posts/python-file-operations.html">
+    <meta property="og:site_name" content="Hugo's Dev Notes">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Python File Operations: Read, Write, Create & Manage Files">
+    <meta name="twitter:description" content="Master Python file operations with working examples.">
+
+    <!-- Structured Data -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "BlogPosting",
-      "headline": "Python File Operations: Read, Write, and Manage Files",
-      "description": "Learn Python file operations from scratch — reading, writing, appending, CSV, JSON, and safe file handling with context managers. Beginner-friendly tutorial with working code examples.",
-      "datePublished": "2026-06-21",
-      "dateModified": "2026-06-21",
+      "headline": "Python File Operations: Read, Write, Create & Manage Files — Complete Beginner's Guide",
+      "description": "Master Python file operations — reading, writing, appending, creating directories, and safe file handling.",
+      "datePublished": "2026-07-09",
+      "dateModified": "2026-07-09",
       "author": {"@type": "Person", "name": "Hugo Wong"},
       "publisher": {"@type": "Organization", "name": "Hugo's Dev Notes", "url": "https://blog.hugow.dev"},
-      "mainEntityOfPage": "{"@id": "https://blog.hugow.dev/posts/python-file-operations.html")}",
-      "keywords": "Python"
+      "mainEntityOfPage": "https://blog.hugow.dev/posts/python-file-operations.html"
     }
     </script>
-
-    <!-- Social Meta -->
-    <!-- Open Graph -->
-    <meta property="og:title" content="Python File Operations: Read, Write, and Manage Files">
-    <meta property="og:description" content="Learn Python file operations from scratch — reading, writing, appending, CSV, JSON, and safe file handling with context managers. Beginner-friendly tutorial wit">
-    <meta property="og:type" content="article">
-    <meta property="og:url" content="https://blog.hugow.dev/posts/python-file-operations.html">
-    <meta property="og:site_name" content="Hugo's Dev Notes">
-    <meta property="article:published_time" content="2026-06-21">
-    <meta property="article:modified_time" content="2026-06-21">
-    <meta property="article:section" content="python">
-    <meta property="article:tag" content="Python">
-    
-    <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Python File Operations: Read, Write, and Manage Files">
-    <meta name="twitter:description" content="Learn Python file operations from scratch — reading, writing, appending, CSV, JSON, and safe file handling with context managers. Beginner-friendly tutorial wit">
-    
 </head>
 <body>
     <div class="progress-bar" id="progressBar"></div>
-        <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
 
     <header>
         <div class="container">
             <div class="logo">
-                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
                 <p class="subtitle">Cloudflare · Python · AI Coding</p>
             </div>
             <nav>
-                <a href="../index.html" class="nav-btn">🏠 Home</a>
-                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
-                <a href="../python.html" class="nav-btn">🐍 Python</a>
-                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
             </nav>
         </div>
     </header>
 
     <main class="container">
-        <a href="../index.html" class="back-link">← Back to posts</a>
-        
-        <article class="post-content">
-            <span class="tag python">Python</span>
-            <h1>Python File Operations: Read, Write, and Manage Files</h1>
-            <time>June 21, 2026 · 11 min read</time>
+        <article class="post-full">
+            <div class="post-header">
+                <div class="post-tags">
+                    <span class="tag python">Python</span>
+                </div>
+                <h1>Python File Operations: Read, Write, Create & Manage Files — Complete Beginner's Guide</h1>
+                <div class="post-meta">
+                    <span class="post-date">July 9, 2026</span>
+                    <span class="read-time">10 min read</span>
+                </div>
+            </div>
 
-            <p>Almost every real Python program needs to work with files — reading configuration, logging output, processing data, or saving results. File operations are one of those fundamental skills that separate "I can print Hello World" from "I can build useful programs." In this guide, we'll cover everything from basic read/write to working with CSV and JSON files.</p>
+            <div class="post-content">
+                <p>Every Python program needs to read and write data at some point. Whether you're building a web scraper that saves results, a CLI tool that reads config files, or an app that logs errors to disk — understanding file operations is fundamental. This guide covers everything from basic <code>open()</code> to production-grade safe file handling.</p>
 
-            <h2>The Basics: Opening and Reading Files</h2>
+                <h2 id="basic-read-write">1. Basic File Reading and Writing</h2>
+                <p>Python's built-in <code>open()</code> function is your gateway to file operations. It takes a filename and a mode, then returns a file object you can read from or write to.</p>
 
-            <p>Python makes it incredibly simple to read a file. The <code>open()</code> function is your starting point:</p>
-
-            <pre><code># Read the entire file as a single string
-with open("data.txt", "r") as file:
-    content = file.read()
-    print(content)
-
-# Read line by line (memory efficient for large files)
-with open("data.txt", "r") as file:
-    for line in file:
-        print(line.strip())  # .strip() removes trailing newlines
-
-# Read all lines into a list
-with open("data.txt", "r") as file:
-    lines = file.readlines()
-    print(f"Total lines: {len(lines)}")
-    print(f"First line: {lines[0].strip()}")</code></pre>
-
-            <p>Notice the <code>with</code> statement? This is called a <strong>context manager</strong>. It automatically closes the file when the block finishes — even if an error occurs. This is the recommended way to handle files in Python. <em>Always</em> use <code>with</code>.</p>
-
-            <h3>Why <code>with</code> Is Better Than Manual Close</h3>
-
-            <pre><code># ❌ DON'T DO THIS — easy to forget file.close()
-file = open("data.txt", "r")
-content = file.read()
-print(content)
-file.close()
-
-# ✅ DO THIS — automatic cleanup, even on errors
-with open("data.txt", "r") as file:
-    content = file.read()
+                <h3>Reading a File — All at Once</h3>
+                <pre><code># Read entire file into a string
+with open("data.txt", "r") as f:
+    content = f.read()
     print(content)</code></pre>
+                <p>The <code>with</code> statement is critical — it automatically closes the file when the block ends, even if an error occurs. <strong>Always use <code>with</code> for file operations.</strong></p>
 
-            <p>If an exception happens between <code>open()</code> and <code>close()</code> in the first example, the file handle stays open forever. With <code>with</code>, Python guarantees cleanup.</p>
+                <h3>Reading Line by Line</h3>
+                <pre><code># Read one line at a time (memory efficient for large files)
+with open("large_file.log", "r") as f:
+    for line in f:
+        print(line.strip())  # strip() removes trailing newline</code></pre>
+                <p>Iterating over a file object yields one line at a time. This is far more memory-efficient than <code>read()</code> for files larger than available RAM.</p>
 
-            <h2>Writing to Files</h2>
+                <h3>Getting All Lines as a List</h3>
+                <pre><code># Read all lines into a list of strings
+with open("data.txt", "r") as f:
+    lines = f.readlines()
+    print(lines[0])     # First line
+    print(len(lines))   # Total number of lines</code></pre>
 
-            <p>Writing is just as simple. You have two main modes:</p>
+                <h3>Writing to a File</h3>
+                <pre><code># Write (overwrites existing content)
+with open("output.txt", "w") as f:
+    f.write("Hello, Python!\n")
+    f.write("Second line\n")
 
-            <pre><code># Write mode — creates new file or OVERWRITES existing
-with open("output.txt", "w") as file:
-    file.write("Hello, World!\n")
-    file.write("This is line two.\n")
-    file.write("Last line.\n")
+# Append (adds to end of file)
+with open("output.txt", "a") as f:
+    f.write("This line is appended\n")</code></pre>
+                <p>Mode <code>"w"</code> truncates the file first (erases everything). Mode <code>"a"</code> opens for appending without clearing existing content.</p>
 
-# Append mode — adds to existing file without deleting
-with open("output.txt", "a") as file:
-    file.write("This line was appended.\n")</code></pre>
+                <h2 id="file-modes">2. File Modes Explained</h2>
+                <table class="code-table">
+                    <tr><th>Mode</th><th>Meaning</th><th>Creates if missing?</th></tr>
+                    <tr><td><code>"r"</code></td><td>Read only</td><td>No — raises <code>FileNotFoundError</code></td></tr>
+                    <tr><td><code>"w"</code></td><td>Write (truncates)</td><td>Yes</td></tr>
+                    <tr><td><code>"a"</code></td><td>Append</td><td>Yes</td></tr>
+                    <tr><td><code>"x"</code></td><td>Exclusive create</td><td>Yes — error if exists</td></tr>
+                    <tr><td><code>"r+"</code></td><td>Read and write</td><td>No</td></tr>
+                    <tr><td><code>"rb"</code></td><td>Read binary</td><td>No</td></tr>
+                    <tr><td><code>"wb"</code></td><td>Write binary</td><td>Yes</td></tr>
+                </table>
 
-            <p><strong>Warning:</strong> Using <code>"w"</code> mode on an existing file will <em>erase everything</em> first. Double-check your filename before writing!</p>
+                <h2 id="directory-operations">3. Directory Operations with os</h2>
+                <p>Python's <code>os</code> module handles directory creation, listing, and management:</p>
 
-            <h2>File Modes at a Glance</h2>
+                <pre><code>import os
 
-            <pre><code>r   — Read only (default). Error if file doesn't exist.
-w   — Write only. Creates new file or overwrites existing.
-a   — Append. Creates new file if doesn't exist. Adds to end.
-r+  — Read and write. Cursor starts at beginning.
-x   — Exclusive create. Error if file already exists.
-b   — Binary mode (add to any mode: rb, wb, ab)</code></pre>
+# Check if a path exists
+if os.path.exists("data"):
+    print("Directory exists")
 
-            <h2>Reading and Writing CSV Files</h2>
+# Check specific types
+os.path.isfile("config.json")   # Is it a file?
+os.path.isdir("data")           # Is it a directory?
 
-            <p>CSV (Comma-Separated Values) is the most common data format. Python's built-in <code>csv</code> module handles all the complexity:</p>
+# Create a single directory
+os.mkdir("logs")
 
-            <pre><code>import csv
+# Create nested directories (like mkdir -p)
+os.makedirs("data/exports/csv", exist_ok=True)
 
-# Write a CSV file
-with open("students.csv", "w", newline="") as file:
-    writer = csv.writer(file)
-    writer.writerow(["Name", "Age", "Grade"])  # Header row
-    writer.writerow(["Alice", 22, "A"])
-    writer.writerow(["Bob", 20, "B+"])
-    writer.writerow(["Charlie", 23, "A-"])
+# List contents of a directory
+files = os.listdir(".")
+for name in files:
+    print(name)
 
-# Read the CSV file
-with open("students.csv", "r") as file:
-    reader = csv.reader(file)
-    for row in reader:
-        print(row)
-        # Output:
-        # ['Name', 'Age', 'Grade']
-        # ['Alice', '22', 'A']
-        # ['Bob', '20', 'B+']
-        # ['Charlie', '23', 'A-']
+# Get the current working directory
+print(os.getcwd())
 
-# Read CSV with column names (DictReader)
-with open("students.csv", "r") as file:
-    reader = csv.DictReader(file)
-    for student in reader:
-        print(f"{student['Name']}: {student['Grade']}")
-        # Output:
-        # Alice: A
-        # Bob: B+
-        # Charlie: A-</code></pre>
+# Join paths safely (handles OS-specific separators)
+filepath = os.path.join("data", "exports", "output.csv")
+print(filepath)  # data/exports/output.csv (Unix)</code></pre>
 
-            <h2>Working with JSON Files</h2>
+                <h2 id="pathlib">4. Modern Path Handling with pathlib</h2>
+                <p>Since Python 3.4, <code>pathlib</code> offers an object-oriented approach that's cleaner than string concatenation:</p>
 
-            <p>JSON is the standard format for APIs and configuration. Python's <code>json</code> module converts between JSON text and Python dictionaries:</p>
+                <pre><code>from pathlib import Path
 
-            <pre><code>import json
+# Create path objects
+config = Path("config/settings.json")
+home = Path.home()
+print(home)  # /home/username
 
-# Write JSON
-data = {
-    "name": "Hugo's Dev Notes",
-    "url": "https://blog.hugow.dev",
-    "topics": ["Cloudflare", "Python", "AI Coding"],
-    "stats": {
-        "posts": 14,
-        "visitors": 1250
-    }
-}
-
-with open("config.json", "w") as file:
-    json.dump(data, file, indent=2)
-
-# Read JSON
-with open("config.json", "r") as file:
-    loaded = json.load(file)
-    print(loaded["name"])            # Hugo's Dev Notes
-    print(loaded["topics"][0])       # Cloudflare
-    print(loaded["stats"]["posts"])  # 14
-
-# Pretty-print JSON
-print(json.dumps(loaded, indent=2))</code></pre>
-
-            <p>The key functions are:</p>
-            <ul>
-                <li><code>json.dump()</code> — write Python object to file</li>
-                <li><code>json.load()</code> — read file into Python object</li>
-                <li><code>json.dumps()</code> — convert to formatted string</li>
-                <li><code>json.loads()</code> — parse string into Python object</li>
-            </ul>
-
-            <h2>Safe File Handling with Error Checking</h2>
-
-            <p>Real programs need to handle missing files, permission errors, and corrupted data gracefully:</p>
-
-            <pre><code>import json
-import os
-
-def read_config(filepath):
-    """Read a JSON config file with full error handling"""
-    
-    # Check if file exists
-    if not os.path.exists(filepath):
-        print(f"❌ Config file not found: {filepath}")
-        return None
-    
-    try:
-        with open(filepath, "r") as file:
-            config = json.load(file)
-            print(f"✅ Loaded config with {len(config)} keys")
-            return config
-            
-    except json.JSONDecodeError as e:
-        print(f"❌ Invalid JSON in {filepath}: {e}")
-        return None
-    except PermissionError:
-        print(f"❌ No permission to read {filepath}")
-        return None
-    except Exception as e:
-        print(f"❌ Unexpected error: {e}")
-        return None
-
-# Use it
-config = read_config("config.json")
-if config:
-    print(config.get("name", "Unknown"))</code></pre>
-
-            <h2>Pathlib: The Modern Way to Handle Paths</h2>
-
-            <p>Python 3 includes <code>pathlib</code> — an object-oriented approach to file paths that's cleaner than string manipulation:</p>
-
-            <pre><code>from pathlib import Path
-
-# Create a Path object
-p = Path("my_folder/data.txt")
-
-# Get parts
-print(p.name)        # data.txt
-print(p.stem)        # data
-print(p.suffix)      # .txt
-print(p.parent)      # my_folder
-
-# Join paths (no more string concatenation)
-new_path = Path("my_folder") / "sub_folder" / "file.txt"
-print(new_path)  # my_folder/sub_folder/file.txt
+# Chain paths with /
+data_dir = Path("data") / "exports" / "2026"
+print(data_dir)  # data/exports/2026
 
 # Check existence
-if Path("data.txt").exists():
-    print("File exists!")
+if config.exists():
+    content = config.read_text()  # One-liner read!
+    
+# Write in one line
+(Path("output.txt")).write_text("Hello!\n")
 
-# List all Python files in a directory
-py_files = list(Path(".").glob("*.py"))
+# Get parts
+print(config.stem)   # settings
+print(config.suffix) # .json
+print(config.parent) # config
+
+# Find all Python files recursively
+py_files = list(Path(".").glob("**/*.py"))
 for f in py_files:
-    print(f.name)
+    print(f.relative_to("."))</code></pre>
 
-# Read entire file in one line
-content = Path("data.txt").read_text()
+                <h2 id="binary-files">5. Binary File Operations</h2>
+                <p>Images, PDFs, and executables need binary mode — text mode adds unwanted encoding/decoding:</p>
 
-# Write entire file in one line
-Path("output.txt").write_text("Hello!")
+                <pre><code># Read and write binary data
+with open("image.png", "rb") as f:
+    data = f.read()
 
-# Create directories that don't exist
-Path("new_folder/sub_folder").mkdir(parents=True, exist_ok=True)</code></pre>
+with open("copy.png", "wb") as f:
+    f.write(data)
 
-            <h2>Real-World Project: A Simple Contact Manager</h2>
+# Or use pathlib's binary methods
+from pathlib import Path
+Path("copy.png").write_bytes(Path("image.png").read_bytes())
 
-            <p>Let's combine everything into a practical project — a contact book that saves data to JSON:</p>
+# Read with specific encoding
+with open("notes.txt", "r", encoding="utf-8") as f:
+    text = f.read()</code></pre>
 
-            <pre><code>import json
+                <h2 id="safe-patterns">6. Production-Safe Patterns</h2>
+                <p>Real-world file handling needs error handling and atomicity:</p>
+
+                <pre><code>from pathlib import Path
+import tempfile
+import shutil
+
+def safe_write(filepath, content):
+    """Atomically write a file — never leave a partial write."""
+    path = Path(filepath)
+    
+    # Ensure parent directory exists
+    path.parent.mkdir(parents=True, exist_ok=True)
+    
+    # Write to a temp file first, then rename (atomic on Unix)
+    dir_path = path.parent
+    with tempfile.NamedTemporaryFile(
+        "w", dir=dir_path, delete=False, suffix=".tmp"
+    ) as tmp:
+        tmp.write(content)
+        tmp_path = tmp.name
+    
+    # Atomic replace
+    Path(tmp_path).rename(path)
+
+# Usage
+safe_write("config/settings.json", '{"debug": false}')
+
+# Safe read with default fallback
+def read_config(path, default=None):
+    try:
+        return Path(path).read_text()
+    except FileNotFoundError:
+        print(f"Config not found: {path}, using defaults")
+        return default
+    except PermissionError:
+        print(f"No permission to read: {path}")
+        return default</code></pre>
+
+                <h2 id="context-managers">7. Custom Context Managers for Files</h2>
+                <p>Create reusable file-handling patterns with <code>@contextmanager</code>:</p>
+
+                <pre><code>from contextlib import contextmanager
 from pathlib import Path
 
-CONTACTS_FILE = Path("contacts.json")
+@contextmanager
+def write_locked(path, mode="w"):
+    """Write to a file with automatic newline handling."""
+    file = open(path, mode)
+    try:
+        yield file
+    finally:
+        file.flush()  # Ensure data is written to disk
+        file.close()
 
-def load_contacts():
-    """Load contacts from file, or return empty list"""
-    if CONTACTS_FILE.exists():
-        return json.loads(CONTACTS_FILE.read_text())
-    return []
+# Usage
+with write_locked("app.log", "a") as log:
+    log.write(f"Event occurred at {time.time()}\n")</code></pre>
 
-def save_contacts(contacts):
-    """Save contacts list to file"""
-    CONTACTS_FILE.write_text(json.dumps(contacts, indent=2))
+                <h2 id="practical-project">8. Practical Project: Simple Log Analyzer</h2>
+                <p>Let's put it all together — a script that reads a log file, counts error types, and writes a summary report:</p>
 
-def add_contact():
-    """Add a new contact"""
-    name = input("Name: ").strip()
-    email = input("Email: ").strip()
-    phone = input("Phone: ").strip()
+                <pre><code>from pathlib import Path
+from collections import Counter
+from datetime import datetime
+
+def analyze_logs(log_path, report_path):
+    """Read a log file and generate an error summary."""
+    log_file = Path(log_path)
     
-    contacts = load_contacts()
-    contacts.append({
-        "name": name,
-        "email": email,
-        "phone": phone
-    })
-    save_contacts(contacts)
-    print(f"✅ Contact '{name}' saved!")
-
-def list_contacts():
-    """Display all contacts"""
-    contacts = load_contacts()
-    if not contacts:
-        print("No contacts yet.")
+    if not log_file.exists():
+        print(f"Log file not found: {log_path}")
         return
-    print(f"\n{'Name':<20} {'Email':<30} {'Phone':<15}")
-    print("-" * 65)
-    for c in contacts:
-        print(f"{c['name']:<20} {c['email']:<30} {c['phone']:<15}")
-
-def search_contacts(query):
-    """Search contacts by name"""
-    contacts = load_contacts()
-    results = [c for c in contacts if query.lower() in c['name'].lower()]
-    if results:
-        print(f"Found {len(results)} match(es):")
-        for r in results:
-            print(f"  {r['name']} - {r['email']} - {r['phone']}")
-    else:
-        print("No matches found.")
-
-# Simple menu
-while True:
-    print("\n📇 Contact Manager")
-    print("1. Add contact")
-    print("2. List contacts")
-    print("3. Search contacts")
-    print("4. Quit")
-    choice = input("Choice: ").strip()
     
-    if choice == "1":
-        add_contact()
-    elif choice == "2":
-        list_contacts()
-    elif choice == "3":
-        search_contacts(input("Search: "))
-    elif choice == "4":
-        print("Goodbye!")
-        break
-    else:
-        print("Invalid choice.")</code></pre>
+    errors = Counter()
+    total_lines = 0
+    errors_found = 0
+    
+    # Read line by line for memory efficiency
+    with log_file.open("r", encoding="utf-8") as f:
+        for line in f:
+            total_lines += 1
+            line = line.strip()
+            
+            if "ERROR" in line:
+                # Extract error type
+                parts = line.split(":", 1)
+                if len(parts) > 1:
+                    errors[parts[0].strip()] += 1
+                    errors_found += 1
+            elif "WARNING" in line:
+                errors["WARNING"] += 1
+    
+    # Build report
+    report = []
+    report.append("=== Log Analysis Report ===")
+    report.append(f"Generated: {datetime.now().isoformat()}")
+    report.append(f"Total lines: {total_lines}")
+    report.append(f"Errors found: {errors_found}")
+    report.append("")
+    
+    if errors:
+        report.append("Error breakdown:")
+        for error_type, count in errors.most_common(10):
+            report.append(f"  {error_type}: {count}")
+    
+    # Write report atomically
+    report_text = "\n".join(report) + "\n"
+    Path(report_path).parent.mkdir(parents=True, exist_ok=True)
+    Path(report_path).write_text(report_text)
+    print(f"Report written to {report_path}")
 
-            <p>After running this program, your <code>contacts.json</code> file will look like:</p>
+# Usage
+analyze_logs("var/log/app.log", "reports/error_summary.txt")</code></pre>
 
-            <pre><code>[
-  {
-    "name": "Alice Chen",
-    "email": "alice@example.com",
-    "phone": "555-0101"
-  },
-  {
-    "name": "Bob Smith",
-    "email": "bob@example.com",
-    "phone": "555-0102"
-  }
-]</code></pre>
+                <h2 id="file-modes-summary">Summary: Choosing the Right Mode</h2>
+                <ul>
+                    <li><strong>Read text:</strong> <code>open("file.txt", "r")</code> or <code>Path.read_text()</code></li>
+                    <li><strong>Overwrite:</strong> <code>open("file.txt", "w")</code> or <code>Path.write_text()</code></li>
+                    <li><strong>Append:</strong> <code>open("file.txt", "a")</code></li>
+                    <li><strong>Binary:</strong> add <code>b</code> — <code>"rb"</code>, <code>"wb"</code></li>
+                    <li><strong>Safe writes:</strong> use temp file + rename pattern</li>
+                    <li><strong>Large files:</strong> iterate line by line, never <code>.read()</code></li>
+                    <li><strong>Always use <code>with</code>:</strong> guarantees cleanup on errors</li>
+                </ul>
 
-            <h2>Best Practices Summary</h2>
+                <p>File operations are one of the most common tasks in any Python project. Master these patterns and you'll handle everything from simple config files to production log analysis with confidence. The <code>with</code> statement, <code>pathlib</code>, and proper error handling are the three pillars of safe file operations in Python.</p>
 
-            <ol>
-                <li><strong>Always use <code>with</code></strong> — never manage file handles manually</li>
-                <li><strong>Handle exceptions</strong> — files might not exist, be corrupted, or lack permissions</li>
-                <li><strong>Use <code>pathlib</code></strong> — cleaner than string paths</li>
-                <li><strong>Specify encoding</strong> — use <code>open("file.txt", "r", encoding="utf-8")</code> for text files</li>
-                <li><strong>Use <code>newline=""</code> with CSV</strong> — prevents blank lines on Windows</li>
-                <li><strong>Prefer JSON for structured data</strong> — it maps directly to Python dictionaries</li>
-                <li><strong>Use <code>json.dump()</code> with <code>indent=2</code></strong> — human-readable output</li>
-            </ol>
-
-            <blockquote>
-                <strong>Remember:</strong> File operations are where programs become useful. A Python script that only works with in-memory data is limited. One that can read configs, process data files, and save results is a real tool.
-            </blockquote>
-
-            <h2>Next Steps</h2>
-            <ul>
-                <li><a href="python-functions.html">Python Functions</a> — wrap file operations into reusable functions</li>
-                <li><a href="python-apis.html">Python APIs</a> — fetch data from the web and save it to files</li>
-                <li><a href="python-web-scraping.html">Python Web Scraping</a> — extract data from websites and store it locally</li>
-            </ul>
+                <div class="related-posts">
+                    <h3>Related Posts</h3>
+                    <ul>
+                        <li><a href="python-csv-json-files.html">Python CSV and JSON Files</a></li>
+                        <li><a href="python-os-pathlib.html">Python os and pathlib Modules</a></li>
+                        <li><a href="python-error-handling-advanced.html">Python Error Handling</a></li>
+                    </ul>
+                </div>
+            </div>
         </article>
     </main>
 
     <footer>
         <div class="container">
-            <p>© 2026 Hugo's Dev Notes | Built with ❤️ & AI</p>
-            <div class="footer-links">
-                <a href="https://github.com/hugow0528" target="_blank">GitHub</a>
-                <a href="https://blog.hugow.dev/sitemap.xml">Sitemap</a>
-            </div>
+            <p>&copy; 2026 Hugo's Dev Notes. Built with practical tutorials.</p>
         </div>
     </footer>
+
     <script>
-        // Theme toggle
-        const themeToggle = document.getElementById('themeToggle');
-        if (themeToggle) {{
-            const savedTheme = localStorage.getItem('theme') || 'dark';
-            if (savedTheme === 'light') {{
-                document.body.classList.add('light-mode');
-                themeToggle.textContent = '☀';
-            }}
-            themeToggle.addEventListener('click', () => {{
-                document.body.classList.toggle('light-mode');
-                const isLight = document.body.classList.contains('light-mode');
-                localStorage.setItem('theme', isLight ? 'light' : 'dark');
-                themeToggle.textContent = isLight ? '☀' : '◐';
-            }});
-        }}
         // Progress bar
-        window.addEventListener('scroll', () => {{
-            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+        window.addEventListener('scroll', () => {
+            const winScroll = document.documentElement.scrollTop;
             const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
             const scrolled = (winScroll / height) * 100;
-            const bar = document.getElementById('progressBar');
-            if (bar) bar.style.width = scrolled + "%";
-        }});
+            document.getElementById('progressBar').style.width = scrolled + '%';
+        });
+
+        // Theme toggle
+        const toggle = document.getElementById('themeToggle');
+        if (toggle) {
+            const saved = localStorage.getItem('theme');
+            if (saved) document.body.setAttribute('data-theme', saved);
+            toggle.addEventListener('click', () => {
+                const current = document.body.getAttribute('data-theme') || 'dark';
+                const next = current === 'dark' ? 'light' : 'dark';
+                document.body.setAttribute('data-theme', next);
+                localStorage.setItem('theme', next);
+            });
+        }
     </script>
 </body>
 </html>

@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Fundamentals: OSI Model, TCP/UDP, DNS, Routing & How the Internet Works | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn network fundamentals from scratch — OSI 7-layer model, TCP vs UDP, DNS resolution, routing, subnets, NAT, and practical networking commands. Every developer needs this knowledge.">
+    <meta name="keywords" content="networking basics, OSI model, TCP UDP, DNS, routing, subnet, NAT, network tutorial, developer networking, beginner guide">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/network-fundamentals.html">
+    <link rel="stylesheet" href="../style.css">
+
+    <!-- SEO Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "headline": "Network Fundamentals: OSI Model, TCP/UDP, DNS, Routing & How the Internet Works",
+      "description": "Learn network fundamentals — OSI 7-layer model, TCP vs UDP, DNS resolution, routing, subnets, NAT, and practical commands.",
+      "datePublished": "2026-07-10",
+      "dateModified": "2026-07-10",
+      "author": {"@type": "Person", "name": "Hugo Wong"},
+      "publisher": {"@type": "Organization", "name": "Hugo's Dev Notes", "url": "https://blog.hugow.dev"},
+      "mainEntityOfPage": {"@id": "https://blog.hugow.dev/posts/network-fundamentals.html"},
+      "keywords": "Security"
+    }
+    </script>
+
+    <!-- Social Meta -->
+    <meta property="og:title" content="Network Fundamentals: OSI Model, TCP/UDP, DNS, Routing & How the Internet Works">
+    <meta property="og:description" content="Learn network fundamentals — OSI model, TCP/UDP, DNS, routing, subnets, NAT, and practical networking commands. Every developer needs this.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.hugow.dev/posts/network-fundamentals.html">
+    <meta property="og:site_name" content="Hugo's Dev Notes">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Network Fundamentals: OSI Model, TCP/UDP, DNS, Routing & How the Internet Works">
+    <meta name="twitter:description" content="Learn network fundamentals — OSI model, TCP/UDP, DNS, routing, and practical commands.">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post">
+            <div class="post-tags">
+                <span class="tag security">Security</span>
+                <span class="tag devops">DevOps</span>
+            </div>
+
+            <header class="post-header">
+                <h1>Network Fundamentals: OSI Model, TCP/UDP, DNS, Routing & How the Internet Works</h1>
+                <div class="post-meta">
+                    <span class="post-date">July 10, 2026</span>
+                    <span class="post-read-time">14 min read</span>
+                    <span class="post-badge">New</span>
+                </div>
+            </header>
+
+            <div class="post-excerpt">
+                <p>Understand how the internet works from the ground up — the OSI 7-layer model, TCP vs UDP, DNS resolution, IP addressing and subnets, NAT, routing, firewalls, and essential networking commands every developer should know. Real examples and practical exercises.</p>
+            </div>
+
+            <div class="post-content">
+                <p>You can write great code without understanding networking — until you can't. Debugging a connection timeout, setting up Docker containers to talk to each other, configuring a reverse proxy, or understanding why an API call fails all require networking knowledge.</p>
+
+                <p>This guide covers the essentials every developer needs, from the abstract OSI model to hands-on commands you'll use daily.</p>
+
+                <h2>1. The OSI 7-Layer Model (Conceptual Framework)</h2>
+
+                <p>The OSI model is a mental framework for understanding how data moves across a network. Think of it like a package being sent through the postal system — each layer adds or removes a wrapper.</p>
+
+                <pre><code>Layer 7 — Application: HTTP, HTTPS, SSH, DNS, FTP, SMTP
+Layer 6 — Presentation: Encryption, compression, data format (TLS/SSL)
+Layer 5 — Session: Connection management (keep-alive, cookies)
+Layer 4 — Transport:   TCP, UDP, ports, reliability
+Layer 3 — Network:     IP addresses, routing, firewalls
+Layer 2 — Data Link:   MAC addresses, switches, Ethernet
+Layer 1 — Physical:    Cables, WiFi signals, bits on wire</code></pre>
+
+                <p>Memory trick: <strong>"All People Seem To Need Data Processing"</strong> (top to bottom)</p>
+
+                <h3>How Data Travels (Encapsulation)</h3>
+
+                <p>When your browser loads <code>https://example.com</code>:</p>
+
+                <pre><code>1. Application Layer:   HTTP request "GET / HTTP/1.1"
+2. Transport Layer:     Wraps in TCP (reliable delivery)
+3. Network Layer:       Wraps in IP packet (source + dest IP)
+4. Data Link Layer:     Wraps in Ethernet frame (MAC addresses)
+5. Physical Layer:      Converts to electrical signals / WiFi waves
+
+At the receiver, each layer unwraps in reverse order.</code></pre>
+
+                <h2>2. TCP vs UDP — The Two Transport Protocols</h2>
+
+                <p>Everything that goes across the internet uses either TCP or UDP. Understanding the difference is crucial.</p>
+
+                <h3>TCP (Transmission Control Protocol)</h3>
+                <p>TCP is reliable — it guarantees every byte arrives, in order, without duplicates.</p>
+
+                <pre><code>✅ Guarantees delivery
+✅ Reorders packets
+✅ Retransmits lost data
+✅ Controls flow (no overwhelming receiver)
+❌ Slower due to overhead
+❌ More bandwidth
+
+Used by: HTTP, HTTPS, SSH, FTP, email (SMTP)</code></pre>
+
+                <p>How TCP guarantees delivery — The Three-Way Handshake:</p>
+
+                <pre><code>Client                          Server
+  | ───── SYN ──────────────────&gt; |  "I want to connect"
+  | &lt;──── SYN + ACK ───────────── |  "I heard you, here's my ACK"
+  | ───── ACK ──────────────────&gt; |  "Connection established!"
+  |                               |
+  |  ◀── Now data flows reliably ─▶
+  |                               |
+  | ───── FIN ──────────────────&gt; |  "Closing connection"
+  | &lt;──── ACK ──────────────────  |
+  | &lt;──── FIN ──────────────────  |
+  | ───── ACK ──────────────────&gt; |  "Connection closed"</code></pre>
+
+                <h3>UDP (User Datagram Protocol)</h3>
+                <p>UDP is fire-and-forget — no guarantees, but super fast.</p>
+
+                <pre><code>❌ No delivery guarantee
+❌ No reordering
+❌ No retransmission
+✅ Blazing fast
+✅ Less bandwidth
+✅ No handshake needed
+
+Used by: DNS queries, video streaming, VoIP, online games
+Why? A dropped video frame is fine, but a delayed one isn't.</code></pre>
+
+                <h3>Quick Python Example: TCP vs UDP</h3>
+                <pre><code># TCP Client — reliable connection
+import socket
+
+tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+tcp.connect(("example.com", 80))
+tcp.sendall(b"GET / HTTP/1.1\r\nHost: example.com\r\n\r\n")
+response = tcp.recv(4096)
+print(response.decode()[:200])
+tcp.close()
+
+# UDP Client — fire and forget
+udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+# DNS query to Google's public DNS
+dns_query = b"\x12\x34\x01\x00\x00\x01\x00\x00\x00\x00\x00\x00"
+dns_query += b"\x07example\x03com\x00\x00\x01\x00\x01"
+udp.sendto(dns_query, ("8.8.8.8", 53))
+response, addr = udp.recvfrom(512)
+udp.close()</code></pre>
+
+                <h2>3. IP Addresses and Subnets</h2>
+
+                <p>Every device on a network has an IP address — like a mailing address for data.</p>
+
+                <h3>IPv4 Addresses</h3>
+                <pre><code>192.168.1.100   — Your laptop (private)
+10.0.0.5        — Server on your LAN (private)
+8.8.8.8         — Google DNS (public)
+127.0.0.1       — localhost (always your own machine)
+255.255.255.255 — Broadcast address</code></pre>
+
+                <h3>Private vs Public IPs</h3>
+                <pre><code>Private ranges (routable only within your network):
+  10.0.0.0     – 10.255.255.255     (/8)
+  172.16.0.0   – 172.31.255.255     (/12)
+  192.168.0.0  – 192.168.255.255   (/16)
+
+Everything else = public (routable on the internet)</code></pre>
+
+                <h3>Subnet Masks and CIDR Notation</h3>
+                <pre><code>A subnet mask divides an IP into network + host parts:
+
+IP:        192.168.1.100
+Mask:      255.255.255.0    (same as /24)
+Network:   192.168.1.0
+Host:                    100
+
+CIDR notation:
+  /24  → 255.255.255.0  → 256 addresses  (192.168.1.0 – 192.168.1.255)
+  /25  → 255.255.255.128 → 128 addresses  (192.168.1.0 – 192.168.1.127)
+  /16  → 255.255.0.0    → 65,536 addresses
+  /8   → 255.0.0.0      → 16 million addresses</code></pre>
+
+                <h3>Docker and Subnets</h3>
+                <pre><code># Docker creates its own subnets
+docker network ls
+# bridge    172.17.0.0/16  (default bridge)
+
+# Containers get IPs from this subnet
+docker run --name web -d nginx
+docker inspect web
+# IP: 172.17.0.2
+
+# Docker networking uses the same IP/subnet concepts!
+# This is why port mapping (-p 8080:80) is needed</code></pre>
+
+                <h2>4. NAT (Network Address Translation)</h2>
+
+                <p>NAT is why your entire house can share one public IP address. Your router translates between private and public addresses.</p>
+
+                <pre><code>Your setup:
+  ┌─────────────┐
+  │  Your Home   │
+  │  192.168.1.0│
+  │  /24         │
+  │              │
+  │ Laptop: .100 │──┐
+  │ Phone:  .101  │─┤── Your Router (NAT) ──► Internet
+  │ Tablet: .102  │─┘
+  │ PC:     .103  │
+  └─────────────┘
+         │
+  Public IP: 203.0.113.5
+
+When your laptop requests example.com:
+1. Laptop sends: src=192.168.1.100:54321 → dst=93.184.216.34:443
+2. Router NATs:  src=203.0.113.5:54321  → dst=93.184.216.34:443
+3. Response comes back to 203.0.113.5:54321
+4. Router translates back to 192.168.1.100:54321</code></pre>
+
+                <p>Without NAT, we'd need unique public IPs for every device. IPv4 has ~4.3 billion addresses. NAT stretches that to billions of devices.</p>
+
+                <h2>5. DNS Resolution — How Domain Names Become IPs</h2>
+
+                <p>When you type <code>example.com</code>, your computer doesn't know where that is. DNS translates names to IP addresses.</p>
+
+                <h3>Step-by-Step DNS Lookup</h3>
+                <pre><code>1. Browser check:  "Do I have example.com cached?" → No
+2. OS cache:        "Did the OS recently look this up?" → No
+3. Router:          "Ask the local router's DNS" → No
+4. ISP DNS:         "Ask ISP's DNS server (e.g., 192.168.1.1)" → No
+5. Root servers:    "Ask root . servers → try the .com TLD"
+6. TLD server:      "Ask .com servers → try example.com's nameserver"
+7. Authoritative:   "Ask example.com's DNS → 93.184.216.34!"
+8. Response:        "93.184.216.34" propagates back up the chain
+9. Browser:         "Got it! Connect to 93.184.216.34"</code></pre>
+
+                <h3>DNS Record Types</h3>
+                <pre><code>A       → Domain to IPv4:  example.com → 93.184.216.34
+AAAA    → Domain to IPv6:  example.com → 2606:2800:220:1:248:1893:25c8:1946
+CNAME   → Alias:           www.example.com → example.com
+MX      → Mail server:     example.com → mail.example.com
+TXT     → Text data:       SPF, DKIM, domain verification
+NS      → Nameserver:      example.com → ns1.cloudflare.com
+PTR     → Reverse DNS:     93.184.216.34 → example.com</code></pre>
+
+                <h3>DNS TTL (Time to Live)</h3>
+                <pre><code>TTL controls how long DNS results are cached:
+
+  TTL 300  → 5 minutes   (fast propagation, more queries)
+  TTL 3600 → 1 hour      (balanced)
+  TTL 86400→ 24 hours    (slow propagation, fewer queries)
+
+When you change DNS records, wait for TTL to expire or reduce it first!</code></pre>
+
+                <h2>6. Routing — How Data Finds Its Way</h2>
+
+                <p>Routers use routing tables to decide where to send packets. Think of it like a postal system: the routing table tells each router which "neighbor" is closest to the destination.</p>
+
+                <pre><code>Example routing table (Linux):
+$ ip route
+default via 192.168.1.1 dev eth0          # Default gateway
+192.168.1.0/24 dev eth0 proto kernel      # Local network
+172.17.0.0/16 dev docker0                 # Docker network
+
+How a packet to 8.8.8.8 is routed:
+1. Check: "Is 8.8.8.8 in my local network (192.168.1.0/24)?" → No
+2. Check: "Is it in my Docker network?" → No
+3. Use default gateway (192.168.1.1) → send to router
+4. Router sends to ISP → ISP routes to Google → arrives!</code></pre>
+
+                <h2>7. Ports — How Multiple Services Share One IP</h2>
+
+                <p>One IP address can host many services. Ports distinguish between them — like apartment numbers in a building.</p>
+
+                <pre><code>Well-known ports (0-1023, require root/admin):
+  20/21  → FTP
+  22     → SSH
+  25     → SMTP (email)
+  53     → DNS
+  80     → HTTP
+  110    → POP3
+  143    → IMAP
+  443    → HTTPS
+  993    → IMAPS
+  3306   → MySQL
+  5432   → PostgreSQL
+  8080   → HTTP proxy (alternative)
+  8443   → HTTPS proxy (alternative)
+
+When you run a web server on port 80 and SSH on port 22,
+both use the same IP but different ports.</code></pre>
+
+                <h3>Checking Open Ports</h3>
+                <pre><code># See what ports YOUR machine has open
+sudo ss -tlnp
+# or
+sudo netstat -tlnp
+
+# See what's listening on port 80
+ss -tlnp | grep :80
+
+# Check if a remote port is open
+nc -zv example.com 443    # Netcat
+curl -I https://example.com   # curl
+timeout 5 bash -c 'cat &lt;/dev/null &gt; /dev/tcp/example.com/443 &amp;&amp; echo open || echo closed'
+
+# Scan a range of ports (like a security audit)
+nmap -p 22,80,443,8080 example.com</code></pre>
+
+                <h2>8. Essential Networking Commands</h2>
+
+                <p>These commands you'll use constantly as a developer.</p>
+
+                <h3>Connectivity Testing</h3>
+                <pre><code># Can I reach this host?
+ping example.com
+ping -c 4 8.8.8.8        # Send 4 packets
+
+# Trace the route packets take
+traceroute example.com     # macOS/Linux
+tracert example.com        # Windows
+
+# Test connectivity on a specific port
+nc -zv example.com 443    # Netcat (TCP connect test)
+
+# DNS lookup
+nslookup example.com       # Query DNS server
+dig example.com            # Detailed DNS lookup
+dig example.com AAAA       # IPv6 lookup
+dig MX example.com         # Mail server lookup
+host example.com           # Simple lookup</code></pre>
+
+                <h3>Local Network Info</h3>
+                <pre><code># Your IP address
+ip addr show              # Linux
+ipconfig                  # Windows
+ifconfig                  # macOS (legacy)
+
+# Listening ports
+ss -tlnp                  # Linux (modern, replaces netstat)
+netstat -tlnp             # Legacy but still common
+
+# Active connections
+ss -tnp                   # All TCP connections
+ss -tnp | grep ESTAB      # Established connections only</code></pre>
+
+                <h3>Curl — The Developer's Swiss Army Knife</h3>
+                <pre><code># GET request
+curl https://example.com
+
+# See headers only
+curl -I https://example.com
+
+# POST with JSON
+curl -X POST https://api.example.com/data \
+  -H "Content-Type: application/json" \
+  -d '{"name":"hugo","email":"hugo@example.com"}'
+
+# Save response to file
+curl -o response.html https://example.com
+
+# Follow redirects
+curl -L https://short.link
+
+# Show transfer stats
+curl -w "\nDNS: %{time_namelookup}s\nConnect: %{time_connect}s\nTotal: %{time_total}s\n" \
+  https://example.com
+
+# Test with HTTP/2
+curl --http2 -I https://example.com</code></pre>
+
+                <h2>9. How It All Fits Together: A Complete Request</h2>
+
+                <p>Let's trace what happens when you visit <code>https://hugow.dev</code>:</p>
+
+                <pre><code>1. DNS Lookup (UDP port 53)
+   Your computer asks: "Where is hugow.dev?"
+   DNS returns: 104.21.45.123
+
+2. TCP Three-Way Handshake (TCP port 443)
+   SYN → SYN-ACK → ACK (connection established)
+
+3. TLS Handshake (Application layer)
+   ClientHello → ServerHello → Certificates → Keys
+   (This is HTTPS — encrypted communication)
+
+4. HTTP Request
+   GET / HTTP/2
+   Host: hugow.dev
+
+5. Server Response
+   HTTP/2 200 OK
+   Content-Type: text/html
+   (HTML page content)
+
+6. Browser renders HTML
+   Loads CSS, JavaScript, images
+   Each resource follows steps 1-5
+
+7. Connection teardown
+   FIN → ACK (TCP connection closed)</code></pre>
+
+                <h2>Bonus: Networking in Docker</h2>
+
+                <p>Docker networking is a practical application of everything we've covered.</p>
+
+                <pre><code># Docker creates a virtual network
+docker network create my-net
+# Creates subnet: 172.18.0.0/16
+
+# Containers on the same network can talk by name
+docker run --name web -d --network my-net nginx
+docker run --name api -d --network my-net python:3.11-slim
+
+# From "api" container, you can reach "web" directly:
+docker exec api ping web    # Resolves via Docker's internal DNS!
+docker exec api curl http://web  # Works! Docker handles DNS
+
+# Default bridge network doesn't support name resolution
+# You MUST use custom networks for container name resolution</code></pre>
+
+                <h2>Summary</h2>
+
+                <table>
+                    <tr><th>Concept</th><th>Quick Reference</th></tr>
+                    <tr><td>OSI Model</td><td>7 layers: App → Transport → Network → Link → Physical</td></tr>
+                    <tr><td>TCP</td><td>Reliable, ordered, slower — HTTP, SSH, email</td></tr>
+                    <tr><td>UDP</td><td>Fast, unreliable — DNS, video, gaming</td></tr>
+                    <tr><td>IP</td><td>Address for every device (public or private)</td></tr>
+                    <tr><td>Subnet</td><td>Groups of IPs sharing a network prefix</td></tr>
+                    <tr><td>NAT</td><td>Translates private → public IPs</td></tr>
+                    <tr><td>DNS</td><td>Translates domain names → IP addresses</td></tr>
+                    <tr><td>Ports</td><td>Distinguish services on one IP (80, 443, 22...)</td></tr>
+                    <tr><td>Routing</td><td>How packets find their path across networks</td></tr>
+                </table>
+
+                <p>Understanding networking transforms you from someone who blindly follows tutorials to someone who actually understands what's happening under the hood. Next time a connection times out or a container can't reach another, you'll know exactly where to look. 🌐</p>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes. Built with ❤️ and Python.</p>
+        </div>
+    </footer>
+
+    <script src="../theme.js"></script>
+</body>
+</html>

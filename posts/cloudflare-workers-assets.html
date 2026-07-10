@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloudflare Workers Assets: Serve Static Files from Your Edge Functions | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn Cloudflare Workers Assets — serve HTML, CSS, JavaScript, and images directly from your Workers deployment. Build SPAs, full-stack apps, and edge sites without separate hosting. Step-by-step guide with wrangler configuration and routing examples.">
+    <meta name="keywords" content="Cloudflare Workers Assets, Workers, static files, SPA, edge computing, wrangler, HTML hosting, Cloudflare">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/cloudflare-workers-assets.html">
+    <link rel="stylesheet" href="../style.css">
+
+    <!-- SEO Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "headline": "Cloudflare Workers Assets: Serve Static Files from Your Edge Functions",
+      "description": "Learn Cloudflare Workers Assets — serve HTML, CSS, JavaScript, and images directly from your Workers deployment. Build SPAs and edge sites without separate hosting.",
+      "datePublished": "2026-07-09",
+      "dateModified": "2026-07-09",
+      "author": {"@type": "Person", "name": "Hugo Wong"},
+      "publisher": {"@type": "Organization", "name": "Hugo's Dev Notes", "url": "https://blog.hugow.dev"},
+      "keywords": "Cloudflare"
+    }
+    </script>
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="Cloudflare Workers Assets: Serve Static Files from Your Edge Functions">
+    <meta property="og:description" content="Learn Cloudflare Workers Assets — serve HTML, CSS, JavaScript, and images directly from your Workers deployment without separate hosting.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.hugow.dev/posts/cloudflare-workers-assets.html">
+    <meta property="og:site_name" content="Hugo's Dev Notes">
+    <meta property="article:published_time" content="2026-07-09">
+    <meta property="article:modified_time" content="2026-07-09">
+    <meta property="article:section" content="cloudflare">
+    <meta property="article:tag" content="Cloudflare">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Cloudflare Workers Assets: Serve Static Files from Your Edge Functions">
+    <meta name="twitter:description" content="Learn Cloudflare Workers Assets — serve HTML, CSS, JavaScript, and images directly from your Workers deployment.">
+    
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+        <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+                <a href="../devops.html" class="nav-btn">🐳 DevOps</a>
+                <a href="../security.html" class="nav-btn">🔐 Security</a>
+                <a href="../webdev.html" class="nav-btn">💻 Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+        
+        <article class="post-content">
+            <span class="tag cloudflare">Cloudflare</span>
+            <span class="tag web">Web Dev</span>
+            <h1>Cloudflare Workers Assets: Serve Static Files from Your Edge Functions</h1>
+            <time>July 9, 2026 · 9 min read</time>
+
+            <p>Cloudflare Workers Assets is a feature that lets you bundle static files — HTML, CSS, JavaScript, images, fonts — directly with your Worker. Instead of deploying your API to Workers and your frontend to a separate static host (S3, Vercel, Netlify), everything lives in one deployment. Your static assets get served from Cloudflare's 300+ edge locations with the same low latency as your Worker code.</p>
+
+            <p>In this guide, we'll walk through setting up Workers Assets, configuring the manifest, handling routing between static files and API endpoints, and building a complete single-page application (SPA) served entirely from a Worker.</p>
+
+            <h2>What Is Workers Assets?</h2>
+
+            <p>Workers Assets solves a common problem: you need both a frontend (static files) and a backend (API endpoints), but managing two separate deployments adds complexity. With Workers Assets:</p>
+
+            <ul>
+                <li><strong>Single deployment:</strong> One <code>wrangler deploy</code> command pushes everything</li>
+                <li><strong>Same origin:</strong> Frontend and API share the same domain — no CORS issues</li>
+                <li><strong>Edge caching:</strong> Static assets are automatically cached at the edge with smart cache-control headers</li>
+                <li><strong>Worker as fallback:</strong> Your Worker code can intercept requests and serve API responses or dynamic content</li>
+                <li><strong>Free tier included:</strong> Assets count toward your storage limits but are free on the Workers plan</li>
+            </ul>
+
+            <h2>Project Structure</h2>
+
+            <p>A typical Workers Assets project looks like this:</p>
+
+            <pre><code>my-app/
+├── src/
+│   └── index.js          # Your Worker code
+├── assets/                # Static files to deploy
+│   ├── index.html
+│   ├── css/
+│   │   └── style.css
+│   ├── js/
+│   │   └── app.js
+│   └── images/
+│       └── logo.png
+├── package.json
+├── wrangler.jsonc
+└── README.md</code></pre>
+
+            <h2>Step 1: Initialize and Configure</h2>
+
+            <p>Start by creating a new Workers project and configuring the assets directory in your <code>wrangler.jsonc</code> file:</p>
+
+            <pre><code># Create a new project
+npm create cloudflare@latest my-app
+cd my-app
+
+# Or if you already have a Worker, just add the configuration</code></pre>
+
+            <p>Then update your <code>wrangler.jsonc</code> to specify the assets directory:</p>
+
+            <pre><code>{
+  "name": "my-app",
+  "main": "src/index.js",
+  "compatibility_date": "2026-07-09",
+  "assets": {
+    "directory": "./assets",
+    "binding": "ASSETS",
+    "html_handling": "html",
+    "not_found_handling": "single-page-application"
+  }
+}</code></pre>
+
+            <p>The key options explained:</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Option</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>directory</code></td>
+                        <td>Path to your static files folder</td>
+                    </tr>
+                    <tr>
+                        <td><code>binding</code></td>
+                        <td>Environment variable name for accessing assets programmatically</td>
+                    </tr>
+                    <tr>
+                        <td><code>html_handling</code></td>
+                        <td><code>"html"</code> sets proper Content-Type; <code>"binary"</code> treats HTML as binary</td>
+                    </tr>
+                    <tr>
+                        <td><code>not_found_handling</code></td>
+                        <td><code>"single-page-application"</code> serves index.html for unmatched routes (SPA); <code>"404"</code> returns a 404</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2>Step 2: Create Your Static Files</h2>
+
+            <p>Create the HTML entry point and supporting files:</p>
+
+            <pre><code>mkdir -p assets/css assets/js
+
+# assets/index.html
+&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+    &lt;title&gt;My Workers App&lt;/title&gt;
+    &lt;link rel="stylesheet" href="/css/style.css"&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;div id="app"&gt;
+        &lt;h1&gt;Hello from Workers Assets!&lt;/h1&gt;
+        &lt;p id="greeting"&gt;Loading...&lt;/p&gt;
+        &lt;button id="fetchBtn"&gt;Get Data from API&lt;/button&gt;
+        &lt;pre id="output"&gt;&lt;/pre&gt;
+    &lt;/div&gt;
+    &lt;script src="/js/app.js"&gt;&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+
+            <pre><code># assets/css/style.css
+body {
+    font-family: system-ui, sans-serif;
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 0 20px;
+    color: #333;
+}
+
+h1 { color: #f6821f; }
+
+button {
+    background: #f6821f;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+button:hover { background: #e57000; }
+
+pre {
+    background: #f5f5f5;
+    padding: 16px;
+    border-radius: 6px;
+    margin-top: 16px;
+    overflow-x: auto;
+}</code></pre>
+
+            <pre><code># assets/js/app.js
+// Fetch data from the Worker's API endpoint
+document.getElementById('fetchBtn').addEventListener('click', async () => {
+    const output = document.getElementById('output');
+    output.textContent = 'Loading...';
+    
+    try {
+        const response = await fetch('/api/hello');
+        const data = await response.json();
+        output.textContent = JSON.stringify(data, null, 2);
+    } catch (error) {
+        output.textContent = `Error: ${error.message}`;
+    }
+});
+
+// Fetch greeting from API on page load
+fetch('/api/greeting')
+    .then(res => res.json())
+    .then(data => {
+        document.getElementById('greeting').textContent = data.message;
+    });</code></pre>
+
+            <h2>Step 3: Write the Worker Code</h2>
+
+            <p>Your Worker handles API routes and falls through to serve static assets for everything else:</p>
+
+            <pre><code>// src/index.js
+
+export default {
+    async fetch(request, env, ctx) {
+        const url = new URL(request.url);
+        
+        // API routes — handle /api/* yourself
+        if (url.pathname.startsWith('/api/')) {
+            return handleApi(request);
+        }
+        
+        // Everything else — serve from assets (automatic fallback)
+        // Workers Assets automatically serves static files for non-matching routes
+        // So we can just return the assets response for non-API requests
+        return env.ASSETS.fetch(request);
+    }
+};
+
+async function handleApi(request) {
+    const url = new URL(request.url);
+    
+    if (url.pathname === '/api/greeting') {
+        return Response.json({
+            message: `Hello! You visited at ${new Date().toLocaleString()}`,
+            server: 'Cloudflare Workers'
+        });
+    }
+    
+    if (url.pathname === '/api/hello') {
+        return Response.json({
+            name: 'Workers Assets App',
+            status: 'running',
+            timestamp: Date.now(),
+            visitorIp: request.headers.get('CF-Connecting-IP')
+        });
+    }
+    
+    if (url.pathname === '/api/health') {
+        return Response.json({ status: 'ok' }, { status: 200 });
+    }
+    
+    // Unknown API route
+    return Response.json(
+        { error: 'API endpoint not found' },
+        { status: 404 }
+    );
+}</code></pre>
+
+            <p>The key insight: when a request doesn't match your <code>/api/</code> prefix, <code>env.ASSETS.fetch(request)</code> serves the static files. Workers Assets automatically picks the right file based on the URL path.</p>
+
+            <h2>SPA Routing: Serving index.html for All Paths</h2>
+
+            <p>If you're building a React, Vue, or Svelte SPA, you want every route (except <code>/api/</code>) to serve <code>index.html</code> so the client-side router handles navigation:</p>
+
+            <pre><code>// src/index.js — SPA version
+
+export default {
+    async fetch(request, env, ctx) {
+        const url = new URL(request.url);
+        
+        // API routes
+        if (url.pathname.startsWith('/api/')) {
+            return handleApi(request);
+        }
+        
+        // Static asset routes (CSS, JS, images)
+        // These have file extensions, so serve them directly
+        if (url.pathname.match(/\.(css|js|png|jpg|svg|ico|woff2)$/)) {
+            return env.ASSETS.fetch(request);
+        }
+        
+        // Everything else — serve index.html for client-side routing
+        const assetRequest = new Request(
+            new URL('/index.html', request.url),
+            { headers: request.headers }
+        );
+        return env.ASSETS.fetch(assetRequest);
+    }
+};</code></pre>
+
+            <p>Alternatively, set <code>"not_found_handling": "single-page-application"</code> in your <code>wrangler.jsonc</code> and Workers Assets will automatically serve <code>index.html</code> for any path that doesn't match an existing file or your Worker's routes.</p>
+
+            <h2>Setting Cache-Control Headers</h2>
+
+            <p>Workers Assets sets sensible defaults (cache static assets aggressively), but you can customize headers in your Worker:</p>
+
+            <pre><code>export default {
+    async fetch(request, env, ctx) {
+        const url = new URL(request.url);
+        
+        if (url.pathname.startsWith('/api/')) {
+            return handleApi(request);
+        }
+        
+        // Let Assets serve the file
+        let response = await env.ASSETS.fetch(request);
+        
+        // Add custom cache headers
+        if (url.pathname.match(/\.(css|js)$/)) {
+            // Cache JS/CSS for 1 year (they should be versioned)
+            response = new Response(response.body, response);
+            response.headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+        } else if (url.pathname.match(/\.(png|jpg|svg|woff2)$/)) {
+            // Cache images and fonts for 30 days
+            response = new Response(response.body, response);
+            response.headers.set('Cache-Control', 'public, max-age=2592000');
+        } else if (url.pathname.match(/\.html$/)) {
+            // Don't cache HTML — always get fresh version
+            response = new Response(response.body, response);
+            response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+        }
+        
+        return response;
+    }
+};</code></pre>
+
+            <h2>Handling 404 and 500 Pages</h2>
+
+            <p>You can create custom error pages that Workers Assets serves automatically:</p>
+
+            <pre><code># Create these in your assets/ directory
+
+# assets/404.html
+&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+    &lt;title&gt;Page Not Found&lt;/title&gt;
+    &lt;link rel="stylesheet" href="/css/style.css"&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;h1&gt;404 — Page Not Found&lt;/h1&gt;
+    &lt;p&gt;The page you're looking for doesn't exist.&lt;/p&gt;
+    &lt;a href="/&gt;Go home&lt;/a&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+
+# assets/500.html
+&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+    &lt;title&gt;Server Error&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;h1&gt;500 — Something went wrong&lt;/h1&gt;
+    &lt;p&gt;Please try again later.&lt;/p&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+
+            <p>Workers Assets automatically serves these when your Worker throws an error or returns a 404/500 status.</p>
+
+            <h2>Deploying</h2>
+
+            <p>Everything deploys with one command:</p>
+
+            <pre><code># Deploy to your Cloudflare Workers subdomain
+npx wrangler deploy
+
+# Deploy to a custom domain (after setting up in wrangler.jsonc)
+npx wrangler deploy --var NAME=production
+
+# Preview locally with hot-reload
+npx wrangler dev</code></pre>
+
+            <p>That's it. Your HTML, CSS, JavaScript, images, and Worker code all deploy together. Your visitors get static files from the edge cache and API responses from your Worker — all from the same URL.</p>
+
+            <h2>Workers Assets vs Cloudflare Pages</h2>
+
+            <p>When should you use Workers Assets vs Cloudflare Pages?</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Feature</th>
+                        <th>Workers Assets</th>
+                        <th>Cloudflare Pages</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Static file serving</td>
+                        <td>✅ Yes</td>
+                        <td>✅ Yes (optimized)</td>
+                    </tr>
+                    <tr>
+                        <td>Edge functions (API)</td>
+                        <td>✅ Full Workers runtime</td>
+                        <td>✅ Pages Functions (subset)</td>
+                    </tr>
+                    <tr>
+                        <td>Build process</td>
+                        <td>Manual / npm scripts</td>
+                        <td>✅ Built-in build steps</td>
+                    </tr>
+                    <tr>
+                        <td>Git integration</td>
+                        <td>Manual</td>
+                        <td>✅ Automatic deploys from git</td>
+                    </tr>
+                    <tr>
+                        <td>Preview deployments</td>
+                        <td>Manual</td>
+                        <td>✅ Per-PR previews</td>
+                    </tr>
+                    <tr>
+                        <td>Complex Worker logic</td>
+                        <td>✅ Full Workers API</td>
+                        <td>⚠️ Limited to Pages Functions</td>
+                    </tr>
+                    <tr>
+                        <td>Bundles</td>
+                        <td>Worker + assets = 1 deploy</td>
+                        <td>Pages + Functions = 1 deploy</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p><strong>Choose Workers Assets</strong> when you have significant Worker logic (databases, D1, KV, API complexity) that needs to run alongside your frontend.</p>
+
+            <p><strong>Choose Cloudflare Pages</strong> when your app is mostly static content with light serverless functions, or when you want automatic Git-based CI/CD with preview deployments.</p>
+
+            <h2>Common Gotchas</h2>
+
+            <ul>
+                <li><strong>Asset size limit:</strong> Individual files are limited to 25 MB. Total assets are limited by your plan (100 GB on Workers Paid, lower on Free).</li>
+                <li><strong>Build output:</strong> Workers Assets expects ready-to-serve files. Make sure your build step (Vite, Webpack, etc.) outputs to the <code>assets/</code> directory before deploying.</li>
+                <li><strong>Trailing slashes:</strong> <code>/about</code> won't match <code>about.html</code> by default. Use <code>html_handling: "html"</code> in your config to enable HTML file matching.</li>
+                <li><strong>Subdirectories:</strong> If you have <code>assets/docs/index.html</code>, the Worker serves it at <code>/docs/</code>. The directory name becomes part of the URL path.</li>
+                <li><strong>Environment variables:</strong> Set them in <code>wrangler.jsonc</code> or the Cloudflare dashboard. They're available in your Worker via <code>env</code>, but NOT in your static HTML/JS files.</li>
+            </ul>
+
+            <h2>Building a Full-Stack SPA with Vite</h2>
+
+            <p>Here's how to integrate Workers Assets with a Vite build pipeline:</p>
+
+            <pre><code># wrangler.jsonc
+{
+  "name": "my-spa",
+  "main": "src/index.js",
+  "compatibility_date": "2026-07-09",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application"
+  },
+  "build": {
+    "command": "npm run build"
+  }
+}
+
+# package.json scripts
+{
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build --outDir dist",
+    "deploy": "npm run build && npx wrangler deploy",
+    "preview": "npx wrangler dev"
+  }
+}
+
+# vite.config.js
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig({
+  plugins: [react()],
+  base: '/',
+  build: {
+    outDir: 'dist',
+    sourcemap: true
+  }
+});</code></pre>
+
+            <p>Now <code>npm run deploy</code> builds your React app into <code>dist/</code> and deploys both the build output and your Worker together.</p>
+
+            <h2>Next Steps</h2>
+
+            <ul>
+                <li><strong>Add a database:</strong> Pair Workers Assets with <a href="posts/cloudflare-workers-d1-database.html">Cloudflare D1</a> for server-side data storage</li>
+                <li><strong>Add caching:</strong> Use <a href="posts/cloudflare-workers-kv.html">Workers KV</a> for cached API responses or configuration</li>
+                <li><strong>Add authentication:</strong> Use <a href="posts/cloudflare-access-auth.html">Cloudflare Access</a> to protect admin routes</li>
+                <li><strongAdd analytics:</strong> Use <a href="posts/cloudflare-workers.html">Workers</a> to inject analytics scripts or track page views</li>
+            </ul>
+
+            <p>Workers Assets eliminates the "frontend on one platform, backend on another" problem. One deployment, one domain, one set of API keys. Try it for your next project and see how much simpler your architecture becomes.</p>
+
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes | Built with ❤️ & AI</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528" target="_blank">GitHub</a>
+                <a href="https://blog.hugow.dev/sitemap.xml">Sitemap</a>
+            </div>
+        </div>
+    </footer>
+    <script>
+        // Theme toggle
+        const themeToggle = document.getElementById('themeToggle');
+        if (themeToggle) {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            if (savedTheme === 'light') {
+                document.body.classList.add('light-mode');
+                themeToggle.textContent = '☀';
+            }
+            themeToggle.addEventListener('click', () => {
+                document.body.classList.toggle('light-mode');
+                const isLight = document.body.classList.contains('light-mode');
+                localStorage.setItem('theme', isLight ? 'light' : 'dark');
+                themeToggle.textContent = isLight ? '☀' : '◐';
+            });
+        }
+        // Progress bar
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            const bar = document.getElementById('progressBar');
+            if (bar) bar.style.width = scrolled + "%";
+        });
+    </script>
+</body>
+</html>

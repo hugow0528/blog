@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloudflare Durable Objects: Shared State at the Edge — Complete Guide | Hugo's Dev Notes</title>
+    <meta name="description" content="Master Cloudflare Durable Objects — the serverless database alternative for shared state, real-time apps, and coordination at the edge. Build counters, leaderboards, and chat rooms with real code.">
+    <meta name="keywords" content="cloudflare durable objects, cloudflare workers, serverless database, edge state, real-time apps, durable objects tutorial">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/cloudflare-durable-objects.html">
+    <link rel="stylesheet" href="../style.css">
+
+    <!-- SEO Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "headline": "Cloudflare Durable Objects: Shared State at the Edge — Complete Guide",
+      "description": "Master Cloudflare Durable Objects — the serverless database alternative for shared state, real-time apps, and coordination at the edge.",
+      "datePublished": "2026-07-10",
+      "dateModified": "2026-07-10",
+      "author": {"@type": "Person", "name": "Hugo Wong"},
+      "publisher": {"@type": "Organization", "name": "Hugo's Dev Notes", "url": "https://blog.hugow.dev"},
+      "mainEntityOfPage": {"@id": "https://blog.hugow.dev/posts/cloudflare-durable-objects.html"},
+      "keywords": "Cloudflare, DevOps"
+    }
+    </script>
+
+    <!-- Social Meta -->
+    <meta property="og:title" content="Cloudflare Durable Objects: Shared State at the Edge">
+    <meta property="og:description" content="Master Cloudflare Durable Objects — serverless database alternative for shared state, real-time apps, and coordination at the edge.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.hugow.dev/posts/cloudflare-durable-objects.html">
+    <meta property="og:site_name" content="Hugo's Dev Notes">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Cloudflare Durable Objects: Shared State at the Edge">
+    <meta name="twitter:description" content="Master Cloudflare Durable Objects — serverless database alternative for shared state and real-time apps.">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post">
+            <div class="post-tags">
+                <span class="tag cloudflare">Cloudflare</span>
+                <span class="tag devops">DevOps</span>
+            </div>
+
+            <header class="post-header">
+                <h1>Cloudflare Durable Objects: Shared State at the Edge — Complete Guide</h1>
+                <div class="post-meta">
+                    <span class="post-date">July 10, 2026</span>
+                    <span class="post-read-time">10 min read</span>
+                    <span class="post-badge">New</span>
+                </div>
+            </header>
+
+            <div class="post-excerpt">
+                <p>Master Cloudflare Durable Objects — persistent state at the edge without traditional databases. Build real-time counters, leaderboards, chat rooms, and rate limiters. Step-by-step code examples from basic to advanced patterns.</p>
+            </div>
+
+            <div class="post-content">
+                <p>Cloudflare Workers are incredibly fast — they run at the edge, closest to your users. But there's one limitation: they're stateless. Every request is independent, and you can't share data between them without an external database.</p>
+
+                <p>Enter <strong>Durable Objects</strong> — a feature that gives you a persistent, colocated storage and compute environment at the edge. Think of it as a serverless database with zero cold starts, single-digit millisecond latency, and a generous free tier.</p>
+
+                <h2>What Are Durable Objects?</h2>
+
+                <p>A Durable Object is a <strong>single-threaded actor</strong> that lives at a specific location in Cloudflare's global network. Every request routed to the same Durable Object ID is guaranteed to hit the same instance, giving you:</p>
+
+                <ul>
+                    <li><strong>Colocated storage</strong> — key-value store with atomic operations</li>
+                    <li><strong>Strong consistency</strong> — no eventual consistency headaches</li>
+                    <li><strong>Networking</strong> — WebSocket support for real-time apps</li>
+                    <li><strong>Automatic failover</strong> — if an instance crashes, data survives</li>
+                </ul>
+
+                <h2>1. Set Up Your First Durable Object</h2>
+
+                <p>First, define your Durable Object in <code>wrangler.toml</code>:</p>
+
+                <pre><code># wrangler.toml
+name = "my-app"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+
+[[durable_objects.bindings]]
+name = "MY_DO"
+class_name = "MyCounter"</code></pre>
+
+                <p>Then implement the Durable Object class:</p>
+
+                <pre><code>// src/counter.js
+export class MyCounter {
+    constructor(state, env) {
+        this.state = state;
+        this.env = env;
+        this.count = 0;
+    }
+
+    async fetch(request) {
+        // Increment the counter
+        this.count += 1;
+        
+        // Persist to storage
+        await this.state.storage.put("count", this.count);
+        
+        return new Response(
+            JSON.stringify({ count: this.count }),
+            { headers: { "Content-Type": "application/json" } }
+        );
+    }
+}</code></pre>
+
+                <h2>2. Routing Requests to Your Durable Object</h2>
+
+                <p>Durable Objects are accessed via unique IDs. You derive these IDs from your application data — like a room ID, user ID, or rate-limit bucket:</p>
+
+                <pre><code>// src/index.js
+export default {
+    async fetch(request, env) {
+        const url = new URL(request.url);
+        
+        // Use the path as our Durable Object ID
+        const roomId = url.pathname.slice(1) || "default";
+        const id = env.MY_DO.idFromName(roomId);
+        const stub = env.MY_DO.get(id);
+        
+        return stub.fetch(request);
+    }
+};</code></pre>
+
+                <p>Now <code>http://your-app.dev/room1</code> and <code>http://your-app.dev/room1</code> will always hit the same Durable Object instance, while <code>/room2</code> hits a different one.</p>
+
+                <h2>3. Persistent Storage API</h2>
+
+                <p>Durable Objects include a built-in transactional key-value store:</p>
+
+                <pre><code>// Key-value operations
+await storage.put("key", "value");           // Save
+const value = await storage.get("key");      // Read (null if missing)
+await storage.delete("key");                  // Delete
+
+// Lists
+await storage.list({ prefix: "user_" });      // Filtered list
+await storage.list();                          // All keys
+
+// Batch operations (atomic)
+await storage.transaction(async tx => {
+    const a = await tx.get("a") || 0;
+    const b = await tx.get("b") || 0;
+    await tx.put("a", a - 10);
+    await tx.put("b", b + 10);
+});
+
+// Get all keys
+const all = await storage.list();
+const keys = all.keys.map(k => k.name);</code></pre>
+
+                <h2>4. Real-World Example: Global Leaderboard</h2>
+
+                <p>Let's build a real-time leaderboard that works across all edge locations:</p>
+
+                <pre><code>// src/leaderboard.js
+export class Leaderboard {
+    constructor(state, env) {
+        this.state = state;
+        this.state.blockConcurrencyWhile(async () => {
+            this.scores = await state.storage.get("scores") || {};
+        });
+    }
+
+    async fetch(request) {
+        const url = new URL(request.url);
+        
+        switch (url.pathname) {
+            case "/score": {
+                const data = await request.json();
+                this.scores[data.player] = Math.max(
+                    this.scores[data.player] || 0,
+                    data.score
+                );
+                await this.state.storage.put("scores", this.scores);
+                return new Response(JSON.stringify({ ok: true }));
+            }
+            
+            case "/top": {
+                const sorted = Object.entries(this.scores)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 10);
+                return new Response(JSON.stringify(sorted));
+            }
+            
+            default:
+                return new Response("Not found", { status: 404 });
+        }
+    }
+}</code></pre>
+
+                <h2>5. WebSocket Support for Real-Time Apps</h2>
+
+                <p>Durable Objects can hold persistent WebSocket connections — making them perfect for chat rooms, live notifications, and collaborative editing:</p>
+
+                <pre><code>// src/chat.js
+export class ChatRoom {
+    constructor(state, env) {
+        this.state = state;
+        this.connections = new Map();
+        this.messages = [];
+        
+        // Handle WebSocket upgrades
+        state.ephemeralKey = "ws-room-" + Math.random();
+    }
+
+    async fetch(request) {
+        const url = new URL(request.url);
+        
+        if (url.pathname === "/ws") {
+            const { 0: client, 1: server } = new WebSocketPair();
+            server.accept();
+            
+            const id = this.connections.size + 1;
+            this.connections.set(id, server);
+            
+            server.addEventListener("message", (event) => {
+                const msg = JSON.parse(event.data);
+                msg.id = Date.now();
+                
+                // Save to storage
+                this.messages.push(msg);
+                if (this.messages.length > 100) {
+                    this.messages = this.messages.slice(-100);
+                    this.state.storage.put("messages", this.messages);
+                }
+                
+                // Broadcast to all connected clients
+                for (const [, conn] of this.connections) {
+                    conn.send(JSON.stringify(msg));
+                }
+            });
+            
+            server.addEventListener("close", () => {
+                this.connections.delete(id);
+            });
+            
+            return new Response(null, { status: 101, webSocket: client });
+        }
+        
+        // Get recent messages (non-WebSocket)
+        if (url.pathname === "/messages") {
+            return new Response(JSON.stringify(this.messages.slice(-50)));
+        }
+    }
+}</code></pre>
+
+                <h2>6. Alarm API: Scheduled Tasks Inside Durable Objects</h2>
+
+                <p>Durable Objects support alarms — scheduled wake-ups even when idle:</p>
+
+                <pre><code>// Schedule an alarm
+await this.state.storage.setAlarm(Date.now() + 60 * 60 * 1000); // 1 hour from now
+
+// Clear an alarm
+await this.state.storage.deleteAlarm();
+
+// Handle the alarm (runs automatically when triggered)
+async alarm() {
+    // Do periodic work here
+    const now = Date.now();
+    // Clean up old data, send notifications, etc.
+}</code></pre>
+
+                <h2>7. Durable Objects vs Alternatives</h2>
+
+                <table>
+                    <tr><th>Feature</th><th>Durable Objects</th><th>Worker KV</th><th>D1 Database</th><th>External DB</th></tr>
+                    <tr><td>Latency</td><td>&lt;5ms</td><td>&lt;10ms</td><td>20-50ms</td><td>100ms+</td></tr>
+                    <tr><td>Consistency</td><td>Strong</td><td>Eventual</td><td>Strong</td><td>Varies</td></tr>
+                    <tr><td>Compute</td><td>Yes (full JS)</td><td>No</td><td>No</td><td>Separate</td></tr>
+                    <tr><td>WebSocket</td><td>Yes</td><td>No</td><td>No</td><td>Separate</td></tr>
+                    <tr><td>Alarms</td><td>Yes</td><td>No</td><td>No</td><td>Separate</td></tr>
+                    <tr><td>Query Power</td><td>Key lookup</td><td>Index + scan</td><td>Full SQL</td><td>Full SQL</td></tr>
+                    <tr><td>Free Tier</td><td>100k objects</td><td>100k ops</td><td>5MB DBs</td><td>Usually none</td></tr>
+                </table>
+
+                <h2>When to Use Durable Objects</h2>
+
+                <p>Durable Objects shine for:</p>
+
+                <ul>
+                    <li><strong>Real-time apps</strong> — chat rooms, live dashboards, collaborative editing</li>
+                    <li><strong>Rate limiting</strong> — per-user or per-IP counters with exact accuracy</li>
+                    <li><strong>Session storage</strong> — user sessions that need fast reads/writes</li>
+                    <li><strong>Distributed locks</strong> — coordinate actions across requests</li>
+                    <li><strong>Counters &amp; leaderboards</strong> — atomic increments at the edge</li>
+                </ul>
+
+                <p>Use <strong>D1</strong> when you need SQL queries, joins, or complex filtering. Use <strong>Worker KV</strong> for simple caching where eventual consistency is acceptable. Use <strong>Durable Objects</strong> when you need strong consistency, compute, or real-time networking at the edge.</p>
+
+                <h2>Summary</h2>
+
+                <p>Cloudflare Durable Objects are a powerful tool for building stateful, real-time applications at the edge. They combine persistent storage, compute, and networking into a single primitive — eliminating the need for separate databases and WebSocket servers for many use cases.</p>
+
+                <p>Start with simple counters and leaderboards, then graduate to real-time chat and collaborative apps. The free tier is generous enough to prototype and even run small production services.</p>
+
+                <blockquote>
+                    <p><strong>Key takeaway:</strong> Durable Objects give you strong consistency and colocated compute at the edge — the perfect balance between a key-value store and a full database. When your app needs state + logic at the same location, Durable Objects are your answer.</p>
+                </blockquote>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes. Built with ❤️ and Python.</p>
+        </div>
+    </footer>
+
+    <script src="../theme.js"></script>
+</body>
+</html>

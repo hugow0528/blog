@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS Container Queries: Responsive Components That Adapt to Their Parent — Hugo's Dev Notes</title>
+    <meta name="description" content="Learn CSS container queries — the modern way to make components responsive to their parent container instead of the viewport. Practical examples for card grids, sidebars, navigation, and real component libraries.">
+    <meta name="keywords" content="css container queries, container-style, responsive design, css tutorial, component responsive, modern css">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/css-container-queries.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post">
+            <header class="post-header">
+                <div class="post-tags">
+                    <span class="tag web">Web Dev</span>
+                </div>
+                <h1>CSS Container Queries: Responsive Components That Adapt to Their Parent</h1>
+                <div class="post-meta">
+                    <span class="post-date">July 8, 2026</span>
+                    <span class="read-time">9 min read</span>
+                </div>
+            </header>
+
+            <div class="post-content">
+                <p>For years, CSS media queries have been the only way to make layouts responsive. But media queries listen to the viewport (the browser window), not the component's actual container. This leads to a common problem: a card looks great in a wide grid on desktop, but when that same card is placed in a narrow sidebar, it still renders as if it's in a wide layout. CSS container queries solve this by letting you query the size of a parent element instead of the viewport.</p>
+
+                <h2>The Problem with Media Queries</h2>
+                <p>Consider a product card component:</p>
+
+                <pre><code>/* Media queries respond to the VIEWPORT, not the card's container */
+@media (min-width: 768px) {
+    .product-card {
+        display: flex;
+        flex-direction: row;
+    }
+}
+
+@media (max-width: 767px) {
+    .product-card {
+        display: flex;
+        flex-direction: column;
+    }
+}</code></pre>
+
+                <p>Now imagine placing this card in a narrow sidebar on a desktop. The viewport is 1400px wide, so the card tries to lay out horizontally — but the sidebar is only 250px. The layout breaks. You'd need another media query specifically for the sidebar, which couples your component to where it's placed. Container queries fix this.</p>
+
+                <h2>Declaring a Container</h2>
+                <p>First, declare which element is a query container:</p>
+
+                <pre><code>/* Method 1: Named container */
+.card-wrapper {
+    container-type: inline-size;
+    container-name: card;
+}
+
+/* Method 2: Shorthand (named) */
+.sidebar {
+    container: sidebar / inline-size;
+}
+
+/* Method 3: Unnamed container (queries any ancestor) */
+.grid-item {
+    container-type: inline-size;
+}</code></pre>
+
+                <p>The <code>container-type</code> property tells the browser to track this element's size. The two main values are:</p>
+
+                <ul>
+                    <li><strong>inline-size</strong> — Query based on width (most common)</li>
+                    <li><strong>size</strong> — Query both width and height (use cautiously — creates a new block formatting context)</li>
+                </ul>
+
+                <h2>Writing Container Queries</h2>
+                <p>Once a container is declared, write queries with <code>@container</code>:</p>
+
+                <pre><code>/* Query the "card" named container */
+@container card (min-width: 400px) {
+    .product-card {
+        display: flex;
+        flex-direction: row;
+        gap: 1rem;
+    }
+    
+    .product-card .image {
+        width: 180px;
+        flex-shrink: 0;
+    }
+    
+    .product-card .details {
+        flex: 1;
+    }
+}
+
+/* Default (narrow) layout — no container needed */
+.product-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.product-card .image {
+    width: 100%;
+}</code></pre>
+
+                <p>The key insight: <code>.product-card</code> now adapts based on <code>.card-wrapper</code>'s width, regardless of the viewport size. Put it in a wide grid, it goes horizontal. Put it in a narrow sidebar, it goes vertical.</p>
+
+                <h2>Container Query Examples</h2>
+
+                <h3>1. Responsive Navigation Component</h3>
+                <p>A navigation bar that shows a hamburger menu in narrow containers:</p>
+
+                <pre><code>/* Container declaration */
+.nav-container {
+    container-type: inline-size;
+}
+
+/* Narrow: hamburger menu */
+.nav-list {
+    display: none;
+}
+
+.nav-toggle {
+    display: block;
+}
+
+/* Wide: show full menu */
+@container (min-width: 600px) {
+    .nav-list {
+        display: flex;
+        gap: 1rem;
+    }
+    
+    .nav-toggle {
+        display: none;
+    }
+}</code></pre>
+
+                <p>This navigation component works in a header, a sidebar, or an embedded iframe — it adapts to wherever it lives.</p>
+
+                <h3>2. Card Grid with Auto-Responsive Cards</h3>
+                <p>Cards that switch from list to grid view based on available space:</p>
+
+                <pre><code>/* The container — could be any element */
+.content-area {
+    container-type: inline-size;
+}
+
+/* Compact card for narrow spaces */
+.blog-card {
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+}
+
+.blog-card .card-image {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+}
+
+.blog-card .card-title {
+    font-size: 1rem;
+}
+
+/* Expanded card in wider spaces */
+@container (min-width: 500px) {
+    .blog-card {
+        flex-direction: row;
+        padding: 1.25rem;
+    }
+    
+    .blog-card .card-image {
+        width: 200px;
+        aspect-ratio: 1 / 1;
+        flex-shrink: 0;
+    }
+    
+    .blog-card .card-title {
+        font-size: 1.25rem;
+    }
+    
+    .blog-card .card-excerpt {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+}</code></pre>
+
+                <h3>3. Conditional Layout with Container Styles</h3>
+                <p>Container queries can also respond to styles, not just size:</p>
+
+                <pre><code>.theme-container {
+    container-type: inline-size;
+    container-name: theme;
+}
+
+/* Dark mode variant within container */
+@container theme (min-width: 300px) {
+    .card {
+        background: #1a1a2e;
+        color: #eee;
+    }
+    
+    .card:hover {
+        background: #16213e;
+    }
+}</code></pre>
+
+                <h3>4. Multiple Breakpoints in One Query Block</h3>
+                <p>Combine conditions with <code>and</code>, <code>or</code>, and <code>not</code>:</p>
+
+                <pre><code>/* Between 400px and 700px */
+@container (min-width: 400px) and (max-width: 700px) {
+    .card {
+        flex-direction: row;
+    }
+}
+
+/* OR conditions */
+@container (width < 300px) or (width > 800px) {
+    .widget {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* NOT condition */
+@container not (min-width: 600px) {
+    .sidebar-nav {
+        display: none;
+    }
+}
+
+/* Named container + condition */
+@container sidebar (min-width: 280px) {
+    .sidebar-content {
+        padding: 2rem;
+    }
+}</code></pre>
+
+                <h2>Container Query Units</h2>
+                <p>Use container-relative units to scale elements proportionally:</p>
+
+                <pre><code>.responsive-container {
+    container-type: inline-size;
+}
+
+/* cqi = container query inline (width) */
+.responsive-title {
+    font-size: clamp(1rem, 4cqi, 2.5rem);
+}
+
+/* cqh = container query block (height) */
+.responsive-image {
+    height: 50cqh;
+}
+
+/* cqb = container query block (for block-sized containers) */
+.responsive-padding {
+    padding: 2cqi;
+}</code></pre>
+
+                <p>Container query units let you create truly fluid components that scale with their parent — no JavaScript needed.</p>
+
+                <h2>Container Queries vs Media Queries: When to Use Each</h2>
+
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Use Media Queries When...</th>
+                            <th>Use Container Queries When...</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Adjusting global layout (header, footer)</td>
+                            <td>Making a component responsive to its slot</td>
+                        </tr>
+                        <tr>
+                            <td>Targeting device capabilities (orientation, hover)</td>
+                            <td>A component that lives in multiple places</td>
+                        </tr>
+                        <tr>
+                            <td>Changing font sizes site-wide</td>
+                            <td>Card, widget, or module layouts</td>
+                        </tr>
+                        <tr>
+                            <td>Dark/light mode (prefers-color-scheme)</td>
+                            <td>Nested responsive design</td>
+                        </tr>
+                        <tr>
+                            <td>Mobile-first page structure</td>
+                            <td>Component libraries and design systems</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h2>Browser Support</h2>
+                <p>Container queries are supported in all modern browsers:</p>
+
+                <ul>
+                    <li><strong>Chrome/Edge</strong> — 105+</li>
+                    <li><strong>Firefox</strong> — 110+</li>
+                    <li><strong>Safari</strong> — 16+</li>
+                </ul>
+
+                <p>For older browsers, the <code>@container</code> rules are simply ignored — the default (narrow) layout still works. This makes container queries inherently progressive-enhancement-friendly.</p>
+
+                <h2>Debugging Container Queries</h2>
+                <p>Use Chrome DevTools to inspect container sizes:</p>
+
+                <pre><code>/* Make containers visible during development */
+@media (forced-colors: active) {
+    [container-type],
+    [container] {
+        outline: 2px dashed lime;
+    }
+}
+
+/* Or add a custom property to mark containers */
+.debug-containers {
+    container-type: inline-size;
+}
+
+.debug-containers::before {
+    content: "container: " var(--container-width, "checking...");
+    position: absolute;
+    top: -20px;
+    left: 0;
+    font-size: 10px;
+    color: #666;
+}</code></pre>
+
+                <div class="callout">
+                    <h3>💡 Pro Tip: Use @container in CSS-in-JS and CSS Modules</h3>
+                    <p>Container queries work everywhere CSS works — including CSS modules, Tailwind CSS (with the <code>@container</code> directive), and CSS-in-JS libraries like Styled Components. No framework-specific syntax needed.</p>
+                </div>
+
+                <h2>Real-World Pattern: Component Library with Container Queries</h2>
+                <p>Build a reusable alert component that adapts to any context:</p>
+
+                <pre><code>/* Container declaration — add to any parent */
+.alert-wrapper {
+    container-type: inline-size;
+}
+
+/* Base: compact stacked layout */
+.alert {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1rem;
+    border-radius: 8px;
+    border-left: 4px solid #3b82f6;
+    background: #eff6ff;
+}
+
+.alert-icon {
+    width: 24px;
+    height: 24px;
+}
+
+.alert-title {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.alert-message {
+    font-size: 0.85rem;
+    color: #4b5563;
+}
+
+.alert-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.alert-actions button {
+    width: 100%;
+    padding: 0.5rem;
+}
+
+/* Medium: icon + text in a row */
+@container (min-width: 350px) {
+    .alert {
+        flex-direction: row;
+        gap: 0.75rem;
+        align-items: flex-start;
+    }
+    
+    .alert-icon {
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+    
+    .alert-body {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+}
+
+/* Wide: actions inline */
+@container (min-width: 500px) {
+    .alert-actions {
+        flex-direction: row;
+        margin-left: auto;
+    }
+    
+    .alert-actions button {
+        width: auto;
+        padding: 0.5rem 1rem;
+    }
+}</code></pre>
+
+                <h2>Summary</h2>
+                <p>CSS container queries are the missing piece for component-level responsive design. Key takeaways:</p>
+
+                <ul>
+                    <li><strong>Declare containers</strong> with <code>container-type: inline-size</code> or the <code>container</code> shorthand</li>
+                    <li><strong>Query containers</strong> with <code>@container</code> — just like media queries but scoped</li>
+                    <li><strong>Name containers</strong> to avoid accidentally querying the wrong ancestor</li>
+                    <li><strong>Combine with media queries</strong> — they work together, not instead of each other</li>
+                    <li><strong>Use container units</strong> (<code>cqi</code>, <code>cqh</code>) for proportional scaling</li>
+                    <li><strong>Progressive enhancement</strong> — fallbacks work naturally when browsers don't support @container</li>
+                </ul>
+
+                <p>Container queries don't replace media queries — they complement them. Use media queries for page-level layout decisions and container queries for component-level adaptability. Together, they give you full control over responsive design at every level.</p>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes. Built with ☕ and code.</p>
+        </div>
+    </footer>
+
+    <script>
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + "%";
+        });
+        const toggle = document.getElementById('themeToggle');
+        toggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark');
+        });
+    </script>
+</body>
+</html>

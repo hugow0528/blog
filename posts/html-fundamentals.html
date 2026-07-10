@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML Fundamentals: Structure Your Web Pages — Complete Beginner's Guide | Hugo's Dev Notes</title>
+    <link rel="canonical" href="https://blog.hugow.dev/posts/html-fundamentals.html">
+    <link rel="stylesheet" href="../style.css">
+
+    <!-- SEO Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "headline": "HTML Fundamentals: Structure Your Web Pages — Complete Beginner's Guide",
+      "description": "Learn HTML from scratch — the document structure, semantic elements, links, images, lists, tables, forms, and modern best practices. Build your first webpage with working examples.",
+      "datePublished": "2026-07-09",
+      "dateModified": "2026-07-09",
+      "author": {"@type": "Person", "name": "Hugo Wong"},
+      "publisher": {"@type": "Organization", "name": "Hugo's Dev Notes", "url": "https://blog.hugow.dev"},
+      "keywords": "HTML, web development, beginner, tutorial"
+    }
+    </script>
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="HTML Fundamentals: Structure Your Web Pages — Complete Beginner's Guide">
+    <meta property="og:description" content="Learn HTML from scratch — the document structure, semantic elements, links, images, lists, tables, forms, and modern best practices. Build your first webpage with working examples.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.hugow.dev/posts/html-fundamentals.html">
+    <meta property="og:site_name" content="Hugo's Dev Notes">
+    <meta property="article:published_time" content="2026-07-09">
+    <meta property="article:modified_time" content="2026-07-09">
+    <meta property="article:section" content="web">
+    <meta property="article:tag" content="Web Dev">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="HTML Fundamentals: Structure Your Web Pages — Complete Beginner's Guide">
+    <meta name="twitter:description" content="Learn HTML from scratch — the document structure, semantic elements, links, images, lists, tables, forms, and modern best practices.">
+
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+
+        <article class="post-content">
+            <span class="tag web">Web Dev</span>
+            <h1>HTML Fundamentals: Structure Your Web Pages — Complete Beginner's Guide</h1>
+            <time>July 9, 2026 · 12 min read</time>
+
+            <p>HTML (HyperText Markup Language) is the skeleton of every website. It tells the browser what content to show and how it's organized. Unlike CSS (styling) or JavaScript (behavior), HTML is purely about <strong>structure</strong> — headings, paragraphs, images, links, and the semantic meaning behind them.</p>
+
+            <p>If you want to build anything on the web, HTML is your first step. Let's go from zero to a complete webpage.</p>
+
+            <h2>The Basic Document Structure</h2>
+
+            <p>Every HTML page follows this template. Save it as <code>index.html</code> and open it in your browser:</p>
+
+            <pre><code>&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+    &lt;title&gt;My First Webpage&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;h1&gt;Hello, World!&lt;/h1&gt;
+    &lt;p&gt;This is my first webpage.&lt;/p&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+
+            <p>Breaking it down:</p>
+            <ul>
+                <li><code>&lt;!DOCTYPE html&gt;</code> — tells the browser this is HTML5</li>
+                <li><code>&lt;html&gt;</code> — root element, wrap everything inside it</li>
+                <li><code>&lt;head&gt;</code> — metadata (title, character encoding, links to CSS/JS)</li>
+                <li><code>&lt;body&gt;</code> — visible content the user sees</li>
+                <li><code>lang="en"</code> — tells screen readers and search engines the language</li>
+            </ul>
+
+            <p>The <code>meta charset="UTF-8"</code> line is essential — it lets you use any character (emojis, accented letters, CJK, etc.). The <code>meta viewport</code> line makes your page responsive on mobile devices. Always include both.</p>
+
+            <h2>Headings: h1 Through h6</h2>
+
+            <p>HTML provides six heading levels. Use them to create a logical hierarchy:</p>
+
+            <pre><code>&lt;h1&gt;Main Page Title&lt;/h1&gt;         &lt;!-- Only ONE per page --&gt;
+&lt;h2&gt;Section Title&lt;/h2&gt;
+&lt;h3&gt;Subsection&lt;/h3&gt;
+&lt;h4&gt;Sub-subsection&lt;/h4&gt;
+&lt;h5&gt;Minor heading&lt;/h5&gt;
+&lt;h6&gt;Smallest heading&lt;/h6&gt;</code></pre>
+
+            <p>Golden rules for headings:</p>
+            <ul>
+                <li>Use exactly <strong>one</strong> <code>&lt;h1&gt;</code> per page — it's the main topic</li>
+                <li>Never skip levels (don't go from <code>h2</code> to <code>h4</code>)</li>
+                <li>Use headings for structure, <strong>not</strong> to make text bigger. That's CSS's job</li>
+                <li>Screen readers use headings to navigate — good heading structure = better accessibility</li>
+            </ul>
+
+            <h2>Paragraphs and Text Formatting</h2>
+
+            <p>The <code>&lt;p&gt;</code> tag creates paragraphs. The browser automatically adds space between them:</p>
+
+            <pre><code>&lt;p&gt;This is the first paragraph. It contains some text
+that wraps to multiple lines in the source code,
+but the browser treats it as one block.&lt;/p&gt;
+
+&lt;p&gt;This is the second paragraph.&lt;/p&gt;</code></pre>
+
+            <p>For inline text formatting, use semantic tags that convey meaning:</p>
+
+            <pre><code>&lt;p&gt;This text is &lt;strong&gt;important&lt;/strong&gt; and this is &lt;em&gt;emphasized&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;This is &lt;abbr title="HyperText Markup Language"&gt;HTML&lt;/abbr&gt; code.&lt;/p&gt;
+&lt;p&gt;Water is H&lt;sub&gt;2&lt;/sub&gt;O and E = mc&lt;sup&gt;2&lt;/sup&gt;.&lt;/p&gt;
+&lt;p&gt;Use &lt;code&gt;print("hello")&lt;/code&gt; to output text in Python.&lt;/p&gt;
+&lt;p&gt;The price was &lt;del&gt;$100&lt;/del&gt; &lt;ins&gt;$80&lt;/ins&gt; on sale.&lt;/p&gt;</code></pre>
+
+            <p>Avoid <code>&lt;b&gt;</code> and <code>&lt;i&gt;</code> — they're purely visual. Use <code>&lt;strong&gt;</code> (important) and <code>&lt;em&gt;</code> (emphasized) instead, which convey meaning to assistive technologies.</p>
+
+            <h2>Links: Connecting the Web</h2>
+
+            <p>The <code>&lt;a&gt;</code> (anchor) tag creates hyperlinks — the backbone of the web:</p>
+
+            <pre><code>&lt;!-- Open in same tab (default) --&gt;
+&lt;a href="https://blog.hugow.dev"&gt;Visit Hugo's Blog&lt;/a&gt;
+
+&lt;!-- Open in new tab --&gt;
+&lt;a href="https://docs.python.org" target="_blank" rel="noopener"&gt;Python Docs&lt;/a&gt;
+
+&lt;!-- Internal page link --&gt;
+&lt;a href="about.html"&gt;About Me&lt;/a&gt;
+
+&lt;!-- Email link --&gt;
+&lt;a href="mailto:hugo@example.com"&gt;Email Me&lt;/a&gt;
+
+&lt;!-- Phone link (works on mobile) --&gt;
+&lt;a href="tel:+1234567890"&gt;Call Me&lt;/a&gt;
+
+&lt;!-- Jump to section on same page --&gt;
+&lt;a href="#installation"&gt;Skip to Installation&lt;/a&gt;</code></pre>
+
+            <p>Always include <code>rel="noopener"</code> when using <code>target="_blank"</code> — it's a security and performance best practice that prevents the new page from accessing your page's window object.</p>
+
+            <h2>Images</h2>
+
+            <p>Images use the self-closing <code>&lt;img&gt;</code> tag. The <code>alt</code> attribute is <strong>required</strong> — it describes the image for screen readers and shows when the image fails to load:</p>
+
+            <pre><code>&lt;!-- Basic image --&gt;
+&lt;img src="photo.jpg" alt="A sunset over Victoria Harbour in Hong Kong"&gt;
+
+&lt;!-- Image with specific dimensions (prevents layout shifts) --&gt;
+&lt;img src="logo.png" alt="Company logo" width="200" height="80"&gt;
+
+&lt;!-- Image as a clickable link --&gt;
+&lt;a href="gallery.html"&gt;
+    &lt;img src="preview.jpg" alt="Click to view the photo gallery"&gt;
+&lt;/a&gt;</code></pre>
+
+            <p>Tip: Always specify <code>width</code> and <code>height</code> to prevent "layout shift" — when the page jumps around as images load. For responsive images that adapt to screen size, use the <code>srcset</code> attribute:</p>
+
+            <pre><code>&lt;img src="photo.jpg"
+     srcset="photo-small.jpg 480w,
+             photo-medium.jpg 768w,
+             photo-large.jpg 1200w"
+     sizes="(max-width: 480px) 100vw,
+            (max-width: 768px) 50vw,
+            33vw"
+     alt="Descriptive text"&gt;</code></pre>
+
+            <h2>Semantic HTML: Meaningful Structure</h2>
+
+            <p>HTML5 introduced semantic elements that describe <em>what the content is</em>, not just how it looks. These improve SEO, accessibility, and code readability:</p>
+
+            <pre><code>&lt;header&gt;
+    &lt;nav&gt;
+        &lt;a href="/"&gt;Home&lt;/a&gt;
+        &lt;a href="/blog"&gt;Blog&lt;/a&gt;
+        &lt;a href="/about"&gt;About&lt;/a&gt;
+    &lt;/nav&gt;
+&lt;/header&gt;
+
+&lt;main&gt;
+    &lt;article&gt;
+        &lt;h1&gt;Blog Post Title&lt;/h1&gt;
+        &lt;time datetime="2026-07-09"&gt;July 9, 2026&lt;/time&gt;
+        &lt;p&gt;Blog post content goes here...&lt;/p&gt;
+    &lt;/article&gt;
+
+    &lt;aside&gt;
+        &lt;h2&gt;Related Posts&lt;/h2&gt;
+        &lt;ul&gt;
+            &lt;li&gt;&lt;a href="/post1"&gt;Related Post 1&lt;/a&gt;&lt;/li&gt;
+        &lt;/ul&gt;
+    &lt;/aside&gt;
+&lt;/main&gt;
+
+&lt;footer&gt;
+    &lt;p&gt;&amp;copy; 2026 Hugo's Dev Notes&lt;/p&gt;
+&lt;/footer&gt;</code></pre>
+
+            <p>Semantic element cheat sheet:</p>
+            <ul>
+                <li><code>&lt;header&gt;</code> — page or section header</li>
+                <li><code>&lt;nav&gt;</code> — navigation links</li>
+                <li><code>&lt;main&gt;</code> — primary content (only one per page)</li>
+                <li><code>&lt;article&gt;</code> — self-contained content (blog post, news article)</li>
+                <li><code>&lt;section&gt;</code> — thematic grouping of content</li>
+                <li><code>&lt;aside&gt;</code> — sidebar or tangential content</li>
+                <li><code>&lt;footer&gt;</code> — page or section footer</li>
+                <li><code>&lt;figure&gt;</code> — image or diagram with optional caption</li>
+                <li><code>&lt;time&gt;</code> — machine-readable date/time</li>
+            </ul>
+
+            <h2>Lists</h2>
+
+            <p>Three types of lists for different situations:</p>
+
+            <pre><code>&lt;!-- Unordered list (bullet points) --&gt;
+&lt;ul&gt;
+    &lt;li&gt;Python&lt;/li&gt;
+    &lt;li&gt;JavaScript&lt;/li&gt;
+    &lt;li&gt;Go&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;!-- Ordered list (numbered) --&gt;
+&lt;ol&gt;
+    &lt;li&gt;Install Python&lt;/li&gt;
+    &lt;li&gt;Create a virtual environment&lt;/li&gt;
+    &lt;li&gt;Install dependencies with pip&lt;/li&gt;
+    &lt;li&gt;Run your script&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;!-- Description list (terms and definitions) --&gt;
+&lt;dl&gt;
+    &lt;dt&gt;HTML&lt;/dt&gt;
+    &lt;dd&gt;HyperText Markup Language — structures web content&lt;/dd&gt;
+    &lt;dt&gt;CSS&lt;/dt&gt;
+    &lt;dd&gt;Cascading Style Sheets — styles web content&lt;/dd&gt;
+    &lt;dt&gt;JS&lt;/dt&gt;
+    &lt;dd&gt;JavaScript — adds interactivity to web pages&lt;/dd&gt;
+&lt;/dl&gt;</code></pre>
+
+            <h2>Tables: Display Tabular Data</h2>
+
+            <p>Tables are for <strong>tabular data only</strong> — never use them for page layout:</p>
+
+            <pre><code>&lt;table&gt;
+    &lt;caption&gt;Popular Programming Languages&lt;/caption&gt;
+    &lt;thead&gt;
+        &lt;tr&gt;
+            &lt;th&gt;Language&lt;/th&gt;
+            &lt;th&gt;Year&lt;/th&gt;
+            &lt;th&gt;Creator&lt;/th&gt;
+        &lt;/tr&gt;
+    &lt;/thead&gt;
+    &lt;tbody&gt;
+        &lt;tr&gt;
+            &lt;td&gt;Python&lt;/td&gt;
+            &lt;td&gt;1991&lt;/td&gt;
+            &lt;td&gt;Guido van Rossum&lt;/td&gt;
+        &lt;/tr&gt;
+        &lt;tr&gt;
+            &lt;td&gt;JavaScript&lt;/td&gt;
+            &lt;td&gt;1995&lt;/td&gt;
+            &lt;td&gt;Brendan Eich&lt;/td&gt;
+        &lt;/tr&gt;
+        &lt;tr&gt;
+            &lt;td&gt;Go&lt;/td&gt;
+            &lt;td&gt;2009&lt;/td&gt;
+            &lt;td&gt;Google Team&lt;/td&gt;
+        &lt;/tr&gt;
+    &lt;/tbody&gt;
+&lt;/table&gt;</code></pre>
+
+            <p>Always use <code>&lt;thead&gt;</code> for headers and <code>&lt;tbody&gt;</code> for data rows. The <code>&lt;caption&gt;</code> provides a table description for screen readers.</p>
+
+            <h2>Divs, Spans, and Inline vs Block</h2>
+
+            <p>When semantic tags don't fit, use generic containers:</p>
+
+            <pre><code>&lt;!-- Block-level: takes full width, starts on new line --&gt;
+&lt;div class="card"&gt;
+    &lt;h2&gt;Card Title&lt;/h2&gt;
+    &lt;p&gt;Card content&lt;/p&gt;
+&lt;/div&gt;
+
+&lt;!-- Inline: flows with text, only as wide as content --&gt;
+&lt;p&gt;The price is &lt;span class="discount"&gt;$80&lt;/span&gt; on sale.&lt;/p&gt;</code></pre>
+
+            <p>Key difference: <code>&lt;div&gt;</code> is for grouping block elements, <code>&lt;span&gt;</code> is for styling small pieces of text within a line. Use semantic elements whenever possible — <code>&lt;div&gt;</code> and <code>&lt;span&gt;</code> are fallbacks, not defaults.</p>
+
+            <h2>Attributes: Adding Extra Information</h2>
+
+            <p>Attributes provide additional info about elements. Key attributes you'll use daily:</p>
+
+            <pre><code>&lt;!-- class: for CSS styling (can reuse) --&gt;
+&lt;p class="highlight"&gt;Important text&lt;/p&gt;
+
+&lt;!-- id: unique identifier (use once per page) --&gt;
+&lt;div id="main-content"&gt;...&lt;/div&gt;
+
+&lt;!-- data-*: store custom data for JavaScript --&gt;
+&lt;button data-user-id="42"&gt;Delete User&lt;/button&gt;
+
+&lt;!-- style: inline CSS (avoid in production) --&gt;
+&lt;p style="color: red;"&gt;Don't do this&lt;/p&gt;
+
+&lt;!-- aria: accessibility attributes --&gt;
+&lt;button aria-label="Close menu"&gt;✕&lt;/button&gt;</code></pre>
+
+            <p>Use <code>class</code> for styling (an element can have multiple: <code>class="btn btn-primary"</code>). Use <code>id</code> sparingly — for anchors and JavaScript hooks. Never use <code>id</code> for styling if <code>class</code> works.</p>
+
+            <h2>Special Characters and HTML Entities</h2>
+
+            <p>Some characters are reserved in HTML. Use entities to display them:</p>
+
+            <pre><code>&amp;lt;   → &lt;     (less than)
+&amp;gt;   → &gt;     (greater than)
+&amp;amp;  → &amp;     (ampersand)
+&amp;quot; → "     (double quote)
+&amp;nbsp; →        (non-breaking space)
+&amp;copy; → ©     (copyright)
+&amp;mdash; → —    (em dash)
+&amp;euro;  → €     (euro sign)</code></pre>
+
+            <p>In practice, UTF-8 encoding handles most special characters directly. You mainly need entities for <code>&lt;</code>, <code>&gt;</code>, <code>&amp;</code>, and <code>"</code> when they appear in content.</p>
+
+            <h2>Build a Complete Webpage: Step by Step</h2>
+
+            <p>Let's put everything together into a real blog-style page:</p>
+
+            <pre><code>&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+    &lt;title&gt;My Blog — Python Tips&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;header&gt;
+        &lt;h1&gt;My Dev Blog&lt;/h1&gt;
+        &lt;nav&gt;
+            &lt;a href="index.html"&gt;Home&lt;/a&gt; |
+            &lt;a href="about.html"&gt;About&lt;/a&gt; |
+            &lt;a href="contact.html"&gt;Contact&lt;/a&gt;
+        &lt;/nav&gt;
+    &lt;/header&gt;
+
+    &lt;main&gt;
+        &lt;article&gt;
+            &lt;h2&gt;Python List Comprehensions&lt;/h2&gt;
+            &lt;p&gt;List comprehensions are a Python feature that lets you
+            create lists in a single, readable line of code.&lt;/p&gt;
+
+            &lt;figure&gt;
+                &lt;img src="screenshot.png" alt="Code editor showing a list comprehension"
+                     width="600" height="300"&gt;
+                &lt;figcaption&gt;Figure 1: A list comprehension in action&lt;/figcaption&gt;
+            &lt;/figure&gt;
+
+            &lt;p&gt;Here's a simple example:&lt;/p&gt;
+
+            &lt;pre&gt;&lt;code&gt;squares = [x ** 2 for x in range(10)]
+print(squares)  # [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]&lt;/code&gt;&lt;/pre&gt;
+
+            &lt;p&gt;They're &lt;strong&gt;faster&lt;/strong&gt; and more &lt;em&gt;Pythonic&lt;/em&gt; than
+            equivalent for-loops.&lt;/p&gt;
+        &lt;/article&gt;
+
+        &lt;aside&gt;
+            &lt;h3&gt;Related Posts&lt;/h3&gt;
+            &lt;ul&gt;
+                &lt;li&gt;&lt;a href="python-loops.html"&gt;Python Loops&lt;/a&gt;&lt;/li&gt;
+                &lt;li&gt;&lt;a href="python-functions.html"&gt;Python Functions&lt;/a&gt;&lt;/li&gt;
+            &lt;/ul&gt;
+        &lt;/aside&gt;
+    &lt;/main&gt;
+
+    &lt;footer&gt;
+        &lt;p&gt;&amp;copy; 2026 My Blog. All rights reserved.&lt;/p&gt;
+    &lt;/footer&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+
+            <h2>Common Mistakes to Avoid</h2>
+
+            <h3>Forgetting to close tags</h3>
+            <pre><code>&lt;!-- Wrong: missing closing tag --&gt;
+&lt;p&gt;This paragraph never ends...
+
+&lt;!-- Right --&gt;
+&lt;p&gt;This paragraph is complete.&lt;/p&gt;</code></pre>
+
+            <h3>Using divs for everything</h3>
+            <pre><code>&lt;!-- Wrong --&gt;
+&lt;div class="nav"&gt;...&lt;/div&gt;
+
+&lt;!-- Right --&gt;
+&lt;nav&gt;...&lt;/nav&gt;</code></pre>
+
+            <h3>Nesting block elements inside inline elements</h3>
+            <pre><code>&lt;!-- Wrong: p inside a span --&gt;
+&lt;span&gt;&lt;p&gt;This breaks layout&lt;/p&gt;&lt;/span&gt;
+
+&lt;!-- Right: span inside a p --&gt;
+&lt;p&gt;This is &lt;span&gt;correct&lt;/span&gt; nesting.&lt;/p&gt;</code></pre>
+
+            <h2>Next Steps</h2>
+            <ul>
+                <li>Learn <a href="#">CSS</a> — style your HTML pages with colors, fonts, and layouts</li>
+                <li>Explore <a href="#">JavaScript</a> — make your pages interactive</li>
+                <li>Practice building real pages — a portfolio, blog, or documentation site</li>
+            </ul>
+
+            <blockquote>
+                <strong>Practice tip:</strong> Open your browser's developer tools (F12), go to any website, and inspect the HTML. See how real sites use semantic elements, classes, and structure. It's the fastest way to learn from production code.
+            </blockquote>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Hugo's Dev Notes. Built with vibe coding.</p>
+        </div>
+    </footer>
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        if (themeToggle) {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            if (savedTheme === 'light') {
+                document.body.classList.add('light-mode');
+                themeToggle.textContent = '☀';
+            }
+            themeToggle.addEventListener('click', () => {
+                document.body.classList.toggle('light-mode');
+                const isLight = document.body.classList.contains('light-mode');
+                localStorage.setItem('theme', isLight ? 'light' : 'dark');
+                themeToggle.textContent = isLight ? '☀' : '◐';
+            });
+        }
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            const bar = document.getElementById('progressBar');
+            if (bar) bar.style.width = scrolled + "%";
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Debugging and Profiling: pdb, print() Tricks & Performance Tools | Hugo's Dev Notes</title>
+    <meta name="description" content="Master Python debugging and profiling — pdb interactive debugger, print() debugging tricks, logging-based debugging, cProfile for performance analysis, and finding memory leaks. Complete beginner's guide with real examples.">
+    <meta name="keywords" content="python debugging, pdb, profiler, cProfile, memory leak, python performance, debug python, beginner tutorial">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-debugging-profiling.html">
+    <link rel="stylesheet" href="../style.css">
+
+    <!-- SEO Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "headline": "Python Debugging and Profiling: pdb, print() Tricks & Performance Tools",
+      "description": "Master Python debugging and profiling — pdb interactive debugger, print() debugging tricks, logging-based debugging, cProfile for performance analysis, and finding memory leaks.",
+      "datePublished": "2026-07-10",
+      "dateModified": "2026-07-10",
+      "author": {"@type": "Person", "name": "Hugo Wong"},
+      "publisher": {"@type": "Organization", "name": "Hugo's Dev Notes", "url": "https://blog.hugow.dev"},
+      "mainEntityOfPage": {"@id": "https://blog.hugow.dev/posts/python-debugging-profiling.html"},
+      "keywords": "Python"
+    }
+    </script>
+
+    <!-- Social Meta -->
+    <meta property="og:title" content="Python Debugging and Profiling: pdb, print() Tricks & Performance Tools">
+    <meta property="og:description" content="Master Python debugging and profiling — pdb, print() tricks, cProfile, and memory leak detection. Beginner-friendly with real examples.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.hugow.dev/posts/python-debugging-profiling.html">
+    <meta property="og:site_name" content="Hugo's Dev Notes">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Python Debugging and Profiling: pdb, print() Tricks & Performance Tools">
+    <meta name="twitter:description" content="Master Python debugging and profiling — pdb, print() tricks, cProfile, and memory leak detection.">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post">
+            <div class="post-tags">
+                <span class="tag python">Python</span>
+            </div>
+
+            <header class="post-header">
+                <h1>Python Debugging and Profiling: pdb, print() Tricks & Performance Tools</h1>
+                <div class="post-meta">
+                    <span class="post-date">July 10, 2026</span>
+                    <span class="post-read-time">12 min read</span>
+                    <span class="post-badge">New</span>
+                </div>
+            </header>
+
+            <div class="post-excerpt">
+                <p>Master Python debugging and profiling from scratch — the built-in pdb debugger, smart print() debugging tricks, logging-based debugging, cProfile for performance analysis, line_profiler for line-by-line profiling, and finding memory leaks with tracemalloc. Real code examples for every concept.</p>
+            </div>
+
+            <div class="post-content">
+                <p>Every Python developer spends more time debugging than writing new code. It's not glamorous, but it's essential. This guide covers the complete toolkit for finding and fixing bugs in Python, from the simplest print statement to professional profiling tools.</p>
+
+                <p>Whether you're a beginner confused by a TypeError or a developer tracking down a performance bottleneck, you'll learn practical techniques you can use immediately.</p>
+
+                <h2>1. print() Debugging — Don't Underestimate the Basics</h2>
+
+                <p>Before reaching for fancy tools, master the humble <code>print()</code>. Yes, print debugging works — and it works fast when done right.</p>
+
+                <h3>Basic Print Debugging</h3>
+                <pre><code># Basic: print variable values
+def calculate_total(items, tax_rate):
+    print(f"items: {items}")
+    print(f"tax_rate: {tax_rate}")
+
+    subtotal = sum(item["price"] * item["qty"] for item in items)
+    print(f"subtotal: {subtotal}")
+
+    total = subtotal * (1 + tax_rate)
+    print(f"total: {total}")
+    return total</code></pre>
+
+                <h3>The <code>print(f"DEBUG: {var=}")</code> Trick (Python 3.8+)</h3>
+                <p>Python 3.8 introduced a killer feature: self-documenting print statements.</p>
+                <pre><code>x = 42
+name = "hugo"
+items = [1, 2, 3]
+
+print(f"{x=}")           # Output: x=42
+print(f"{name=}")        # Output: name='hugo'
+print(f"{items=}")       # Output: items=[1, 2, 3]
+
+# Combine with expressions
+print(f"{x=}, {x*2=}")   # Output: x=42, x*2=84
+
+# This is HUGE for debugging — you see both name and value</code></pre>
+
+                <h3>Print with Line Numbers</h3>
+                <pre><code>import inspect
+
+def debug_print(msg):
+    frame = inspect.currentframe().f_back
+    print(f"[L{frame.f_lineno}] {msg}")
+
+def example():
+    x = 1
+    debug_print(f"before calc, x={x}")  # [L10] before calc, x=1
+    x += 5
+    debug_print(f"after calc, x={x}")   # [L12] after calc, x=6
+
+example()</code></pre>
+
+                <h3>Print Only When Debugging</h3>
+                <pre><code>import os
+
+def debug(msg):
+    if os.environ.get("DEBUG") == "1":
+        print(f"DEBUG: {msg}")
+
+# Usage: only prints when DEBUG=1
+DEBUG=1 python myscript.py</code></pre>
+
+                <h2>2. The pdb Interactive Debugger</h2>
+
+                <p><code>pdb</code> is Python's built-in interactive debugger. It lets you pause execution, inspect variables, step through code, and evaluate expressions — all without modifying your code permanently.</p>
+
+                <h3>Setting a Breakpoint</h3>
+                <pre><code>def process_orders(orders):
+    total = 0
+    for order in orders:
+        # Drop into debugger here
+        breakpoint()  # Python 3.7+ (same as import pdb; pdb.set_trace())
+        total += order["amount"]
+    return total</code></pre>
+
+                <p>When you run this, execution pauses at <code>breakpoint()</code> and drops you into the pdb prompt:</p>
+
+                <pre><code>--Return--
+> myscript.py(5)process_orders()
+        total += order["amount"]
+(Pdb) </code></pre>
+
+                <h3>Essential pdb Commands</h3>
+                <pre><code># Command    Shortcut    What it does
+────────────────────────────────────────────────────
+Continue     c           Run until next breakpoint
+Next line    n           Execute current line, stop at next
+Step in      s           Step INTO function calls
+Return       r           Run until current function returns
+List context l           Show surrounding code
+Up frame     u           Move up a stack frame
+Down frame   d           Move down a stack frame
+Evaluate     p           Print variable: p x, p order
+PP pretty    pp          Pretty-print variable
+Where        w           Show full stack trace
+Quit         q           Exit debugger
+!</code></pre>
+
+                <h3>pdb in Action</h3>
+                <pre><code>def find_duplicate(numbers):
+    """Find the first duplicate in a list"""
+    seen = set()
+    for i, num in enumerate(numbers):
+        breakpoint()
+        if num in seen:
+            return num
+        seen.add(num)
+    return None
+
+# Run: python myscript.py
+# Then at the (Pdb) prompt:
+
+(Pdb) p numbers      # [1, 2, 3, 2, 4]
+(Pdb) p i            # 0
+(Pdb) p num          # 1
+(Pdb) p seen         # set()
+(Pdb) n              # (go to next line)
+(Pdb) p seen         # {1}
+(Pdb) c              # (continue to next breakpoint, i=1)
+(Pdb) c              # (i=2)
+(Pdb) c              # (i=3, num=2)
+(Pdb) p num in seen  # True! Found our duplicate
+(Pdb) c              # returns 2</code></pre>
+
+                <h3>Conditional Breakpoints</h3>
+                <pre><code># Break only when a condition is met
+def process_items(items):
+    for i, item in enumerate(items):
+        breakpoint()  # Will stop every iteration
+
+# BETTER: Use a conditional expression
+def process_items(items):
+    for i, item in enumerate(items):
+        if i == 5: breakpoint()  # Only break on 6th item
+        process(item)</code></pre>
+
+                <h3>Running pdb from the Command Line</h3>
+                <pre><code># Start script in debugger immediately
+python -m pdb myscript.py
+
+(Pdb) b 10            # Set breakpoint on line 10
+(Pdb) b process_orders  # Set breakpoint on function
+(Pdb) c               # Run to first breakpoint
+(Pdb) continue
+(Pdb) n               # Step through</code></pre>
+
+                <h2>3. Logging-Based Debugging (The Professional Approach)</h2>
+
+                <p>For production code, replace <code>print()</code> with the <code>logging</code> module. It gives you levels, formatting, timestamps, and file output.</p>
+
+                <pre><code>import logging
+
+# Configure once (usually in your main module)
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s | %(name)s | %(levelname)s | %(message)s',
+    handlers=[
+        logging.FileHandler("app.log"),
+        logging.StreamHandler()  # Also print to console
+    ]
+)
+
+logger = logging.getLogger(__name__)
+
+def calculate_shipping(weight, distance):
+    logger.debug(f"Calculating shipping: weight={weight}kg, distance={distance}km")
+
+    if weight <= 0:
+        logger.error(f"Invalid weight: {weight}")
+        raise ValueError("Weight must be positive")
+
+    base_rate = 5.0
+    per_km = 0.5
+    per_kg = 0.1
+    cost = base_rate + (distance * per_km) + (weight * per_kg)
+
+    logger.info(f"Shipping cost calculated: ${cost:.2f}")
+    return cost
+
+# Output:
+# 2026-07-10 10:00:00,123 | __main__ | DEBUG | Calculating shipping: weight=2.5kg, distance=100km
+# 2026-07-10 10:00:00,124 | __main__ | INFO | Shipping cost calculated: $57.50</code></pre>
+
+                <p>Logging levels from lowest to highest:</p>
+                <pre><code>DEBUG    → Detailed diagnostic info
+INFO     → Confirmation things work normally
+WARNING  → Something unexpected happened
+ERROR    → Something failed but program continues
+CRITICAL → Severe error, program might stop</code></pre>
+
+                <h2>4. cProfile: Find What's Slow</h2>
+
+                <p>When your Python code is slow, don't guess — profile it. <code>cProfile</code> tells you exactly which functions consume the most time.</p>
+
+                <h3>Basic cProfile Usage</h3>
+                <pre><code>import cProfile
+
+def slow_function():
+    """Simulate a slow function with nested work"""
+    results = []
+    for i in range(10000):
+        results.append(sorted(range(i, 0, -1)))
+    return len(results)
+
+# Run with profiler
+cProfile.run('slow_function()')
+
+# Output:
+#    10002 function calls in 0.152 seconds
+#
+#    Ordered by: standard name
+#
+#    ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+#       10000    0.089    0.000    0.142    0.000 {built-in method builtins.sorted}
+#       10000    0.033    0.000    0.033    0.000 {method 'append' of 'list' objects}
+#           1    0.001    0.001    0.152    0.152 myscript.py:4(slow_function)</code></pre>
+
+                <h3>Profile with a Script</h3>
+                <pre><code># From command line (easiest way)
+python -m cProfile -s cumtime myscript.py
+
+# -s cumtime : sort by cumulative time (slowest overall)
+# -s tottime : sort by total time in function itself
+# -s calls   : sort by number of calls
+# -o profile.out : save to file instead of printing</code></pre>
+
+                <h3>Pretty Print with pstats</h3>
+                <pre><code>import cProfile
+import pstats
+
+profile = cProfile.Profile()
+profile.enable()
+
+# Your code here
+slow_function()
+
+profile.disable()
+
+stats = pstats.Stats(profile)
+stats.strip_dirs()
+stats.sort_stats('cumulative')
+stats.print_stats(10)  # Top 10 slowest functions</code></pre>
+
+                <h2>5. line_profiler: See Time Per Line</h2>
+
+                <p><code>cProfile</code> tells you which functions are slow. <code>line_profiler</code> tells you which <em>lines</em> are slow within a function.</p>
+
+                <pre><code># Install first: pip install line_profiler
+
+# myscript.py
+import line_profiler
+
+@profile  # Special decorator for line_profiler
+def build_report(data):
+    # Line 1: Sort the data
+    sorted_data = sorted(data, key=lambda x: x["value"])
+
+    # Line 2: Calculate totals
+    totals = {}
+    for item in sorted_data:
+        category = item["category"]
+        if category not in totals:
+            totals[category] = 0
+        totals[category] += item["value"]
+
+    # Line 3: Build output
+    report_lines = []
+    for cat, total in totals.items():
+        report_lines.append(f"{cat}: ${total:.2f}")
+
+    return "\n".join(report_lines)
+
+# Run: kernprof -l -v myscript.py
+# This shows time spent on EACH line of the @profile function</code></pre>
+
+                <h2>6. Finding Memory Leaks with tracemalloc</h2>
+
+                <p>Memory leaks in Python happen when objects aren't garbage collected — often from circular references, caches that grow forever, or holding onto data you don't need.</p>
+
+                <pre><code>import tracemalloc
+
+# Start tracking memory
+tracemalloc.start()
+
+# Simulate a memory leak
+cache = {}
+def leaky_function():
+    for i in range(100000):
+        cache[i] = "x" * 1000  # Each entry = 1KB, never freed
+
+leaky_function()
+
+# Take a snapshot and compare
+snapshot = tracemalloc.take_snapshot()
+top_stats = snapshot.statistics('lineno')
+
+print("[ Top 10 memory allocations ]")
+for stat in top_stats[:10]:
+    print(stat)
+
+# Output:
+# myscript.py:10: size=97.7 MiB, count=100000, average=1000 B
+#   (showing the exact line allocating the most memory)
+
+# Compare two snapshots (before and after)
+snapshot1 = tracemalloc.take_snapshot()
+leaky_function()
+snapshot2 = tracemalloc.take_snapshot()
+
+top_stats = snapshot2.compare_to(snapshot1, 'lineno')
+for stat in top_stats[:5]:
+    print(stat)
+    # Shows: myscript.py:10: +97.7 MiB</code></pre>
+
+                <h2>7. Building a Complete Debugging Workflow</h2>
+
+                <p>Here's a production-ready debugging setup combining everything we've learned:</p>
+
+                <pre><code># debug_utils.py — Add this to any project
+import os
+import sys
+import logging
+import tracemalloc
+
+# --- Debug flag ---
+DEBUG = os.environ.get("DEBUG") == "1"
+PROFILE = os.environ.get("PROFILE") == "1"
+
+# --- Smart logger ---
+logger = logging.getLogger("myapp")
+logger.setLevel(logging.DEBUG if DEBUG else logging.INFO)
+handler = logging.StreamHandler(sys.stderr)
+handler.setFormatter(logging.Formatter(
+    '%(asctime)s | %(levelname)-8s | %(name)s | %(message)s'
+))
+logger.addHandler(handler)
+
+# --- Debug print helper ---
+def dprint(*args, **kwargs):
+    """Only prints when DEBUG=1"""
+    if DEBUG:
+        print(*args, **kwargs, file=sys.stderr)
+
+# --- Memory tracker ---
+if PROFILE:
+    tracemalloc.start()
+    logger.info("Memory tracking enabled")
+
+def get_memory_report():
+    """Print top memory allocations"""
+    if not tracemalloc.is_tracing():
+        return
+    snapshot = tracemalloc.take_snapshot()
+    top = snapshot.statistics('lineno')[:10]
+    logger.info("=== Top memory allocations ===")
+    for stat in top:
+        logger.info(f"  {stat}")
+
+# --- Usage in your app ---
+def main():
+    logger.info("Application starting")
+
+    items = [{"name": f"item_{i}", "value": i} for i in range(100)]
+    dprint(f"Loaded {len(items)} items")
+
+    # Process...
+    total = sum(item["value"] for item in items)
+    logger.debug(f"Calculated total: {total}")
+
+    get_memory_report()
+    logger.info("Application complete")
+
+if __name__ == "__main__":
+    main()</code></pre>
+
+                <h2>Summary: Your Debugging Toolkit</h2>
+
+                <table>
+                    <tr><th>Tool</th><th>Use When</th><th>Command</th></tr>
+                    <tr><td><code>print()</code></td><td>Quick, exploratory debugging</td><td><code>print(f"{var=}")</code></td></tr>
+                    <tr><td><code>breakpoint()</code></td><td>Interactive stepping through code</td><td>Pause, inspect, step</td></tr>
+                    <tr><td><code>python -m pdb</code></td><td>Post-mortem crash analysis</td><td><code>python -m pdb myscript.py</code></td></tr>
+                    <tr><td><code>logging</code></td><td>Production debugging with levels</td><td><code>logger.debug(msg)</code></td></tr>
+                    <tr><td><code>cProfile</code></td><td>Find slow functions</td><td><code>python -m cProfile script.py</code></td></tr>
+                    <tr><td><code>line_profiler</code></td><td>Find slow lines within functions</td><td><code>kernprof -l -v script.py</code></td></tr>
+                    <tr><td><code>tracemalloc</code></td><td>Find memory leaks</td><td>Enable in code, take snapshots</td></tr>
+                </table>
+
+                <p>Start with <code>print()</code> for quick fixes, graduate to <code>breakpoint()</code> for complex bugs, and always profile before optimizing. Happy debugging! 🐛🔍</p>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes. Built with ❤️ and Python.</p>
+        </div>
+    </footer>
+
+    <script src="../theme.js"></script>
+</body>
+</html>

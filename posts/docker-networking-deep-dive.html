@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docker Networking Deep Dive: Containers That Communicate — Complete Guide | Hugo's Dev Notes</title>
+    <link rel="canonical" href="https://blog.hugow.dev/posts/docker-networking-deep-dive.html">
+    <link rel="stylesheet" href="../style.css">
+
+    <meta name="description" content="Understand Docker networking from scratch — bridge networks, host mode, container linking, DNS resolution, multi-host networking, and docker-compose networks. Working examples for every topology.">
+    <meta name="keywords" content="docker networking, docker bridge, docker compose network, container dns, docker host network, docker macvlan">
+    <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="Docker Networking Deep Dive: Containers That Communicate">
+    <meta property="og:description" content="Understand Docker networking from scratch — bridge networks, host mode, container linking, DNS resolution, and docker-compose networks.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.hugow.dev/posts/docker-networking-deep-dive.html">
+    <meta property="og:site_name" content="Hugo's Dev Notes">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Docker Networking Deep Dive: Containers That Communicate">
+    <meta name="twitter:description" content="Master Docker networking — bridge, host, custom networks, and DNS resolution.">
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "headline": "Docker Networking Deep Dive: Containers That Communicate — Complete Guide",
+      "description": "Understand Docker networking from scratch — bridge networks, host mode, DNS resolution, and docker-compose networks.",
+      "datePublished": "2026-07-09",
+      "dateModified": "2026-07-09",
+      "author": {"@type": "Person", "name": "Hugo Wong"},
+      "publisher": {"@type": "Organization", "name": "Hugo's Dev Notes", "url": "https://blog.hugow.dev"},
+      "mainEntityOfPage": "https://blog.hugow.dev/posts/docker-networking-deep-dive.html"
+    }
+    </script>
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-full">
+            <div class="post-header">
+                <div class="post-tags">
+                    <span class="tag devops">DevOps</span>
+                </div>
+                <h1>Docker Networking Deep Dive: Containers That Communicate — Complete Guide</h1>
+                <div class="post-meta">
+                    <span class="post-date">July 9, 2026</span>
+                    <span class="read-time">10 min read</span>
+                </div>
+            </div>
+
+            <div class="post-content">
+                <p>When containers can't reach each other, or your app can't access the internet, the culprit is almost always networking. Docker manages networks automatically, but understanding <em>how</em> they work is the difference between "it works on my machine" and production-ready deployments. This guide covers every Docker network driver, DNS resolution, port mapping, and the networking magic inside <code>docker-compose</code>.</p>
+
+                <h2 id="network-drivers">1. Docker Network Drivers</h2>
+                <p>Docker ships with five network drivers, each designed for a specific use case:</p>
+
+                <table class="code-table">
+                    <tr><th>Driver</th><th>Use Case</th><th>Multi-host?</th></tr>
+                    <tr><td><code>bridge</code></td><td>Default — containers on one host</td><td>No</td></tr>
+                    <tr><td><code>host</code></td><td>Remove isolation — use host network</td><td>N/A</td></tr>
+                    <tr><td><code>none</code></td><td>No networking at all</td><td>No</td></tr>
+                    <tr><td><code>overlay</code></td><td>Containers across multiple Docker hosts</td><td>Yes (swarm)</td></tr>
+                    <tr><td><code>macvlan</code></td><td>Assign real MAC addresses</td><td>Yes</td></tr>
+                </table>
+
+                <h2 id="bridge-network">2. The Default Bridge Network</h2>
+                <p>When you run <code>docker run</code> without <code>--network</code>, Docker places the container on the default <code>bridge</code> network:</p>
+
+                <pre><code># See all networks
+docker network ls
+
+# Inspect the default bridge
+docker network inspect bridge
+
+# Run a container on the default bridge (implicit)
+docker run -d --name web nginx
+
+# Connect to it from the host
+curl http://localhost
+
+# But OTHER containers can't resolve it by name on the default bridge!</code></pre>
+                <p>The default bridge provides NAT (containers can reach the internet) but containers <strong>cannot discover each other by name</strong>. You must use <code>--link</code> (deprecated) or IP addresses to communicate between containers on the default bridge.</p>
+
+                <h2 id="custom-bridge">3. Custom Bridge Networks — DNS Auto-Discovery</h2>
+                <p>Custom bridge networks solve the name resolution problem. Containers on the same custom network can reach each other by container name:</p>
+
+                <pre><code># Create a custom bridge network
+docker network create mynet
+
+# Run containers on it
+docker run -d --name db --network mynet postgres:15
+docker run -d --name web --network mynet \
+    -e DATABASE_HOST=db \
+    nginx
+
+# Now "web" can resolve "db" to its IP address
+docker exec web ping db
+# PING db (172.18.0.2): 56 data bytes
+
+# Connect a running container to a network
+docker network connect mynet existing_container</code></pre>
+                <p><strong>Key insight:</strong> Docker provides an embedded DNS server on every custom bridge network. Container names are automatically registered as DNS entries. This is the foundation of <code>docker-compose</code> service discovery.</p>
+
+                <h2 id="host-mode">4. Host Network Mode</h2>
+                <p>Host mode removes all network isolation — the container shares the host's network namespace:</p>
+
+                <pre><code># Container uses the host's IP and ports directly
+docker run -d --network host nginx
+
+# The container IS the host — no port mapping needed
+# If nginx listens on port 80, it's on host port 80
+curl http://localhost
+
+# Useful for: high-throughput apps, network tools, monitoring
+# NOT useful for: running multiple services on same port</code></pre>
+                <p>Host mode is faster (no NAT overhead) but you can't run two containers on the same port. It's common in monitoring stacks (Prometheus, cAdvisor) and high-performance scenarios.</p>
+
+                <h2 id="port-mapping">5. Port Mapping: Publishing Container Ports</h2>
+                <p>By default, containers are isolated. Port mapping bridges the gap:</p>
+
+                <pre><code># -p host_port:container_port
+docker run -d --name web -p 8080:80 nginx
+
+# Access on host:port
+curl http://localhost:8080
+
+# Bind to specific interface
+docker run -d -p 127.0.0.1:8080:80 nginx
+# Only accessible from localhost, not from other machines
+
+# Multiple port mappings
+docker run -d -p 8080:80 -p 8443:443 myapp
+
+# Random host port (Docker picks one)
+docker run -d -p 80 nginx
+docker port web  # Shows which host port was assigned
+
+# UDP ports
+docker run -d -p 5353:5353/udp dns-server</code></pre>
+
+                <h2 id="docker-compose">6. Docker Compose Networking</h2>
+                <p><code>docker-compose</code> creates a network automatically and connects all services to it:</p>
+
+                <pre><code># docker-compose.yml
+services:
+  web:
+    image: nginx
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+
+  api:
+    image: node:18
+    command: node server.js
+    environment:
+      DB_HOST: db        # DNS resolves to the "db" container
+      REDIS_HOST: redis  # DNS resolves to the "redis" container
+
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_PASSWORD: secret
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    # No ports exposed — only accessible from other containers
+
+volumes:
+  db_data:</code></pre>
+                <p>All four services are on the same network. <code>web</code> can reach <code>api</code> by hostname, <code>api</code> can reach both <code>db</code> and <code>redis</code>. Only <code>web</code> exposes a port to the host.</p>
+
+                <h3>Multiple Networks in Compose</h3>
+                <p>Isolate services with multiple networks — a common production pattern:</p>
+
+                <pre><code>services:
+  # Public-facing (accessible from host)
+  web:
+    image: nginx
+    ports:
+      - "8080:80"
+    networks:
+      - frontend
+      - backend
+
+  # Backend service (not directly exposed)
+  api:
+    image: node:18
+    networks:
+      - frontend
+      - backend
+
+  # Database (only accessible from backend)
+  db:
+    image: postgres:15
+    networks:
+      - backend
+
+networks:
+  frontend:  # web &amp; api
+  backend:   # web, api &amp; db</code></pre>
+                <p>The <code>db</code> container is on the <code>backend</code> network only. Even if someone attacks the <code>web</code> container on the <code>frontend</code> network, they cannot reach <code>db</code>. This is network segmentation — a core security practice.</p>
+
+                <h2 id="dns">7. Docker DNS Resolution Details</h2>
+                <p>Docker's embedded DNS server provides more than basic name resolution:</p>
+
+                <pre><code># Get a container's IP address
+docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' web
+
+# Resolve DNS from inside a container
+docker exec web nslookup api
+# Server:    127.0.0.11
+# Address:   127.0.0.11#53
+# Name:      api
+# Address:   172.19.0.3
+
+# Containers resolve by:
+# 1. Service name (docker-compose)
+# 2. Container name (--name flag)
+# 3. Full network alias
+# 4. External DNS (falls through to /etc/resolv.conf)</code></pre>
+                <p>Docker's DNS server listens at <code>127.0.0.11</code> inside containers. It resolves container names on the same network, then forwards to the host's DNS resolver for external domains.</p>
+
+                <h3>Network Aliases</h3>
+                <p>Give containers multiple DNS names for flexible naming:</p>
+
+                <pre><code># docker-compose.yml
+services:
+  db:
+    image: postgres:15
+    networks:
+      backend:
+        aliases:
+          - database
+          - postgres
+          - db-primary</code></pre>
+                <p>Now <code>db</code>, <code>database</code>, <code>postgres</code>, and <code>db-primary</code> all resolve to the same container. This lets you rename services without updating every connection string.</p>
+
+                <h2 id="network-isolation">8. Network Isolation and Security</h2>
+                <p>Docker provides several mechanisms to isolate and secure container networks:</p>
+
+                <pre><code># Create an isolated network (no internet access for containers)
+docker network create --internal isolated
+
+# Containers on this network can talk to each other
+# but CANNOT reach the internet
+docker run -d --network isolated --name app myapp
+
+# Create with specific subnet (useful for IP-based rules)
+docker network create \
+    --driver bridge \
+    --subnet 172.20.0.0/16 \
+    --gateway 172.20.0.1 \
+    appnet
+
+# Disconnect a container from a network (runtime)
+docker network disconnect mynet suspicious_container
+
+# Inspect what's connected
+docker network inspect mynet</code></pre>
+
+                <h2 id="troubleshooting">9. Troubleshooting Docker Networks</h2>
+                <p>When containers can't reach each other, follow this checklist:</p>
+
+                <pre><code># 1. Verify the container is on the right network
+docker inspect --format='{{range $net, $config := .NetworkSettings.Networks}}{{$net}} {{end}}' container_name
+
+# 2. Check DNS resolution from inside the container
+docker exec web ping db
+docker exec web nslookup api
+
+# 3. Check port mappings
+docker port web
+docker ps --format "{{.Names}}: {{.Ports}}"
+
+# 4. Verify the target service is actually running
+docker logs db
+docker exec db pg_isready
+
+# 5. Check for firewall rules on the host
+sudo iptables -L -n | grep docker
+
+# 6. Test from the host
+curl http://localhost:8080
+curl http://db_ip:5432
+
+# 7. Inspect full network config
+docker network inspect mynet
+docker network inspect bridge</code></pre>
+
+                <h2 id="practical-stack">10. Practical: Three-Tier Application Stack</h2>
+                <p>Let's combine everything into a production-like <code>docker-compose</code> setup:</p>
+
+                <pre><code># docker-compose.yml — Three-tier with network isolation
+services:
+  # Reverse proxy + CDN
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    networks:
+      - proxy
+      - app
+    depends_on:
+      - app
+    restart: unless-stopped
+
+  # Application server
+  app:
+    build: ./app
+    environment:
+      DATABASE_URL: postgresql://user:pass@db:5432/myapp
+      REDIS_URL: redis://cache:6379
+    networks:
+      - proxy
+      - app
+      - data
+    depends_on:
+      db:
+        condition: service_healthy
+      cache:
+        condition: service_started
+    restart: unless-stopped
+
+  # Database (isolated — no public network)
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: myapp
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user"]
+      interval: 10s
+      timeout: 5s
+    restart: unless-stopped
+
+  # Redis cache (isolated — no public network)
+  cache:
+    image: redis:7-alpine
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    networks:
+      - data
+    restart: unless-stopped
+
+networks:
+  proxy:  # nginx &amp; app — handles incoming traffic
+  app:    # nginx &amp; app — internal API calls
+  data:   # app, db, cache — backend data layer
+
+volumes:
+  pgdata:</code></pre>
+                <p>This setup gives you three security layers: the <code>proxy</code> network handles public traffic, <code>app</code> handles service-to-service communication, and <code>data</code> isolates your databases. An attacker on the <code>proxy</code> network cannot reach <code>db</code> or <code>cache</code> directly.</p>
+
+                <h2 id="summary">Summary</h2>
+                <ul>
+                    <li><strong>Default bridge:</strong> quick start, no DNS between containers</li>
+                    <li><strong>Custom bridge:</strong> automatic DNS resolution — use these!</li>
+                    <li><strong>docker-compose:</strong> creates custom bridge + DNS automatically</li>
+                    <li><strong>Host mode:</strong> maximum performance, no isolation</li>
+                    <li><strong>Multiple networks:</strong> segment traffic for security</li>
+                    <li><strong>Port mapping:</strong> <code>-p host:container</code> bridges external access</li>
+                    <li><strong>Internal networks:</strong> block internet access with <code>--internal</code></li>
+                    <li><strong>Network aliases:</strong> give containers multiple DNS names</li>
+                </ul>
+
+                <p>Docker networking transforms containers from isolated boxes into a connected system. Understanding these concepts means you can design secure, maintainable architectures instead of fighting mysterious connectivity issues. Start with custom bridge networks and <code>docker-compose</code> — they handle 95% of development and staging scenarios.</p>
+
+                <div class="related-posts">
+                    <h3>Related Posts</h3>
+                    <ul>
+                        <li><a href="docker-compose-local-dev.html">Docker Compose for Local Development</a></li>
+                        <li><a href="docker-basics.html">Docker Basics for Beginners</a></li>
+                        <li><a href="docker-compose-production.html">Docker Compose in Production</a></li>
+                    </ul>
+                </div>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Hugo's Dev Notes. Built with practical tutorials.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Progress bar
+        window.addEventListener('scroll', () => {
+            const winScroll = document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + '%';
+        });
+
+        // Theme toggle
+        const toggle = document.getElementById('themeToggle');
+        if (toggle) {
+            const saved = localStorage.getItem('theme');
+            if (saved) document.body.setAttribute('data-theme', saved);
+            toggle.addEventListener('click', () => {
+                const current = document.body.getAttribute('data-theme') || 'dark';
+                const next = current === 'dark' ? 'light' : 'dark';
+                document.body.setAttribute('data-theme', next);
+                localStorage.setItem('theme', next);
+            });
+        }
+    </script>
+</body>
+</html>

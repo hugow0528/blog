@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python os and pathlib Modules: Navigate and Manage Filesystems | Hugo's Dev Notes</title>
+    <meta name="description" content="Master Python's os and pathlib modules for file and directory operations. Learn path manipulation, file discovery, walking directories, creating/copying/removing files, and choosing between os.path and pathlib. Beginner-friendly guide with working code.">
+    <meta name="keywords" content="Python os module, pathlib, file operations, directory listing, walk, glob, file path, Python beginner, filesystem">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-os-pathlib.html">
+    <link rel="stylesheet" href="../style.css">
+
+    <!-- SEO Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "headline": "Python os and pathlib Modules: Navigate and Manage Filesystems",
+      "description": "Master Python's os and pathlib modules for file and directory operations — path manipulation, file discovery, walking directories, creating/copying/removing files, and choosing between os.path and pathlib.",
+      "datePublished": "2026-07-09",
+      "dateModified": "2026-07-09",
+      "author": {"@type": "Person", "name": "Hugo Wong"},
+      "publisher": {"@type": "Organization", "name": "Hugo's Dev Notes", "url": "https://blog.hugow.dev"},
+      "keywords": "Python"
+    }
+    </script>
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="Python os and pathlib Modules: Navigate and Manage Filesystems">
+    <meta property="og:description" content="Master Python's os and pathlib modules for file and directory operations — path manipulation, file discovery, walking directories, and more.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.hugow.dev/posts/python-os-pathlib.html">
+    <meta property="og:site_name" content="Hugo's Dev Notes">
+    <meta property="article:published_time" content="2026-07-09">
+    <meta property="article:modified_time" content="2026-07-09">
+    <meta property="article:section" content="python">
+    <meta property="article:tag" content="Python">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Python os and pathlib Modules: Navigate and Manage Filesystems">
+    <meta name="twitter:description" content="Master Python's os and pathlib modules for file and directory operations.">
+    
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+        <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">🏠 Home</a>
+                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
+                <a href="../python.html" class="nav-btn">🐍 Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
+                <a href="../devops.html" class="nav-btn">🐳 DevOps</a>
+                <a href="../security.html" class="nav-btn">🔐 Security</a>
+                <a href="../webdev.html" class="nav-btn">💻 Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+        
+        <article class="post-content">
+            <span class="tag python">Python</span>
+            <h1>Python os and pathlib Modules: Navigate and Manage Filesystems</h1>
+            <time>July 9, 2026 · 10 min read</time>
+
+            <p>Every Python developer needs to work with the filesystem — whether finding configuration files, listing project directories, cleaning up temporary data, or building tools that process files in bulk. Python gives you two powerful built-in modules for this: <code>os</code> (and <code>os.path</code>) and <code>pathlib</code>. In this guide, we'll explore both approaches so you can choose the right tool for every task.</p>
+
+            <h2>The Two Schools: os.path vs pathlib</h2>
+
+            <p>Python has had two ways to work with file paths. Understanding both is important because you'll encounter <code>os.path</code> in older codebases and <code>pathlib</code> in modern ones.</p>
+
+            <h3>os.path (String-Based, Since Python 1.5)</h3>
+
+            <p>The <code>os.path</code> module treats paths as strings. Every operation takes strings and returns strings:</p>
+
+            <pre><code>import os.path
+
+path = "home/user/documents/report.pdf"
+
+# Get the directory name
+directory = os.path.dirname(path)
+print(directory)  # "home/user/documents"
+
+# Get the file name
+filename = os.path.basename(path)
+print(filename)  # "report.pdf"
+
+# Join path parts (handles slashes correctly)
+full = os.path.join("home", "user", "documents", "report.pdf")
+print(full)  # "home/user/documents/report.pdf" (Unix)
+
+# Split into (path, extension)
+name, ext = os.path.splitext(path)
+print(name)  # "home/user/documents/report"
+print(ext)   # ".pdf"
+
+# Check if file/directory exists
+print(os.path.exists(path))    # True or False
+print(os.path.isfile(path))    # True if it's a file
+print(os.path.isdir(path))     # True if it's a directory
+
+# Get file size in bytes
+size = os.path.getsize(path)
+print(f"Size: {size} bytes")</code></pre>
+
+            <h3>pathlib (Object-Based, Since Python 3.4)</h3>
+
+            <p>The <code>pathlib</code> module treats paths as objects with methods. This is the modern, recommended approach:</p>
+
+            <pre><code>from pathlib import Path
+
+path = Path("home/user/documents/report.pdf")
+
+# Properties replace functions
+print(path.parent)       # PosixPath('home/user/documents')
+print(path.name)         # "report.pdf"
+print(path.stem)         # "report"
+print(path.suffix)       # ".pdf"
+print(path.suffixes)     # [".pdf"] (for "file.tar.gz")
+
+# Joining paths uses the / operator
+full = Path("home") / "user" / "documents" / "report.pdf"
+print(full)  # PosixPath('home/user/documents/report.pdf')
+
+# Checking existence
+print(path.exists())    # True or False
+print(path.is_file())   # True if it's a file
+print(path.is_dir())    # True if it's a directory
+
+# File size
+print(path.stat().st_size)  # Size in bytes</code></pre>
+
+            <p>The <code>pathlib</code> approach reads more naturally and is less error-prone. You chain methods instead of nesting function calls.</p>
+
+            <h2>Listing Directory Contents</h2>
+
+            <p>Listing files in a directory is one of the most common filesystem operations. Both modules handle it well:</p>
+
+            <h3>Using os.listdir()</h3>
+
+            <pre><code>import os
+
+# List everything in the current directory
+items = os.listdir(".")
+print(items)
+# ['script.py', 'data.csv', 'output/', 'README.md']
+
+# List with full paths
+for item in os.listdir("/tmp"):
+    full_path = os.path.join("/tmp", item)
+    print(full_path)
+
+# Filter for specific extensions
+python_files = [f for f in os.listdir(".") if f.endswith(".py")]
+print(python_files)  # ['script.py', 'utils.py']</code></pre>
+
+            <h3>Using pathlib's iterdir() and glob()</h3>
+
+            <pre><code>from pathlib import Path
+
+# List everything
+items = Path(".").iterdir()
+for item in items:
+    print(item)
+
+# Filter by name pattern (glob)
+python_files = Path(".").glob("*.py")
+for f in python_files:
+    print(f.name)  # just the filename
+
+# Recursive glob (all .py files in subdirectories too)
+all_python = Path(".").rglob("*.py")
+for f in all_python:
+    print(f)  # prints full relative path
+
+# Multiple patterns
+configs = list(Path(".").glob("*.json")) + list(Path(".").glob("*.yaml"))
+print(f"Found {len(configs)} config files")</code></pre>
+
+            <h2>Walking Directory Trees Recursively</h2>
+
+            <p>When you need to process every file in a directory and all its subdirectories, use <code>os.walk()</code> or <code>Path.rglob()</code>:</p>
+
+            <h3>Using os.walk()</h3>
+
+            <pre><code>import os
+
+# Walk yields (dirpath, subdirectories, files) for each directory
+for dirpath, dirnames, filenames in os.walk("my_project"):
+    print(f"Directory: {dirpath}")
+    for filename in filenames:
+        filepath = os.path.join(dirpath, filename)
+        print(f"  File: {filepath}")
+
+# Walk only .txt files and print their sizes
+for dirpath, _, filenames in os.walk("documents"):
+    for filename in filenames:
+        if filename.endswith(".txt"):
+            filepath = os.path.join(dirpath, filename)
+            size = os.path.getsize(filepath)
+            print(f"{filepath}: {size} bytes")
+
+# Skip certain directories (modify dirnames in-place)
+for dirpath, dirnames, filenames in os.walk("my_project"):
+    # Skip hidden directories and __pycache__
+    dirnames[:] = [d for d in dirnames if not d.startswith(".") and d != "__pycache__"]
+    for filename in filenames:
+        print(os.path.join(dirpath, filename))</code></pre>
+
+            <h3>Using pathlib.rglob()</h3>
+
+            <pre><code>from pathlib import Path
+
+# Simple recursive search — all files
+all_files = list(Path("my_project").rglob("*"))
+for f in all_files:
+    if f.is_file():
+        print(f"{f}: {f.stat().st_size} bytes")
+
+# Find all test files
+test_files = list(Path("my_project").rglob("test_*.py"))
+for f in test_files:
+    print(f)
+
+# Find Markdown files and count words
+for md_file in Path(".").rglob("*.md"):
+    text = md_file.read_text()
+    word_count = len(text.split())
+    print(f"{md_file.name}: {word_count} words")</code></pre>
+
+            <h2>Creating, Copying, and Removing Files</h2>
+
+            <p>Filesystem manipulation goes beyond reading — you'll often need to create directories, copy files, or clean up temporary data.</p>
+
+            <h3>Creating Directories</h3>
+
+            <pre><code>from pathlib import Path
+import os
+
+# pathlib: create directory (and parents if needed)
+config_dir = Path("config/database")
+config_dir.mkdir(parents=True, exist_ok=True)
+# parents=True creates intermediate dirs (like mkdir -p)
+# exist_ok=True prevents error if directory already exists
+
+# os equivalent: creates intermediate dirs
+os.makedirs("config/database", exist_ok=True)
+
+# Create a file (touch)
+(Path("config/database") / "settings.json").touch()
+
+# Write content directly
+(Path("config/database") / "settings.json").write_text(
+    '{"host": "localhost", "port": 5432}'
+)</code></pre>
+
+            <h3>Reading and Writing Files with pathlib</h3>
+
+            <pre><code>from pathlib import Path
+
+# Read entire file as text
+text = Path("notes.txt").read_text()
+
+# Read as bytes (for images, binaries)
+data = Path("logo.png").read_bytes()
+
+# Write text
+Path("output.txt").write_text("Hello, World!\n")
+
+# Append text
+Path("output.txt").write_text(Path("output.txt").read_text() + "New line\n")
+
+# Read lines into a list
+lines = Path("notes.txt").read_text().splitlines()
+print(f"Found {len(lines)} lines")</code></pre>
+
+            <h3>Copying and Moving Files</h3>
+
+            <pre><code>from pathlib import Path
+import shutil
+
+src = Path("data/report.csv")
+dst = Path("backup/report.csv")
+
+# Copy file
+shutil.copy(src, dst)
+
+# Copy entire directory tree
+shutil.copytree("my_project", "my_project_backup")
+
+# Move (rename) a file
+src.rename(Path("archive") / src.name)
+
+# Remove a single file
+Path("temp.txt").unlink()
+
+# Remove empty directory
+Path("empty_folder").rmdir()
+
+# Remove directory tree (BE CAREFUL!)
+shutil.rmtree("unwanted_folder")</code></pre>
+
+            <h2>Working with Environment Variables and Paths</h2>
+
+            <p>The <code>os</code> module also handles environment variables and system information — things that <code>pathlib</code> doesn't cover:</p>
+
+            <pre><code>import os
+
+# Get environment variables
+home = os.environ.get("HOME")  # or os.getenv("HOME")
+print(f"Home directory: {home}")
+
+# Safe access with default value
+db_host = os.getenv("DB_HOST", "localhost")
+db_port = int(os.getenv("DB_PORT", "5432"))
+
+# Get the current working directory
+cwd = os.getcwd()
+print(f"Working in: {cwd}")
+
+# Change directory
+os.chdir("/tmp")
+
+# Get special path info
+print(os.name)           # 'posix' (Linux/Mac) or 'nt' (Windows)
+print(os.cpu_count())    # Number of CPU cores
+print(os.getpid())       # Current process ID
+
+# Expand user home (~)
+expanded = os.path.expanduser("~/documents")
+print(expanded)  # "/home/user/documents"</code></pre>
+
+            <h2>Practical Example: Project File Analyzer</h2>
+
+            <p>Let's combine everything into a practical script that analyzes a Python project — counting files, calculating total size, and generating a summary report:</p>
+
+            <pre><code>from pathlib import Path
+from collections import Counter
+
+def analyze_project(project_dir="."):
+    """Analyze a project directory and print statistics."""
+    project = Path(project_dir)
+    
+    # Track file types and total size
+    extensions = Counter()
+    total_size = 0
+    file_count = 0
+    dir_count = 0
+    
+    for filepath in project.rglob("*"):
+        if filepath.is_file():
+            extensions[filepath.suffix or "(no extension)"] += 1
+            total_size += filepath.stat().st_size
+            file_count += 1
+        elif filepath.is_dir():
+            dir_count += 1
+    
+    # Print report
+    print(f"\n{'='*50}")
+    print(f"Project Analysis: {project.name}")
+    print(f"{'='*50}")
+    print(f"Directories: {dir_count}")
+    print(f"Files:       {file_count}")
+    print(f"Total size:  {total_size / 1024:.1f} KB")
+    print(f"\nFile types:")
+    for ext, count in extensions.most_common():
+        print(f"  {ext:15} {count}")
+    print()
+
+# Run it
+analyze_project(".")
+analyze_project("my_project")</code></pre>
+
+            <p>Output:</p>
+
+            <pre><code>==================================================
+Project Analysis: my_project
+==================================================
+Directories: 8
+Files:       42
+Total size:  156.3 KB
+
+File types:
+  .py           28
+  .md           3
+  .json         4
+  .txt          2
+  (no extension)  3
+  .yml          2</code></pre>
+
+            <h2>Which Should You Use: os.path or pathlib?</h2>
+
+            <p>Here's a simple decision guide:</p>
+
+            <ul>
+                <li><strong>Use pathlib</strong> for everyday path manipulation, file I/O, and glob patterns. It's cleaner, more Pythonic, and the modern standard.</li>
+                <li><strong>Use os.path</strong> when working with legacy code or when you specifically need string paths (some older libraries expect strings).</li>
+                <li><strong>Use os</strong> for environment variables (<code>os.environ</code>), process info (<code>os.getpid()</code>), and system calls (<code>os.chdir()</code>, <code>os.system()</code>).</li>
+                <li><strong>Use shutil</strong> for copying/moving files and directories — neither os nor pathlib handles this well.</li>
+            </ul>
+
+            <blockquote>
+                <p><strong>Pro tip:</strong> If you need a string from a pathlib Path, just use <code>str(path)</code>. If you need a Path from a string, use <code>Path(string)</code>. Converting between them is trivial.</p>
+            </blockquote>
+
+            <h2>Common Pitfalls to Avoid</h2>
+
+            <p>Here are mistakes beginners make when working with paths:</p>
+
+            <pre><code># ❌ Don't concatenate paths with string formatting
+bad_path = "./data/" + filename  # breaks on Windows, fails with trailing slashes
+
+# ✅ Use pathlib's / operator
+good_path = Path("./data") / filename
+
+# ❌ Don't hardcode directory separators
+bad_path = "home/user/data"  # works on Linux, breaks on Windows
+
+# ✅ Let Python handle the separator
+good_path = Path("home") / "user" / "data"
+
+# ❌ Don't forget to handle missing files
+try:
+    data = Path("missing.txt").read_text()
+except FileNotFoundError:
+    print("File not found, creating default...")
+    Path("missing.txt").write_text("default content")</code></pre>
+
+            <h2>Quick Reference Table</h2>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Task</th>
+                        <th>os.path</th>
+                        <th>pathlib</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Join paths</td>
+                        <td><code>os.path.join(a, b)</code></td>
+                        <td><code>a / b</code></td>
+                    </tr>
+                    <tr>
+                        <td>Get directory</td>
+                        <td><code>os.path.dirname(p)</code></td>
+                        <td><code>p.parent</code></td>
+                    </tr>
+                    <tr>
+                        <td>Get filename</td>
+                        <td><code>os.path.basename(p)</code></td>
+                        <td><code>p.name</code></td>
+                    </tr>
+                    <tr>
+                        <td>Check exists</td>
+                        <td><code>os.path.exists(p)</code></td>
+                        <td><code>p.exists()</code></td>
+                    </tr>
+                    <tr>
+                        <td>Read text file</td>
+                        <td><code>open(p).read()</code></td>
+                        <td><code>p.read_text()</code></td>
+                    </tr>
+                    <tr>
+                        <td>List directory</td>
+                        <td><code>os.listdir(dir)</code></td>
+                        <td><code>Path(dir).iterdir()</code></td>
+                    </tr>
+                    <tr>
+                        <td>Recursive glob</td>
+                        <td><code>glob.glob()</code></td>
+                        <td><code>Path.rglob("*.py")</code></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2>Next Steps</h2>
+
+            <p>Now that you understand <code>os</code> and <code>pathlib</code>, try building these practice projects:</p>
+
+            <ul>
+                <li><strong>Duplicate finder:</strong> Scan a directory and find files with identical content using checksums</li>
+                <li><strong>Backup script:</strong> Copy recent files to a backup directory, organized by date</li>
+                <li><strong>Project linter:</strong> Find Python files missing <code>.pyc</code> cache, empty directories, or huge log files</li>
+                <li><strong>Media organizer:</strong> Sort a folder of photos by date, type, and size into organized subdirectories</li>
+            </ul>
+
+            <p>Filesystem operations are a building block for almost every real Python project. Master these tools, and you'll be able to write scripts that manage files, organize data, and automate boring tasks with confidence.</p>
+
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes | Built with ❤️ & AI</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528" target="_blank">GitHub</a>
+                <a href="https://blog.hugow.dev/sitemap.xml">Sitemap</a>
+            </div>
+        </div>
+    </footer>
+    <script>
+        // Theme toggle
+        const themeToggle = document.getElementById('themeToggle');
+        if (themeToggle) {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            if (savedTheme === 'light') {
+                document.body.classList.add('light-mode');
+                themeToggle.textContent = '☀';
+            }
+            themeToggle.addEventListener('click', () => {
+                document.body.classList.toggle('light-mode');
+                const isLight = document.body.classList.contains('light-mode');
+                localStorage.setItem('theme', isLight ? 'light' : 'dark');
+                themeToggle.textContent = isLight ? '☀' : '◐';
+            });
+        }
+        // Progress bar
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            const bar = document.getElementById('progressBar');
+            if (bar) bar.style.width = scrolled + "%";
+        });
+    </script>
+</body>
+</html>

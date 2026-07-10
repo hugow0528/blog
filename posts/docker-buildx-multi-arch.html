@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docker Buildx: Multi-Architecture Image Builds Made Easy | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn Docker Buildx — build container images for multiple architectures (x86, ARM) in one command, use BuildKit features, export to different formats, and create production-grade build pipelines.">
+    <meta name="keywords" content="docker buildx, multi-arch, docker build, BuildKit, ARM64, cross-compile, docker tutorial, devops">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/docker-buildx-multi-arch.html">
+    <link rel="stylesheet" href="../style.css">
+
+    <!-- SEO Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "headline": "Docker Buildx: Multi-Architecture Image Builds Made Easy",
+      "description": "Learn Docker Buildx — build container images for multiple architectures, use BuildKit features, export to different formats.",
+      "datePublished": "2026-07-10",
+      "dateModified": "2026-07-10",
+      "author": {"@type": "Person", "name": "Hugo Wong"},
+      "publisher": {"@type": "Organization", "name": "Hugo's Dev Notes", "url": "https://blog.hugow.dev"},
+      "mainEntityOfPage": {"@id": "https://blog.hugow.dev/posts/docker-buildx-multi-arch.html"},
+      "keywords": "DevOps"
+    }
+    </script>
+
+    <!-- Social Meta -->
+    <meta property="og:title" content="Docker Buildx: Multi-Architecture Image Builds Made Easy">
+    <meta property="og:description" content="Learn Docker Buildx — build container images for multiple architectures, BuildKit features, and advanced build techniques.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.hugow.dev/posts/docker-buildx-multi-arch.html">
+    <meta property="og:site_name" content="Hugo's Dev Notes">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Docker Buildx: Multi-Architecture Image Builds Made Easy">
+    <meta name="twitter:description" content="Build Docker images for x86 and ARM architectures from one machine using Docker Buildx.">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post">
+            <div class="post-tags">
+                <span class="tag devops">DevOps</span>
+            </div>
+
+            <header class="post-header">
+                <h1>Docker Buildx: Multi-Architecture Image Builds Made Easy</h1>
+                <div class="post-meta">
+                    <span class="post-date">July 10, 2026</span>
+                    <span class="post-read-time">11 min read</span>
+                    <span class="post-badge">New</span>
+                </div>
+            </header>
+
+            <div class="post-excerpt">
+                <p>Master Docker Buildx — build images for multiple CPU architectures from a single machine, leverage BuildKit's advanced caching and parallel builds, export to different formats, and set up CI/CD pipelines for production multi-arch deployments.</p>
+            </div>
+
+            <div class="post-content">
+                <p>Most developers build Docker images on their laptop and push them to a registry. But what if your users run different CPU architectures? x86_64 on desktops, ARM64 on Macs with Apple Silicon, ARM on Raspberry Pis and cloud instances?</p>
+
+                <p><strong>Docker Buildx</strong> solves this problem elegantly. It's a CLI plugin that supercharges Docker builds with BuildKit, supporting multi-architecture images, advanced caching, and export to formats beyond Docker.</p>
+
+                <h2>What Is Docker Buildx?</h2>
+
+                <p>Buildx is more than just "build for multiple architectures." It brings several powerful features:</p>
+
+                <ul>
+                    <li><strong>Multi-arch builds</strong> — build for x86_64, ARM64, ARM/v7 from one machine</li>
+                    <li><strong>BuildKit engine</strong> — parallel build stages, better caching, interactive debugging</li>
+                    <li><strong>Bake files</strong> — declarative build configuration like Makefiles</li>
+                    <li><strong>Export to any format</strong> — Docker, OCI, tar, directory, even containerd</li>
+                    <li><strong>Secrets &amp; SSH forwarding</strong> — pass credentials securely without baking them into images</li>
+                </ul>
+
+                <h2>1. Enable Buildx</h2>
+
+                <p>Buildx comes bundled with Docker Desktop. For Linux, enable it:</p>
+
+                <pre><code># Check if Buildx is available
+docker buildx version
+
+# Create a new builder instance with QEMU for cross-platform builds
+docker buildx create --name mybuilder --use --bootstrap
+
+# Register QEMU for emulation (needed for cross-arch builds)
+docker run --privileged --rm tonistiigi/binfmt --install all
+
+# Verify you can build for multiple platforms
+docker buildx inspect --bootstrap</code></pre>
+
+                <h2>2. Multi-Architecture Builds</h2>
+
+                <p>The magic command — build for both x86_64 and ARM64 in one go:</p>
+
+                <pre><code># Build and push multi-arch images
+docker buildx build \
+    --platform linux/amd64,linux/arm64 \
+    --tag myapp:latest \
+    --push \
+    .</code></pre>
+
+                <p>Behind the scenes, Buildx uses QEMU emulation to run ARM64 build steps on your x86_64 machine (or vice versa). The resulting manifest list contains both architectures — Docker pull automatically picks the right one.</p>
+
+                <h3>Dockerfile with Architecture Awareness</h3>
+
+                <pre><code># Dockerfile
+FROM --platform=$BUILDPLATFORM node:20-alpine AS builder
+
+# TARGETPLATFORM is the platform being built FOR
+# BUILDPLATFORM is the platform we're building ON
+ARG TARGETPLATFORM
+ARG BUILDPLATFORM
+
+RUN echo "Building on ${BUILDPLATFORM} for ${TARGETPLATFORM}"
+
+# Install architecture-specific dependencies
+RUN case "${TARGETPLATFORM}" in \
+    linux/amd64)  echo "x86_64 detected" ;; \
+    linux/arm64)  echo "ARM64 detected" ;; \
+    linux/arm/v7) echo "ARM v7 detected" ;; \
+    *) echo "Unknown platform: ${TARGETPLATFORM}" ;; \
+  esac
+
+COPY package*.json ./
+RUN npm ci --only=production
+
+COPY . .
+RUN npm run build
+
+FROM node:20-alpine
+COPY --from=builder /app/dist /app
+WORKDIR /app
+EXPOSE 3000
+CMD ["node", "server.js"]</code></pre>
+
+                <h2>3. Advanced Caching Strategies</h2>
+
+                <p>BuildKit provides powerful cache backends. Never rebuild what you've already built:</p>
+
+                <pre><code># Inline cache (stored in registry with the image)
+docker buildx build \
+    --cache-to type=inline \
+    --cache-from type=registry,ref=myapp:cache \
+    --tag myapp:latest \
+    --push .
+
+# GitHub Actions Cache (fastest for CI)
+docker buildx build \
+    --cache-to type=gha,mode=max \
+    --cache-from type=gha \
+    --tag myapp:latest \
+    --load .
+
+# Local directory cache (for development)
+docker buildx build \
+    --cache-to type=local,dest=/tmp/build-cache \
+    --cache-from type=local,src=/tmp/build-cache \
+    --tag myapp:latest \
+    --load .</code></pre>
+
+                <h2>4. Build Secret Injection</h2>
+
+                <p>Never bake secrets into your Docker image layers. Buildx supports secure secret injection:</p>
+
+                <pre><code># Dockerfile
+FROM node:20-alpine
+RUN --mount=type=secret,id=auth_token \
+    npm config set //registry.npmjs.org/:_authToken $(cat /run/secrets/auth_token) && \
+    npm ci
+
+# Or with SSH agent forwarding
+FROM golang:1.22
+RUN --mount=type=ssh \
+    git clone git@github.com:private/repo.git
+
+# Build with secrets
+docker buildx build \
+    --secret id=auth_token,src=~/.npmrc \
+    --ssh default \
+    --tag myapp:latest \
+    .</code></pre>
+
+                <p>The secrets exist only during the build step and are never written to any image layer.</p>
+
+                <h2>5. Docker Bake: Declarative Build Configuration</h2>
+
+                <p>For complex projects with multiple images, use <code>docker-bake.hcl</code>:</p>
+
+                <pre><code>// docker-bake.hcl
+variable "TAG" {
+  default = "latest"
+}
+
+target "api" {
+  dockerfile = "api/Dockerfile"
+  context    = "api"
+  tags       = ["myapp/api:${TAG}"]
+  platforms  = ["linux/amd64", "linux/arm64"]
+}
+
+target "web" {
+  dockerfile = "web/Dockerfile"
+  context    = "web"
+  tags       = ["myapp/web:${TAG}"]
+  platforms  = ["linux/amd64", "linux/arm64"]
+}
+
+target "db" {
+  dockerfile = "db/Dockerfile"
+  context    = "db"
+  tags       = ["myapp/db:${TAG}"]
+}</code></pre>
+
+                <pre><code># Build all images
+docker buildx bake
+
+# Build with custom tag
+docker buildx bake --set "*.TAG=v1.0.0"
+
+# Push all
+docker buildx bake --push
+
+# Only build the API
+docker buildx bake api</code></pre>
+
+                <h2>6. GitHub Actions CI/CD Pipeline</h2>
+
+                <p>Put it all together in an automated pipeline:</p>
+
+                <pre><code># .github/workflows/build.yml
+name: Build &amp; Push Multi-Arch Images
+
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build &amp; Push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+            ghcr.io/${{ github.repository }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          secrets: |
+            "npm_token=${{ secrets.NPM_TOKEN }}"</code></pre>
+
+                <h2>7. Export to Different Formats</h2>
+
+                <p>Buildx isn't limited to Docker images. Export to other formats:</p>
+
+                <pre><code># Export as OCI image (standard format, smaller)
+docker buildx build --output type=oci,dest=image.tar .
+
+# Export as Docker image
+docker buildx build --output type=docker --load .
+
+# Export as tarball
+docker buildx build --output type=tar,dest=image.tar .
+
+# Export to a directory (for local testing)
+docker buildx build --output type=local,dest=./output .
+
+# Export to containerd
+docker buildx build --output type=containerd,name=myapp:latest .</code></pre>
+
+                <h2>Performance Tips</h2>
+
+                <table>
+                    <tr><th>Tip</th><th>Impact</th></tr>
+                    <tr><td>Use <code>--cache-from type=gha</code> in CI</td><td>70-90% faster rebuilds</td></tr>
+                    <tr><td>Pin base images by digest, not tag</td><td>Reproducible builds</td></tr>
+                    <tr><td>Order Dockerfile commands by change frequency</td><td>Maximize layer caching</td></tr>
+                    <tr><td>Use <code>docker/build-push-action@v5</code> in GitHub Actions</td><td>Built-in BuildKit support</td></tr>
+                    <tr><td>Run QEMU emulation for ARM builds on x86</td><td>2-5x slower, but works</td></tr>
+                    <tr><td>Use a BuildKit node pool for parallel arch builds</td><td>Near-linear scaling</td></tr>
+                </table>
+
+                <h2>Common Gotchas</h2>
+
+                <ul>
+                    <li><strong>QEMU emulation is slow</strong> — ARM builds on x86 can take 3-5x longer. Consider using cloud runners with native ARM support for production pipelines.</li>
+                    <li><strong>Some Dockerfiles assume x86</strong> — check that your base image and dependencies support the target architecture.</li>
+                    <li><strong>Layer caching across platforms</strong> — BuildKit caches layers independently per platform. Share cache with <code>--cache-from type=registry</code>.</li>
+                    <li><strong>Manifest list vs manifest</strong> — multi-arch images use a manifest list. Verify with <code>docker buildx imagetools inspect</code>.</li>
+                </ul>
+
+                <h2>Summary</h2>
+
+                <p>Docker Buildx transforms how you build container images. Multi-architecture builds mean your users on any platform get the right image automatically. BuildKit's caching and parallelism dramatically speed up CI/CD pipelines. And features like secret injection keep your builds secure.</p>
+
+                <p>Start with simple multi-arch builds for your existing Dockerfiles, then explore BuildKit caching, Bake files for complex projects, and automated CI/CD pipelines.</p>
+
+                <blockquote>
+                    <p><strong>Key takeaway:</strong> One Dockerfile, one build command, images for every architecture. Buildx eliminates the "it works on my machine" problem by building natively for every target platform — your users get the right image automatically.</p>
+                </blockquote>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes. Built with ❤️ and Python.</p>
+        </div>
+    </footer>
+
+    <script src="../theme.js"></script>
+</body>
+</html>

@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Error Handling: try/except, Custom Exceptions &amp; Defensive Coding — Hugo's Dev Notes</title>
+    <meta name="description" content="Master Python error handling — try/except/finally, raising exceptions, custom exception classes, retry logic, context managers, and defensive programming patterns. Real code examples for production-grade Python.">
+    <meta name="keywords" content="python error handling, try except, raise, custom exceptions, python tutorial, defensive programming, retry logic">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-error-handling-advanced.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post">
+            <header class="post-header">
+                <div class="post-tags">
+                    <span class="tag python">Python</span>
+                </div>
+                <h1>Python Error Handling: try/except, Custom Exceptions &amp; Defensive Coding</h1>
+                <div class="post-meta">
+                    <span class="post-date">July 8, 2026</span>
+                    <span class="read-time">10 min read</span>
+                </div>
+            </header>
+
+            <div class="post-content">
+                <p>Every Python program encounters errors — invalid input, missing files, network failures, and unexpected data. The difference between a beginner and a professional developer is not whether their code has bugs, but how gracefully it handles them. This guide covers Python error handling from <code>try/except</code> basics to production-grade patterns including custom exceptions, retry logic, and context managers.</p>
+
+                <h2>Why Error Handling Matters</h2>
+                <p>Without proper error handling, a single unexpected value can crash your entire application:</p>
+
+                <pre><code># ❌ Crashes with ZeroDivisionError
+def calculate_discount(price, percentage):
+    return price / (1 - percentage / 100)
+
+calculate_discount(100, 100)  # 💥 Crash!</code></pre>
+
+                <p>With error handling, your program stays alive and gives useful feedback:</p>
+
+                <pre><code># ✅ Graceful handling
+def calculate_discount(price, percentage):
+    if percentage >= 100:
+        raise ValueError("Discount must be less than 100%")
+    if percentage < 0:
+        raise ValueError("Discount cannot be negative")
+    return price / (1 - percentage / 100)
+
+try:
+    result = calculate_discount(100, 100)
+except ValueError as e:
+    print(f"Invalid input: {e}")  # Invalid input: Discount must be less than 100%</code></pre>
+
+                <h2>The try/except/else/finally Structure</h2>
+                <p>Python's exception handling has four parts that work together:</p>
+
+                <pre><code>try:
+    # Code that might raise an exception
+    result = risky_operation()
+except SpecificError as e:
+    # Handle a specific type of error
+    print(f"Got error: {e}")
+except AnotherError:
+    # Handle a different error type
+    print("Something else went wrong")
+except Exception as e:
+    # Catch-all for any other exception
+    print(f"Unexpected error: {e}")
+else:
+    # Runs ONLY if no exception was raised
+    print("Operation succeeded!")
+finally:
+    # ALWAYS runs, whether exception or not
+    print("Cleanup done")</code></pre>
+
+                <p>Each block serves a specific purpose:</p>
+
+                <ul>
+                    <li><strong>try</strong> — The code that might fail</li>
+                    <li><strong>except SpecificError</strong> — Handle expected errors</li>
+                    <li><strong>except Exception</strong> — Catch unexpected errors (use sparingly)</li>
+                    <li><strong>else</strong> — Code that should run on success (avoids accidentally catching exceptions)</li>
+                    <li><strong>finally</strong> — Cleanup that must always happen (closing files, releasing locks)</li>
+                </ul>
+
+                <h2>Catching Specific Exceptions</h2>
+                <p>Always catch the most specific exception you can. Catching a broad <code>Exception</code> masks bugs:</p>
+
+                <pre><code>import json
+
+# ❌ BAD: Catches too much — hides bugs
+try:
+    data = json.loads(user_input)
+except Exception:
+    data = {}
+
+# ✅ GOOD: Catch only what you expect
+try:
+    data = json.loads(user_input)
+except (json.JSONDecodeError, TypeError) as e:
+    print(f"Failed to parse JSON: {e}")
+    data = {}</code></pre>
+
+                <p>Common built-in exceptions you'll encounter:</p>
+
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Exception</th>
+                            <th>When It Occurs</th>
+                            <th>Example</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>ValueError</code></td><td>Wrong value type</td><td><code>int("abc")</code></td></tr>
+                        <tr><td><code>TypeError</code></td><td>Wrong operation for type</td><td><code>"hello" + 5</code></td></tr>
+                        <tr><td><code>KeyError</code></td><td>Missing dict key</td><td><code>d["nonexistent"]</code></td></tr>
+                        <tr><td><code>IndexError</code></td><td>Out of range index</td><td><code>[1,2,3][10]</code></td></tr>
+                        <tr><td><code>FileNotFoundError</code></td><td>Missing file</td><td><code>open("nope.txt")</code></td></tr>
+                        <tr><td><code>AttributeError</code></td><td>Missing attribute</td><td><code>None.method()</code></td></tr>
+                        <tr><td><code>ConnectionError</code></td><td>Network failure</td><td><code>requests.get(url)</code></td></tr>
+                        <tr><td><code>OverflowError</code></td><td>Number too large</td><td><code>float("inf") * 2</code></td></tr>
+                    </tbody>
+                </table>
+
+                <h2>Multiple Exceptions in One Handler</h2>
+                <p>When different exceptions need the same handling, group them:</p>
+
+                <pre><code>def load_config(filepath):
+    try:
+        with open(filepath) as f:
+            return json.load(f)
+    except (FileNotFoundError, PermissionError) as e:
+        # Same fallback for both errors
+        print(f"Cannot read config: {e}")
+        return {"debug": True, "port": 8080}
+    except json.JSONDecodeError as e:
+        # Different handling for malformed JSON
+        print(f"Config file is not valid JSON: {e}")
+        raise  # Re-raise — this is a critical error</code></pre>
+
+                <h2>The raise Statement</h2>
+                <p>Use <code>raise</code> to signal that something went wrong:</p>
+
+                <pre><code>def get_username(user_id):
+    if user_id <= 0:
+        raise ValueError(f"user_id must be positive, got {user_id}")
+    
+    user = database.find(user_id)
+    if user is None:
+        raise LookupError(f"No user found with ID {user_id}")
+    
+    return user.name
+
+# Using it
+try:
+    name = get_username(-5)
+except ValueError as e:
+    print(e)  # user_id must be positive, got -5</code></pre>
+
+                <p>You can also re-raise the current exception (useful in logging before propagation):</p>
+
+                <pre><code>try:
+    connect_to_database()
+except ConnectionError as e:
+    log_error(f"Database connection failed: {e}")
+    # Clean up any partial state
+    close_temp_files()
+    raise  # Re-raise the original exception</code></pre>
+
+                <h2>Chaining Exceptions with raise from</h2>
+                <p>When you catch one exception and raise another, use <code>raise ... from</code> to preserve the original traceback:</p>
+
+                <pre><code>def parse_age(text):
+    try:
+        return int(text)
+    except ValueError as original_error:
+        raise ValueError(f"Age must be a number, got '{text}'") from original_error
+
+try:
+    age = parse_age("twenty")
+except ValueError as e:
+    print(e)           # Age must be a number, got 'twenty'
+    print(e.__cause__) # The original ValueError: invalid literal...</code></pre>
+
+                <p>The <code>from</code> clause creates a chain that shows both errors in the traceback. Without it, the original error is lost.</p>
+
+                <h2>Custom Exception Classes</h2>
+                <p>Create custom exceptions to make your error handling expressive:</p>
+
+                <pre><code># Define application-specific exceptions
+class PaymentError(Exception):
+    """Base exception for payment issues"""
+    pass
+
+class InsufficientFundsError(PaymentError):
+    def __init__(self, balance, amount):
+        self.balance = balance
+        self.amount = amount
+        super().__init__(
+            f"Insufficient funds: balance=${balance:.2f}, "
+            f"requested=${amount:.2f}"
+        )
+
+class CardExpiredError(PaymentError):
+    def __init__(self, card_number, expiry_date):
+        self.card_number = card_number
+        self.expiry_date = expiry_date
+        super().__init__(
+            f"Card ending in {card_number[-4:]} expired on {expiry_date}"
+        )
+
+# Use them
+def process_payment(account, amount):
+    if account.is_expired():
+        raise CardExpiredError(account.card, account.expires)
+    if account.balance < amount:
+        raise InsufficientFundsError(account.balance, amount)
+    account.balance -= amount
+    return True
+
+# Handle specific subtypes
+try:
+    process_payment(my_account, 500)
+except InsufficientFundsError as e:
+    print(f"Ask user to add money: {e.balance - e.amount}")
+except CardExpiredError as e:
+    print("Redirect to card update page")
+except PaymentError as e:
+    # Catch any other payment error
+    print(f"Payment failed: {e}")</code></pre>
+
+                <div class="callout">
+                    <h3>💡 Best Practice: Create an Exception Hierarchy</h3>
+                    <p>Define a base exception for your application, then create specific subclasses. This lets callers catch everything with <code>except AppError</code> or handle specifics with <code>except SpecificError</code>.</p>
+                </div>
+
+                <h2>Retry Logic with Exponential Backoff</h2>
+                <p>Network calls and database connections fail temporarily. Retry with increasing delays:</p>
+
+                <pre><code>import time
+
+def retry_with_backoff(func, max_retries=3, base_delay=1):
+    """Retry a function with exponential backoff"""
+    for attempt in range(max_retries):
+        try:
+            return func()
+        except (ConnectionError, TimeoutError) as e:
+            if attempt == max_retries - 1:
+                raise  # Last attempt — give up
+            delay = base_delay * (2 ** attempt)  # 1s, 2s, 4s...
+            print(f"Attempt {attempt + 1} failed: {e}. Retrying in {delay}s...")
+            time.sleep(delay)
+    raise RuntimeError("All retries exhausted")
+
+# Usage
+def fetch_data():
+    response = requests.get("https://api.example.com/data", timeout=5)
+    response.raise_for_status()
+    return response.json()
+
+# This will retry up to 3 times on connection errors
+try:
+    data = retry_with_backoff(fetch_data)
+    print("Got data!", len(data))
+except Exception as e:
+    print(f"Failed after all retries: {e}")</code></pre>
+
+                <p>The backoff pattern (1s, 2s, 4s, 8s...) prevents overwhelming a recovering server. Python's <code>tenacity</code> library provides a decorator-based version if you don't want to write it manually.</p>
+
+                <h2>Context Managers for Resource Cleanup</h2>
+                <p>The <code>with</code> statement ensures resources are cleaned up even when exceptions occur:</p>
+
+                <pre><code># ✅ File handling — always closes, even on error
+with open("data.txt", "w") as f:
+    f.write("hello")
+    # if an exception happens here, f.close() still runs
+
+# ✅ Database connection pattern
+class DatabaseConnection:
+    def __init__(self, url):
+        self.url = url
+        self.conn = None
+    
+    def __enter__(self):
+        self.conn = create_connection(self.url)
+        return self.conn
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.conn:
+            if exc_type is not None:
+                self.conn.rollback()  # Undo changes on error
+            else:
+                self.conn.commit()    # Save changes on success
+            self.conn.close()
+        return False  # Don't suppress exceptions
+
+# Usage
+with DatabaseConnection("sqlite:///mydb.db") as db:
+    db.execute("INSERT INTO users VALUES (?, ?)", ("Alice", "alice@example.com"))
+    # If any error occurs above, the transaction rolls back automatically</code></pre>
+
+                <h2>Assertion vs Exception</h2>
+                <p>Don't use <code>assert</code> for input validation — it can be disabled:</p>
+
+                <pre><code># ❌ BAD: assert can be disabled with python -O flag
+def divide(a, b):
+    assert b != 0, "Cannot divide by zero"
+    return a / b
+
+# ✅ GOOD: Use exceptions for validation
+def divide(a, b):
+    if b == 0:
+        raise ZeroDivisionError("Cannot divide by zero")
+    return a / b
+
+# ✅ assert is fine for internal invariants (bugs, not user errors)
+def process_items(items):
+    # This should NEVER be False — it indicates a bug
+    assert len(items) > 0, "Internal error: empty items list"
+    return [transform(item) for item in items]</code></pre>
+
+                <h2>Real-World Pattern: Safe API Client</h2>
+                <p>Combining everything into a production-ready pattern:</p>
+
+                <pre><code>import json
+import time
+import logging
+
+logger = logging.getLogger(__name__)
+
+class APIError(Exception):
+    """Base API exception"""
+    def __init__(self, message, status_code=None, response_body=None):
+        super().__init__(message)
+        self.status_code = status_code
+        self.response_body = response_body
+
+class RateLimitError(APIError):
+    pass
+
+class AuthenticationError(APIError):
+    pass
+
+class APIClient:
+    def __init__(self, base_url, api_key):
+        self.base_url = base_url
+        self.api_key = api_key
+        self.session = requests.Session()
+        self.session.headers.update({
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        })
+    
+    def request(self, method, endpoint, **kwargs):
+        """Make a request with retry and proper error handling"""
+        url = f"{self.base_url}/{endpoint.lstrip('/')}"
+        
+        for attempt in range(3):
+            try:
+                response = self.session.request(
+                    method, url, timeout=10, **kwargs
+                )
+                
+                if response.status_code == 429:
+                    retry_after = int(response.headers.get("Retry-After", 5))
+                    logger.warning(f"Rate limited. Waiting {retry_after}s...")
+                    time.sleep(retry_after)
+                    continue
+                
+                response.raise_for_status()
+                
+                if response.content:
+                    return response.json()
+                return None
+                
+            except requests.Timeout:
+                logger.warning(f"Request timeout (attempt {attempt + 1})")
+                if attempt == 2:
+                    raise APIError("Request timed out after 3 attempts")
+                time.sleep(2 ** attempt)
+                
+            except requests.ConnectionError:
+                logger.warning(f"Connection error (attempt {attempt + 1})")
+                if attempt == 2:
+                    raise APIError("Cannot connect after 3 attempts")
+                time.sleep(2 ** attempt)
+        
+        raise APIError("Unexpected request failure")
+    
+    def get_users(self):
+        return self.request("GET", "/users")
+    
+    def create_user(self, name, email):
+        return self.request("POST", "/users", json={
+            "name": name,
+            "email": email
+        })
+
+# Usage
+try:
+    client = APIClient("https://api.example.com", "sk-12345")
+    users = client.get_users()
+    print(f"Loaded {len(users)} users")
+except AuthenticationError:
+    print("Invalid API key — check your configuration")
+except RateLimitError:
+    print("Too many requests — slow down")
+except APIError as e:
+    print(f"API request failed: {e}")</code></pre>
+
+                <h2>Summary</h2>
+                <p>Good error handling makes your Python programs robust and maintainable. Key takeaways:</p>
+
+                <ul>
+                    <li><strong>Catch specific exceptions</strong> — Never use bare <code>except:</code> or broad <code>except Exception:</code></li>
+                    <li><strong>Create custom exceptions</strong> — They make your API self-documenting</li>
+                    <li><strong>Use raise from</strong> — Preserve error chains for debugging</li>
+                    <li><strong>Implement retry logic</strong> — Temporary failures should be retried with backoff</li>
+                    <li><strong>Use context managers</strong> — <code>with</code> guarantees cleanup</li>
+                    <li><strong>Reserve assert for bugs</strong> — Use exceptions for user input validation</li>
+                    <li><strong>Log before raising</strong> — Especially in production, always log before re-raising</li>
+                </ul>
+
+                <p>Mastering error handling transforms your code from "works on my machine" to "production-ready." The next time you write a function, ask yourself: "What can go wrong here?" Then write the code that handles it gracefully.</p>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes. Built with ☕ and code.</p>
+        </div>
+    </footer>
+
+    <script>
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + "%";
+        });
+        const toggle = document.getElementById('themeToggle');
+        toggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark');
+        });
+    </script>
+</body>
+</html>

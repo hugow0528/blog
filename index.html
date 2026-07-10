@@ -97,12 +97,208 @@
 
         <!-- Filter Pills -->
         <div class="filter-bar">
-            <button class="filter-pill active" onclick="filterPosts('all', this)">All</button><button class="filter-pill" onclick="filterPosts('cloudflare', this)">☁️ Cloudflare <span class="count">19</span></button><button class="filter-pill" onclick="filterPosts('python', this)">🐍 Python <span class="count">44</span></button><button class="filter-pill" onclick="filterPosts('devops', this)">🐳 DevOps <span class="count">48</span></button><button class="filter-pill" onclick="filterPosts('security', this)">🔐 Security <span class="count">13</span></button><button class="filter-pill" onclick="filterPosts('vibe', this)">🤖 AI Coding <span class="count">7</span></button><button class="filter-pill" onclick="filterPosts('web', this)">💻 Web Dev <span class="count">11</span></button>
+            <button class="filter-pill active" onclick="filterPosts('all', this)">All</button><button class="filter-pill" onclick="filterPosts('cloudflare', this)">☁️ Cloudflare <span class="count">21</span></button><button class="filter-pill" onclick="filterPosts('python', this)">🐍 Python <span class="count">47</span></button><button class="filter-pill" onclick="filterPosts('devops', this)">🐳 DevOps <span class="count">51</span></button><button class="filter-pill" onclick="filterPosts('security', this)">🔐 Security <span class="count">13</span></button><button class="filter-pill" onclick="filterPosts('vibe', this)">🤖 AI Coding <span class="count">7</span></button><button class="filter-pill" onclick="filterPosts('web', this)">💻 Web Dev <span class="count">15</span></button>
         </div>
 
         <!-- Posts Grid -->
         <div class="posts" id="postsContainer">
 
+        <article class="post" data-tags="cloudflare,devops">
+            <div class="post-tags">
+                <span class="tag cloudflare">Cloudflare</span><span class="tag devops">DevOps</span>
+            </div>
+            <h2 class="post-title"><a href="posts/cloudflare-durable-objects.html">Cloudflare Durable Objects: Shared State at the Edge — Complete Guide</a></h2>
+            <div class="post-excerpt">
+                <p>Master Cloudflare Durable Objects — persistent state at the edge without traditional databases. Build real-time counters, leaderboards, chat rooms, and rate limiters. Step-by-step code examples from basic to advanced patterns...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">July 10, 2026</span>
+                <span class="post-read-time">10 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+        </article>
+        <article class="post" data-tags="devops">
+            <div class="post-tags">
+                <span class="tag devops">DevOps</span>
+            </div>
+            <h2 class="post-title"><a href="posts/docker-buildx-multi-arch.html">Docker Buildx: Multi-Architecture Image Builds Made Easy</a></h2>
+            <div class="post-excerpt">
+                <p>Master Docker Buildx — build images for multiple CPU architectures from a single machine, leverage BuildKit's advanced caching and parallel builds, export to different formats, and set up CI/CD pipelines for production multi-arch deployments...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">July 10, 2026</span>
+                <span class="post-read-time">11 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags">
+                <span class="tag python">Python</span>
+            </div>
+            <h2 class="post-title"><a href="posts/python-debugging-profiling.html">Python Debugging and Profiling: pdb, print() Tricks &amp; Performance Tools</a></h2>
+            <div class="post-excerpt">
+                <p>Master Python debugging and profiling from scratch — the built-in pdb debugger, smart print() debugging tricks, logging-based debugging, cProfile for performance analysis, line_profiler for line-by-line profiling, and finding memory leaks with tracemalloc. Real code examples for every concept. From simple print() to production-ready profiling scripts...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">July 10, 2026</span>
+                <span class="post-read-time">12 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+        </article>
+        <article class="post" data-tags="security,devops">
+            <div class="post-tags">
+                <span class="tag security">Security</span><span class="tag devops">DevOps</span>
+            </div>
+            <h2 class="post-title"><a href="posts/network-fundamentals.html">Network Fundamentals: OSI Model, TCP/UDP, DNS, Routing &amp; How the Internet Works</a></h2>
+            <div class="post-excerpt">
+                <p>Understand how the internet works from the ground up — the OSI 7-layer model, TCP vs UDP, DNS resolution, IP addressing and subnets, NAT, routing, firewalls, and essential networking commands every developer should know. Real examples and practical exercises. From the conceptual model to hands-on troubleshooting...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">July 10, 2026</span>
+                <span class="post-read-time">14 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags">
+                <span class="tag python">Python</span>
+            </div>
+            <h2 class="post-title"><a href="posts/python-file-operations.html">Python File Operations: Read, Write, Create &amp; Manage Files — Complete Beginner's Guide</a></h2>
+            <div class="post-excerpt">
+                <p>Master Python file operations from scratch — reading, writing, appending, creating directories, checking existence, reading line by line, and safe file handling with atomic writes. Working examples for every concept. From basic open() to production-grade file management...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">July 9, 2026</span>
+                <span class="post-read-time">10 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+        </article>
+        <article class="post" data-tags="devops">
+            <div class="post-tags">
+                <span class="tag devops">DevOps</span>
+            </div>
+            <h2 class="post-title"><a href="posts/docker-networking-deep-dive.html">Docker Networking Deep Dive: Containers That Communicate — Complete Guide</a></h2>
+            <div class="post-excerpt">
+                <p>Understand Docker networking from scratch — bridge networks, host mode, container DNS resolution, multi-network segmentation, port mapping, docker-compose networking, and troubleshooting connectivity issues. Working examples for every network topology...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">July 9, 2026</span>
+                <span class="post-read-time">10 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+        </article>
+        <article class="post" data-tags="web">
+            <div class="post-tags">
+                <span class="tag web">Web Dev</span>
+            </div>
+            <h2 class="post-title"><a href="posts/javascript-fetch-api.html">JavaScript Fetch API: Make HTTP Requests — Complete Beginner's Guide</a></h2>
+            <div class="post-excerpt">
+                <p>Learn the JavaScript Fetch API from scratch — GET requests, POST with JSON, error handling, authentication headers, downloading files, and a complete weather app project. Working examples for every concept. From basic await syntax to production-grade error handling patterns...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">July 9, 2026</span>
+                <span class="post-read-time">11 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+        </article>
+        <article class="post" data-tags="web">
+            <div class="post-tags">
+                <span class="tag web">Web Dev</span>
+            </div>
+            <h2 class="post-title"><a href="posts/html-fundamentals.html">HTML Fundamentals: Structure Your Web Pages — Complete Beginner's Guide</a></h2>
+            <div class="post-excerpt">
+                <p>Learn HTML from scratch — the document structure, semantic elements, links, images, lists, tables, forms, and modern best practices. Build your first webpage with working examples. From &lt;!DOCTYPE html&gt; to complete semantic page layouts...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">July 9, 2026</span>
+                <span class="post-read-time">12 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+        </article>
+        <article class="post" data-tags="security">
+            <div class="post-tags">
+                <span class="tag security">Security</span>
+            </div>
+            <h2 class="post-title"><a href="posts/penetration-testing-basics.html">Penetration Testing Basics: How to Hack Your Own Applications Safely</a></h2>
+            <div class="post-excerpt">
+                <p>Learn ethical hacking fundamentals — the five phases of penetration testing, hands-on tools including nmap, Nikto, and Burp Suite, common web vulnerabilities (SQL injection, XSS, broken auth), building a Docker security lab, and professional reporting. From reconnaissance to exploitation with real code examples and safe practice environments...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">July 9, 2026</span>
+                <span class="post-read-time">12 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags">
+                <span class="tag python">Python</span>
+            </div>
+            <h2 class="post-title"><a href="posts/python-loops-iteration.html">Python Loops and Iteration: for, while, break, continue — Beginner Guide</a></h2>
+            <div class="post-excerpt">
+                <p>Master Python loops from scratch — for loops over lists, strings, and dictionaries, while loops with conditions, range() for number sequences, enumerate() and zip() for advanced patterns, break and continue control flow, nested loops for grids and combinations, and list comprehensions for one-liner transforms. Working examples for every concept...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">July 9, 2026</span>
+                <span class="post-read-time">11 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+        </article>
+        <article class="post" data-tags="cloudflare,web">
+            <div class="post-tags">
+                <span class="tag cloudflare">Cloudflare</span><span class="tag web">Web Dev</span>
+            </div>
+            <h2 class="post-title"><a href="posts/cloudflare-workers-assets.html">Cloudflare Workers Assets: Serve Static Files from Your Edge Functions</a></h2>
+            <div class="post-excerpt">
+                <p>Serve HTML, CSS, JavaScript, and images directly from your Cloudflare Workers deployment. Build SPAs and full-stack apps without separate hosting. Configure the assets manifest, handle API vs static routing, set cache headers, deploy with Vite, and compare Workers Assets to Cloudflare Pages. Single deployment, same origin, edge caching...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">July 9, 2026</span>
+                <span class="post-read-time">9 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags">
+                <span class="tag python">Python</span>
+            </div>
+            <h2 class="post-title"><a href="posts/python-os-pathlib.html">Python os and pathlib Modules: Navigate and Manage Filesystems</a></h2>
+            <div class="post-excerpt">
+                <p>Master Python's os and pathlib modules for file and directory operations. Learn path manipulation, file discovery with glob, walking directory trees, creating/copying/removing files, and choosing between os.path and pathlib. Practical project file analyzer script. From basic path joining to recursive directory walking...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">July 9, 2026</span>
+                <span class="post-read-time">10 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+        </article>
+        <article class="post" data-tags="python">
+            <div class="post-tags">
+                <span class="tag python">Python</span>
+            </div>
+            <h2 class="post-title"><a href="posts/python-error-handling-advanced.html">Python Error Handling: try/except, Custom Exceptions &amp; Defensive Coding</a></h2>
+            <div class="post-excerpt">
+                <p>Master Python error handling from the ground up — try/except/else/finally blocks, raising exceptions, custom exception hierarchies, retry logic with exponential backoff, context managers for resource cleanup, and a production-ready API client pattern. From catching specific errors to building resilient, defensive code that survives production...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">July 8, 2026</span>
+                <span class="post-read-time">10 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+        </article>
+        <article class="post" data-tags="web">
+            <div class="post-tags">
+                <span class="tag web">Web Dev</span>
+            </div>
+            <h2 class="post-title"><a href="posts/css-container-queries.html">CSS Container Queries: Responsive Components That Adapt to Their Parent</a></h2>
+            <div class="post-excerpt">
+                <p>Learn CSS container queries — the modern way to make components responsive to their parent container, not the viewport. Practical examples for responsive cards, navigation bars, sidebars, and component libraries. From declaring containers to @container syntax, multiple breakpoints, container query units (cqi/cqh), and real-world patterns...</p>
+            </div>
+            <div class="post-meta">
+                <span class="post-date">July 8, 2026</span>
+                <span class="post-read-time">9 min read</span>
+                <span class="post-badge">New</span>
+            </div>
+        </article>
         <article class="post" data-tags="python">
             <div class="post-tags">
                 <span class="tag python">Python</span>

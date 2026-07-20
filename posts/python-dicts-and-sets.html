@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Dictionaries and Sets: The Hash-Based Data Structures You'll Use Daily — Complete Beginner's Guide</title>
+    <meta name="description" content="Master Python dictionaries and sets — dict creation, key-value access, .get(), .update(), set operations, comprehensions, and real-world patterns. Working code for every concept.">
+    <meta name="keywords" content="python dictionary, python set, dict, set operations, dict comprehension, python data structures, python beginner">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-dicts-and-sets.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn active">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-detail">
+            <header class="post-header">
+                <div class="post-tags">
+                    <span class="tag python">Python</span>
+                </div>
+                <h1>Python Dictionaries and Sets: The Hash-Based Data Structures You'll Use Daily — Complete Beginner's Guide</h1>
+                <div class="post-meta">
+                    <span class="post-date">July 18, 2026</span>
+                    <span class="read-time">11 min read</span>
+                </div>
+            </header>
+
+            <div class="post-content">
+                <p>If you know lists and tuples, you already understand Python sequences. But when you need to look up data by name instead of position, or track unique items efficiently, dictionaries and sets become your best friends. They are the two most-used data structures in Python after lists, and mastering them will make your code shorter, faster, and clearer.</p>
+
+                <h2>What Are Dictionaries?</h2>
+                <p>A dictionary (<code>dict</code>) stores <strong>key-value pairs</strong>. Think of it like a real dictionary: you look up a word (the key) to find its definition (the value). In Python, keys must be immutable (strings, numbers, tuples), while values can be anything.</p>
+
+<pre><code class="language-python"># Creating dictionaries
+user = {"name": "Hugo", "age": 30, "city": "Tokyo"}
+
+# Empty dict, then fill it
+config = {}
+config["host"] = "localhost"
+config["port"] = 8080
+
+# Using the dict() constructor
+settings = dict(debug=True, version="2.0", retries=3)
+
+print(user["name"])   # Hugo
+print(settings["debug"])  # True</code></pre>
+
+                <p>Accessing values is <code>O(1)</code> — constant time — because Python uses a <strong>hash table</strong> under the hood. That means looking up <code>user["name"]</code> takes the same time whether the dictionary has 10 entries or 10 million.</p>
+
+                <h2>Safe Access with <code>.get()</code></h2>
+                <p>Direct access with <code>["key"]</code> raises a <code>KeyError</code> if the key doesn't exist. Use <code>.get()</code> for safe access:</p>
+
+<pre><code class="language-python">data = {"name": "Alice", "role": "admin"}
+
+# Direct access — crashes if key missing
+# print(data["email"])  # KeyError!
+
+# Safe access with .get()
+email = data.get("email")
+print(email)  # None
+
+# Safe access with a default value
+role = data.get("role", "guest")
+print(role)  # "admin" (key exists)
+
+country = data.get("country", "Unknown")
+print(country)  # "Unknown" (key missing)</code></pre>
+
+                <h2>Updating and Merging Dictionaries</h2>
+                <p>Several ways to modify or combine dictionaries:</p>
+
+<pre><code class="language-python"># Update individual keys
+user = {"name": "Hugo", "age": 30}
+user["city"] = "Tokyo"       # Add new key
+user["age"] = 31             # Overwrite existing
+
+# .update() — merge another dict
+defaults = {"theme": "dark", "lang": "en", "notif": True}
+prefs = {"theme": "light", "lang": "ja"}
+
+defaults.update(prefs)
+print(defaults)  # {"theme": "light", "lang": "ja", "notif": True}
+
+# Merge with | operator (Python 3.9+)
+base = {"a": 1, "b": 2}
+extra = {"b": 3, "c": 4}
+merged = base | extra
+print(merged)  # {"a": 1, "b": 3, "c": 4}</code></pre>
+
+                <h2>Iterating Over Dictionaries</h2>
+                <p>Three ways to loop through a dictionary:</p>
+
+<pre><code class="language-python">scores = {"math": 95, "science": 88, "english": 92}
+
+# Keys only (default)
+for subject in scores:
+    print(subject)
+# math, science, english
+
+# Key-value pairs
+for subject, score in scores.items():
+    print(f"{subject}: {score}")
+
+# Values only
+for score in scores.values():
+    print(score)
+
+# Keys only (explicit)
+for subject in scores.keys():
+    print(subject)</code></pre>
+
+                <h2>Dictionary Comprehensions</h2>
+                <p>Build dictionaries in one line with dict comprehensions — the same syntax as list comprehensions, but with curly braces and <code>key: value</code> pairs:</p>
+
+<pre><code class="language-python"># Square numbers: {n: n^2}
+squares = {n: n**2 for n in range(1, 6)}
+print(squares)  # {1: 1, 2: 4, 3: 9, 4: 16, 5: 25}
+
+# Invert a dictionary
+original = {"a": 1, "b": 2, "c": 3}
+inverted = {v: k for k, v in original.items()}
+print(inverted)  # {1: "a", 2: "b", 3: "c"}
+
+# Filter and transform
+prices = {"apple": 1.2, "banana": 0.5, "cherry": 3.0}
+cheap = {k: v for k, v in prices.items() if v < 2.0}
+print(cheap)  # {"apple": 1.2, "banana": 0.5}</code></pre>
+
+                <h2>What Are Sets?</h2>
+                <p>A <code>set</code> stores <strong>unique, unordered</strong> items. Use sets when you need to track membership, remove duplicates, or perform mathematical operations like union and intersection.</p>
+
+<pre><code class="language-python"># Creating sets
+fruits = {"apple", "banana", "cherry"}
+empty = set()  # Not {} — that's an empty dict!
+
+# From a list — removes duplicates
+numbers = [1, 2, 2, 3, 3, 3, 4]
+unique = set(numbers)
+print(unique)  # {1, 2, 3, 4}
+
+# Membership testing — O(1), very fast!
+print("apple" in fruits)    # True
+print("mango" in fruits)    # False
+
+# Adding and removing
+fruits.add("mango")
+fruits.discard("banana")  # Safe — won't error if missing
+fruits.remove("cherry")   # Raises KeyError if missing</code></pre>
+
+                <h2>Set Operations</h2>
+                <p>Sets shine when you need mathematical operations on collections:</p>
+
+<pre><code class="language-python">python_users = {"Alice", "Bob", "Charlie", "Diana"}
+js_users = {"Bob", "Diana", "Eve", "Frank"}
+
+# Union — everyone
+everyone = python_users | js_users
+print(everyone)  # {"Alice", "Bob", "Charlie", "Diana", "Eve", "Frank"}
+
+# Intersection — both
+both = python_users & js_users
+print(both)  # {"Bob", "Diana"}
+
+# Difference — Python only
+python_only = python_users - js_users
+print(python_only)  # {"Alice", "Charlie"}
+
+# Symmetric difference — one but not both
+either = python_users ^ js_users
+print(either)  # {"Alice", "Charlie", "Eve", "Frank"}</code></pre>
+
+                <h2>Real-World Example: Counting with a Dictionary</h2>
+                <p>One of the most common patterns is counting occurrences. A dictionary maps items to their count:</p>
+
+<pre><code class="language-python">from collections import Counter
+
+# Manual counting
+words = ["the", "cat", "sat", "on", "the", "mat", "the", "cat"]
+counts = {}
+for word in words:
+    counts[word] = counts.get(word, 0) + 1
+print(counts)  # {"the": 3, "cat": 2, "sat": 1, "on": 1, "mat": 1}
+
+# Or use Counter (built-in, faster, more features)
+counter = Counter(words)
+print(counter.most_common(3))  # [("the", 3), ("cat", 2), ("sat", 1)]</code></pre>
+
+                <h2>Real-World Example: Grouping with Dictionaries</h2>
+                <p>Group items by a common property using a dictionary with lists as values:</p>
+
+<pre><code class="language-python">students = [
+    {"name": "Alice", "grade": "A"},
+    {"name": "Bob", "grade": "B"},
+    {"name": "Charlie", "grade": "A"},
+    {"name": "Diana", "grade": "C"},
+    {"name": "Eve", "grade": "B"},
+]
+
+# Group by grade
+groups = {}
+for student in students:
+    grade = student["grade"]
+    groups.setdefault(grade, []).append(student["name"])
+
+print(groups)
+# {"A": ["Alice", "Charlie"], "B": ["Bob", "Eve"], "C": ["Diana"]}</code></pre>
+
+                <h2>When to Use What</h2>
+                <p>Quick reference for choosing the right data structure:</p>
+                <ul>
+                    <li><strong>List</strong> — ordered, allows duplicates, index-based access</li>
+                    <li><strong>Dict</strong> — key-value lookup, unique keys, fast by-name access</li>
+                    <li><strong>Set</strong> — unique items, fast membership testing, math operations</li>
+                    <li><strong>Tuple</strong> — fixed, immutable sequence, configuration data</li>
+                </ul>
+
+                <h2>Common Pitfalls</h2>
+                <p><strong>Mutability matters.</strong> Dictionary keys must be immutable:</p>
+
+<pre><code class="language-python"># These keys work — immutable types
+d = {
+    "name": "Alice",    # str
+    42: "answer",        # int
+    (1, 2): "pair",      # tuple
+}
+
+# These keys don't work — mutable types
+# d[[1, 2]] = "list"    # TypeError!
+# d[{"a": 1}] = "dict"  # TypeError!</code></pre>
+
+                <p><strong>Remember:</strong> <code>{}</code> creates an empty dictionary, not an empty set. Use <code>set()</code> for an empty set.</p>
+
+                <h2>Summary</h2>
+                <p>Dictionaries and sets are the backbone of everyday Python. Use dictionaries when you need to associate data by name, and sets when you need uniqueness or fast lookups. Combine them with comprehensions for concise, Pythonic code. Practice with real data — parse config files, count words in text, deduplicate API responses — and these structures will become second nature.</p>
+            </div>
+        </article>
+    </main>
+
+    <footer class="container" style="text-align:center;padding:24px 0 48px;color:var(--text-quaternary);font-size:12px;">
+        <p>Built with ☕ by Hugo Wong · Hosted on Cloudflare Pages</p>
+    </footer>
+
+    <script>
+    // Reading progress bar
+    window.addEventListener('scroll', () => {
+        const bar = document.getElementById('progressBar');
+        if (bar) {
+            const scrollTop = window.scrollY;
+            const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+            bar.style.width = (scrollTop / docHeight * 100) + '%';
+        }
+    });
+    </script>
+</body>
+</html>

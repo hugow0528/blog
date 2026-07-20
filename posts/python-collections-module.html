@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Collections Module: defaultdict, deque, Counter &amp; namedtuple — Complete Beginner's Guide</title>
+    <meta name="description" content="Master Python's collections module — defaultdict, Counter, deque, OrderedDict, namedtuple, and ChainMap. Real-world patterns that replace 10 lines with 1.">
+    <meta name="keywords" content="python collections, defaultdict, Counter, deque, namedtuple, ChainMap, OrderedDict">
+    <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-collections-module.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn active">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-full">
+            <header class="post-header">
+                <div class="post-tags">
+                    <span class="tag python">Python</span>
+                </div>
+                <h1>Python Collections Module: defaultdict, deque, Counter &amp; namedtuple</h1>
+                <div class="post-meta">
+                    <span class="post-date">July 19, 2026</span>
+                    <span class="read-time">10 min read</span>
+                </div>
+            </header>
+
+            <div class="post-content">
+                <p>Python's built-in <code>dict</code>, <code>list</code>, <code>set</code>, and <code>tuple</code> types cover most use cases. But the <code>collections</code> module ships with specialized containers that solve common patterns in one line instead of five. After reading this guide, you'll never write <code>if key not in dict: dict[key] = []</code> again.</p>
+
+                <p>We'll cover the six most useful classes: <code>defaultdict</code>, <code>Counter</code>, <code>deque</code>, <code>namedtuple</code>, <code>OrderedDict</code>, and <code>ChainMap</code>. Every example is production-ready code you can use today.</p>
+
+                <h2 id="defaultdict">defaultdict: Never Check if a Key Exists</h2>
+                <p>The #1 time-saver in the collections module. A <code>defaultdict</code> automatically creates a default value when you access a missing key:</p>
+
+                <pre><code class="language-python">from collections import defaultdict
+
+# Instead of this (regular dict):
+groups = {}
+for name, grade in [("Alice", "A"), ("Bob", "B"), ("Charlie", "A")]:
+    if grade not in groups:
+        groups[grade] = []
+    groups[grade].append(name)
+
+# Do this (defaultdict):
+groups = defaultdict(list)
+for name, grade in [("Alice", "A"), ("Bob", "B"), ("Charlie", "A")]:
+    groups[grade].append(name)
+# defaultdict(list, {'A': ['Alice', 'Charlie'], 'B': ['Bob']})</code></pre>
+
+                <p>How it works: you pass a <em>callable</em> (not a value!) as the default factory:</p>
+
+                <pre><code class="language-python"># defaultdict with different default types
+counts = defaultdict(int)          # Missing keys → 0
+counts["apple"] += 1               # counts["apple"] is now 1
+
+mapping = defaultdict(dict)        # Missing keys → {}
+mapping["user1"]["name"] = "Hugo"
+
+sets = defaultdict(set)            # Missing keys → set()
+sets["fruits"].add("apple")
+
+# Custom default: return a string
+message = defaultdict(lambda: "N/A")
+message["name"] = "Hugo"
+print(message["email"])  # "N/A"</code></pre>
+
+                <p><strong>Real-world example — log aggregation:</strong></p>
+
+                <pre><code class="language-python">from collections import defaultdict
+from datetime import datetime
+
+logs = [
+    ("2026-07-19 10:00", "ERROR", "Database timeout"),
+    ("2026-07-19 10:01", "INFO", "User logged in"),
+    ("2026-07-19 10:02", "ERROR", "Connection refused"),
+    ("2026-07-19 10:03", "WARN", "Slow query"),
+    ("2026-07-19 10:04", "ERROR", "Null pointer"),
+]
+
+# Group logs by level
+by_level = defaultdict(list)
+for timestamp, level, message in logs:
+    by_level[level].append(f"{timestamp}: {message}")
+
+for level, entries in by_level.items():
+    print(f"\n=== {level} ({len(entries)} entries) ===")
+    for entry in entries:
+        print(f"  {entry}")</code></pre>
+
+                <h2 id="counter">Counter: Count Everything</h2>
+                <p><code>Counter</code> is a dict subclass that tracks how many times each element appears. It's essentially a multiset:</p>
+
+                <pre><code class="language-python">from collections import Counter
+
+# Count elements in any iterable
+words = "the cat sat on the mat the cat ran"
+word_counts = Counter(words.split())
+print(word_counts)
+# Counter({'the': 3, 'cat': 2, 'sat': 1, 'on': 1, 'mat': 1, 'ran': 1})
+
+# Most common N items
+print(word_counts.most_common(3))
+# [('the', 3), ('cat', 2), ('sat', 1)]
+
+# Count characters
+char_counts = Counter("mississippi")
+print(char_counts)
+# Counter({'i': 4, 's': 4, 'p': 2, 'm': 1})</code></pre>
+
+                <p>Math operations between Counters are incredibly useful:</p>
+
+                <pre><code class="language-python"># Subtract counters — find what's missing
+shopping_list = Counter(["bread", "milk", "eggs", "butter", "cheese"])
+pantry = Counter(["bread", "bread", "eggs", "milk"])
+need_to_buy = shopping_list - pantry
+print(need_to_buy)  # Counter({'butter': 1, 'cheese': 1})
+
+# Add counters — combine inventories
+warehouse_a = Counter({"widget": 50, "gadget": 30})
+warehouse_b = Counter({"widget": 20, "gadget": 40, "tool": 10})
+total = warehouse_a + warehouse_b
+print(total)  # Counter({'widget': 70, 'gadget': 70, 'tool': 10})
+
+# Update in-place
+colors = Counter(["red", "blue", "red", "green"])
+colors.update(["blue", "blue"])  # Counter({'red': 2, 'blue': 3, 'green': 1})</code></pre>
+
+                <p><strong>Real-world example — analyze API response codes:</strong></p>
+
+                <pre><code class="language-python">from collections import Counter
+import random
+
+# Simulate 1000 API calls
+status_codes = [random.choices(
+    [200, 201, 301, 400, 403, 404, 500, 502, 503],
+    weights=[60, 10, 2, 5, 3, 10, 5, 3, 2]
+)[0] for _ in range(1000)]
+
+counts = Counter(status_codes)
+print("Status code distribution:")
+for code, count in counts.most_common():
+    pct = count / len(status_codes) * 100
+    bar = "█" * int(pct / 2)
+    print(f"  {code}: {count:4d} ({pct:5.1f}%) {bar}")
+
+# Calculate error rate
+errors = sum(c for code, c in counts.items() if code >= 400)
+print(f"\nError rate: {errors/len(status_codes)*100:.1f}%")</code></pre>
+
+                <h2 id="deque">deque: Fast Appends and Pops from Both Ends</h2>
+                <p>A <code>deque</code> (double-ended queue) supports O(1) appends and pops from both ends. Regular lists are O(n) for inserting/removing at the front:</p>
+
+                <pre><code class="language-python">from collections import deque
+
+q = deque(["a", "b", "c"])
+
+# Append and pop from both ends
+q.append("d")           # Right end: deque(['a', 'b', 'c', 'd'])
+q.appendleft("z")       # Left end: deque(['z', 'a', 'b', 'c', 'd'])
+q.pop()                 # Remove right: deque(['z', 'a', 'b', 'c'])
+q.popleft()             # Remove left: deque(['a', 'b', 'c'])
+
+# Max length — auto-discards oldest items when full
+window = deque(maxlen=3)
+window.append(1)  # deque([1])
+window.append(2)  # deque([1, 2])
+window.append(3)  # deque([1, 2, 3])
+window.append(4)  # deque([2, 3, 4]) ← 1 was automatically removed!
+
+# Rotate
+d = deque([1, 2, 3, 4, 5])
+d.rotate(1)   # [5, 1, 2, 3, 4]  — shift right
+d.rotate(-1)  # [1, 2, 3, 4, 5]  — shift back left</code></pre>
+
+                <p><strong>Real-world example — sliding window average:</strong></p>
+
+                <pre><code class="language-python">from collections import deque
+
+def moving_average(values, window_size):
+    """Calculate moving average with a fixed window."""
+    window = deque(maxlen=window_size)
+    results = []
+
+    for value in values:
+        window.append(value)
+        results.append(sum(window) / len(window))
+
+    return results
+
+# Example: smooth noisy sensor readings
+readings = [20, 21, 19, 25, 22, 20, 18, 23, 21, 22]
+smoothed = moving_average(readings, window_size=3)
+
+for raw, smooth in zip(readings, smoothed):
+    print(f"Raw: {raw:3d} → Smoothed: {smooth:.1f}")
+# Raw:  20 → Smoothed: 20.0
+# Raw:  21 → Smoothed: 20.5
+# Raw:  19 → Smoothed: 20.0
+# Raw:  25 → Smoothed: 21.7
+# ...</code></pre>
+
+                <p><strong>Real-world example — BFS graph traversal:</strong></p>
+
+                <pre><code class="language-python">from collections import deque, defaultdict
+
+def bfs(graph, start):
+    """Breadth-first search using deque."""
+    visited = set()
+    queue = deque([start])
+    visited.add(start)
+    order = []
+
+    while queue:
+        node = queue.popleft()
+        order.append(node)
+
+        for neighbor in graph.get(node, []):
+            if neighbor not in visited:
+                visited.add(neighbor)
+                queue.append(neighbor)
+
+    return order
+
+# Social network: who knows whom?
+network = {
+    "Alice": ["Bob", "Charlie"],
+    "Bob": ["Alice", "Diana"],
+    "Charlie": ["Alice", "Diana", "Eve"],
+    "Diana": ["Bob", "Charlie", "Eve"],
+    "Eve": ["Charlie", "Diana"],
+}
+
+print(bfs(network, "Alice"))
+# ['Alice', 'Bob', 'Charlie', 'Diana', 'Eve']</code></pre>
+
+                <h2 id="namedtuple">namedtuple: Tuples with Named Fields</h2>
+                <p>A <code>namedtuple</code> is an immutable record type. It's lighter than a class and faster than a dict for fixed-structure data:</p>
+
+                <pre><code class="language-python">from collections import namedtuple
+
+# Define a "class" in one line
+Point = namedtuple("Point", ["x", "y"])
+p = Point(3, 4)
+
+print(p.x)       # 3 — access by name
+print(p[0])      # 3 — still indexable
+print(p)         # Point(x=3, y=4) — nice repr
+
+# Unpack like a regular tuple
+x, y = p
+
+# Convert to dict
+print(p._asdict())  # {'x': 3, 'y': 4}
+
+# Override with _replace (returns new tuple — it's immutable)
+p2 = p._replace(x=10)  # Point(x=10, y=4)</code></pre>
+
+                <p><strong>Real-world example — parse CSV-like data:</strong></p>
+
+                <pre><code class="language-python">from collections import namedtuple
+
+User = namedtuple("User", ["id", "name", "email", "role"])
+
+# Simulate database rows
+raw_rows = [
+    (1, "Hugo", "hugo@example.com", "admin"),
+    (2, "Alice", "alice@example.com", "user"),
+    (3, "Bob", "bob@example.com", "user"),
+    (4, "Charlie", "charlie@example.com", "moderator"),
+]
+
+users = [User(*row) for row in raw_rows]
+
+# Query by role
+admins = [u for u in users if u.role == "admin"]
+print(admins)
+# [User(id=1, name='Hugo', email='hugo@example.com', role='admin')]
+
+# With defaults (Python 3.7+)
+Contact = namedtuple(
+    "Contact", ["name", "phone", "email"],
+    defaults=["unknown", "unknown"]
+)
+c = Contact("Hugo")  # Contact(name='Hugo', phone='unknown', email='unknown')</code></pre>
+
+                <h2 id="ordereddict">OrderedDict: Dicts That Remember Insertion Order</h2>
+                <p>Note: As of Python 3.7+, regular <code>dict</code> preserves insertion order. <code>OrderedDict</code> is still useful for its extra methods and explicit semantics:</p>
+
+                <pre><code class="language-python">from collections import OrderedDict
+
+# Last moved to end (LRU cache pattern)
+cache = OrderedDict()
+cache["first"] = 1
+cache["second"] = 2
+cache["third"] = 3
+
+# Move to end on access (simulating cache hit)
+cache.move_to_end("first")
+# Now order: second, third, first
+
+# Pop oldest item (evict least recently used)
+evicted = cache.popitem(last=False)
+print(evicted)  # ('second', 2)
+
+# Compare dicts ignoring order
+od1 = OrderedDict([("a", 1), ("b", 2)])
+od2 = OrderedDict([("b", 2), ("a", 1)])
+print(od1 == od2)  # False — order matters for OrderedDict!</code></pre>
+
+                <p><strong>Real-world example — simple LRU cache:</strong></p>
+
+                <pre><code class="language-python">from collections import OrderedDict
+
+class LRUCache:
+    """Least Recently Used cache with OrderedDict."""
+    def __init__(self, capacity):
+        self.cache = OrderedDict()
+        self.capacity = capacity
+
+    def get(self, key):
+        if key not in self.cache:
+            return None
+        # Move to end = recently used
+        self.cache.move_to_end(key)
+        return self.cache[key]
+
+    def put(self, key, value):
+        if key in self.cache:
+            self.cache.move_to_end(key)
+        self.cache[key] = value
+        # Evict oldest if over capacity
+        if len(self.cache) > self.capacity:
+            self.cache.popitem(last=False)
+
+# Usage
+cache = LRUCache(3)
+cache.put("a", 1)
+cache.put("b", 2)
+cache.put("c", 3)
+cache.get("a")   # Access 'a', making it most recent
+cache.put("d", 4)  # Evicts 'b' (least recently used)
+
+print(list(cache.cache.items()))
+# [('a', 1), ('c', 3), ('d', 4)]</code></pre>
+
+                <h2 id="chainmap">ChainMap: Merge Multiple Dicts</h2>
+                <p><code>ChainMap</code> groups multiple dicts together. Lookups check each dict in order — like a scope chain:</p>
+
+                <pre><code class="language-python">from collections import ChainMap
+
+defaults = {"theme": "dark", "lang": "en", "debug": False}
+config = {"theme": "light"}
+overrides = {"debug": True}
+
+# Chain: overrides → config → defaults
+merged = ChainMap(overrides, config, defaults)
+
+print(merged["theme"])  # "light"  (from config)
+print(merged["lang"])   # "en"     (from defaults)
+print(merged["debug"])  # True     (from overrides)
+
+# Adding a new chain layer (new scope)
+runtime = ChainMap({"env": "prod"}, merged)
+print(runtime["theme"])  # "light"</code></pre>
+
+                <p><strong>Perfect for environment configs:</strong></p>
+
+                <pre><code class="language-python">from collections import ChainMap
+import os
+
+# Layered configuration
+system_defaults = {
+    "db_host": "localhost",
+    "db_port": 5432,
+    "log_level": "INFO",
+    "cache_ttl": 300,
+}
+
+env_config = {k: v for k, v in os.environ.items() if k.startswith("APP_")}
+# e.g., {"APP_DB_HOST": "db.production.com", "APP_LOG_LEVEL": "WARNING"}
+
+# Normalize env var names
+env_config = {k[4:].lower(): v for k, v in env_config.items()}
+
+# Final config: env overrides everything
+config = ChainMap(env_config, system_defaults)
+print(f"DB: {config['db_host']}:{config['db_port']}")
+print(f"Log: {config['log_level']}")</code></pre>
+
+                <h2 id="when-to-use">When to Use What — Quick Reference</h2>
+                <table class="data-table">
+                    <thead>
+                        <tr><th>Class</th><th>Use When</th><th>Replaces</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>defaultdict</code></td><td>Grouping, counting, building nested structures</td><td><code>if key not in d</code> boilerplate</td></tr>
+                        <tr><td><code>Counter</code></td><td>Frequencies, histograms, top-N queries</td><td>Manual counting loops</td></tr>
+                        <tr><td><code>deque</code></td><td>Queues, sliding windows, BFS</td><td><code>list</code> for front pops</td></tr>
+                        <tr><td><code>namedtuple</code></td><td>Lightweight records, function return values</td><td>Simple data classes</td></tr>
+                        <tr><td><code>OrderedDict</code></td><td>LRU caches, ordered comparisons</td><td>Custom ordered containers</td></tr>
+                        <tr><td><code>ChainMap</code></td><td>Layered configs, environment merging</td><td>Manual dict merging</td></tr>
+                    </tbody>
+                </table>
+
+                <h2 id="summary">Summary</h2>
+                <p>The <code>collections</code> module ships with Python — no installs needed. These six classes handle patterns you'd otherwise write manually:</p>
+                <ul>
+                    <li><code>defaultdict</code> eliminates missing-key checks</li>
+                    <li><code>Counter</code> counts and compares in one line</li>
+                    <li><code>deque</code> gives you O(1) operations on both ends</li>
+                    <li><code>namedtuple</code> creates lightweight named records</li>
+                    <li><code>OrderedDict</code> preserves order with LRU support</li>
+                    <li><code>ChainMap</code> layers multiple dicts into one view</li>
+                </ul>
+                <p>Start by replacing your <code>if key not in dict</code> patterns with <code>defaultdict</code> and your counting loops with <code>Counter</code>. Those two alone will make your code cleaner within a week.</p>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Hugo's Dev Notes. Built with ☕ and curiosity.</p>
+        </div>
+    </footer>
+</body>
+</html>

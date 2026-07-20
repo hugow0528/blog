@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python JSON and APIs: Working with External Data — Complete Beginner's Guide | Hugo's Dev Notes</title>
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-json-and-apis.html">
+    <link rel="stylesheet" href="../style.css">
+
+    <!-- SEO Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "headline": "Python JSON and APIs: Working with External Data — Complete Beginner's Guide",
+      "description": "Learn to work with JSON and APIs in Python — parse JSON strings, read JSON files, make HTTP requests, handle errors, and build a complete weather app. Real code examples for every concept.",
+      "datePublished": "2026-07-12",
+      "dateModified": "2026-07-12",
+      "author": {"@type": "Person", "name": "Hugo Wong"},
+      "publisher": {"@type": "Organization", "name": "Hugo's Dev Notes", "url": "https://blog.hugow.dev"},
+      "mainEntityOfPage": "https://blog.hugow.dev/posts/python-json-and-apis.html",
+      "keywords": "python, json, api, http, requests, beginner"
+    }
+    </script>
+
+    <!-- Social Meta -->
+    <meta property="og:title" content="Python JSON and APIs: Working with External Data — Complete Beginner's Guide">
+    <meta property="og:description" content="Learn to work with JSON and APIs in Python — parse JSON, make HTTP requests, handle errors, and build a weather app.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.hugow.dev/posts/python-json-and-apis.html">
+    <meta property="og:site_name" content="Hugo's Dev Notes">
+    <meta property="article:published_time" content="2026-07-12">
+    <meta property="article:modified_time" content="2026-07-12">
+    <meta property="article:section" content="python">
+    <meta property="article:tag" content="Python, JSON, API">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Python JSON and APIs: Working with External Data — Complete Beginner's Guide">
+    <meta name="twitter:description" content="Learn to work with JSON and APIs in Python — parse JSON, make HTTP requests, handle errors, and build a weather app.">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+
+        <article class="post-content">
+            <span class="tag python">Python</span>
+            <h1>Python JSON and APIs: Working with External Data — Complete Beginner's Guide</h1>
+            <time>July 12, 2026 · 10 min read</time>
+
+            <p>Almost every Python application needs to talk to external services — fetch data from a weather API, send notifications to Slack, read configuration from a JSON file, or parse a response from a database. The universal language for this kind of communication is <strong>JSON</strong> (JavaScript Object Notation).</p>
+
+            <p>This guide covers everything from parsing JSON strings to building a complete API client with error handling, retry logic, and response caching. By the end, you'll be comfortable working with any REST API from Python.</p>
+
+            <h2>What Is JSON?</h2>
+
+            <p>JSON is a lightweight data format that represents data as key-value pairs and arrays. It maps naturally to Python data types:</p>
+
+            <table>
+                <tr><th>JSON Type</th><th>Python Equivalent</th></tr>
+                <tr><td>object <code>{}</code></td><td>dict</td></tr>
+                <tr><td>array <code>[]</code></td><td>list</td></tr>
+                <tr><td>string</td><td>str</td></tr>
+                <tr><td>number (int)</td><td>int</td></tr>
+                <tr><td>number (float)</td><td>float</td></tr>
+                <tr><td>true / false</td><td>True / False</td></tr>
+                <tr><td>null</td><td>None</td></tr>
+            </table>
+
+            <p>Python's built-in <code>json</code> module handles all conversions automatically.</p>
+
+            <h2>Parsing JSON Strings</h2>
+
+            <p>The most common operation is converting a JSON string into a Python dictionary:</p>
+
+            <pre><code>import json
+
+# A JSON string (notice double quotes)
+json_string = '{"name": "Alice", "age": 30, "skills": ["Python", "Docker"]}'
+
+# Parse JSON string into Python dict
+data = json.loads(json_string)
+
+print(data["name"])       # "Alice"
+print(data["age"])        # 30
+print(data["skills"][0])  # "Python"
+print(type(data))         # &lt;class 'dict'&gt;</code></pre>
+
+            <p>The <code>json.loads()</code> function reads a <strong>s</strong>tring and returns a Python object. Conversely, <code>json.dumps()</code> does the opposite — converts Python objects to JSON <strong>s</strong>trings:</p>
+
+            <pre><code># Python dict → JSON string
+person = {"name": "Bob", "age": 25, "active": True}
+json_output = json.dumps(person)
+print(json_output)
+# {"name": "Bob", "age": 25, "active": true}
+
+# Pretty-print JSON with indentation
+json_pretty = json.dumps(person, indent=2)
+print(json_pretty)
+# {
+#   "name": "Bob",
+#   "age": 25,
+#   "active": true
+# }</code></pre>
+
+            <h2>Reading and Writing JSON Files</h2>
+
+            <p>JSON data often lives in files. Python makes reading and writing JSON files straightforward:</p>
+
+            <pre><code>import json
+
+# Writing a dict to a JSON file
+config = {
+    "app_name": "MyApp",
+    "version": "1.0",
+    "database": {
+        "host": "localhost",
+        "port": 5432,
+        "name": "mydb"
+    },
+    "features": ["auth", "logging", "cache"]
+}
+
+# Method 1: Read/write with open() + json
+with open("config.json", "w") as f:
+    json.dump(config, f, indent=2)
+
+# Method 2: Read back
+with open("config.json", "r") as f:
+    loaded = json.load(f)
+
+print(loaded["database"]["host"])  # "localhost"
+print(loaded["features"])          # ["auth", "logging", "cache"]</code></pre>
+
+            <p><strong>Key tip:</strong> Always use <code>with open()</code> (context manager) to ensure the file is properly closed, even if an error occurs.</p>
+
+            <h3>Handling JSON Files with Non-Standard Keys</h3>
+
+            <p>Some APIs use camelCase or kebab-case for field names. Here's how to normalize them:</p>
+
+            <pre><code>import re
+
+def camel_to_snake(name):
+    """Convert CamelCase to snake_case"""
+    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
+    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+
+# Example
+api_response = {"userId": 42, "firstName": "Alice", "createdAt": "2026-01-01"}
+normalized = {camel_to_snake(k): v for k, v in api_response.items()}
+print(normalized)
+# {"user_id": 42, "first_name": "Alice", "created_at": "2026-01-01"}</code></pre>
+
+            <h2>Making HTTP Requests with requests</h2>
+
+            <p>The <code>requests</code> library is the standard way to make HTTP requests in Python. Install it first:</p>
+
+            <pre><code>pip install requests</code></pre>
+
+            <h3>GET Requests — Fetching Data</h3>
+
+            <pre><code>import requests
+
+# Fetch data from a public API
+response = requests.get("https://jsonplaceholder.typicode.com/posts/1")
+
+# Check status code
+print(response.status_code)  # 200 (success)
+
+# Parse JSON response (built-in!)
+data = response.json()
+
+print(data["title"])    # "sunt aut facere repellat..."
+print(data["userId"])   # 1
+print(data["body"])     # "qui est esse..."</code></pre>
+
+            <p>The <code>response.json()</code> method automatically parses the JSON body — no need to call <code>json.loads()</code> manually.</p>
+
+            <h3>GET Requests with Query Parameters</h3>
+
+            <pre><code>import requests
+
+# Pass query parameters as a dict (automatically URL-encoded)
+params = {
+    "q": "python",
+    "per_page": 5,
+    "page": 1
+}
+
+response = requests.get("https://api.github.com/search/repositories", params=params)
+
+repos = response.json()
+for repo in repos["items"]:
+    print(f"{repo['full_name']}: {repo['stargazers_count']} stars")</code></pre>
+
+            <h3>POST Requests — Sending Data</h3>
+
+            <pre><code>import requests
+import json
+
+# Send JSON data to an API
+url = "https://jsonplaceholder.typicode.com/posts"
+payload = {
+    "title": "My New Post",
+    "body": "This is the content of my blog post.",
+    "userId": 1
+}
+
+response = requests.post(url, json=payload)
+
+print(response.status_code)  # 201 (created)
+print(response.json())       # Your data back with an "id" added</code></pre>
+
+            <p>Pass data with <code>json=payload</code> (not <code>data=payload</code>) — the library handles serialization and sets the <code>Content-Type: application/json</code> header automatically.</p>
+
+            <h3>PUT and DELETE Requests</h3>
+
+            <pre><code>import requests
+
+url = "https://jsonplaceholder.typicode.com/posts/1"
+
+# PUT — Update an existing resource
+response = requests.put(url, json={
+    "id": 1,
+    "title": "Updated Title",
+    "body": "Updated content.",
+    "userId": 1
+})
+print(response.status_code)  # 200
+
+# DELETE — Remove a resource
+response = requests.delete(url)
+print(response.status_code)  # 200</code></pre>
+
+            <h2>Working with API Authentication</h2>
+
+            <p>Most real APIs require authentication. Here are the common patterns:</p>
+
+            <pre><code>import requests
+
+# 1. API Key in header
+response = requests.get(
+    "https://api.example.com/data",
+    headers={"Authorization": "Bearer YOUR_API_KEY"}
+)
+
+# 2. API Key in query parameter
+response = requests.get(
+    "https://api.example.com/data",
+    params={"api_key": "YOUR_API_KEY"}
+)
+
+# 3. Basic auth (username/password)
+response = requests.get(
+    "https://api.example.com/data",
+    auth=("username", "password")
+)
+
+# 4. Custom headers (e.g., for OpenWeatherMap)
+response = requests.get(
+    "https://api.openweathermap.org/data/2.5/weather",
+    params={"q": "Tokyo", "appid": "YOUR_KEY", "units": "metric"}
+)</code></pre>
+
+            <h2>Error Handling — The Professional Way</h2>
+
+            <p>APIs fail. Networks are unreliable. Professional code handles errors gracefully:</p>
+
+            <pre><code>import requests
+
+def fetch_weather(city):
+    """Fetch weather data with comprehensive error handling"""
+    url = "https://api.openweathermap.org/data/2.5/weather"
+
+    try:
+        response = requests.get(url, params={
+            "q": city,
+            "appid": "YOUR_API_KEY",
+            "units": "metric"
+        }, timeout=10)  # Never wait forever!
+
+        # Raise exception for 4xx/5xx status codes
+        response.raise_for_status()
+
+        data = response.json()
+
+        return {
+            "city": data["name"],
+            "temperature": data["main"]["temp"],
+            "description": data["weather"][0]["description"],
+            "humidity": data["main"]["humidity"]
+        }
+
+    except requests.exceptions.Timeout:
+        print("⏰ Request timed out. Server didn't respond in 10 seconds.")
+        return None
+
+    except requests.exceptions.ConnectionError:
+        print("🔌 Connection error. Check your internet connection.")
+        return None
+
+    except requests.exceptions.HTTPError as e:
+        if response.status_code == 401:
+            print("🔑 Authentication failed. Check your API key.")
+        elif response.status_code == 404:
+            print(f"🏙️ City '{city}' not found.")
+        elif response.status_code == 429:
+            print("⚠️ Rate limited. Try again later.")
+        else:
+            print(f"❌ HTTP Error: {e}")
+        return None
+
+    except requests.exceptions.RequestException as e:
+        print(f"💥 Unexpected error: {e}")
+        return None
+
+    except (KeyError, TypeError):
+        print("📦 Response format changed. Check the API documentation.")
+        return None
+
+# Usage
+result = fetch_weather("Tokyo")
+if result:
+    print(f"🌤️ {result['city']}: {result['temperature']}°C, {result['description']}")</code></pre>
+
+            <p>This function handles six different failure scenarios: timeouts, connection errors, specific HTTP error codes, generic request exceptions, and malformed response data.</p>
+
+            <h2>Building a Reusable API Client</h2>
+
+            <p>When you work with the same API repeatedly, create a dedicated client class:</p>
+
+            <pre><code>import requests
+from functools import wraps
+
+class GitHubClient:
+    """Reusable client for the GitHub API"""
+
+    BASE_URL = "https://api.github.com"
+
+    def __init__(self, token=None):
+        self.session = requests.Session()
+        self.session.headers.update({
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28"
+        })
+        if token:
+            self.session.headers["Authorization"] = f"token {token}"
+
+    def get(self, path, params=None):
+        """GET request with automatic error handling"""
+        url = f"{self.BASE_URL}{path}"
+        response = self.session.get(url, params=params, timeout=10)
+        response.raise_for_status()
+        return response.json()
+
+    def get_user(self, username):
+        """Get user profile"""
+        return self.get(f"/users/{username}")
+
+    def get_repos(self, username, sort="updated"):
+        """Get user's public repositories"""
+        return self.get(f"/users/{username}/repos", params={"sort": sort})
+
+    def get_repo(self, owner, repo):
+        """Get specific repository details"""
+        return self.get(f"/repos/{owner}/{repo}")
+
+# Usage
+gh = GitHubClient()
+
+# Fetch user profile
+user = gh.get_user("python")
+print(f"{user['login']}: {user['public_repos']} public repos")
+
+# Fetch repositories
+repos = gh.get_repos("python")
+for repo in repos[:5]:
+    print(f"  ⭐ {repo['name']}: {repo['description'][:50]}")</code></pre>
+
+            <p>The <code>requests.Session()</code> reuses TCP connections across requests, which is faster and more efficient than creating a new connection for each call.</p>
+
+            <h2>Complete Project: API Wrapper with Caching</h2>
+
+            <p>Let's combine everything into a practical project — an API client with built-in caching to reduce unnecessary requests:</p>
+
+            <pre><code>import requests
+import json
+import os
+import time
+from datetime import datetime
+
+class CachedAPIClient:
+    """API client with file-based caching"""
+
+    def __init__(self, base_url, cache_dir=".api_cache", ttl=3600):
+        self.base_url = base_url
+        self.cache_dir = cache_dir
+        self.ttl = ttl  # Time-to-live in seconds
+        os.makedirs(cache_dir, exist_ok=True)
+        self.session = requests.Session()
+
+    def _cache_key(self, url, params):
+        """Generate a unique cache key from URL and parameters"""
+        import hashlib
+        key = f"{url}_{json.dumps(params, sort_keys=True)}"
+        return hashlib.md5(key.encode()).hexdigest()
+
+    def get(self, path, params=None):
+        """GET with automatic caching"""
+        url = f"{self.base_url}{path}"
+        cache_file = os.path.join(self.cache_dir, f"{self._cache_key(url, params)}.json")
+
+        # Check if cache exists and is still valid
+        if os.path.exists(cache_file):
+            with open(cache_file, "r") as f:
+                cached = json.load(f)
+            age = time.time() - cached["_cached_at"]
+            if age < self.ttl:
+                print(f"  💾 Cache hit ({age:.0f}s old)")
+                return cached["data"]
+            else:
+                print(f"  🕐 Cache expired ({age:.0f}s old)")
+
+        # Fetch fresh data
+        print(f"  🌐 Fetching from {url}")
+        response = self.session.get(url, params=params, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+
+        # Save to cache
+        cache_entry = {
+            "data": data,
+            "_cached_at": time.time(),
+            "_cached_at_human": datetime.now().isoformat()
+        }
+        with open(cache_file, "w") as f:
+            json.dump(cache_entry, f, indent=2)
+
+        return data
+
+    def clear_cache(self):
+        """Remove all cached files"""
+        for filename in os.listdir(self.cache_dir):
+            os.remove(os.path.join(self.cache_dir, filename))
+        print(f"  🗑️ Cleared {len(os.listdir(self.cache_dir))} cache files")
+
+# Usage
+api = CachedAPIClient(
+    base_url="https://jsonplaceholder.typicode.com",
+    ttl=300  # Cache for 5 minutes
+)
+
+# First call — fetches from API
+posts = api.get("/posts", params={"_limit": 5})
+print(f"Got {len(posts)} posts")
+
+# Second call — served from cache
+posts = api.get("/posts", params={"_limit": 5})
+print(f"Got {len(posts)} posts (from cache)")</code></pre>
+
+            <h2>Best Practices Summary</h2>
+
+            <ul>
+                <li><strong>Always set a timeout</strong> — never let a request hang indefinitely</li>
+                <li><strong>Handle HTTP errors</strong> with <code>response.raise_for_status()</code> and specific exception types</li>
+                <li><strong>Use <code>requests.Session()</code></strong> for multiple requests to the same API (connection reuse)</li>
+                <li><strong>Pass <code>json=payload</code></strong> instead of <code>data=payload</code> for POST/PUT requests</li>
+                <li><strong>Use query parameter dict</strong> instead of manual URL string building</li>
+                <li><strong>Store API keys in environment variables</strong>, never hardcode them</li>
+                <li><strong>Respect rate limits</strong> — implement retry logic with exponential backoff</li>
+                <li><strong>Cache responses</strong> when the data doesn't change frequently</li>
+                <li><strong>Validate response data</strong> before accessing nested keys (use <code>.get()</code> or try/except)</li>
+            </ul>
+
+            <h2>Next Steps</h2>
+
+            <p>Once you're comfortable with HTTP requests and JSON, explore:</p>
+
+            <ul>
+                <li><a href="python-async-await.html">Async/await with aiohttp</a> for high-performance concurrent API calls</li>
+                <li><a href="python-flask-rest-api.html">Building your own REST API</a> with Flask</li>
+                <li><a href="python-web-scraping.html">Web scraping</a> for sites without official APIs</li>
+                <li><a href="python-env-vars-secrets.html">Environment variables</a> for managing API keys securely</li>
+            </ul>
+
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes · Built with Cloudflare</p>
+        </div>
+    </footer>
+
+    <script>
+    // Progress bar
+    window.addEventListener('scroll', () => {
+        const bar = document.getElementById('progressBar');
+        if (bar) {
+            const scrollTop = window.scrollY;
+            const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+            bar.style.width = (scrollTop / docHeight * 100) + '%';
+        }
+    });
+
+    // Theme toggle
+    const toggle = document.getElementById('themeToggle');
+    if (toggle) {
+        const saved = localStorage.getItem('theme');
+        if (saved === 'light') document.body.classList.add('light-mode');
+        toggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            localStorage.setItem('theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
+        });
+    }
+    </script>
+</body>
+</html>

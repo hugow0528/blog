@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Packaging &amp; Publishing to PyPI: Share Your Code with the World — Complete Beginner's Guide</title>
+    <meta name="description" content="Learn how to package Python code, create installable distributions, write setup.py and pyproject.toml, build wheels, and publish to PyPI. Step-by-step with working examples.">
+    <meta name="keywords" content="python packaging, pyproject.toml, setup.py, pip, PyPI, twine, wheel, python distribution, publish package">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-packaging-pypi.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-detail">
+            <header class="post-header">
+                <div class="post-tags">
+                    <span class="tag python">Python</span>
+                </div>
+                <h1>Python Packaging &amp; Publishing to PyPI: Share Your Code with the World — Complete Beginner's Guide</h1>
+                <div class="post-meta">
+                    <span class="post-date">July 17, 2026</span>
+                    <span class="read-time">11 min read</span>
+                </div>
+            </header>
+
+            <div class="post-content">
+                <p>You've written a Python module that's genuinely useful. Maybe it's a utility for parsing logs, a helper for Cloudflare API calls, or a data transformation library. Every time you work on a new project, you copy and paste the same code. Sound familiar? It's time to package it properly and share it with the world.</p>
+
+                <p>Python packaging can feel overwhelming at first. There are <code>setup.py</code>, <code>setup.cfg</code>, <code>pyproject.toml</code>, <code>MANIFEST.in</code>, sdist, wheels, Twine, setuptools, and more. This guide walks you through every piece — from your first packaged module to publishing a real package on PyPI that anyone can install with <code>pip install your-package</code>.</p>
+
+                <h2>How Python Packaging Works</h2>
+                <p>At its core, packaging turns your Python source code into something installable. Here's the flow:</p>
+                <ol>
+                    <li>You write Python code in a proper directory structure</li>
+                    <li>You create a configuration file (<code>pyproject.toml</code>) describing your package</li>
+                    <li>A build tool (like <code>build</code>) creates distribution files (sdist and wheel)</li>
+                    <li>You upload those files to PyPI using <code>twine</code></li>
+                    <li>Anyone can install your package with <code>pip install your-package</code></li>
+                </ol>
+
+                <h2>Step 1: Set Up the Project Structure</h2>
+                <p>Every Python package follows a standard directory structure. Let's create one for a sample package called <code>myutils</code>:</p>
+
+<pre><code class="language-bash"># Create the project directory
+mkdir myutils && cd myutils
+
+# Create the package structure
+mkdir -p myutils/tests
+mkdir -p docs
+
+# Create necessary files
+touch myutils/__init__.py
+touch myutils/__about__.py
+touch myutils/tests/__init__.py
+touch pyproject.toml
+touch README.md
+touch LICENSE
+
+# Your directory should look like:
+# myutils/
+# ├── pyproject.toml
+# ├── README.md
+# ├── LICENSE
+# └── myutils/
+#     ├── __init__.py
+#     ├── __about__.py
+#     └── tests/
+#         └── __init__.py</code></pre>
+
+                <p>The inner <code>myutils/</code> directory is your <strong>package</strong> — the code that gets imported. The outer <code>myutils/</code> is your <strong>project</strong> — containing config, docs, and the source.</p>
+
+                <h2>Step 2: Write Your Code</h2>
+                <p>Let's build a simple utility package with two modules:</p>
+
+<pre><code class="language-python"># myutils/__about__.py
+"""Package metadata"""
+__version__ = "0.1.0"
+__author__ = "Hugo Wong"
+__email__ = "hugo@example.com"
+</code></pre>
+
+<pre><code class="language-python"># myutils/core.py
+"""Core utility functions for common tasks."""
+
+import re
+import os
+from pathlib import Path
+from typing import Optional
+
+
+def slugify(text: str, separator: str = "-") -> str:
+    """Convert text to a URL-friendly slug.
+
+    >>> slugify("Hello World!")
+    'hello-world'
+    >>> slugify("Python 3.11 Features", separator="_")
+    'python_3_11_features'
+    """
+    text = text.strip().lower()
+    text = re.sub(r"[^\w\s-]", "", text)
+    text = re.sub(r"[\s]+", separator, text)
+    return text.strip(separator)
+
+
+def find_files(
+    directory: str,
+    pattern: str = "*.py",
+    recursive: bool = True,
+) -> list[str]:
+    """Find files matching a glob pattern in a directory.
+
+    >>> files = find_files("/tmp", "*.log", recursive=False)
+    >>> all(f.endswith(".log") for f in files)
+    True
+    """
+    path = Path(directory)
+    method = path.rglob if recursive else path.glob
+    return [str(f) for f in method(pattern)]
+
+
+def read_json(path: str) -> dict:
+    """Read and parse a JSON file.
+
+    Raises:
+        FileNotFoundError: If the file doesn't exist.
+        json.JSONDecodeError: If the file contains invalid JSON.
+    """
+    import json
+
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def write_json(path: str, data: dict, indent: int = 2) -> None:
+    """Write a dictionary to a JSON file."""
+    import json
+
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=indent, ensure_ascii=False)
+</code></pre>
+
+<pre><code class="language-python"># myutils/__init__.py
+"""myutils - A collection of Python utility functions."""
+
+from myutils.__about__ import __version__, __author__
+from myutils.core import slugify, find_files, read_json, write_json
+
+__all__ = [
+    "__version__",
+    "__author__",
+    "slugify",
+    "find_files",
+    "read_json",
+    "write_json",
+]
+</code></pre>
+
+                <h2>Step 3: Configure pyproject.toml</h2>
+                <p>The <code>pyproject.toml</code> file is the modern standard for Python packaging. It replaces <code>setup.py</code> for most use cases and is required for PEP 517/518 compatibility.</p>
+
+<pre><code class="language-toml"># pyproject.toml
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "myutils"
+version = "0.1.0"
+description = "A collection of useful Python utility functions"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+authors = [
+    {name = "Hugo Wong", email = "hugo@example.com"},
+]
+keywords = [
+    "utilities",
+    "python",
+    "helpers",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries",
+]
+
+# Optional dependencies
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "black>=23.0",
+    "mypy>=1.0",
+]
+docs = [
+    "sphinx>=7.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/hugow0528/myutils"
+Repository = "https://github.com/hugow0528/myutils"
+Issues = "https://github.com/hugow0528/myutils/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["myutils*"]
+
+[tool.black]
+line-length = 88
+target-version = ["py310", "py311", "py312"]
+</code></pre>
+
+                <h3>Understanding the key fields:</h3>
+                <ul>
+                    <li><strong>[build-system]</strong>: Declares which tools build the package. <code>setuptools</code> is the most common choice.</li>
+                    <li><strong>[project]</strong>: All the metadata — name, version, description, authors, Python version requirements, and <code>classifiers</code> that help users find your package on PyPI.</li>
+                    <li><strong>[project.optional-dependencies]</strong>: Named dependency groups. Users can run <code>pip install myutils[dev]</code> to get development tools.</li>
+                    <li><strong>[tool.setuptools.packages.find]</strong>: Tells setuptools which directories contain your package code.</li>
+                </ul>
+
+                <h2>Step 4: Write a README.md</h2>
+                <p>Your README is the landing page for your package on PyPI. Make it count:</p>
+
+<pre><code class="language-markdown"># myutils
+
+A collection of useful Python utility functions.
+
+## Installation
+
+```bash
+pip install myutils
+```
+
+## Quick Start
+
+```python
+from myutils import slugify, find_files
+
+# Convert text to slugs
+slug = slugify("Hello World!")
+print(slug)  # "hello-world"
+
+# Find Python files
+files = find_files("/path/to/project", "*.py")
+print(files)  # ["/path/to/project/app.py", ...]
+```
+
+## API Reference
+
+- `slugify(text, separator="-")` — Convert text to URL-friendly slug
+- `find_files(directory, pattern="*.py", recursive=True)` — Glob file finder
+- `read_json(path)` — Read and parse JSON files
+- `write_json(path, data, indent=2)` — Write data to JSON files
+
+## License
+
+MIT License</code></pre>
+
+                <h2>Step 5: Build the Distribution</h2>
+                <p>Now build your package into distributable formats:</p>
+
+<pre><code class="language-bash"># Install the build tool
+pip install build
+
+# Build the package
+python -m build
+
+# This creates:
+# dist/
+# ├── myutils-0.1.0.tar.gz        (sdist - source distribution)
+# └── myutils-0.1.0-py3-none-any.whl  (wheel - built distribution)
+</code></pre>
+
+                <p>Two files are created:
+                <ul>
+                    <li><strong>sdist</strong> (.tar.gz): The raw source code. Anyone can download and build it. Required by PyPI.</li>
+                    <li><strong>wheel</strong> (.whl): A pre-built, optimized distribution. Users get this when they run <code>pip install</code>. Much faster to install than sdist.</li>
+                </ul></p>
+
+                <h3>Test Install Locally</h3>
+                <p>Before publishing, test your package in a clean virtual environment:</p>
+
+<pre><code class="language-bash"># Create a clean virtual environment
+python -m venv test-env
+source test-env/bin/activate  # On Windows: test-env\Scripts\activate
+
+# Install from the wheel
+pip install dist/myutils-0.1.0-py3-none-any.whl
+
+# Test it works
+python -c "from myutils import slugify; print(slugify('Hello World!'))"
+# Output: hello-world
+
+# Clean up
+deactivate
+rm -rf test-env
+</code></pre>
+
+                <h2>Step 6: Add Tests (Before Publishing!)</h2>
+                <p>Even a small package should have basic tests:</p>
+
+<pre><code class="language-python"># myutils/tests/test_core.py
+import pytest
+from myutils import slugify, find_files
+
+
+def test_slugify_basic():
+    assert slugify("Hello World") == "hello-world"
+
+
+def test_slugify_special_chars():
+    assert slugify("What's Up??!") == "whats-up"
+
+
+def test_slugify_custom_separator():
+    assert slugify("One Two Three", separator="_") == "one_two_three"
+
+
+def test_slugify_empty():
+    assert slugify("") == ""
+
+
+def test_slugify_numbers():
+    assert slugify("Python 3.12") == "python-3-12"
+
+
+def test_find_files(tmp_path):
+    # Create test files
+    (tmp_path / "app.py").touch()
+    (tmp_path / "data.txt").touch()
+    (tmp_path / "config.yaml").touch()
+
+    files = find_files(str(tmp_path), "*.py", recursive=False)
+    assert len(files) == 1
+    assert "app.py" in files[0]
+
+
+def test_find_files_recursive(tmp_path):
+    # Create nested directory
+    subdir = tmp_path / "src"
+    subdir.mkdir()
+    (subdir / "main.py").touch()
+    (tmp_path / "test.py").touch()
+
+    files = find_files(str(tmp_path), "*.py", recursive=True)
+    assert len(files) == 2
+
+
+def test_find_files_no_match(tmp_path):
+    (tmp_path / "file.txt").touch()
+    files = find_files(str(tmp_path), "*.py")
+    assert files == []
+</code></pre>
+
+<pre><code class="language-bash"># Run tests
+pip install pytest
+pytest myutils/tests/ -v --tb=short
+</code></pre>
+
+                <h2>Step 7: Publish to TestPyPI First</h2>
+                <p><strong>Never publish directly to PyPI on your first attempt.</strong> Use TestPyPI — a mirror for testing uploads — before going live.</p>
+
+<h3>Create a TestPyPI Account</h3>
+
+<pre><code class="language-bash"># 1. Go to https://test.pypi.org/account/register/
+# 2. Create an account with your email
+# 3. Verify your email address</code></pre>
+
+<h3>Generate an API Token</h3>
+
+<pre><code class="language-bash"># Go to https://test.pypi.org/manage/account/token/
+# Click "Add API token"
+# Set scope to "Entire account" (for testing)
+# Copy the token — it starts with pypi-</code></pre>
+
+<h3>Upload with Twine</h3>
+
+<pre><code class="language-bash"># Install twine
+pip install twine
+
+# Upload to TestPyPI
+twine upload --repository testpypi dist/*
+# Username: __token__
+# Password: pypi-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+# Verify by installing from TestPyPI
+pip install --index-url https://test.pypi.org/simple/ --no-deps myutils
+</code></pre>
+
+                <h2>Step 8: Publish to Real PyPI</h2>
+                <p>Once your package works perfectly on TestPyPI, publish for real:</p>
+
+<pre><code class="language-bash"># 1. Create account at https://pypi.org/account/register/
+# 2. Verify your email
+# 3. Generate token at https://pypi.org/manage/account/token/
+
+# Upload to production PyPI
+twine upload dist/*
+# Username: __token__
+# Password: pypi-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+# Done! Your package is now at:
+# https://pypi.org/project/myutils/
+# And installable with:
+# pip install myutils
+</code></pre>
+
+                <h2>Versioning: Semantic Versioning</h2>
+                <p>Follow <strong>SemVer</strong> (MAJOR.MINOR.PATCH) for your version numbers:</p>
+                <ul>
+                    <li><strong>MAJOR</strong> (1.0.0 → 2.0.0): Breaking changes. Users' code might stop working.</li>
+                    <li><strong>MINOR</strong> (0.1.0 → 0.2.0): New features, backward compatible.</li>
+                    <li><strong>PATCH</strong> (0.1.0 → 0.1.1): Bug fixes only, no new features.</li>
+                </ul>
+
+                <p>You can use <code>bump-my-version</code> to automate version bumps:</p>
+
+<pre><code class="language-bash"># Install
+pip install bump-my-version
+
+# Bump version
+bump-my-version bump patch  # 0.1.0 → 0.1.1
+bump-my-version bump minor  # 0.1.1 → 0.2.0
+bump-my-version bump major  # 0.2.0 → 1.0.0
+
+# Rebuild and re-upload
+python -m build
+twine upload dist/*
+</code></pre>
+
+                <h2>Automate with GitHub Actions</h2>
+                <p>Set up a CI workflow that tests and publishes automatically:</p>
+
+<pre><code class="language-yaml"># .github/workflows/publish.yml
+name: Publish to PyPI
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install build twine pytest
+
+      - name: Run tests
+        run: pytest myutils/tests/ -v
+
+      - name: Build package
+        run: python -m build
+
+      - name: Publish to PyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: twine upload dist/
+</code></pre>
+
+                <p>Store your PyPI token as a GitHub secret at <code>Settings → Secrets → PYPI_API_TOKEN</code>. Now every time you create a release on GitHub, the package gets tested and published automatically!</p>
+
+                <h2>Common Pitfalls and Tips</h2>
+                <ul>
+                    <li><strong>Package name already taken:</strong> Check <code>https://pypi.org/project/your-name/</code> before starting. If it exists, pick a different name — you can't claim it.</li>
+                    <li><strong>Forgetting <code>__init__.py</code>:</strong> Without this file, Python won't recognize your directory as a package.</li>
+                    <li><strong>Version mismatch:</strong> Ensure the version in <code>pyproject.toml</code> matches <code>__about__.py</code>. Use the same source of truth.</li>
+                    <li><strong>Dependencies in [project] vs [project.optional-dependencies]:</strong> Put runtime dependencies in [project].dependencies and dev tools in optional-dependencies.</li>
+                    <li><strong>Never delete a version from PyPI:</strong> Once published, versions are permanent. Fix bugs with a new version instead.</li>
+                    <li><strong>Add a LICENSE file:</strong> Most open source packages use MIT or Apache 2.0. Without one, users can't legally use your code.</li>
+                </ul>
+
+                <h2>Next Steps</h2>
+                <ul>
+                    <li>Add <strong>sphinx documentation</strong> for auto-generated API docs</li>
+                    <li>Set up <strong>GitHub Actions</strong> for automated testing on every push</li>
+                    <li>Add <strong>pre-commit hooks</strong> with black and mypy for code quality</li>
+                    <li>Create <strong>type stubs</strong> (<code>.pyi</code> files) for better IDE support</li>
+                    <li>Set up <strong>semantic-release</strong> for fully automated versioning and publishing</li>
+                </ul>
+
+                <p>Packaging your Python code might seem like extra work, but once you've done it once, future packages take minutes. You'll have a clean, installable, testable codebase that you can share with teammates, the community, or just your future self.</p>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo Wong · Built with curiosity and Coffee</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528">GitHub</a>
+                <a href="https://hugow.dev">hugow.dev</a>
+                <a href="/sitemap.xml">Sitemap</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-mode');
+            themeToggle.textContent = '☀';
+        }
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            themeToggle.textContent = isLight ? '☀' : '◐';
+        });
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + "%";
+        });
+    </script>
+</body>
+</html>

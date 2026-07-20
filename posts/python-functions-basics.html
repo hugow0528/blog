@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Functions: def, Parameters, Return Values &amp; *args/**kwargs — Complete Beginner's Guide</title>
+    <meta name="description" content="Master Python functions from scratch — defining functions, positional and keyword arguments, default values, *args and **kwargs, return values, lambda functions, docstrings, and real-world patterns. Working code for every concept.">
+    <meta name="keywords" content="python functions, def, parameters, arguments, *args, **kwargs, return values, lambda, python tutorial, beginner">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-functions-basics.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-detail">
+            <header class="post-header">
+                <div class="post-tags">
+                    <span class="tag python">Python</span>
+                </div>
+                <h1>Python Functions: <code>def</code>, Parameters, Return Values &amp; <code>*args/**kwargs</code> — Complete Beginner's Guide</h1>
+                <div class="post-meta">
+                    <span class="post-date">July 17, 2026</span>
+                    <span class="read-time">12 min read</span>
+                </div>
+            </header>
+
+            <div class="post-content">
+                <p>Functions are the building blocks of every Python program. They let you package code into reusable, named blocks that you can call anytime. If you've been writing Python by repeating the same code, functions will change everything. Let's build a complete mental model from zero to production-ready.</p>
+
+                <h2>Why Functions Matter</h2>
+                <p>Without functions, your code looks like a wall of logic. You repeat yourself, you make mistakes when copying, and nobody can read your code. Functions solve all three problems.</p>
+
+<pre><code class="language-python"># ❌ Without functions — repeating yourself
+# Calculate tax for order 1
+total1 = 99.99
+tax1 = total1 * 0.08
+final1 = total1 + tax1
+print(f"Order 1: ${final1:.2f}")
+
+# Calculate tax for order 2
+total2 = 249.50
+tax2 = total2 * 0.08
+final2 = total2 + tax2
+print(f"Order 2: ${final2:.2f}")
+
+# Calculate tax for order 3... (you see the pattern)</code></pre>
+
+<pre><code class="language-python"># ✅ With functions — write once, use everywhere
+def calculate_price(subtotal, tax_rate=0.08):
+    tax = subtotal * tax_rate
+    return subtotal + tax
+
+print(f"Order 1: ${calculate_price(99.99):.2f}")
+print(f"Order 2: ${calculate_price(249.50):.2f}")
+print(f"Order 3: ${calculate_price(50.00, 0.10):.2f}")  # Different tax rate</code></pre>
+
+                <p>The function captures the <em>logic</em> once. You just change the inputs. This is called <strong>D.R.Y.</strong> — Don't Repeat Yourself.</p>
+
+                <h2>Defining Your First Function</h2>
+                <p>Use the <code>def</code> keyword, followed by the function name, parentheses for parameters, and a colon. Everything indented underneath is the function body.</p>
+
+<pre><code class="language-python">def greet(name):
+    """Say hello to someone."""
+    message = f"Hello, {name}!"
+    return message
+
+# Call the function
+result = greet("Hugo")
+print(result)  # Output: Hello, Hugo!</code></pre>
+
+                <p>Three key parts:</p>
+                <ul>
+                    <li><strong>Name</strong> (<code>greet</code>) — describes what the function does</li>
+                    <li><strong>Parameters</strong> (<code>name</code>) — inputs the function needs</li>
+                    <li><strong>Return value</strong> (<code>return message</code>) — what the function gives back</li>
+                </ul>
+
+                <h2>Parameters: Positional vs Keyword Arguments</h2>
+                <p>Python gives you two ways to pass arguments into functions. Understanding both is essential.</p>
+
+<pre><code class="language-python">def create_user(username, email, age):
+    return {"username": username, "email": email, "age": age}
+
+# Positional arguments — order matters
+user1 = create_user("alice", "alice@example.com", 28)
+# user1 = {'username': 'alice', 'email': 'alice@example.com', 'age': 28}
+
+# Keyword arguments — order doesn't matter, self-documenting
+user2 = create_user(
+    age=32,
+    email="bob@example.com",
+    username="bob"
+)
+# user2 = {'username': 'bob', 'email': 'bob@example.com', 'age': 32}</code></pre>
+
+                <p><strong>Rule of thumb:</strong> Use positional arguments for simple, obvious cases. Use keyword arguments when the function has 3+ parameters or when the meaning isn't immediately clear from the value.</p>
+
+                <h2>Default Parameter Values</h2>
+                <p>Set defaults so callers don't have to specify everything:</p>
+
+<pre><code class="language-python">def connect_to_database(host="localhost", port=5432, timeout=30):
+    """Connect to a PostgreSQL database with sensible defaults."""
+    return f"Connecting to {host}:{port} (timeout={timeout}s)"
+
+# Use all defaults
+conn1 = connect_to_database()
+# Output: Connecting to localhost:5432 (timeout=30s)
+
+# Override just what you need
+conn2 = connect_to_database(host="db.prod.example.com", timeout=60)
+# Output: Connecting to db.prod.example.com:5432 (timeout=60s)</code></pre>
+
+                <p><strong>Important:</strong> Parameters with defaults must come <em>after</em> parameters without defaults.</p>
+
+<pre><code class="language-python"># ✅ Correct — required params first
+def process_file(filepath, mode="r", encoding="utf-8"):
+    ...
+
+# ❌ SyntaxError — required param after default
+def process_file(filepath="data.txt", mode):
+    ...</code></pre>
+
+                <h2>The Dangerous Default Mutable Argument</h2>
+                <p>This is the #1 Python interview question and the #1 source of subtle bugs:</p>
+
+<pre><code class="language-python"># ❌ DON'T DO THIS
+def append_to_list(item, my_list=[]):
+    my_list.append(item)
+    return my_list
+
+print(append_to_list(1))  # [1]
+print(append_to_list(2))  # [1, 2] ← Oops! It remembered the previous call
+print(append_to_list(3))  # [1, 2, 3] ← Still the same list!</code></pre>
+
+                <p>Why? Because <code>[]</code> is evaluated <em>once</em> when the function is defined, not each time it's called. The same list object is reused.</p>
+
+<pre><code class="language-python"># ✅ DO THIS instead
+def append_to_list(item, my_list=None):
+    if my_list is None:
+        my_list = []
+    my_list.append(item)
+    return my_list
+
+print(append_to_list(1))  # [1]
+print(append_to_list(2))  # [2] ← Fresh list each time
+print(append_to_list(3))  # [3] ← Perfect</code></pre>
+
+                <p>Use <code>None</code> as the default, then create the mutable object inside the function. This pattern applies to lists, dicts, and sets.</p>
+
+                <h2><code>*args</code>: Arbitrary Positional Arguments</h2>
+                <p>Use <code>*args</code> when you don't know how many positional arguments will be passed:</p>
+
+<pre><code class="language-python">def add_all(*args):
+    """Add any number of numbers together."""
+    total = 0
+    for num in args:
+        total += num
+    return total
+
+print(add_all(1, 2, 3))        # 6
+print(add_all(10, 20))         # 30
+print(add_all(1, 2, 3, 4, 5))  # 15</code></pre>
+
+                <p>Inside the function, <code>args</code> is a <strong>tuple</strong> of all passed values. The asterisk is just a convention — you could write <code>*numbers</code> if that's clearer.</p>
+
+                <h2><code>**kwargs</code>: Arbitrary Keyword Arguments</h2>
+                <p>Use <code>**kwargs</code> when you want to accept arbitrary named parameters:</p>
+
+<pre><code class="language-python">def build_url(base, **params):
+    """Build a URL with query parameters."""
+    query = "&amp;".join(f"{k}={v}" for k, v in params.items())
+    return f"{base}?{query}" if params else base
+
+url1 = build_url("https://api.example.com/data")
+# https://api.example.com/data
+
+url2 = build_url("https://api.example.com/data",
+                 page=1,
+                 limit=20,
+                 sort="date")
+# https://api.example.com/data?page=1&amp;limit=20&amp;sort=date</code></pre>
+
+                <p>Inside the function, <code>params</code> is a <strong>dictionary</strong> of all keyword arguments.</p>
+
+                <h2>Combining Everything</h2>
+                <p>Python lets you mix all parameter types. The order is strict: <strong>required → defaults → *args → **kwargs</strong>.</p>
+
+<pre><code class="language-python">def send_notification(user_id, message, priority="normal", *channels, **metadata):
+    """
+    Send a notification through multiple channels.
+    
+    Args:
+        user_id: The recipient's ID (required)
+        message: What to send (required)
+        priority: "normal", "high", or "urgent" (default: "normal")
+        *channels: Any number of delivery channels
+        **metadata: Extra tracking data
+    """
+    print(f"[{priority.upper()}] To user {user_id}")
+    print(f"Message: {message}")
+    print(f"Channels: {channels}")
+    print(f"Metadata: {metadata}")
+
+send_notification(
+    42,
+    "Your order shipped!",
+    "high",
+    "email", "sms", "push",
+    order_id="ORD-12345",
+    campaign="summer_sale"
+)
+
+# Output:
+# [HIGH] To user 42
+# Message: Your order shipped!
+# Channels: ('email', 'sms', 'push')
+# Metadata: {'order_id': 'ORD-12345', 'campaign': 'summer_sale'}</code></pre>
+
+                <h2>Lambda Functions: One-Liner Functions</h2>
+                <p>Use <code>lambda</code> for quick, anonymous functions — especially when passing a function as an argument:</p>
+
+<pre><code class="language-python"># Regular function
+def square(x):
+    return x ** 2
+
+# Equivalent lambda
+square = lambda x: x ** 2
+
+# Where lambdas shine — sorting with a key
+users = [
+    {"name": "Alice", "age": 28},
+    {"name": "Bob", "age": 22},
+    {"name": "Charlie", "age": 35},
+]
+
+# Sort by age
+users_by_age = sorted(users, key=lambda u: u["age"])
+
+# Sort by name length
+users_by_name_len = sorted(users, key=lambda u: len(u["name"]))
+
+# Map — transform every element
+prices = [10.99, 24.50, 5.99]
+with_tax = list(map(lambda p: round(p * 1.08, 2), prices))
+# [11.87, 26.46, 6.47]</code></pre>
+
+                <p><strong>When NOT to use lambda:</strong> If the function needs more than one expression, needs a name for debugging, or has complex logic — use <code>def</code>. Lambda is for simple, throwaway functions.</p>
+
+                <h2>Docstrings: Document Your Functions</h2>
+                <p>A docstring is a string literal as the first line in your function. It's read by <code>help()</code>, IDEs, and tools like Sphinx:</p>
+
+<pre><code class="language-python">def calculate_shipping(weight, distance, express=False):
+    """
+    Calculate shipping cost based on weight and distance.
+    
+    Args:
+        weight: Package weight in kilograms (float)
+        distance: Delivery distance in kilometers (float)
+        express: Use express delivery for 2x cost (bool, default: False)
+    
+    Returns:
+        float: Total shipping cost in dollars
+    
+    Examples:
+        >>> calculate_shipping(2.5, 100)
+        12.5
+        >>> calculate_shipping(2.5, 100, express=True)
+        25.0
+    """
+    base_cost = weight * 2 + distance * 0.02
+    if express:
+        base_cost *= 2
+    return round(base_cost, 2)
+
+# Access the docstring
+help(calculate_shipping)</code></pre>
+
+                <h2>Real-World Pattern: Function Composition</h2>
+                <p>Build complex behavior by chaining small, single-purpose functions:</p>
+
+<pre><code class="language-python">def fetch_users_from_api():
+    """Simulate fetching users from an API."""
+    return [
+        {"id": 1, "name": " Alice ", "email": "alice@example.com", "active": True},
+        {"id": 2, "name": "bob", "email": "  BOB@EXAMPLE.COM  ", "active": False},
+        {"id": 3, "name": "  charlie  ", "email": "charlie@example.com", "active": True},
+    ]
+
+def clean_name(name):
+    """Strip whitespace and capitalize a name."""
+    return name.strip().title()
+
+def normalize_email(email):
+    """Strip whitespace and lowercase an email."""
+    return email.strip().lower()
+
+def is_active(user):
+    """Check if a user is active."""
+    return user.get("active", False)
+
+def format_user(user):
+    """Format a single user record."""
+    return {
+        "id": user["id"],
+        "name": clean_name(user["name"]),
+        "email": normalize_email(user["email"]),
+        "active": user["active"],
+    }
+
+# Pipeline: fetch → clean → filter → format
+raw = fetch_users_from_api()
+cleaned = [format_user(u) for u in raw]
+active = [u for u in cleaned if is_active(u)]
+
+for user in active:
+    print(f"{user['name']} &lt;{user['email']}&gt;")
+# Alice &lt;alice@example.com&gt;
+# Charlie &lt;charlie@example.com&gt;</code></pre>
+
+                <p>Each function does <em>one thing well</em>. Together, they form a data processing pipeline. This pattern scales: replace the fetch function with a real API call, swap the filter for different criteria, add new formatting — everything stays testable.</p>
+
+                <h2>Summary</h2>
+                <p>Here's your function checklist:</p>
+                <ul>
+                    <li>Use <code>def name(params):</code> to define functions</li>
+                    <li>Prefer keyword arguments for 3+ parameters</li>
+                    <li>Set defaults for optional parameters (but never use mutable defaults!)</li>
+                    <li>Use <code>*args</code> for variable positional arguments, <code>**kwargs</code> for variable keyword arguments</li>
+                    <li>Use <code>lambda</code> for one-line functions passed as arguments</li>
+                    <li>Always write docstrings for functions that others will use</li>
+                    <li>Build pipelines by composing small functions</li>
+                </ul>
+
+                <p>Functions are the foundation. Master them, and every other Python concept — classes, decorators, generators, async — builds on top of what you know now.</p>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo Wong · Built with curiosity and Coffee</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528">GitHub</a>
+                <a href="https://hugow.dev">hugow.dev</a>
+                <a href="/sitemap.xml">Sitemap</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-mode');
+            themeToggle.textContent = '☀';
+        }
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            themeToggle.textContent = isLight ? '☀' : '◐';
+        });
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + "%";
+        });
+    </script>
+</body>
+</html>

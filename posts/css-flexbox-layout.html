@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS Flexbox Layout: Align, Distribute &amp; Responsive Design — Complete Beginner's Guide</title>
+    <meta name="description" content="Master CSS Flexbox — flex-direction, justify-content, align-items, flex-wrap, flex-grow/shrink/basis, and real-world layout patterns. Working examples for every concept.">
+    <meta name="keywords" content="CSS flexbox, flex layout, justify-content, align-items, flex-wrap, responsive CSS, flex container">
+    <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/css-flexbox-layout.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn active">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-full">
+            <header class="post-header">
+                <div class="post-tags">
+                    <span class="tag web">Web Dev</span>
+                </div>
+                <h1>CSS Flexbox Layout: Align, Distribute &amp; Responsive Design</h1>
+                <div class="post-meta">
+                    <span class="post-date">July 19, 2026</span>
+                    <span class="read-time">11 min read</span>
+                </div>
+            </header>
+
+            <div class="post-content">
+                <p>CSS Flexbox (Flexible Box Layout) is the most powerful layout tool in CSS for one-dimensional layouts — rows or columns of items. Whether you're centering a div (the classic CSS struggle), building a navigation bar, creating a responsive card grid, or aligning items in a form, Flexbox solves it in one line of code. Before Flexbox, developers used floats, tables, and JavaScript for layout. After Flexbox, all of that became a thing of the past.</p>
+
+                <p>This guide takes you from <code>display: flex</code> to production-ready layouts. Every concept is explained with visual reasoning and real HTML/CSS code you can copy and run immediately.</p>
+
+                <h2 id="basics">The Flexbox Mental Model</h2>
+                <p>Flexbox has two parts: a <strong>container</strong> and <strong>items</strong> inside it.</p>
+
+                <ul>
+                    <li><strong>Flex container:</strong> The parent element with <code>display: flex</code></li>
+                    <li><strong>Flex items:</strong> Direct children of the container (only direct children are flex items)</li>
+                    <li><strong>Main axis:</strong> The primary direction items are laid out (horizontal by default)</li>
+                    <li><strong>Cross axis:</strong> The perpendicular direction</li>
+                </ul>
+
+                <p>Here's the minimum code to make something flex:</p>
+
+                <pre><code class="language-html">&lt;div class="container"&gt;
+  &lt;div class="item"&gt;1&lt;/div&gt;
+  &lt;div class="item"&gt;2&lt;/div&gt;
+  &lt;div class="item"&gt;3&lt;/div&gt;
+&lt;/div&gt;
+
+&lt;style&gt;
+.container {
+  display: flex;        /* This makes it a flex container */
+  gap: 16px;            /* Space between items */
+}
+
+.item {
+  padding: 20px;
+  background: #191a1b;
+  border-radius: 8px;
+  text-align: center;
+}
+&lt;/style&gt;</code></pre>
+
+                <p>That's it. Now the three items sit side by side with 16px gaps between them. No floats, no inline-block, no clearfix hacks.</p>
+
+                <h2 id="direction">flex-direction: Which Way Things Flow</h2>
+                <p>By default, flex items lay out horizontally (left to right). Change the direction with <code>flex-direction</code>:</p>
+
+                <pre><code class="language-css">.container {
+  display: flex;
+}
+
+/* Default: items go left → right (row) */
+.row {
+  flex-direction: row;
+}
+
+/* Items go right → left (row-reverse) */
+.row-reverse {
+  flex-direction: row-reverse;
+}
+
+/* Items go top → bottom (column) */
+.column {
+  flex-direction: column;
+}
+
+/* Items go bottom → top (column-reverse) */
+.column-reverse {
+  flex-direction: column-reverse;
+}</code></pre>
+
+                <p><strong>Real-world use — vertical card stack:</strong></p>
+
+                <pre><code class="language-html">&lt;div class="card-stack"&gt;
+  &lt;div class="card"&gt;First&lt;/div&gt;
+  &lt;div class="card"&gt;Second&lt;/div&gt;
+  &lt;div class="card"&gt;Third&lt;/div&gt;
+&lt;/div&gt;
+
+&lt;style&gt;
+.card-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 400px;
+}
+&lt;/style&gt;</code></pre>
+
+                <h2 id="justify">justify-content: Align on the Main Axis</h2>
+                <p><code>justify-content</code> controls how items are distributed along the main axis. This is the property you'll reach for most often:</p>
+
+                <pre><code class="language-css">/* Items start at the beginning (default) */
+.start { justify-content: flex-start; }
+
+/* Items pack to the end */
+.end { justify-content: flex-end; }
+
+/* Items center in the container — the #1 most used value */
+.center { justify-content: center; }
+
+/* Items spread out with equal space between them */
+.between { justify-content: space-between; }
+
+/* Equal space before first, between, and after last */
+.around { justify-content: space-around; }
+
+/* Equal space on all sides (visually cleanest) */
+.evenly { justify-content: space-evenly; }</code></pre>
+
+                <p><strong>Real-world use — centered page layout:</strong></p>
+
+                <pre><code class="language-html">&lt;body&gt;
+  &lt;div class="centered"&gt;
+    &lt;h1&gt;Hello World&lt;/h1&gt;
+    &lt;p&gt;Perfectly centered&lt;/p&gt;
+  &lt;/div&gt;
+&lt;/body&gt;
+
+&lt;style&gt;
+body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  margin: 0;
+}
+
+.centered {
+  text-align: center;
+}
+&lt;/style&gt;</code></pre>
+
+                <p>This is the canonical "center a div" solution. Two properties: <code>justify-content: center</code> (horizontal) and <code>align-items: center</code> (vertical). Works on any viewport size.</p>
+
+                <h2 id="align">align-items and align-content: Cross-Axis Alignment</h2>
+                <p>While <code>justify-content</code> handles the main axis, <code>align-items</code> handles the cross axis:</p>
+
+                <pre><code class="language-css">/* Items stretch to fill container height (default) */
+.stretch { align-items: stretch; }
+
+/* Items align to the top/start */
+.start { align-items: flex-start; }
+
+/* Items align to the bottom/end */
+.end { align-items: flex-end; }
+
+/* Items center vertically */
+.center { align-items: center; }
+
+/* Items align to the baseline of text */
+.baseline { align-items: baseline; }</code></pre>
+
+                <p><strong>Real-world use — navigation bar with logo and links:</strong></p>
+
+                <pre><code class="language-html">&lt;nav class="navbar"&gt;
+  &lt;div class="logo"&gt;MySite&lt;/div&gt;
+  &lt;div class="links"&gt;
+    &lt;a href="#"&gt;Home&lt;/a&gt;
+    &lt;a href="#"&gt;About&lt;/a&gt;
+    &lt;a href="#"&gt;Contact&lt;/a&gt;
+  &lt;/div&gt;
+&lt;/nav&gt;
+
+&lt;style&gt;
+.navbar {
+  display: flex;
+  justify-content: space-between;  /* Logo left, links right */
+  align-items: center;             /* Vertically center everything */
+  padding: 16px 24px;
+  background: #0f1011;
+  border-bottom: 1px solid #23252a;
+}
+
+.links {
+  display: flex;
+  gap: 24px;
+}
+
+.links a {
+  color: #d0d6e0;
+  text-decoration: none;
+}
+&lt;/style&gt;</code></pre>
+
+                <h2 id="flex-wrap">flex-wrap: Handle Overflow</h2>
+                <p>By default, flex items try to fit on one line and will shrink (or overflow). Enable wrapping so items flow to new lines:</p>
+
+                <pre><code class="language-css">/* All items on one line (default) — they shrink */
+.nowrap { flex-wrap: nowrap; }
+
+/* Items wrap to new lines when space runs out */
+.wrap { flex-wrap: wrap; }
+
+/* Items wrap but start from the last line */
+.wrap-reverse { flex-wrap: wrap-reverse; }</code></pre>
+
+                <p><strong>Real-world use — responsive card grid:</strong></p>
+
+                <pre><code class="language-html">&lt;div class="card-grid"&gt;
+  &lt;div class="card"&gt;Card 1&lt;/div&gt;
+  &lt;div class="card"&gt;Card 2&lt;/div&gt;
+  &lt;div class="card"&gt;Card 3&lt;/div&gt;
+  &lt;div class="card"&gt;Card 4&lt;/div&gt;
+  &lt;div class="card"&gt;Card 5&lt;/div&gt;
+  &lt;div class="card"&gt;Card 6&lt;/div&gt;
+&lt;/div&gt;
+
+&lt;style&gt;
+.card-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.card {
+  flex: 1 1 280px;     /* grow | shrink | basis */
+  min-width: 250px;
+  padding: 24px;
+  background: #191a1b;
+  border-radius: 8px;
+  border: 1px solid #23252a;
+}
+&lt;/style&gt;</code></pre>
+
+                <p>The <code>flex: 1 1 280px</code> shorthand means: "grow to fill space, shrink if needed, but start at 280px wide." Combined with <code>flex-wrap: wrap</code>, this creates a responsive grid that shows 3 cards on desktop, 2 on tablet, and 1 on mobile — with zero media queries.</p>
+
+                <h2 id="flex-grow">flex-grow, flex-shrink, and flex-basis</h2>
+                <p>These three properties control how individual items behave. They can be set individually or with the <code>flex</code> shorthand:</p>
+
+                <pre><code class="language-css">/* flex: grow shrink basis */
+
+/* Grow to fill space, don't shrink, base 300px */
+.card { flex: 1 0 300px; }
+
+/* Don't grow, don't shrink, fixed 200px */
+.sidebar { flex: 0 0 200px; }
+
+/* Grow equally, can shrink, no minimum */
+.tab { flex: 1 1 0; }
+
+/* Don't grow, can shrink if needed, auto width */
+.logo { flex: 0 1 auto; }
+
+/* Full shorthand: 1 1 280px is the same as */
+.card {
+  flex-grow: 1;      /* How much to grow relative to siblings */
+  flex-shrink: 1;    /* How much to shrink when space is tight */
+  flex-basis: 280px; /* Starting size before growing/shrinking */
+}</code></pre>
+
+                <p><strong>Common patterns:</strong></p>
+
+                <pre><code class="language-css">/* Two-column layout: sidebar + main content */
+.layout {
+  display: flex;
+  gap: 24px;
+}
+
+.sidebar {
+  flex: 0 0 250px;   /* Fixed width sidebar */
+}
+
+.main {
+  flex: 1;           /* Takes all remaining space */
+}
+
+/* Footer: logo on left, links on right, copyright centered */
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px;
+}
+
+.footer .links {
+  display: flex;
+  gap: 16px;
+}</code></pre>
+
+                <h2 id="align-self">align-self: Override per Item</h2>
+                <p>Use <code>align-self</code> on individual items to override the container's <code>align-items</code>:</p>
+
+                <pre><code class="language-css">.container {
+  display: flex;
+  align-items: center;  /* Default: all items centered */
+  height: 200px;
+}
+
+.item:nth-child(2) {
+  align-self: flex-start;  /* This item goes to the top */
+}
+
+.item:nth-child(4) {
+  align-self: flex-end;    /* This item goes to the bottom */
+}</code></pre>
+
+                <p><strong>Real-world use — form with different input heights:</strong></p>
+
+                <pre><code class="language-html">&lt;div class="form-row"&gt;
+  &lt;label&gt;Name&lt;/label&gt;
+  &lt;input type="text" placeholder="Your name"&gt;
+  &lt;button type="submit"&gt;Send&lt;/button&gt;
+  &lt;div class="help-text"&gt;Optional field&lt;/div&gt;
+&lt;/div&gt;
+
+&lt;style&gt;
+.form-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.help-text {
+  align-self: flex-start;  /* Align to top, not center */
+  font-size: 12px;
+  color: #8a8f98;
+  margin-top: 24px;        /* Push it below the input */
+}
+&lt;/style&gt;</code></pre>
+
+                <h2 id="order">order: Reorder Without Changing HTML</h2>
+                <p>Flexbox lets you visually reorder items without touching the DOM. This is great for responsive layouts where mobile order differs from desktop:</p>
+
+                <pre><code class="language-html">&lt;div class="content"&gt;
+  &lt;header&gt;Header&lt;/header&gt;
+  &lt;main&gt;Main&lt;/main&gt;
+  &lt;aside&gt;Sidebar&lt;/aside&gt;
+  &lt;footer&gt;Footer&lt;/footer&gt;
+&lt;/div&gt;
+
+&lt;style&gt;
+.content {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Desktop: sidebar moves between header and main */
+@media (min-width: 768px) {
+  .content {
+    flex-direction: row;
+  }
+  
+  header { flex: 1; order: 1; }
+  aside  { flex: 0 0 250px; order: 2; }
+  main   { flex: 1; order: 3; }
+  footer { order: 4; width: 100%; }
+}</code></pre>
+
+                <h2 id="real-world">Real-World Layout Recipes</h2>
+
+                <p><strong>1. Holy Grail Layout:</strong></p>
+
+                <pre><code class="language-html">&lt;div class="holy-grail"&gt;
+  &lt;header&gt;Header&lt;/header&gt;
+  &lt;div class="body"&gt;
+    &lt;aside class="left"&gt;Nav&lt;/aside&gt;
+    &lt;main&gt;Content&lt;/main&gt;
+    &lt;aside class="right"&gt;Widgets&lt;/aside&gt;
+  &lt;/div&gt;
+  &lt;footer&gt;Footer&lt;/footer&gt;
+&lt;/div&gt;
+
+&lt;style&gt;
+.holy-grail {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.holy-grail header,
+.holy-grail footer {
+  padding: 16px;
+  background: #0f1011;
+}
+
+.holy-grail .body {
+  display: flex;
+  flex: 1;                /* Fill remaining vertical space */
+}
+
+.left  { flex: 0 0 200px; }
+.right { flex: 0 0 200px; }
+main  { flex: 1; padding: 24px; }
+&lt;/style&gt;</code></pre>
+
+                <p><strong>2. Chat Message Bubbles:</strong></p>
+
+                <pre><code class="language-html">&lt;div class="chat"&gt;
+  &lt;div class="msg sent"&gt;
+    &lt;p&gt;Hey, did you see the new release?&lt;/p&gt;
+    &lt;span class="time"&gt;10:30 AM&lt;/span&gt;
+  &lt;/div&gt;
+  &lt;div class="msg received"&gt;
+    &lt;p&gt;Yes! The new CSS features are incredible.&lt;/p&gt;
+    &lt;span class="time"&gt;10:31 AM&lt;/span&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+
+&lt;style&gt;
+.chat {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 500px;
+}
+
+.msg {
+  display: flex;
+  flex-direction: column;
+  max-width: 80%;
+  padding: 12px 16px;
+  border-radius: 12px;
+}
+
+.sent {
+  align-self: flex-end;
+  background: #5e6ad2;
+  border-bottom-right-radius: 4px;
+}
+
+.received {
+  align-self: flex-start;
+  background: #191a1b;
+  border-bottom-left-radius: 4px;
+}
+
+.time {
+  font-size: 10px;
+  opacity: 0.6;
+  margin-top: 4px;
+}
+&lt;/style&gt;</code></pre>
+
+                <p><strong>3. Image Gallery with Caption Overlay:</strong></p>
+
+                <pre><code class="language-html">&lt;div class="gallery"&gt;
+  &lt;div class="gallery-item"&gt;
+    &lt;div class="image"&gt;🖼️&lt;/div&gt;
+    &lt;div class="caption"&gt;
+      &lt;h3&gt;Mountain View&lt;/h3&gt;
+      &lt;p&gt;Taken during sunrise&lt;/p&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+  &lt;!-- more items... --&gt;
+&lt;/div&gt;
+
+&lt;style&gt;
+.gallery {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.gallery-item {
+  flex: 1 1 300px;
+  display: flex;
+  flex-direction: column;
+  background: #191a1b;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.image {
+  height: 200px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 64px;
+}
+
+.caption {
+  padding: 16px;
+  flex: 1;  /* Pushes content to fill available space */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+&lt;/style&gt;</code></pre>
+
+                <h2 id="gotchas">Common Gotchas</h2>
+                <ul>
+                    <li><strong>Flex items only affect direct children.</strong> Nested elements don't inherit flex behavior — you need <code>display: flex</code> on each container level.</li>
+                    <li><strong>Margin auto is a flex superpower.</strong> Set <code>margin-left: auto</code> on an item to push everything else to the left. This is cleaner than <code>justify-content: space-between</code> when you need a specific gap pattern.</li>
+                    <li><strong>Min-width: 0 on flex items.</strong> By default, flex items won't shrink below their content size. Add <code>min-width: 0</code> (or <code>overflow: hidden</code>) to allow shrinking past content.</li>
+                    <li><strong>Flexbox is one-dimensional.</strong> For two-dimensional layouts (rows AND columns simultaneously), use CSS Grid instead. Flexbox + Grid together cover every layout scenario.</li>
+                    <li><strong>gap works in all modern browsers.</strong> You no longer need negative margins or calc() for spacing between flex items.</li>
+                </ul>
+
+                <h2 id="cheatsheet">Flexbox Quick Reference</h2>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Property</th>
+                            <th>Where</th>
+                            <th>Common Values</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>display</code></td>
+                            <td>Container</td>
+                            <td><code>flex</code>, <code>inline-flex</code></td>
+                        </tr>
+                        <tr>
+                            <td><code>flex-direction</code></td>
+                            <td>Container</td>
+                            <td><code>row</code>, <code>column</code>, <code>row-reverse</code></td>
+                        </tr>
+                        <tr>
+                            <td><code>justify-content</code></td>
+                            <td>Container</td>
+                            <td><code>center</code>, <code>space-between</code>, <code>space-evenly</code></td>
+                        </tr>
+                        <tr>
+                            <td><code>align-items</code></td>
+                            <td>Container</td>
+                            <td><code>center</code>, <code>flex-start</code>, <code>stretch</code></td>
+                        </tr>
+                        <tr>
+                            <td><code>flex-wrap</code></td>
+                            <td>Container</td>
+                            <td><code>wrap</code>, <code>nowrap</code></td>
+                        </tr>
+                        <tr>
+                            <td><code>gap</code></td>
+                            <td>Container</td>
+                            <td><code>8px</code>, <code>16px</code>, <code>1rem</code></td>
+                        </tr>
+                        <tr>
+                            <td><code>flex</code></td>
+                            <td>Item</td>
+                            <td><code>1</code>, <code>0 0 200px</code>, <code>1 1 280px</code></td>
+                        </tr>
+                        <tr>
+                            <td><code>align-self</code></td>
+                            <td>Item</td>
+                            <td><code>flex-start</code>, <code>flex-end</code>, <code>center</code></td>
+                        </tr>
+                        <tr>
+                            <td><code>order</code></td>
+                            <td>Item</td>
+                            <td><code>-1</code> (first), <code>1</code>, <code>2</code></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h2 id="next">Next Steps</h2>
+                <p>Flexbox is the foundation for almost every modern web layout. Practice by building a navigation bar, a card grid, and a footer — the three most common flexbox patterns. Then move on to CSS Grid for two-dimensional layouts (see our <a href="css-grid-layout.html">CSS Grid Layout</a> guide), and combine both for maximum power.</p>
+
+                <p>For more CSS fundamentals, check out our guides on <a href="css-responsive-design.html">responsive design</a>, <a href="css-variables-custom-properties.html">CSS custom properties</a>, and <a href="css-animations-transitions.html">animations and transitions</a>.</p>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Hugo's Dev Notes. Built with curiosity.</p>
+        </div>
+    </footer>
+
+    <script>
+        const toggle = document.getElementById('themeToggle');
+        if (toggle) {
+            toggle.addEventListener('click', () => {
+                document.body.classList.toggle('light-mode');
+                localStorage.setItem('theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
+            });
+            if (localStorage.getItem('theme') === 'light') document.body.classList.add('light-mode');
+        }
+        window.addEventListener('scroll', () => {
+            const bar = document.getElementById('progressBar');
+            if (bar) {
+                const h = document.documentElement;
+                const pct = ((h.scrollTop) / (h.scrollHeight - h.clientHeight)) * 100;
+                bar.style.width = pct + '%';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terraform State Management: Backends, Locking &amp; Workspaces — Complete Beginner's Guide</title>
+    
+    <meta name="description" content="Learn Terraform state management — local vs remote backends, S3 state locking, DynamoDB locking, workspaces, state migration, and team collaboration patterns. Working examples for every concept.">
+    <meta name="keywords" content="terraform state, backend, S3, DynamoDB, locking, workspaces, migration, team, devops">
+    <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/terraform-state-management.html">
+    
+    <meta property="og:title" content="Terraform State Management: Backends, Locking &amp; Workspaces">
+    <meta property="og:description" content="Master Terraform state files, remote backends with S3, DynamoDB locking, workspaces, and team collaboration. Real HCL and Python examples.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.hugow.dev/posts/terraform-state-management.html">
+    
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Terraform State Management for Beginners">
+    
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "headline": "Terraform State Management: Backends, Locking &amp; Workspaces — Complete Beginner's Guide",
+      "author": {"@type": "Person", "name": "Hugo Wong"},
+      "datePublished": "2026-07-18",
+      "dateModified": "2026-07-18"
+    }
+    </script>
+    
+    <link rel="stylesheet" href="../style.css">
+    <link rel="sitemap" type="application/xml" href="/sitemap.xml">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn active">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-full">
+            <div class="post-tags">
+                <span class="tag devops">DevOps</span>
+            </div>
+            <header class="post-header">
+                <h1>Terraform State Management: Backends, Locking &amp; Workspaces — Complete Beginner's Guide</h1>
+                <div class="post-meta">
+                    <span class="post-date">July 18, 2026</span>
+                    <span class="read-time">12 min read</span>
+                </div>
+            </header>
+
+            <div class="post-content">
+                <p>You've written some Terraform config, run <code>terraform apply</code>, and everything works. Great! But look in your directory — there's a file called <code>terraform.tfstate</code>. This file is the heartbeat of Terraform. It tracks every resource you've created, its current configuration, and the mapping between Terraform code and real infrastructure.</p>
+
+                <p>If you lose this file, Terraform has no idea what it manages. If two people edit it at the same time, things break. If you need to share it with a team, storing it locally won't work. This guide covers everything you need to know about <strong>Terraform state management</strong> — from understanding the state file to setting up team-friendly remote backends with locking.</p>
+
+                <h2>What Is the State File?</h2>
+
+                <p>The state file (<code>terraform.tfstate</code>) is a JSON file that Terraform creates to track your infrastructure. Here's a simplified example:</p>
+
+                <pre><code>{
+  "version": 4,
+  "terraform_version": "1.7.0",
+  "resources": [
+    {
+      "mode": "managed",
+      "type": "aws_instance",
+      "name": "web_server",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "attributes": {
+            "id": "i-0abc123def456",
+            "ami": "ami-0abcdef1234567890",
+            "instance_type": "t3.micro",
+            "tags": {
+              "Name": "my-web-server",
+              "Environment": "production"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}</code></pre>
+
+                <p>The state file stores:</p>
+                <ul>
+                    <li><strong>Resource IDs</strong> — the cloud provider's unique identifiers (e.g., <code>i-0abc123</code>)</li>
+                    <li><strong>Attribute values</strong> — current values of every attribute (some sensitive ones are hidden)</li>
+                    <li><strong>Dependencies</strong> — which resources depend on which others</li>
+                    <li><strong>Provider version</strong> — which version of Terraform and providers were used</li>
+                </ul>
+
+                <p>When you run <code>terraform plan</code>, Terraform compares the state file to your configuration to determine what changes are needed. Without it, Terraform would have to query every cloud API from scratch every time.</p>
+
+                <h2>Local vs Remote Backends</h2>
+
+                <p>By default, Terraform stores state <strong>locally</strong> in <code>terraform.tfstate</code>. This is fine for learning and personal projects, but has serious problems for teams:</p>
+
+                <ul>
+                    <li>❌ No sharing — each developer has their own copy</li>
+                    <li>❌ No locking — two people can apply simultaneously, corrupting state</li>
+                    <li>❌ No versioning — no backup if the file gets corrupted</li>
+                    <li>❌ No access control — anyone with file access can modify state</li>
+                </ul>
+
+                <p>A <strong>remote backend</strong> solves all of these. Let's set one up.</p>
+
+                <h2>S3 Backend with DynamoDB Locking</h2>
+
+                <p>The most common Terraform backend setup uses <strong>Amazon S3</strong> for storage and <strong>DynamoDB</strong> for state locking. Here's how to configure it:</p>
+
+                <h3>Step 1: Create the S3 Bucket and DynamoDB Table</h3>
+
+                <p>First, define the backend infrastructure itself:</p>
+
+                <pre><code># backend_setup/main.tf
+terraform {
+  required_providers {
+    aws = { source = "hashicorp/aws", version = "~&gt; 5.0" }
+  }
+}
+
+provider "aws" {
+  region = "us-east-1"
+}
+
+# S3 bucket for state storage
+resource "aws_s3_bucket" "terraform_state" {
+  bucket = "mycompany-terraform-state"
+
+  # Prevent accidental deletion
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+# Enable versioning (backup history)
+resource "aws_s3_bucket_versioning" "terraform_state" {
+  bucket = aws_s3_bucket.terraform_state.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+# Encrypt state at rest
+resource "aws_s3_bucket_server_side_encryption_configuration" "state" {
+  bucket = aws_s3_bucket.terraform_state.id
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "aws:kms"
+    }
+  }
+}
+
+# Block public access
+resource "aws_s3_bucket_public_access_block" "state" {
+  bucket = aws_s3_bucket.terraform_state.id
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+# DynamoDB table for state locking
+resource "aws_dynamodb_table" "terraform_locks" {
+  name         = "terraform-locks"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "LockID"
+
+  attribute {
+    name = "LockID"
+    type = "S"
+  }
+}</code></pre>
+
+                <p>Run <code>terraform apply</code> in this directory to create the backend infrastructure. This is a one-time setup.</p>
+
+                <h3>Step 2: Configure Your Projects to Use the Backend</h3>
+
+                <pre><code># your_project/main.tf
+terraform {
+  required_version = "&gt;= 1.5.0"
+  
+  backend "s3" {
+    bucket         = "mycompany-terraform-state"
+    key            = "prod/infrastructure/terraform.tfstate"
+    region         = "us-east-1"
+    dynamodb_table = "terraform-locks"
+    encrypt        = true
+  }
+
+  required_providers {
+    aws = { source = "hashicorp/aws", version = "~&gt; 5.0" }
+  }
+}
+
+provider "aws" {
+  region = "us-east-1"
+}
+
+# Your actual resources...
+resource "aws_instance" "web" {
+  ami           = "ami-0abcdef1234567890"
+  instance_type = "t3.micro"
+  tags = {
+    Name = "web-server"
+  }
+}</code></pre>
+
+                <p>The <code>backend "s3"</code> block tells Terraform where to store state. Key settings:</p>
+                <ul>
+                    <li><code>bucket</code> — the S3 bucket created above</li>
+                    <li><code>key</code> — the path within the bucket (use folders to separate projects: <code>prod/</code>, <code>staging/</code>)</li>
+                    <li><code>dynamodb_table</code> — enables state locking to prevent concurrent modifications</li>
+                    <li><code>encrypt</code> — encrypts the state file at rest in S3</li>
+                </ul>
+
+                <h3>Step 3: Initialize and Migrate</h3>
+
+                <pre><code>$ terraform init
+
+Do you want to copy existing state to the new backend?
+  Pre-existing state was found while migrating the previous "local" backend to
+  the newly configured "s3" backend.
+  
+  Enter a value: yes</code></pre>
+
+                <p>Terraform automatically detects existing local state and offers to migrate it. Say <code>yes</code>.</p>
+
+                <h2>State Locking Explained</h2>
+
+                <p>When someone runs <code>terraform apply</code>, Terraform:</p>
+                <ol>
+                    <li>Acquires a lock in DynamoDB (writes a record with <code>LockID = &lt;your-key&gt;</code>)</li>
+                    <li>Reads the state from S3</li>
+                    <li>Computes the plan and applies changes</li>
+                    <li>Writes the updated state back to S3</li>
+                    <li>Releases the lock</li>
+                </ol>
+
+                <p>If someone else tries to run <code>terraform apply</code> while the lock is held, they get an error:</p>
+
+                <pre><code>Acquiring state lock. This may take a few moments...
+Error: Error acquiring the state lock
+
+Reason: Another process holds the lock on this Terraform
+       state. Lock info:
+  ID:        abc123
+  Path:      mycompany-terraform-state/prod/terraform.tfstate
+  Operation: OperationTypeApply
+  Who:       user@hostname
+  Version:   1.7.0
+  Created:   2026-07-18 10:30:00 +0000 UTC</code></pre>
+
+                <p>This prevents the worst possible thing: two people modifying the same infrastructure at the same time, causing duplicate resources or destroyed services.</p>
+
+                <h2>Terraform Workspaces</h2>
+
+                <p>What if you need separate state for different environments (dev, staging, production) but want to share the same Terraform code? <strong>Workspaces</strong> give each environment its own state file within the same configuration.</p>
+
+                <pre><code># Create workspaces
+terraform workspace new dev
+terraform workspace new staging
+terraform workspace new production
+
+# List workspaces
+terraform workspace list
+  default
+* dev
+  production
+  staging
+
+# Switch to staging
+terraform workspace select staging</code></pre>
+
+                <p>With workspaces, the S3 backend stores state at different keys:</p>
+                <ul>
+                    <li><code>env:dev/prod/infrastructure/terraform.tfstate</code></li>
+                    <li><code>env:staging/prod/infrastructure/terraform.tfstate</code></li>
+                    <li><code>env:production/prod/infrastructure/terraform.tfstate</code></li>
+                </ul>
+
+                <p>You can reference the current workspace in your config:</p>
+
+                <pre><code>resource "aws_instance" "web" {
+  ami           = "ami-0abcdef1234567890"
+  instance_type = var.instance_type
+  tags = {
+    Name        = "web-server"
+    Environment = terraform.workspace  # "dev", "staging", or "production"
+  }
+}
+
+variable "instance_type" {
+  default = "t3.micro"
+}
+
+# Use a map to vary settings per workspace
+locals {
+  instance_sizes = {
+    dev        = "t3.micro"
+    staging    = "t3.small"
+    production = "t3.large"
+  }
+}
+
+resource "aws_instance" "web" {
+  instance_type = local.instance_sizes[terraform.workspace]
+  # ...
+}</code></pre>
+
+                <h2>State File Commands</h2>
+
+                <p>Terraform provides several commands for working with state:</p>
+
+                <h3>List Resources</h3>
+
+                <pre><code># See all tracked resources
+terraform state list
+aws_instance.web
+aws_s3_bucket.data
+aws_security_group.web_sg
+
+# Show detailed info about a resource
+terraform state show aws_instance.web</code></pre>
+
+                <h3>Move Resources</h3>
+
+                <p>Renamed a resource in your code but don't want to destroy and recreate it?</p>
+
+                <pre><code># In your code, you changed:
+#   resource "aws_instance" "web_server" { ... }
+# to:
+#   resource "aws_instance" "web" { ... }
+
+# Move the state entry without touching the actual resource
+terraform state mv aws_instance.web_server aws_instance.web</code></pre>
+
+                <h3>Remove from State</h3>
+
+                <p>Adopted a manually created resource? Or want to stop managing it?</p>
+
+                <pre><code># Stop tracking a resource (won't destroy it)
+terraform state rm aws_s3_bucket.orphaned
+
+# Import an existing resource into state
+terraform import aws_instance.existing i-0abc123def456</code></pre>
+
+                <h3>Refresh State</h3>
+
+                <pre><code># Update state to match real infrastructure (without applying changes)
+terraform refresh</code></pre>
+
+                <p>Use this if someone manually changed something in the AWS console and you want Terraform to see the current reality.</p>
+
+                <h2>Python Script: State Audit Tool</h2>
+
+                <p>Here's a practical Python script that reads a local state file and reports on your resources:</p>
+
+                <pre><code>#!/usr/bin/env python3
+"""Terraform State Audit Tool — analyze tfstate files."""
+
+import json
+import sys
+from pathlib import Path
+
+def load_state(path="terraform.tfstate"):
+    """Load and parse a Terraform state file"""
+    with open(path) as f:
+        return json.load(f)
+
+def get_resources(state):
+    """Extract all resources from state"""
+    resources = []
+    for res in state.get("resources", []):
+        module = res.get("module", "root")
+        rtype = res["type"]
+        name = res["name"]
+        for inst in res.get("instances", []):
+            attrs = inst.get("attributes", {})
+            resources.append({
+                "module": module,
+                "type": rtype,
+                "name": name,
+                "id": attrs.get("id", "N/A"),
+                "provider": res.get("provider", "unknown"),
+            })
+    return resources
+
+def audit(state_path):
+    """Run an audit on the state file"""
+    state = load_state(state_path)
+    resources = get_resources(state)
+    
+    print(f"📊 Terraform State Audit")
+    print(f"  Terraform version: {state.get('terraform_version', 'unknown')}")
+    print(f"  Total resources: {len(resources)}")
+    print()
+    
+    # Group by type
+    by_type = {}
+    for r in resources:
+        by_type.setdefault(r["type"], []).append(r)
+    
+    print("Resources by type:")
+    for rtype, items in sorted(by_type.items()):
+        print(f"  {rtype}: {len(items)}")
+        for item in items:
+            print(f"    - {item['name']} (id: {item['id']})")
+    
+    # Check for sensitive data exposure
+    print(f"\n⚠️  State file contains {len(resources)} resources.")
+    print("   Remember: never commit terraform.tfstate to version control!")
+    print("   Use a remote backend with encryption.")
+    
+    return resources
+
+if __name__ == "__main__":
+    path = sys.argv[1] if len(sys.argv) > 1 else "terraform.tfstate"
+    if not Path(path).exists():
+        print(f"Error: {path} not found")
+        sys.exit(1)
+    audit(path)</code></pre>
+
+                <p>Run it against any state file: <code>python state_audit.py terraform.tfstate</code></p>
+
+                <h2>State File Security Best Practices</h2>
+
+                <p>The state file can contain sensitive data — passwords, private keys, connection strings. Protect it:</p>
+
+                <ul>
+                    <li><strong>Use remote backends</strong> — S3, GCS, Azure Blob, or Terraform Cloud</li>
+                    <li><strong>Enable encryption</strong> — S3 SSE, AES-256, or KMS</li>
+                    <li><strong>Enable versioning</strong> — S3 versioning keeps a full history of every state change</li>
+                    <li><strong>Restrict access</strong> — IAM policies, bucket policies, least-privilege</li>
+                    <li><strong>Block public access</strong> — S3 bucket public access block</li>
+                    <li><strong>Use state locking</strong> — DynamoDB or equivalent</li>
+                    <li><strong>Mark sensitive variables</strong> — use <code>sensitive = true</code> on variables that hold secrets</li>
+                    <li><strong>Never commit state to Git</strong> — add <code>terraform.tfstate*</code> to <code>.gitignore</code></li>
+                </ul>
+
+                <h2>Troubleshooting Common State Issues</h2>
+
+                <h3>State Lock Errors</h3>
+
+                <p>If a lock gets stuck (someone's <code>terraform apply</code> was interrupted):</p>
+
+                <pre><code># Force unlock (use with caution!)
+terraform force-unlock &lt;LOCK_ID&gt;
+
+# Check the lock
+terraform state pull | head -20</code></pre>
+
+                <h3>State Drift</h3>
+
+                <p>When the real infrastructure differs from what state says:</p>
+
+                <pre><code># Detect drift
+terraform plan
+
+# Update state to match reality
+terraform refresh
+
+# Or re-import a specific resource
+terraform import aws_instance.web i-0abc123</code></pre>
+
+                <h2>Summary</h2>
+
+                <p>Terraform state management is the foundation of safe, team-friendly infrastructure-as-code. Here's what we covered:</p>
+                <ul>
+                    <li><strong>State file</strong> — JSON file tracking all resources, their IDs, and attributes</li>
+                    <li><strong>Remote backends</strong> — S3 + DynamoDB for storage, locking, encryption, and versioning</li>
+                    <li><strong>State locking</strong> — prevents concurrent modifications via DynamoDB</li>
+                    <li><strong>Workspaces</strong> — separate state per environment with shared config</li>
+                    <li><strong>State commands</strong> — <code>state list</code>, <code>state mv</code>, <code>state rm</code>, <code>import</code>, <code>refresh</code></li>
+                    <li><strong>Security</strong> — encryption, access control, versioning, and never committing state</li>
+                </ul>
+
+                <p>Setting up a remote backend is the single most important step when moving from solo Terraform to team Terraform. It takes about 15 minutes to set up S3 + DynamoDB, and it prevents almost every disaster scenario.</p>
+
+                <div class="post-nav">
+                    <a href="terraform-modules.html" class="post-prev">← Terraform Modules</a>
+                    <a href="terraform-basics.html" class="post-next">Terraform Basics →</a>
+                </div>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes. Built with ☕ and curiosity.</p>
+        </div>
+    </footer>
+
+    <script>
+        window.addEventListener("scroll", () => {
+            const winScroll = document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            document.getElementById("progressBar").style.width = (winScroll / height) * 100 + "%";
+        });
+        const toggle = document.getElementById("themeToggle");
+        if (toggle) {
+            toggle.addEventListener("click", () => {
+                document.body.classList.toggle("light-mode");
+                localStorage.setItem("theme", document.body.classList.contains("light-mode") ? "light" : "dark");
+            });
+            if (localStorage.getItem("theme") === "light") document.body.classList.add("light-mode");
+        }
+    </script>
+</body>
+</html>

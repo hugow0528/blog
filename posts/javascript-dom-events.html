@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JavaScript DOM Manipulation and Events: Build Interactive Web Pages — Complete Beginner's Guide | Hugo's Dev Notes</title>
+    <meta name="description" content="Master JavaScript DOM manipulation and event handling — selecting elements, changing content and styles, creating/removing elements, event listeners, delegation, and building interactive UIs.">
+    <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/javascript-dom-events.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn active">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <article class="post-content">
+        <span class="tag web">Web Dev</span>
+        <h1>JavaScript DOM Manipulation and Events: Build Interactive Web Pages — Complete Beginner's Guide</h1>
+        <div class="post-meta">
+            <span class="post-date">July 20, 2026</span>
+            <span class="read-time">11 min read</span>
+        </div>
+
+        <p>The Document Object Model (DOM) is JavaScript's bridge to the HTML page. Through the DOM, JavaScript can read and change any element on the page — text, styles, attributes, structure — and respond to user interactions like clicks, keyboard input, and form submissions. This guide covers everything from selecting elements to building a complete interactive todo app with event delegation.</p>
+
+        <h2>What Is the DOM?</h2>
+        <p>The DOM is a tree-like representation of your HTML document. Every HTML element becomes a node in this tree, and JavaScript provides methods to navigate, read, and modify these nodes. When you change the DOM, the browser automatically re-renders the page — that's how JavaScript creates dynamic, interactive web experiences.</p>
+
+        <h2>Selecting Elements</h2>
+        <p>Before you can manipulate an element, you need to find it. Modern JavaScript provides several methods:</p>
+
+        <pre><code>// Select by ID (returns a single element)
+const heading = document.getElementById("title");
+
+// Select by CSS class (returns a live HTMLCollection)
+const items = document.getElementsByClassName("list-item");
+
+// Select by tag name (returns a live HTMLCollection)
+const paragraphs = document.getElementsByTagName("p");
+
+// QuerySelector — returns the FIRST matching element
+const firstCard = document.querySelector(".card");
+
+// QuerySelectorAll — returns ALL matching elements (static NodeList)
+const allCards = document.querySelectorAll(".card");
+
+// Query complex selectors
+const activeLinks = document.querySelectorAll("nav a.active");
+const nestedSpans = document.querySelectorAll(".parent > .child span.highlight");</code></pre>
+
+        <p><code>querySelector</code> and <code>querySelectorAll</code> are the most versatile — they accept any CSS selector, so you can find elements by class, ID, attribute, pseudo-class, or complex combinations.</p>
+
+        <h2>Reading and Changing Content</h2>
+        <p>Once you have an element, you can read or modify its content using several properties:</p>
+
+        <pre><code>const el = document.querySelector("#message");
+
+// textContent — reads/writes plain text (safe from XSS)
+console.log(el.textContent);  // "Hello World"
+el.textContent = "Updated text";
+
+// innerHTML — reads/writes HTML (be careful with user input!)
+el.innerHTML = "&lt;strong&gt;Bold text&lt;/strong&gt;";
+
+// innerText — reads rendered text (respects CSS styling)
+console.log(el.innerText);</code></pre>
+
+        <p>Use <code>textContent</code> for plain text and <code>innerHTML</code> when you actually need HTML. Never use <code>innerHTML</code> with user-supplied data — it opens your page to cross-site scripting (XSS) attacks. Use <code>textContent</code> or <code>document.createTextNode()</code> instead.</p>
+
+        <h2>Changing Styles and Classes</h2>
+        <p>Modify an element's appearance through the <code>style</code> property or by toggling CSS classes:</p>
+
+        <pre><code>const box = document.querySelector(".box");
+
+// Direct style modification
+box.style.backgroundColor = "#3498db";
+box.style.padding = "20px";
+box.style.borderRadius = "8px";
+
+// Better: toggle CSS classes (keeps logic out of JS)
+box.classList.add("highlight");
+box.classList.remove("hidden");
+box.classList.toggle("active");  // Add if absent, remove if present
+box.classList.contains("active"); // true/false
+
+// Read computed styles
+const computed = getComputedStyle(box);
+console.log(computed.width);   // "300px"
+console.log(computed.color);   // "rgb(52, 152, 219)"</code></pre>
+
+        <p>The <code>classList</code> API is the preferred approach because it separates styling (CSS) from behavior (JavaScript) and avoids inline style conflicts.</p>
+
+        <h2>Working with Attributes</h2>
+        <p>Read and set HTML attributes like <code>src</code>, <code>href</code>, <code>alt</code>, and custom <code>data-*</code> attributes:</p>
+
+        <pre><code>const img = document.querySelector("img");
+
+// Standard attributes
+console.log(img.src);       // Full URL
+console.log(img.alt);       // "A beautiful sunset"
+img.src = "new-image.jpg";
+img.alt = "A sunrise";
+
+// Custom data attributes
+const card = document.querySelector("[data-user-id='42']");
+console.log(card.dataset.userId);  // "42"
+console.log(card.dataset.role);    // "admin"
+card.dataset.status = "active";    // Sets data-status="active"</code></pre>
+
+        <p>The <code>dataset</code> property converts <code>data-*</code> attributes to camelCase JavaScript properties. <code>data-user-id</code> becomes <code>dataset.userId</code>.</p>
+
+        <h2>Creating and Removing Elements</h2>
+        <p>Build dynamic content by creating new elements, adding them to the DOM, and removing old ones:</p>
+
+        <pre><code>// Create a new element
+const li = document.createElement("li");
+li.textContent = "New item";
+li.classList.add("list-item");
+li.setAttribute("data-id", "1");
+
+// Append to parent
+const ul = document.querySelector("#my-list");
+ul.appendChild(li);         // Add at the end
+ul.prepend(li);             // Add at the beginning
+ul.insertBefore(li, ul.children[1]); // Insert before a specific child
+
+// Create multiple elements efficiently
+const fragment = document.createDocumentFragment();
+for (let i = 0; i < 5; i++) {
+    const item = document.createElement("li");
+    item.textContent = `Item ${i + 1}`;
+    fragment.appendChild(item);
+}
+ul.appendChild(fragment);  // Single DOM insertion for all items
+
+// Remove an element
+li.remove();
+
+// Replace one element with another
+const newLi = document.createElement("li");
+newLi.textContent = "Replaced";
+ul.replaceChild(newLi, li);</code></pre>
+
+        <p>Use <code>DocumentFragment</code> when adding many elements — it batches the insertions into a single DOM operation, avoiding expensive re-renders.</p>
+
+        <h2>Event Listeners — Responding to User Actions</h2>
+        <p>Events are how JavaScript responds to user interactions. Attach handlers with <code>addEventListener()</code>:</p>
+
+        <pre><code>const button = document.querySelector("#submit-btn");
+
+// Click event
+button.addEventListener("click", (event) => {
+    console.log("Button clicked!");
+    console.log(event.target);    // The element clicked
+    console.log(event.type);      // "click"
+});
+
+// Keyboard event
+document.addEventListener("keydown", (event) => {
+    console.log(`Key: ${event.key}`);
+    console.log(`Code: ${event.code}`);
+    if (event.key === "Escape") {
+        console.log("User pressed Escape!");
+    }
+});
+
+// Mouse events
+const card = document.querySelector(".card");
+card.addEventListener("mouseenter", () => {
+    card.classList.add("hovered");
+});
+card.addEventListener("mouseleave", () => {
+    card.classList.remove("hovered");
+});
+
+// Form events
+const form = document.querySelector("#contact-form");
+form.addEventListener("submit", (event) => {
+    event.preventDefault();  // Stop page from reloading
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+    console.log("Form data:", data);
+});</code></pre>
+
+        <h2>Common Events Reference</h2>
+        <p>Here are the events you'll use most often:</p>
+
+        <pre><code>// Click: click, dblclick
+// Mouse: mouseenter, mouseleave, mousemove, contextmenu (right-click)
+// Keyboard: keydown, keyup, keypress
+// Form: submit, input, change, focus, blur
+// Window: load, scroll, resize, beforeunload
+// Touch: touchstart, touchmove, touchend
+// DOM: DOMContentLoaded (page fully parsed)</code></pre>
+
+        <p>The <code>DOMContentLoaded</code> event fires when the HTML is fully parsed — use it to run scripts that need elements to exist before executing:</p>
+
+        <pre><code>document.addEventListener("DOMContentLoaded", () => {
+    // Safe to query elements here — the page is ready
+    const header = document.querySelector("header");
+    header.classList.add("loaded");
+});</code></pre>
+
+        <h2>Event Delegation — One Listener for Many Elements</h2>
+        <p>Instead of adding a listener to every single element, attach one listener to a parent and let events bubble up. This is more efficient and works for dynamically created elements:</p>
+
+        <pre><code>// ❌ Bad — adds a listener to every button
+document.querySelectorAll(".delete-btn").forEach(btn => {
+    btn.addEventListener("click", handleDelete);
+});
+
+// ✅ Good — one listener on the parent
+document.querySelector("#todo-list").addEventListener("click", (e) => {
+    // Find the closest matching element (event delegation)
+    const btn = e.target.closest(".delete-btn");
+    if (btn) {
+        const id = btn.dataset.id;
+        btn.closest(".todo-item").remove();
+        console.log(`Deleted item ${id}`);
+    }
+});</code></pre>
+
+        <p>Events propagate in three phases: <strong>capturing</strong> (window → target), <strong>target</strong> (the element itself), and <strong>bubbling</strong> (target → window). By default, listeners fire during bubbling. You can opt into capturing by passing <code>true</code> as the third argument.</p>
+
+        <h2>Building a Complete Todo App</h2>
+        <p>Let's combine everything into a working todo application:</p>
+
+        <pre><code>// HTML (simplified)
+// &lt;form id="todo-form"&gt;
+//   &lt;input type="text" id="todo-input" placeholder="Add a todo..."&gt;
+//   &lt;button type="submit"&gt;Add&lt;/button&gt;
+// &lt;/form&gt;
+// &lt;ul id="todo-list"&gt;&lt;/ul&gt;
+
+const form = document.querySelector("#todo-form");
+const input = document.querySelector("#todo-input");
+const list = document.querySelector("#todo-list");
+
+// Add a todo
+form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const text = input.value.trim();
+    if (!text) return;
+
+    const li = document.createElement("li");
+    li.className = "todo-item";
+    li.innerHTML = `
+        <span class="todo-text">${text}</span>
+        <button class="toggle-btn">✓</button>
+        <button class="delete-btn">✕</button>
+    `;
+    list.appendChild(li);
+    input.value = "";
+    input.focus();
+});
+
+// Event delegation for toggle and delete
+list.addEventListener("click", (e) => {
+    const toggleBtn = e.target.closest(".toggle-btn");
+    const deleteBtn = e.target.closest(".delete-btn");
+
+    if (toggleBtn) {
+        const item = toggleBtn.closest(".todo-item");
+        item.classList.toggle("completed");
+    }
+
+    if (deleteBtn) {
+        const item = deleteBtn.closest(".todo-item");
+        item.remove();
+    }
+});</code></pre>
+
+        <h2>Pitfalls and Best Practices</h2>
+        <p><strong>Remove listeners when done:</strong> Use <code>removeEventListener()</code> to prevent memory leaks, especially in single-page apps. <strong>Never trust <code>innerHTML</code> with user data:</strong> Use <code>textContent</code> or <code>document.createElement()</code> instead. <strong>Avoid inline handlers:</strong> Prefer <code>addEventListener()</code> over <code>onclick="..."</code> in HTML — it keeps JavaScript separate from markup. <strong>Batch DOM changes:</strong> Use <code>DocumentFragment</code> or disable layout with <code>requestAnimationFrame</code> when modifying many elements. <strong>Use <code>closest()</code> for delegation:</strong> It reliably finds the intended target element regardless of nesting depth.</p>
+
+        <h2>Summary</h2>
+        <p>DOM manipulation and event handling are the core skills for building interactive web pages with JavaScript. Select elements with <code>querySelector</code>, modify content with <code>textContent</code>, style with <code>classList</code>, create elements with <code>createElement()</code>, and respond to interactions with <code>addEventListener()</code>. Combine these with event delegation for efficient, maintainable code that scales to any number of elements.</p>
+
+    </article>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes. Built with care.</p>
+        </div>
+    </footer>
+
+    <script>
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + '%';
+        });
+        const toggle = document.getElementById('themeToggle');
+        if (toggle) {
+            toggle.addEventListener('click', () => {
+                document.body.classList.toggle('light');
+            });
+        }
+    </script>
+</body>
+</html>

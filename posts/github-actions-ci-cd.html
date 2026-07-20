@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Actions CI/CD Pipelines: Automate Builds, Tests &amp; Deployments — Complete Beginner's Guide | Hugo's Dev Notes</title>
+    <link rel="canonical" href="https://blog.hugow.dev/posts/github-actions-ci-cd.html">
+    <link rel="stylesheet" href="../style.css">
+
+    <!-- SEO Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "headline": "GitHub Actions CI/CD Pipelines: Automate Builds, Tests & Deployments — Complete Beginner's Guide",
+      "description": "Learn GitHub Actions from scratch — workflows, jobs, steps, runners, environment variables, secrets, caching, and building a full CI/CD pipeline. Real YAML examples for every concept.",
+      "datePublished": "2026-07-12",
+      "dateModified": "2026-07-12",
+      "author": {"@type": "Person", "name": "Hugo Wong"},
+      "publisher": {"@type": "Organization", "name": "Hugo's Dev Notes", "url": "https://blog.hugow.dev"},
+      "mainEntityOfPage": "https://blog.hugow.dev/posts/github-actions-ci-cd.html",
+      "keywords": "github actions, ci/cd, continuous integration, deployment, automation, workflows"
+    }
+    </script>
+
+    <!-- Social Meta -->
+    <meta property="og:title" content="GitHub Actions CI/CD Pipelines: Automate Builds, Tests & Deployments — Complete Beginner's Guide">
+    <meta property="og:description" content="Learn GitHub Actions from scratch — workflows, jobs, steps, runners, secrets, caching, and building a full CI/CD pipeline.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.hugow.dev/posts/github-actions-ci-cd.html">
+    <meta property="og:site_name" content="Hugo's Dev Notes">
+    <meta property="article:published_time" content="2026-07-12">
+    <meta property="article:modified_time" content="2026-07-12">
+    <meta property="article:section" content="devops">
+    <meta property="article:tag" content="GitHub Actions, CI/CD, DevOps, automation">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="GitHub Actions CI/CD Pipelines: Automate Builds, Tests & Deployments — Complete Beginner's Guide">
+    <meta name="twitter:description" content="Learn GitHub Actions from scratch — workflows, jobs, steps, runners, secrets, caching, and building a full CI/CD pipeline.">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+
+        <article class="post-content">
+            <span class="tag devops">DevOps</span>
+            <h1>GitHub Actions CI/CD Pipelines: Automate Builds, Tests &amp; Deployments — Complete Beginner's Guide</h1>
+            <time>July 12, 2026 · 12 min read</time>
+
+            <p>Every time you push code, someone has to test it. Every time you're ready to deploy, someone has to run the commands. What if that "someone" was a robot — one that runs automatically, catches bugs before they reach production, and deploys your code with a single push? That's exactly what GitHub Actions does. This guide takes you from zero to a fully automated CI/CD pipeline with working YAML examples for every concept.</p>
+
+            <h2>What Is GitHub Actions?</h2>
+
+            <p>GitHub Actions is a continuous integration and continuous delivery (CI/CD) platform built directly into GitHub. You define <strong>workflows</strong> in YAML files that tell GitHub what to do whenever something happens in your repository — a push, a pull request, a schedule, or even manually triggering it from the web UI.</p>
+
+            <p>Think of it as a free build server that lives inside your GitHub repo. No extra infrastructure to set up, no separate tool to learn. Just write a YAML file, commit it, and your pipeline starts running.</p>
+
+            <h2>Key Concepts: The GitHub Actions Vocabulary</h2>
+
+            <table>
+                <tr><th>Term</th><th>What It Is</th></tr>
+                <tr><td><strong>Workflow</strong></td><td>A configurable automated process defined in a YAML file under <code>.github/workflows/</code></td></tr>
+                <tr><td><strong>Event (Trigger)</strong></td><td>The activity that starts a workflow — push, pull_request, schedule, etc.</td></tr>
+                <tr><td><strong>Job</strong></td><td>A set of steps that run on the same runner (machine). Jobs run in parallel by default.</td></tr>
+                <tr><td><strong>Step</strong></td><td>An individual task in a job — either a shell command or a pre-built action.</td></tr>
+                <tr><td><strong>Runner</strong></td><td>The server (virtual machine) where your jobs execute. GitHub provides Ubuntu, Windows, and macOS runners for free.</td></tr>
+                <tr><td><strong>Action</strong></td><td>A reusable unit of code (like a function) provided by the community — e.g., "checkout code", "set up Python", "deploy to Vercel".</td></tr>
+            </table>
+
+            <h2>Your First Workflow: Lint and Test on Every Push</h2>
+
+            <p>Let's create a workflow that runs whenever you push code. Create this file at <code>.github/workflows/ci.yml</code>:</p>
+
+            <pre><code># .github/workflows/ci.yml
+name: CI Pipeline
+
+# Trigger on every push to main and every pull request
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Define the jobs
+jobs:
+  test:
+    # Run on GitHub's Ubuntu runner
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Check out (clone) your repository
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Python 3.12
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Step 3: Install dependencies
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # Step 4: Run linter (flake8)
+      - name: Run linter
+        run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+
+      # Step 5: Run tests with pytest
+      - name: Run tests
+        run: pytest tests/ -v</code></pre>
+
+            <p>That's it. Five steps that check out your code, install Python, install dependencies, run a linter, and run tests. Every time you push, GitHub runs this automatically. If any step fails, the entire workflow fails and you get a big red X on your commit.</p>
+
+            <h2>Understanding Workflow Triggers (Events)</h2>
+
+            <p>Workflows respond to events. Here are the most common ones:</p>
+
+            <pre><code># Run on push to specific branches
+on:
+  push:
+    branches: [main, develop]
+
+# Run on pull request open and sync
+on:
+  pull_request:
+    branches: [main]
+
+# Run on a schedule (every day at 6 AM UTC)
+on:
+  schedule:
+    - cron: "0 6 * * *"
+
+# Run manually from the GitHub Actions tab
+on:
+  workflow_dispatch:
+
+# Run when a release is published
+on:
+  release:
+    types: [published]
+
+# Combine multiple triggers
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:</code></pre>
+
+            <h2>Using Environment Variables and Secrets</h2>
+
+            <p>You'll often need API keys, database URLs, or other sensitive data. Never hardcode secrets in your workflow files. Use GitHub's built-in secrets management:</p>
+
+            <pre><code># Store secrets in: Settings → Secrets and variables → Actions
+# Then reference them in your workflow:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      # Non-sensitive variables defined in the workflow
+      APP_NAME: my-app
+      DEPLOY_ENV: production
+
+    steps:
+      - name: Deploy
+        run: ./deploy.sh
+        env:
+          # Sensitive secrets from GitHub settings
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}</code></pre>
+
+            <p>The <code>${{ secrets.NAME }}</code> syntax masks the value in logs, so sensitive data never appears in the workflow output.</p>
+
+            <h2>Matrix Builds: Test Multiple Versions</h2>
+
+            <p>Want to test your code against multiple Python versions, operating systems, or Node.js versions? Use a matrix strategy:</p>
+
+            <pre><code>jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      # Test every combination of these values
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: pip install -r requirements.txt
+      - run: pytest tests/ -v</code></pre>
+
+            <p>This creates <strong>9 jobs</strong> (3 Python versions × 3 operating systems) running in parallel. Your code is tested across every combination automatically.</p>
+
+            <h2>Caching Dependencies Between Runs</h2>
+
+            <p>Installing the same dependencies every run wastes time. Use GitHub Actions caching to speed up your workflows:</p>
+
+            <pre><code>jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Cache pip packages
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          # Generate a key based on requirements.txt
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          # Fallback: use a partial match if exact key not found
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run tests
+        run: pytest tests/ -v</code></pre>
+
+            <p>The <code>hashFiles()</code> function generates a unique key from your requirements.txt. When the file doesn't change, the cache is restored instantly. When it does change, a fresh install runs and a new cache is created.</p>
+
+            <h2>Job Dependencies and Artifacts</h2>
+
+            <p>Sometimes jobs need to run in order, or share files between them. Use <code>needs</code> for dependencies and <code>actions/upload-artifact</code> / <code>actions/download-artifact</code> for sharing files:</p>
+
+            <pre><code>jobs:
+  # Job 1: Build and test
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: npm run build
+      # Upload the build output for other jobs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: dist/
+
+  # Job 2: Deploy (runs only after build succeeds)
+  deploy:
+    needs: build  # Wait for "build" to complete
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Download the build output from the previous job
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: dist/
+      - name: Deploy to production
+        run: ./deploy.sh
+        env:
+          API_KEY: ${{ secrets.DEPLOY_KEY }}</code></pre>
+
+            <h2>Conditional Execution</h2>
+
+            <p>Run jobs or steps only when certain conditions are met:</p>
+
+            <pre><code>jobs:
+  # Only deploy on pushes to main (not PRs)
+  deploy:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - name: Deploy
+        run: ./deploy.sh
+
+  # Run a step only on failure (for notifications)
+  notify:
+    runs-on: ubuntu-latest
+    if: failure()
+    steps:
+      - name: Send Slack notification
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "❌ Build failed: ${{ github.repository }}"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}</code></pre>
+
+            <h2>Full CI/CD Pipeline Example</h2>
+
+            <p>Here's a complete pipeline that lints, tests, builds, and deploys a Python application:</p>
+
+            <pre><code># .github/workflows/ci-cd.yml
+name: Full CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install flake8 black isort
+      - run: black --check .
+      - run: isort --check-only .
+      - run: flake8 .
+
+  test:
+    runs-on: ubuntu-latest
+    needs: lint  # Don't test if linting fails
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: pip install -r requirements.txt
+      - run: pytest tests/ -v --cov=src --cov-report=xml
+
+  build:
+    runs-on: ubuntu-latest
+    needs: test  # Don't build if tests fail
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install build
+      - run: python -m build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: python-package
+          path: dist/
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    # Only deploy on main branch pushes
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: python-package
+          path: dist/
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}</code></pre>
+
+            <p>This pipeline enforces a chain: <strong>Lint → Test → Build → Deploy</strong>. Each stage must succeed before the next begins. Only pushes to <code>main</code> trigger deployment — pull requests stop at the build step.</p>
+
+            <h2>Reusable Workflows</h2>
+
+            <p>If you have multiple repositories with similar pipelines, extract shared logic into reusable workflows:</p>
+
+            <pre><code># .github/workflows/reusable-test.yml (in a shared repo)
+name: Reusable Test Workflow
+
+on:
+  workflow_call:
+    inputs:
+      python-version:
+        required: true
+        type: string
+        default: "3.12"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python-version }}
+      - run: pip install -r requirements.txt
+      - run: pytest tests/ -v</code></pre>
+
+            <pre><code># In your project's workflow:
+jobs:
+  test:
+    uses: org/shared-workflows/.github/workflows/reusable-test.yml@main
+    with:
+      python-version: "3.12"</code></pre>
+
+            <h2>Self-Hosted Runners for Special Hardware</h2>
+
+            <p>GitHub's free runners are great for most use cases. But if you need GPUs, specific OS versions, or want to reduce network latency, set up a self-hosted runner:</p>
+
+            <pre><code># 1. Register a runner (run on your server)
+git clone https://github.com/actions/runner.git
+cd runner
+./config.sh --url https://github.com/USERNAME/REPO --token YOUR_REGISTRATION_TOKEN
+sudo ./run.sh
+
+# 2. Reference it in your workflow
+jobs:
+  deploy:
+    runs-on: self-hosted  # or runs-on: [self-hosted, linux, x64]
+    steps:
+      - uses: actions/checkout@v4
+      - run: ./deploy-to-internal-server.sh</code></pre>
+
+            <h2>Useful Community Actions</h2>
+
+            <p>The GitHub Actions ecosystem has thousands of pre-built actions. Here are some of the most useful ones:</p>
+
+            <table>
+                <tr><th>Action</th><th>What It Does</th></tr>
+                <tr><td><code>actions/checkout@v4</code></td><td>Clone your repository code</td></tr>
+                <tr><td><code>actions/setup-python@v5</code></td><td>Install Python</td></tr>
+                <tr><td><code>actions/setup-node@v4</code></td><td>Install Node.js</td></tr>
+                <tr><td><code>actions/cache@v4</code></td><td>Cache dependencies</td></tr>
+                <tr><td><code>actions/upload-artifact@v4</code></td><td>Save files between jobs</td></tr>
+                <tr><td><code>docker/login-action@v3</code></td><td>Log in to Docker registry</td></tr>
+                <tr><td><code>docker/build-push-action@v5</code></td><td>Build and push Docker images</td></tr>
+                <tr><td><code>cloudflare/wrangler-action@v3</code></td><td>Deploy Cloudflare Workers</td></tr>
+                <tr><td><code>peaceiris/actions-gh-pages@v4</code></td><td>Deploy to GitHub Pages</td></tr>
+                <tr><td><code>slackapi/slack-github-action@v1</code></td><td>Send Slack notifications</td></tr>
+            </table>
+
+            <h2>Best Practices</h2>
+
+            <ol>
+                <li><strong>Keep workflows small and focused.</strong> One workflow per purpose (CI, CD, scheduled tasks) makes debugging easier.</li>
+                <li><strong>Use concurrency groups</strong> to cancel redundant runs:
+<pre><code>concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true</code></pre>
+                </li>
+                <li><strong>Set timeout minutes</strong> to prevent runaway jobs:
+<pre><code>jobs:
+  test:
+    timeout-minutes: 10</code></pre>
+                </li>
+                <li><strong>Pin action versions</strong> to SHA hashes for security instead of <code>@v4</code>.</li>
+                <li><strong>Use <code>pull_request_target</code> carefully</strong> — it runs with write access on untrusted fork code.</li>
+                <li><strong>Review action logs</strong> after failures. They show exactly which step failed and why.</li>
+            </ol>
+
+            <h2>Summary</h2>
+
+            <p>GitHub Actions transforms your repository into a fully automated development pipeline. You've learned to:</p>
+
+            <ul>
+                <li>Define workflows with triggers, jobs, and steps</li>
+                <li>Use runners, environment variables, and secrets</li>
+                <li>Build matrix strategies for multi-version testing</li>
+                <li>Cache dependencies and share artifacts between jobs</li>
+                <li>Chain jobs with dependencies and conditional execution</li>
+                <li>Create reusable workflows across repositories</li>
+                <li>Build a complete CI/CD pipeline from lint to deploy</li>
+            </ul>
+
+            <p>The beauty of GitHub Actions is that it grows with you. Start with a simple "lint and test" workflow. Add Docker builds. Then deployments. Then notifications. Each addition takes just a few lines of YAML, and the entire process is tracked right alongside your code.</p>
+
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes. Built with love and Cloudflare.</p>
+        </div>
+    </footer>
+
+    <script>
+    // Progress bar
+    window.addEventListener('scroll', () => {
+        const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+        const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        const scrolled = (winScroll / height) * 100;
+        document.getElementById('progressBar').style.width = scrolled + "%";
+    });
+
+    // Theme toggle
+    const toggle = document.getElementById('themeToggle');
+    if (toggle) {
+        const saved = localStorage.getItem('theme');
+        if (saved === 'light') document.body.classList.add('light-mode');
+        toggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            localStorage.setItem('theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
+        });
+    }
+    </script>
+</body>
+</html>

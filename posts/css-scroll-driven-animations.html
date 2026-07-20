@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS Scroll-Driven Animations: Animate on Scroll Without JavaScript — Complete Guide | Hugo's Dev Notes</title>
+    <link rel="canonical" href="https://blog.hugow.dev/posts/css-scroll-driven-animations.html">
+    <link rel="stylesheet" href="../style.css">
+
+    <!-- SEO Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "headline": "CSS Scroll-Driven Animations: Animate on Scroll Without JavaScript — Complete Guide",
+      "description": "Learn CSS scroll-driven animations — the modern way to animate elements as users scroll, using animation-timeline, scroll-timeline, view-timeline, and range syntax. No JavaScript needed.",
+      "datePublished": "2026-07-12",
+      "dateModified": "2026-07-12",
+      "author": {"@type": "Person", "name": "Hugo Wong"},
+      "publisher": {"@type": "Organization", "name": "Hugo's Dev Notes", "url": "https://blog.hugow.dev"},
+      "mainEntityOfPage": "https://blog.hugow.dev/posts/css-scroll-driven-animations.html",
+      "keywords": "css, scroll animations, animation-timeline, view-timeline, web development, css 2026"
+    }
+    </script>
+
+    <!-- Social Meta -->
+    <meta property="og:title" content="CSS Scroll-Driven Animations: Animate on Scroll Without JavaScript — Complete Guide">
+    <meta property="og:description" content="Learn CSS scroll-driven animations — animate elements as users scroll using animation-timeline, scroll-timeline, and view-timeline. No JavaScript needed.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.hugow.dev/posts/css-scroll-driven-animations.html">
+    <meta property="og:site_name" content="Hugo's Dev Notes">
+    <meta property="article:published_time" content="2026-07-12">
+    <meta property="article:modified_time" content="2026-07-12">
+    <meta property="article:section" content="web">
+    <meta property="article:tag" content="CSS, Scroll Animations, Web Dev">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="CSS Scroll-Driven Animations: Animate on Scroll Without JavaScript — Complete Guide">
+    <meta name="twitter:description" content="Learn CSS scroll-driven animations — animate elements as users scroll without JavaScript.">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+
+        <article class="post-content">
+            <span class="tag web">Web Dev</span>
+            <h1>CSS Scroll-Driven Animations: Animate on Scroll Without JavaScript — Complete Guide</h1>
+            <time>July 12, 2026 · 10 min read</time>
+
+            <p>Remember when animating elements on scroll meant hundreds of lines of JavaScript — intersection observers, scroll event listeners, animation frame loops, and cleanup code? That era is over. <strong>CSS Scroll-Driven Animations</strong> let you tie animations directly to scroll position using pure CSS.</p>
+
+            <p>Browsers now support this feature natively — no libraries, no JavaScript, and buttery smooth performance because the browser optimizes scroll-linked animations at the compositor level. This guide covers everything from basic scroll-timeline to advanced view-timeline ranges and real-world hero section patterns.</p>
+
+            <h2>Why CSS Scroll Animations Over JavaScript?</h2>
+
+            <p>The traditional JavaScript approach to scroll animations has several problems:</p>
+
+            <ul>
+                <li><strong>Performance:</strong> Scroll events fire at 60fps — any heavy computation blocks the main thread</li>
+                <li><strong>Jank:</strong> JavaScript animations compete with scroll handling, causing stutter</li>
+                <li><strong>Complexity:</strong> IntersectionObserver + requestAnimationFrame + cleanup = lots of boilerplate</li>
+                <li><strong>Accessibility:</strong> JS animations are harder to pause for users who prefer reduced motion</li>
+            </ul>
+
+            <p>CSS scroll-driven animations solve all of these. The browser's rendering engine handles the animation at the compositor level, completely off the main thread. Zero JavaScript, zero boilerplate, perfect performance.</p>
+
+            <h2>The Two Timeline Types</h2>
+
+            <p>CSS scroll-driven animations use <strong>timelines</strong> instead of time. There are two types:</p>
+
+            <ol>
+                <li><strong>scroll-timeline:</strong> Animates based on the scroll position of a scroll container (e.g., the page)</li>
+                <li><strong>view-timeline:</strong> Animates based on an element's position within the viewport (e.g., when it enters/exits the visible area)</li>
+            </ol>
+
+            <p>Both replace the implicit time-based animation of standard CSS with a scroll-linked progression from 0% (start) to 100% (end).</p>
+
+            <h2>Basic Scroll Timeline</h2>
+
+            <p>A scroll-timeline animates an element as the page (or any scroll container) scrolls. The animation progresses from 0% to 100% as the scroll position moves from the start to the end:</p>
+
+            <pre><code>/* A progress bar that fills as you scroll down the page */
+.progress-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 4px;
+    background: #5e6ad2;
+    width: 100%;
+    transform-origin: left;
+    transform: scaleX(0);
+    animation: fill linear forwards;
+    animation-timeline: scroll(root);
+}
+
+@keyframes fill {
+    to { transform: scaleX(1); }
+}</code></pre>
+
+            <p>The <code>animation-timeline: scroll(root)</code> declaration ties the animation to the root scrolling element (the page). As you scroll from the top to the bottom, the bar goes from <code>scaleX(0)</code> to <code>scaleX(1)</code>.</p>
+
+            <p>Key concepts:</p>
+            <ul>
+                <li><code>scroll(root)</code> — the document's main scroll container</li>
+                <li><code>scroll(y)</code> — vertical scroll of the nearest scroll ancestor</li>
+                <li><code>scroll(x)</code> — horizontal scroll</li>
+                <li>The animation's 0% = scroll position at the top, 100% = scroll position at the bottom</li>
+            </ul>
+
+            <h2>Scroll Timeline with Named Containers</h2>
+
+            <p>You can also use named scroll containers for more control:</p>
+
+            <pre><code>.scroll-container {
+    height: 400px;
+    overflow-y: scroll;
+    scroll-timeline-axis: y;
+    scroll-timeline: --my-scroll;
+}
+
+.animated-element {
+    animation: slide-in linear;
+    animation-timeline: --my-scroll;
+}
+
+@keyframes slide-in {
+    from { transform: translateX(-100%); opacity: 0; }
+    to   { transform: translateX(0);    opacity: 1; }
+}</code></pre>
+
+            <p>The <code>scroll-timeline: --my-scroll</code> property on the container creates a named timeline. The child element references it with <code>animation-timeline: --my-scroll</code>. This decouples the animation from the page scroll — it only responds to scrolling inside that specific container.</p>
+
+            <h2>View Timeline: The Powerhouse</h2>
+
+            <p>View timelines are more powerful because they animate based on an <strong>element's visibility</strong> in the viewport, not just page scroll position. The animation triggers when the element enters or leaves the viewport:</p>
+
+            <pre><code>/* An element fades in and scales up as it enters the viewport */
+.hero-card {
+    opacity: 0;
+    transform: scale(0.8) translateY(40px);
+    animation: appear linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 40%;
+}
+
+@keyframes appear {
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}</code></pre>
+
+            <p>Here's what's happening:</p>
+
+            <ul>
+                <li><code>animation-timeline: view()</code> — the animation is driven by this element's position in the viewport</li>
+                <li><code>animation-range: entry 0% entry 40%</code> — the animation starts when the element first enters the viewport (<code>entry 0%</code>) and completes when 40% of the element is visible (<code>entry 40%</code>)</li>
+                <li><code>both</code> fill mode — the element retains its initial state before animation starts and final state after it ends</li>
+            </ul>
+
+            <h3>View Progress Keywords</h3>
+
+            <p>The <code>animation-range</code> property uses special keywords to define when animation phases occur:</p>
+
+            <ul>
+                <li><strong><code>entry</code></strong> — when the element enters the viewport (from bottom)</li>
+                <li><strong><code>exit</code></strong> — when the element leaves the viewport (from top)</li>
+                <li><strong><code>cover</code></strong> — the combined entry and exit phases</li>
+                <li><strong><code>contain</code></strong> — when the element is fully inside the viewport</li>
+            </ul>
+
+            <p>Each keyword has <code>start</code>, <code>end</code>, and percentage offsets:</p>
+
+            <pre><code>/* Complex range: start animating when 20% visible, finish when 80% visible */
+.fade-in {
+    animation-timeline: view();
+    animation-range: entry 20% entry 80%;
+}
+
+/* Start on entry, end on exit (full viewport traversal) */
+.parallax-element {
+    animation-timeline: view();
+    animation-range: entry exit;
+}
+
+/* Only animate while fully in the viewport */
+.highlight {
+    animation-timeline: view();
+    animation-range: contain;
+}</code></pre>
+
+            <h2>Building a Scroll-Driven Hero Section</h2>
+
+            <p>Let's combine these concepts into a real hero section that animates as the user scrolls:</p>
+
+            <pre><code>&lt;section class="hero"&gt;
+    &lt;h1 class="hero-title"&gt;Welcome to the Future&lt;/h1&gt;
+    &lt;p class="hero-subtitle"&gt;CSS animations driven by scroll&lt;/p&gt;
+    &lt;div class="hero-image"&gt;✦&lt;/div&gt;
+&lt;/section&gt;
+
+&lt;main&gt;
+    &lt;section&gt;More content here...&lt;/section&gt;
+&lt;/main&gt;
+
+&lt;style&gt;
+.hero {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #0a0a0a;
+}
+
+.hero-title {
+    font-size: clamp(2rem, 8vw, 6rem);
+    font-weight: 700;
+    opacity: 1;
+    transform: translateY(0);
+    animation: hero-title linear both;
+    animation-timeline: view();
+    animation-range: entry 0% cover 30%;
+}
+
+@keyframes hero-title {
+    to {
+        opacity: 0;
+        transform: translateY(-80px);
+    }
+}
+
+.hero-subtitle {
+    font-size: clamp(1rem, 3vw, 1.5rem);
+    opacity: 0;
+    animation: hero-sub linear both;
+    animation-timeline: view();
+    animation-range: entry 20% cover 40%;
+}
+
+@keyframes hero-sub {
+    to {
+        opacity: 1;
+    }
+}
+
+.hero-image {
+    font-size: 8rem;
+    transform: scale(0.5) rotate(0deg);
+    animation: hero-img ease-out both;
+    animation-timeline: view();
+    animation-range: entry 10% cover 50%;
+}
+
+@keyframes hero-img {
+    to {
+        transform: scale(1.5) rotate(180deg);
+    }
+}
+&lt;/style&gt;</code></pre>
+
+            <p>This hero section creates a cinematic effect:</p>
+            <ol>
+                <li>The title starts fully visible and fades up as you scroll</li>
+                <li>The subtitle fades in as the title fades out (staggered timing)</li>
+                <li>The decorative element grows and rotates throughout the scroll</li>
+            </ol>
+
+            <p>All of this is pure CSS — zero JavaScript, zero dependencies, and the browser handles the animation at 60fps with no jank.</p>
+
+            <h2>Parallax with View Timeline</h2>
+
+            <p>Create smooth parallax effects by moving elements at different speeds relative to the scroll:</p>
+
+            <pre><code>.parallax-layer {
+    animation: parallax linear;
+    animation-timeline: view();
+    animation-range: cover;
+}
+
+.parallax-slow {
+    --speed: 0.3;
+}
+
+.parallax-fast {
+    --speed: 0.8;
+}
+
+@keyframes parallax {
+    from {
+        transform: translateY(calc(-100px * var(--speed)));
+    }
+    to {
+        transform: translateY(calc(100px * var(--speed)));
+    }
+}</code></pre>
+
+            <p>Each layer moves at a different speed based on the CSS custom property <code>--speed</code>, creating a depth effect. Since the browser composites transforms, this runs on the GPU with no layout recalculation.</p>
+
+            <h2>Scroll-Driven Progress Indicators</h2>
+
+            <p>Build a section progress indicator without JavaScript:</p>
+
+            <pre><code>.section {
+    scroll-timeline: --section-scroll;
+    scroll-timeline-axis: block;
+}
+
+.section-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    width: 100%;
+    background: #333;
+}
+
+.section-progress::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 100%;
+    background: #5e6ad2;
+    transform-origin: left;
+    transform: scaleX(0);
+    animation: progress-fill linear forwards;
+    animation-timeline: --section-scroll;
+}
+
+@keyframes progress-fill {
+    to { transform: scaleX(1); }
+}</code></pre>
+
+            <p>This creates a progress bar at the bottom of each scrollable section that fills as the user scrolls through that section. Each section gets its own progress indicator.</p>
+
+            <h2>Animation Range with Multiple Values</h2>
+
+            <p>You can define complex animation ranges with multiple start and end points:</p>
+
+            <pre><code>/* Animate in on entry, hold, then animate out on exit */
+.reveal-card {
+    animation: reveal linear both;
+    animation-timeline: view();
+    /*
+     * entry 0%  → animation starts (element just visible)
+     * entry 50% → animation completes (halfway into viewport)
+     * exit 0%   → animation restarts (element leaving viewport)
+     * exit 100% → animation completes (element fully gone)
+     */
+    animation-range: entry 0% entry 50% exit 0% exit 100%;
+}
+
+@keyframes reveal {
+    0%   { opacity: 0; transform: translateY(30px) scale(0.95); }
+    25%  { opacity: 1; transform: translateY(0) scale(1); }
+    75%  { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-30px) scale(0.95); }
+}</code></pre>
+
+            <p>The element smoothly fades in as it enters, stays visible while in the viewport, then fades out as it scrolls away — all defined in CSS.</p>
+
+            <h2>Respecting User Preferences</h2>
+
+            <p>Always respect the <code>prefers-reduced-motion</code> preference for users who prefer minimal animation:</p>
+
+            <pre><code>@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}</code></pre>
+
+            <p>For scroll-driven animations specifically, you can disable the timeline entirely:</p>
+
+            <pre><code>@media (prefers-reduced-motion: reduce) {
+    .animated {
+        animation-timeline: none !important;
+        opacity: 1;
+        transform: none;
+    }
+}</code></pre>
+
+            <h2>Browser Support and Fallbacks</h2>
+
+            <p>CSS scroll-driven animations are widely supported as of 2026 in Chrome, Edge, and Safari. For browsers that don't support it, the element simply shows its initial/final CSS state — graceful degradation built in:</p>
+
+            <pre><code>.animated-element {
+    /* Fallback state — visible in old browsers */
+    opacity: 1;
+    transform: none;
+
+    /* Enhanced for modern browsers */
+    animation: fade-in linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 50%;
+}
+
+/* Browsers without support see opacity: 1, no animation */</code></pre>
+
+            <p>The key principle: define your fallback state in the base styles, then enhance with scroll-driven animations. Old browsers see a perfectly usable page.</p>
+
+            <h2>Common Patterns and Recipes</h2>
+
+            <h3>Staggered Card Entrance</h3>
+
+            <pre><code>.card {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: card-in ease-out both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 40%;
+}
+
+/* Each card staggers based on its index */
+.card:nth-child(1) { animation-range: entry 0% entry 30%; }
+.card:nth-child(2) { animation-range: entry 10% entry 40%; }
+.card:nth-child(3) { animation-range: entry 20% entry 50%; }
+.card:nth-child(4) { animation-range: entry 30% entry 60%; }
+
+@keyframes card-in {
+    to { opacity: 1; transform: translateY(0); }
+}</code></pre>
+
+            <h3>Horizontal Scroll Section</h3>
+
+            <pre><code>.horizontal-section {
+    height: 100vh;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    scroll-timeline: --horizontal-scroll x;
+}
+
+.slide {
+    animation: slide-x linear;
+    animation-timeline: --horizontal-scroll;
+}
+
+@keyframes slide-x {
+    from { transform: translateX(0); }
+    to   { transform: translateX(calc(-100vw)); }
+}</code></pre>
+
+            <h2>Summary</h2>
+
+            <p>CSS scroll-driven animations eliminate the need for JavaScript scroll listeners:</p>
+
+            <ul>
+                <li><strong><code>animation-timeline: scroll()</code></strong> — animate based on page/container scroll position</li>
+                <li><strong><code>animation-timeline: view()</code></strong> — animate based on element's viewport position</li>
+                <li><strong><code>animation-range</code></strong> — control exactly when animation phases trigger</li>
+                <li><strong>View progress keywords:</strong> entry, exit, cover, contain — with percentage offsets</li>
+                <li><strong>Always provide fallback states</strong> — old browsers see a static version</li>
+                <li><strong>Respect <code>prefers-reduced-motion</code></strong> — disable animations for users who need it</li>
+            </ul>
+
+            <p>With scroll-driven animations, you get smooth, performant, declarative animations that work entirely in CSS. No more scroll event handlers, no more IntersectionObserver boilerplate, no more requestAnimationFrame loops. Just clean CSS that the browser optimizes automatically.</p>
+
+            <div class="post-footer">
+                <p>📚 <strong>Related posts:</strong></p>
+                <ul class="related-links">
+                    <li><a href="css-animations-transitions.html">← CSS Animations and Transitions</a></li>
+                    <li><a href="css-container-queries.html">← CSS Container Queries</a></li>
+                    <li><a href="javascript-dom-manipulation.html">→ JavaScript DOM Manipulation</a></li>
+                </ul>
+            </div>
+        </article>
+    </main>
+
+    <footer class="site-footer">
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes. Built with Python and deployed on Cloudflare Pages.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Reading progress bar
+        window.addEventListener('scroll', () => {
+            const bar = document.getElementById('progressBar');
+            if (bar) {
+                const scrollTop = window.scrollY;
+                const docHeight = document.body.scrollHeight - window.innerHeight;
+                bar.style.width = `${(scrollTop / docHeight) * 100}%`;
+            }
+        });
+        // Theme toggle
+        const toggle = document.getElementById('themeToggle');
+        if (toggle) {
+            toggle.addEventListener('click', () => {
+                document.body.classList.toggle('light-theme');
+                localStorage.setItem('theme', document.body.classList.contains('light-theme') ? 'light' : 'dark');
+            });
+            if (localStorage.getItem('theme') === 'light') {
+                document.body.classList.add('light-theme');
+            }
+        }
+    </script>
+</body>
+</html>

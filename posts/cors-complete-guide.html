@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cross-Origin Resource Sharing (CORS): How It Works and How to Fix Errors — Complete Guide | Hugo's Dev Notes</title>
+    <meta name="description" content="Understand CORS completely — the Same-Origin Policy, preflight requests, CORS headers, common errors, and how to configure servers for secure cross-origin requests. Working code examples for every scenario.">
+    <meta name="keywords" content="CORS, cross-origin resource sharing, same-origin policy, CORS headers, Access-Control-Allow-Origin, CORS errors, web security, frontend backend">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/cors-complete-guide.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="post-content">
+            <a href="../index.html" class="back-link">← Back to all posts</a>
+            <span class="tag web">Web Dev</span>
+            <span class="tag security">Security</span>
+            <h1>Cross-Origin Resource Sharing (CORS): How It Works and How to Fix Errors — Complete Guide</h1>
+            <time datetime="2026-07-14">July 14, 2026</time>
+
+            <p>If you've ever built a frontend that talks to a backend API, you've probably seen the dreaded CORS error in your browser console:</p>
+
+            <pre><code>Access to fetch at 'https://api.example.com/data' from origin 
+'https://myapp.com' has been blocked by CORS policy: No 
+'Access-Control-Allow-Origin' header is present on the requested resource.</code></pre>
+
+            <p>It looks like a frontend problem, but CORS is actually a <strong>server-side security mechanism</strong>. Understanding how it works will save you hours of debugging. Let's demystify CORS from the ground up.</p>
+
+            <h2>What Is CORS?</h2>
+
+            <p>CORS (Cross-Origin Resource Sharing) is a browser security mechanism that controls how resources on a web server can be requested from a domain different from the one that served the resource. It extends — and adds complexity to — the browser's <strong>Same-Origin Policy</strong>.</p>
+
+            <h3>The Same-Origin Policy</h3>
+
+            <p>The Same-Origin Policy is the browser's default security rule: a webpage loaded from one origin (protocol + domain + port) cannot make requests to a different origin. Three things must match for two URLs to share an origin:</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Component</th>
+                        <th>Example 1</th>
+                        <th>Example 2</th>
+                        <th>Same Origin?</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Protocol</strong></td>
+                        <td><code>https</code></td>
+                        <td><code>http</code></td>
+                        <td>No ❌</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Domain</strong></td>
+                        <td><code>myapp.com</code></td>
+                        <td><code>api.myapp.com</code></td>
+                        <td>No ❌</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Port</strong></td>
+                        <td><code>443</code></td>
+                        <td><code>3000</code></td>
+                        <td>No ❌</td>
+                    </tr>
+                    <tr>
+                        <td>—</td>
+                        <td colspan="2"><code>https://myapp.com:443</code></td>
+                        <td>Yes ✅ (all match)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p>During local development, <code>http://localhost:3000</code> and <code>http://localhost:8000</code> are <strong>different origins</strong> — this is the most common cause of CORS errors when starting out.</p>
+
+            <h2>How CORS Works</h2>
+
+            <p>CORS introduces a negotiation process between the browser and the server. The browser adds extra headers to requests, and the server responds with permissions headers. There are two types of CORS requests:</p>
+
+            <h3>1. Simple Requests</h3>
+
+            <p>A "simple" request must meet ALL of these criteria:</p>
+
+            <ul>
+                <li>Method is <code>GET</code>, <code>HEAD</code>, or <code>POST</code></li>
+                <li>Headers are limited to "safe" headers: <code>Accept</code>, <code>Accept-Language</code>, <code>Content-Language</code>, <code>Content-Type</code> (with limited values), <code>Sec-Fetch-*</code></li>
+                <li><code>Content-Type</code> must be one of: <code>application/x-www-form-urlencoded</code>, <code>multipart/form-data</code>, or <code>text/plain</code></li>
+            </ul>
+
+            <p>For simple requests, the browser sends the request normally with an <code>Origin</code> header. The server must respond with <code>Access-Control-Allow-Origin</code>:</p>
+
+            <pre><code># Request (browser adds automatically)
+GET /api/users HTTP/1.1
+Host: api.example.com
+Origin: https://myapp.com
+
+# Response (server must include)
+HTTP/1.1 200 OK
+Access-Control-Allow-Origin: https://myapp.com
+Content-Type: application/json
+
+{"users": [...]}</code></pre>
+
+            <h3>2. Preflight (CORS-preflight) Requests</h3>
+
+            <p>Any request that is NOT "simple" triggers a preflight. The browser first sends an <code>OPTIONS</code> request to ask "can I make this type of request?" before sending the actual request.</p>
+
+            <pre><code># Preflight request (sent automatically by browser)
+OPTIONS /api/users HTTP/1.1
+Host: api.example.com
+Origin: https://myapp.com
+Access-Control-Request-Method: PUT
+Access-Control-Request-Headers: Content-Type, Authorization
+
+# Preflight response
+HTTP/1.1 204 No Content
+Access-Control-Allow-Origin: https://myapp.com
+Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS
+Access-Control-Allow-Headers: Content-Type, Authorization
+Access-Control-Max-Age: 86400
+
+# Only then does the browser send the actual request
+PUT /api/users/1 HTTP/1.1
+Host: api.example.com
+Origin: https://myapp.com
+Content-Type: application/json
+Authorization: Bearer token123
+
+{"name": "Alice"}</code></pre>
+
+            <p>The <code>Access-Control-Max-Age</code> header tells the browser how long to cache the preflight response, avoiding redundant OPTIONS requests.</p>
+
+            <h2>Essential CORS Headers Reference</h2>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Header</th>
+                        <th>Direction</th>
+                        <th>Purpose</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>Origin</code></td>
+                        <td>Request</td>
+                        <td>Tells server which origin is making the request</td>
+                    </tr>
+                    <tr>
+                        <td><code>Access-Control-Allow-Origin</code></td>
+                        <td>Response</td>
+                        <td>Specifies which origins are allowed</td>
+                    </tr>
+                    <tr>
+                        <td><code>Access-Control-Request-Method</code></td>
+                        <td>Preflight Request</td>
+                        <td>Asks if a specific HTTP method is allowed</td>
+                    </tr>
+                    <tr>
+                        <td><code>Access-Control-Allow-Methods</code></td>
+                        <td>Preflight Response</td>
+                        <td>Lists allowed HTTP methods</td>
+                    </tr>
+                    <tr>
+                        <td><code>Access-Control-Request-Headers</code></td>
+                        <td>Preflight Request</td>
+                        <td>Asks if specific headers are allowed</td>
+                    </tr>
+                    <tr>
+                        <td><code>Access-Control-Allow-Headers</code></td>
+                        <td>Preflight Response</td>
+                        <td>Lists allowed request headers</td>
+                    </tr>
+                    <tr>
+                        <td><code>Access-Control-Allow-Credentials</code></td>
+                        <td>Response</td>
+                        <td>Whether cookies/authorization can be sent</td>
+                    </tr>
+                    <tr>
+                        <td><code>Access-Control-Max-Age</code></td>
+                        <td>Preflight Response</td>
+                        <td>How long to cache the preflight response</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2>Configuring CORS on Popular Servers</h2>
+
+            <h3>Python Flask</h3>
+
+            <pre><code>from flask import Flask, jsonify
+from flask_cors import CORS
+
+app = Flask(__name__)
+
+# Option 1: Allow all origins (development only!)
+CORS(app)
+
+# Option 2: Allow specific origins (production)
+CORS(app, resources={
+    r"/api/*": {
+        "origins": ["https://myapp.com", "https://admin.myapp.com"],
+        "methods": ["GET", "POST", "PUT", "DELETE"],
+        "allow_headers": ["Content-Type", "Authorization"],
+        "max_age": 86400,
+    }
+})
+
+@app.route('/api/users')
+def get_users():
+    return jsonify([{"id": 1, "name": "Alice"}])
+
+# Option 3: Manual headers (no extra dependency)
+@app.after_request
+def add_cors_headers(response):
+    response.headers['Access-Control-Allow-Origin'] = 'https://myapp.com'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+    return response</code></pre>
+
+            <h3>Python FastAPI</h3>
+
+            <pre><code>from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["https://myapp.com", "https://admin.myapp.com"],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
+    max_age=86400,
+)
+
+@app.get("/api/users")
+def get_users():
+    return [{"id": 1, "name": "Alice"}]</code></pre>
+
+            <h3>Node.js Express</h3>
+
+            <pre><code>const express = require('express');
+const cors = require('cors');
+const app = express();
+
+// Option 1: Allow specific origins
+app.use(cors({
+    origin: ['https://myapp.com', 'https://admin.myapp.com'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+    maxAge: 86400,
+}));
+
+// Option 2: Dynamic origin check
+app.use(cors({
+    origin: function(origin, callback) {
+        const allowedOrigins = [
+            'https://myapp.com',
+            'https://admin.myapp.com'
+        ];
+        // Allow requests with no origin (like curl, Postman)
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    }
+}));
+
+app.get('/api/users', (req, res) => {
+    res.json([{ id: 1, name: 'Alice' }]);
+});
+
+app.listen(3000);</code></pre>
+
+            <h3>Nginx</h3>
+
+            <pre><code>server {
+    listen 80;
+    server_name api.example.com;
+
+    location /api/ {
+        # Handle preflight OPTIONS request
+        if ($request_method = 'OPTIONS') {
+            add_header 'Access-Control-Allow-Origin' 'https://myapp.com';
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, OPTIONS';
+            add_header 'Access-Control-Allow-Headers' 'Content-Type, Authorization';
+            add_header 'Access-Control-Max-Age' 86400;
+            add_header 'Content-Length' 0;
+            return 204;
+        }
+
+        # Add CORS headers to actual responses
+        add_header 'Access-Control-Allow-Origin' 'https://myapp.com' always;
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, OPTIONS' always;
+        add_header 'Access-Control-Allow-Headers' 'Content-Type, Authorization' always;
+
+        proxy_pass http://backend:8000;
+    }
+}</code></pre>
+
+            <h3>Cloudflare Workers</h3>
+
+            <pre><code>export default {
+    async fetch(request, env) {
+        // Handle preflight
+        if (request.method === 'OPTIONS') {
+            return new Response(null, {
+                headers: {
+                    'Access-Control-Allow-Origin': 'https://myapp.com',
+                    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE',
+                    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+                    'Access-Control-Max-Age': '86400',
+                },
+            });
+        }
+
+        const response = new Response(JSON.stringify({ message: "OK" }), {
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': 'https://myapp.com',
+            },
+        });
+
+        return response;
+    }
+};</code></pre>
+
+            <h2>Credentials and Cookies</h2>
+
+            <p>If your frontend needs to send cookies or authorization headers (like <code>Authorization: Bearer...</code>), you need to configure <strong>both</strong> the client and server:</p>
+
+            <pre><code>// Frontend: Include credentials
+fetch('https://api.example.com/user', {
+    method: 'GET',
+    credentials: 'include'  // Send cookies
+});
+
+// Server: Allow credentials (Python Flask example)
+@app.after_request
+def add_cors_headers(response):
+    response.headers['Access-Control-Allow-Origin'] = 'https://myapp.com'
+    response.headers['Access-Control-Allow-Credentials'] = 'true'
+    return response</code></pre>
+
+            <blockquote>
+                <strong>Important:</strong> When <code>Access-Control-Allow-Credentials</code> is <code>true</code>, the <code>Access-Control-Allow-Origin</code> header <strong>cannot</strong> be <code>*</code>. You must specify the exact allowed origin. This is a security requirement.
+            </blockquote>
+
+            <h2>Common CORS Errors and Fixes</h2>
+
+            <h3>Error: "No 'Access-Control-Allow-Origin' header is present"</h3>
+            <p><strong>Fix:</strong> Your server isn't sending CORS headers. Add the headers to your server configuration (see examples above).</p>
+
+            <h3>Error: "The value of the 'Access-Control-Allow-Origin' header must not be the wildcard '*' when the request's credentials mode is 'include'"</h3>
+            <p><strong>Fix:</strong> Replace <code>*</code> with the actual origin: <code>Access-Control-Allow-Origin: https://myapp.com</code></p>
+
+            <h3>Error: "Request header field Content-Type is not allowed by Access-Control-Allow-Headers in preflight response"</h3>
+            <p><strong>Fix:</strong> Add <code>Content-Type</code> to the allowed headers list on your server.</p>
+
+            <h3>Error: "Response to preflight request doesn't pass access control check"</h3>
+            <p><strong>Fix:</strong> Your server isn't properly handling OPTIONS requests. Make sure it returns the right CORS headers with a 200 or 204 status code.</p>
+
+            <h2>Should You Use a CORS Proxy?</h2>
+
+            <p>During development, you might encounter CORS issues that seem hard to fix. A CORS proxy sits between your frontend and backend, adding CORS headers. <strong>Never use a public CORS proxy in production</strong> — it creates security vulnerabilities.</p>
+
+            <pre><code>// Example: Vite dev server proxy (safe for development)
+// vite.config.js
+export default {
+    server: {
+        proxy: {
+            '/api': {
+                target: 'http://localhost:8000',
+                changeOrigin: true,
+            }
+        }
+    }
+};</code></pre>
+
+            <p>The correct production solution is always to properly configure CORS on your backend server.</p>
+
+            <h2>Security Best Practices</h2>
+
+            <ol>
+                <li><strong>Never use <code>*</code> in production</strong> — specify exact allowed origins</li>
+                <li><strong>Only allow methods you need</strong> — don't open all methods if your API only needs GET and POST</li>
+                <li><strong>Validate the Origin header</strong> on the server side, even if the browser enforces CORS</li>
+                <li><strong>Set <code>Access-Control-Max-Age</code></strong> to reduce preflight overhead</li>
+                <li><strong>Don't expose <code>Access-Control-Allow-Credentials</code></code> unless you need cookies/auth headers</li>
+                <li><strong>Combine CORS with other security measures</strong> — rate limiting, authentication, input validation</li>
+            </ol>
+
+            <h2>Summary</h2>
+
+            <p>CORS is a browser security feature that prevents unauthorized cross-origin requests. The key takeaways:</p>
+
+            <ul>
+                <li>CORS errors are <strong>server-side</strong> — add the right headers to your API</li>
+                <li>Simple requests (GET, safe POST) send just the <code>Origin</code> header</li>
+                <li>Complex requests trigger a <code>OPTIONS</code> preflight — your server must handle it</li>
+                <li>For credentials, never use <code>*</code> — specify exact origins</li>
+                <li>Every framework has built-in CORS support — use it instead of manual headers</li>
+            </ul>
+
+            <p>Once you understand the Origin header flowing between browser and server, CORS stops being a mystery and becomes a straightforward configuration task.</p>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes. Built with curiosity and code.</p>
+            <div class="footer-links">
+                <a href="../index.html">Home</a>
+                <a href="https://github.com/hugow0528" target="_blank">GitHub</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Progress bar
+        window.addEventListener('scroll', () => {
+            const winScroll = document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + '%';
+        });
+
+        // Theme toggle
+        const toggle = document.getElementById('themeToggle');
+        toggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            localStorage.setItem('theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
+        });
+        if (localStorage.getItem('theme') === 'light') {
+            document.body.classList.add('light-mode');
+        }
+    </script>
+</body>
+</html>

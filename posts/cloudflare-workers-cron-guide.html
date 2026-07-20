@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloudflare Workers Cron Triggers: Serverless Scheduled Jobs — Complete Beginner's Guide</title>
+    <meta name="description" content="Learn Cloudflare Workers Cron Triggers — schedule serverless tasks, build recurring jobs, handle failures, and deploy production cron workflows. Working examples for every concept.">
+    <meta name="keywords" content="cloudflare workers cron, serverless cron, scheduled jobs, cloudflare automation, workers cron triggers">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/cloudflare-workers-cron-guide.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn active">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <article class="post-content container">
+        <span class="tag cloudflare">Cloudflare</span><span class="tag devops">DevOps</span>
+        <h1>Cloudflare Workers Cron Triggers: Serverless Scheduled Jobs — Complete Beginner's Guide</h1>
+
+        <div class="post-meta" style="border-top: 1px solid var(--border-subtle); padding-top: 16px; margin-top: 16px; margin-bottom: 32px;">
+            <span class="post-date">July 15, 2026</span>
+            <span class="read-time">10 min read</span>
+        </div>
+
+        <h2>What Are Cloudflare Workers Cron Triggers?</h2>
+        <p>Cloudflare Workers Cron Triggers let you schedule your Workers scripts to run automatically at specified intervals — without managing servers, cron daemons, or background processes. Think of them as "serverless cron jobs" that run on Cloudflare's global edge network. Free tier gives you daily triggers, and paid plans unlock minute-level scheduling.</p>
+
+        <p>Unlike traditional cron that runs on a single server, Workers Cron executes your code at the edge — meaning your scheduled task starts in milliseconds, anywhere in the world. No cold starts, no server to maintain, no uptime to worry about.</p>
+
+        <h2>How Cron Triggers Work</h2>
+        <p>A Workers Cron Trigger is configured in your <code>wrangler.toml</code> file. When the scheduled time arrives, Cloudflare sends your Worker a <code>scheduled</code> event instead of a fetch event. Your code checks <code>event.type</code> to distinguish between HTTP requests and cron triggers:</p>
+
+        <pre><code>export default {
+    async fetch(request, env, ctx) {
+        // Normal HTTP request handling
+        return new Response("Hello from the Worker!");
+    },
+
+    async scheduled(event, env, ctx) {
+        // Cron trigger — runs on schedule
+        console.log("Cron triggered at:", new Date().toISOString());
+        await runDailyCleanup(env);
+        return new Response("Cron job completed!");
+    }
+};</code></pre>
+
+        <h2>Configuring Cron Schedules</h2>
+        <p>Cron expressions use standard Unix cron syntax. Add your schedule to <code>wrangler.toml</code>:</p>
+
+        <pre><code>[triggers]
+crons = ["0 9 * * *", "*/15 * * * *", "0 0 * * 0"]</code></pre>
+
+        <p>This configures three schedules:
+        <ul style="margin: 12px 0 12px 24px; color: var(--text-secondary);">
+            <li><code>0 9 * * *</code> — Every day at 9:00 AM UTC</li>
+            <li><code>*/15 * * * *</code> — Every 15 minutes (Business plan)</li>
+            <li><code>0 0 * * 0</code> — Every Sunday at midnight UTC</li>
+        </ul>
+        </p>
+
+        <p>Free tier supports daily triggers only (<code>0 9 * * *</code>). Paid plans (Pro/Business/Enterprise) unlock hourly, minute-level, and even sub-minute scheduling.</p>
+
+        <h2>Deploying Your Cron Worker</h2>
+        <p>Deploy with Wrangler CLI:</p>
+
+        <pre><code># Initialize a new Workers project
+npx wrangler init my-cron-worker
+
+# Edit wrangler.toml with cron schedules
+# Add your cron expressions to [triggers]
+
+# Deploy
+npx wrangler deploy</code></pre>
+
+        <p>You can also trigger manually for testing:</p>
+
+        <pre><code>npx wrangler trigger:scheduled my-cron-worker</code></pre>
+
+        <h2>Real-World Example: Daily Database Cleanup</h2>
+        <p>Here's a complete example that cleans expired records from a D1 database every morning:</p>
+
+        <pre><code>export default {
+    async scheduled(event, env, ctx) {
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - 30); // 30 days ago
+        const cutoffStr = cutoff.toISOString();
+
+        try {
+            const result = await env.DB.prepare(
+                "DELETE FROM sessions WHERE created_at < ?"
+            ).bind(cutoffStr).run();
+
+            console.log(`Deleted ${result.meta.changes} expired sessions`);
+
+            // Optional: log to KV for monitoring
+            await env.METRICS.put(
+                `cleanup-${new Date().toISOString().split('T')[0]}`,
+                JSON.stringify({ deleted: result.meta.changes })
+            );
+        } catch (err) {
+            console.error("Cleanup failed:", err);
+            // Retry logic or alerting would go here
+        }
+    }
+};</code></pre>
+
+        <h2>Real-World Example: Health Check Monitor</h2>
+        <p>Monitor external services by pinging them on a schedule:</p>
+
+        <pre><code>const ENDPOINTS = [
+    { name: "API", url: "https://api.example.com/health" },
+    { name: "Web", url: "https://www.example.com" },
+    { name: "Docs", url: "https://docs.example.com" }
+];
+
+export default {
+    async scheduled(event, env, ctx) {
+        const results = [];
+
+        for (const endpoint of ENDPOINTS) {
+            const start = Date.now();
+            let status = "down";
+
+            try {
+                const resp = await fetch(endpoint.url, {
+                    method: "GET",
+                    cf: {
+                        timeout: 10000 // 10 second timeout
+                    }
+                });
+                const duration = Date.now() - start;
+                status = resp.status === 200 ? "up" : `error_${resp.status}`;
+            } catch (err) {
+                status = "error";
+            }
+
+            results.push({ name: endpoint.name, status });
+
+            if (status !== "up") {
+                // Send alert via webhook
+                await fetch("https://alerts.example.com/webhook", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        service: endpoint.name,
+                        status,
+                        timestamp: new Date().toISOString()
+                    })
+                });
+            }
+        }
+
+        console.log("Health checks:", JSON.stringify(results));
+    }
+};</code></pre>
+
+        <h2>Error Handling and Retry Patterns</h2>
+        <p>Cron triggers don't auto-retry on failure. Implement your own retry logic:</p>
+
+        <pre><code>async function withRetry(fn, maxAttempts = 3, delayMs = 1000) {
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+            return await fn();
+        } catch (err) {
+            if (attempt === maxAttempts) throw err;
+            console.warn(`Attempt ${attempt} failed, retrying...`);
+            await new Promise(r => setTimeout(r, delayMs * attempt)); // exponential backoff
+        }
+    }
+}
+
+export default {
+    async scheduled(event, env, ctx) {
+        try {
+            await withRetry(async () => {
+                await env.DB.prepare("VACUUM").run();
+            });
+        } catch (err) {
+            // Log to KV for later inspection
+            await env.LOGS.put(
+                `error-${Date.now()}`,
+                JSON.stringify({ error: err.message, timestamp: new Date().toISOString() })
+            );
+        }
+    }
+};</code></pre>
+
+        <h2>Using ctx.waitUntil() for Background Work</h2>
+        <p>Use <code>ctx.waitUntil()</code> to run async operations after the response returns — useful for long-running tasks:</p>
+
+        <pre><code>export default {
+    async scheduled(event, env, ctx) {
+        // Return response immediately
+        const promise = heavyBackgroundWork(env);
+        ctx.waitUntil(promise);
+        return new Response("Scheduled task started");
+    }
+};</code></pre>
+
+        <h2>Best Practices</h2>
+        <ul style="margin: 12px 0 24px 24px; color: var(--text-secondary);">
+            <li><strong>Idempotency:</strong> Design jobs to be safe to run twice — clock drift can cause double execution</li>
+            <li><strong>Timeout awareness:</strong> Free Workers timeout at 10s (HTTP) / 15min (streaming). Use Durable Objects or Queues for longer work</li>
+            <li><strong>Logging:</strong> Write results to KV, D1, or an external service — console.log only goes to Cloudflare logs</li>
+            <li><strong>Timezones:</strong> Cron schedules use UTC. Adjust your cron expression for local times</li>
+            <li><strong>Rate limits:</strong> Your cron Worker still counts toward overall API rate limits if it calls external services</li>
+        </ul>
+
+        <h2>Monitoring Your Cron Jobs</h2>
+        <p>Track execution in the Cloudflare Dashboard under Workers &amp; Pages → your worker → Cron Triggers. You can view:</p>
+        <ul style="margin: 12px 0 24px 24px; color: var(--text-secondary);">
+            <li>Last invocation time and duration</li>
+            <li>Error logs</li>
+            <li>Schedule configuration</li>
+        </ul>
+
+        <h2>Common Use Cases</h2>
+        <p>Here are popular patterns for Workers Cron:</p>
+        <ul style="margin: 12px 0 24px 24px; color: var(--text-secondary);">
+            <li><strong>Data aggregation:</strong> Compile analytics daily from R2 or KV data</li>
+            <li><strong>Cache warming:</strong> Pre-fetch expensive API responses on a schedule</li>
+            <li><strong>Database maintenance:</strong> VACUUM, delete expired rows, archive old data</li>
+            <li><strong>Notifications:</strong> Send daily/weekly email digests</li>
+            <li><strong>Webhook retries:</strong> Poll failed webhook deliveries and retry</li>
+            <li><strong>Report generation:</strong> Build and email PDF reports from D1 data</li>
+        </ul>
+
+        <h2>Summary</h2>
+        <p>Cloudflare Workers Cron Triggers provide a dead-simple way to schedule tasks on the edge. No servers to manage, no cron daemon to configure — just write code, set a schedule in <code>wrangler.toml</code>, and deploy. Combine with KV for state, D1 for structured data, and Queues for background work to build powerful automation workflows.</p>
+
+        <div style="margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--border-subtle);">
+            <a href="../cloudflare.html" class="nav-btn">← Back to Cloudflare Posts</a>
+            <a href="../index.html" class="nav-btn" style="margin-left: 12px;">Home</a>
+        </div>
+    </article>
+
+    <script>
+        // Progress bar
+        window.addEventListener('scroll', () => {
+            const bar = document.getElementById('progressBar');
+            if (bar) {
+                const scrollPercent = (window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100;
+                bar.style.width = scrollPercent + '%';
+            }
+        });
+        // Theme toggle
+        const toggle = document.getElementById('themeToggle');
+        if (toggle) {
+            toggle.addEventListener('click', () => {
+                document.body.classList.toggle('light');
+            });
+        }
+    </script>
+</body>
+</html>

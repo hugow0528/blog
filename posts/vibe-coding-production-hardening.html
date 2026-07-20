@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>From AI Prototype to Production: Hardening Your Vibe-Coded Apps — Complete Guide | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn to take AI-generated code from prototype to production — security hardening, testing strategies, error handling, CI/CD, and deployment patterns for vibe-coded applications.">
+    <meta name="keywords" content="vibe coding, AI to production, harden AI code, production readiness, AI generated code, code review AI, deployment">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/vibe-coding-production-hardening.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <article class="post-content">
+        <a href="../index.html" class="back-link">← All Posts</a>
+        <span class="tag vibe">AI Coding</span>
+        <h1>From AI Prototype to Production: Hardening Your Vibe-Coded Apps — Complete Guide</h1>
+        <time datetime="2026-07-16">July 16, 2026 · 12 min read</time>
+
+        <p>You've built something amazing in 20 minutes with Cursor, Claude Code, or GitHub Copilot. Your API works. Your frontend loads. The demo impressed your team. Now comes the hard part: <strong>getting it to production without something breaking in 3 PM on a Friday.</strong></p>
+
+        <p>AI-generated code is a fantastic starting point — but it comes with predictable weaknesses. AI tools optimize for code that "looks right" and "runs in the happy path." They frequently skip error handling, use placeholder credentials, forget edge cases, and generate dependencies with known vulnerabilities. This guide covers the <strong>complete hardening checklist</strong> to transform any AI prototype into a production-ready application.</p>
+
+        <h2>Phase 1: The Security Audit (Do This First)</h2>
+
+        <p>Before you do anything else, run a security review. AI tools make systematic mistakes in security — here are the top five things to check.</p>
+
+        <h3>1. Find and Remove Hardcoded Secrets</h3>
+
+        <p>AI models frequently generate placeholder API keys, database passwords, and tokens that look real but are either public knowledge or will tempt you to use them. Search for these patterns:</p>
+
+        <pre><code class="language-bash"># Search your entire project for potential secrets
+grep -rn "api_key\|secret\|password\|token\|API_KEY\|SECRET_KEY\|PASSWORD" --include="*.py" --include="*.js" --include="*.env" .
+
+# Look for suspicious string literals that might be keys
+grep -rn "sk-\|pk-\|AKIA\|eyJ\|ghp_" --include="*.py" .
+
+# Use trufflehog (free) for deep scanning
+pip install trufflehog
+trufflehog filesystem .</code></pre>
+
+        <p><strong>The fix:</strong> Move everything to environment variables. Here's how to replace hardcoded values:</p>
+
+        <pre><code class="language-python"># ❌ What AI often generates:
+DATABASE_URL = "postgresql://admin:password123@localhost:5432/mydb"
+API_KEY = "sk-proj-abc123def456..."  # Placeholder key
+
+# ✅ What production code should look like:
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+DATABASE_URL = os.getenv("DATABASE_URL")
+API_KEY = os.getenv("API_KEY")
+
+if not DATABASE_URL:
+    raise RuntimeError("DATABASE_URL environment variable is required")
+if not API_KEY:
+    raise RuntimeError("API_KEY environment variable is required")
+
+# .env file (add to .gitignore!):
+# DATABASE_URL=postgresql://user:actual_secret@prod-db:5432/mydb
+# API_KEY=sk-proj-your-real-key-here</code></pre>
+
+        <h3>2. Check Dependencies for Vulnerabilities</h3>
+
+        <p>AI tools recommend packages based on training data, not current security advisories. Your <code>requirements.txt</code> might include packages with critical CVEs.</p>
+
+        <pre><code class="language-bash"># Install safety or pip-audit for scanning
+pip install safety
+safety check
+
+# Or use pip-audit (ships with pip in newer versions)
+pip-audit
+
+# For JavaScript/TypeScript projects
+npm audit
+# or
+pnpm audit</code></pre>
+
+        <h3>3. Validate Input Sanitization</h3>
+
+        <p>AI-generated web apps frequently trust user input. Check every endpoint:</p>
+
+        <pre><code class="language-python"># ❌ Common AI mistake — trusting user input directly in SQL
+@app.get("/users/{user_id}")
+async def get_user(user_id: str):
+    query = f"SELECT * FROM users WHERE id = '{user_id}'"  # SQL injection!
+    return await db.execute(query)
+
+# ✅ Use parameterized queries or an ORM
+from sqlalchemy import text
+
+@app.get("/users/{user_id}")
+async def get_user(user_id: str):
+    result = await db.execute(
+        text("SELECT * FROM users WHERE id = :id"),
+        {"id": user_id}
+    )
+    return result.fetchone()</code></pre>
+
+        <p>For FastAPI specifically, Pydantic models are your friend — but verify that every endpoint actually uses them:</p>
+
+        <pre><code class="language-python"># ✅ Always validate with Pydantic
+from pydantic import BaseModel, Field, EmailStr
+
+class CreateUserRequest(BaseModel):
+    email: EmailStr
+    name: str = Field(..., min_length=1, max_length=100)
+    age: int = Field(..., ge=0, le=150)
+
+@app.post("/users")
+async def create_user(data: CreateUserRequest):
+    # data.email is guaranteed to be valid email format
+    # data.name is 1-100 chars
+    # data.age is 0-150
+    return {"id": create_in_db(data)}</code></pre>
+
+        <h3>4. Review CORS and Rate Limiting</h3>
+
+        <p>AI tools often set <code>allow_origins=["*"]</code> or skip rate limiting entirely:</p>
+
+        <pre><code class="language-python"># ❌ AI-generated CORS (accepts everything from anywhere):
+from fastapi.middleware.cors import CORSMiddleware
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+# ✅ Production CORS (specific origins, specific methods):
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["https://yourapp.com", "https://admin.yourapp.com"],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_headers=["Authorization", "Content-Type"],
+    max_age=3600,  # Cache preflight for 1 hour
+)
+
+# Add rate limiting (use slowapi or a custom middleware)
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+
+@app.get("/api/search")
+@limiter.limit("10/minute")
+async def search(request: Request, q: str):
+    return search_results(q)</code></pre>
+
+        <h2>Phase 2: Add Proper Error Handling</h2>
+
+        <p>AI code handles the happy path beautifully. It usually forgets everything that can go wrong. Add these error handling layers:</p>
+
+        <h3>1. Global Exception Handler</h3>
+
+        <pre><code class="language-python">from fastapi import FastAPI, Request, HTTPException
+from fastapi.responses import JSONResponse
+import logging
+
+logger = logging.getLogger(__name__)
+app = FastAPI()
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """Catch any unhandled exception and return a clean error."""
+    logger.error(f"Unhandled error: {exc}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error", "path": str(request.url.path)}
+    )
+
+@app.exception_handler(ValueError)
+async def value_error_handler(request: Request, exc: ValueError):
+    """Return 400 for validation errors instead of 500."""
+    return JSONResponse(
+        status_code=400,
+        content={"detail": str(exc)}
+    )</code></pre>
+
+        <h3>2. Database Error Handling with Retry Logic</h3>
+
+        <pre><code class="language-python">import asyncio
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+from sqlalchemy.exc import OperationalError
+
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=1, max=10),
+    retry=retry_if_exception_type(OperationalError),
+    reraise=True,
+)
+async def db_safe_execute(query, params=None):
+    """Execute a database query with automatic retry on transient failures."""
+    async with db.engine.connect() as conn:
+        return await conn.execute(text(query), params or {})
+
+# Usage
+async def get_user(user_id: str):
+    try:
+        result = await db_safe_execute(
+            "SELECT * FROM users WHERE id = :id",
+            {"id": user_id}
+        )
+        return result.fetchone()
+    except OperationalError as e:
+        logger.error(f"Database error after retries: {e}")
+        raise HTTPException(status_code=503, detail="Service temporarily unavailable")</code></pre>
+
+        <h3>3. Health Check Endpoint</h3>
+
+        <p>Every production app needs a health check. AI tools rarely include these:</p>
+
+        <pre><code class="language-python">@app.get("/health")
+async def health_check():
+    """Returns system health status for load balancers and monitoring."""
+    health = {
+        "status": "healthy",
+        "version": "1.0.0",
+        "checks": {}
+    }
+
+    # Check database connectivity
+    try:
+        await db_safe_execute("SELECT 1")
+        health["checks"]["database"] = "ok"
+    except Exception as e:
+        health["checks"]["database"] = f"error: {str(e)}"
+        health["status"] = "degraded"
+
+    # Check external service
+    try:
+        response = await http_client.get("https://api.external-service.com/status")
+        health["checks"]["external_api"] = "ok" if response.status_code == 200 else "degraded"
+    except Exception as e:
+        health["checks"]["external_api"] = f"error: {str(e)}"
+
+    status_code = 200 if health["status"] == "healthy" else 503
+    return JSONResponse(content=health, status_code=status_code)</code></pre>
+
+        <h2>Phase 3: Write Tests That Matter</h2>
+
+        <p>AI tools can generate tests too — but you need to guide them toward what matters. Use this prompt pattern:</p>
+
+        <pre><code class="language-text">Write pytest tests for my FastAPI app covering:
+1. Happy path for every endpoint
+2. Invalid input (missing fields, wrong types, too long strings)
+3. Authentication failures (no token, expired token, wrong permissions)
+4. Database errors (mock the DB to raise exceptions)
+5. Edge cases (empty lists, max values, zero, negative numbers)
+6. Response format (check status codes, required fields, data types)
+
+Use:
+- httpx.AsyncClient for testing async endpoints
+- pytest fixtures for test data
+- monkeypatch for mocking environment variables
+- Test with coverage: pytest --cov=app --cov-report=term-missing
+- Aim for 80%+ coverage</code></pre>
+
+        <p>Then review the tests manually. Pay attention to:</p>
+
+        <ul>
+            <li><strong>Are error cases actually tested?</strong> Not just "assert it raises" but "assert it raises the <em>right</em> error with the <em>right</em> message"</li>
+            <li><strong>Are tests independent?</strong> Each test should set up its own data, not depend on the order of execution</li>
+            <li><strong>Are mocks reasonable?</strong> Mock external services but test real database logic when possible</li>
+        </ul>
+
+        <pre><code class="language-python"># Good test pattern — independent, covers error case
+import pytest
+from httpx import AsyncClient, ASGITransport
+from app.main import app
+
+@pytest.fixture
+async def client():
+    """Create a test client for every test."""
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as c:
+        yield c
+
+@pytest.mark.asyncio
+async def test_create_user_success(client):
+    response = await client.post("/users", json={
+        "email": "test@example.com",
+        "name": "Test User",
+        "age": 25
+    })
+    assert response.status_code == 201
+    data = response.json()
+    assert data["email"] == "test@example.com"
+    assert "id" in data
+
+@pytest.mark.asyncio
+async def test_create_user_invalid_email(client):
+    """Test that invalid email is rejected with 422."""
+    response = await client.post("/users", json={
+        "email": "not-an-email",
+        "name": "Test User",
+        "age": 25
+    })
+    assert response.status_code == 422
+    assert "email" in response.json()["detail"][0]["loc"]
+
+@pytest.mark.asyncio
+async def test_create_user_missing_field(client):
+    """Test that missing required fields are rejected."""
+    response = await client.post("/users", json={
+        "email": "test@example.com"
+        # name and age missing
+    })
+    assert response.status_code == 422</code></pre>
+
+        <h2>Phase 4: Add Observability</h2>
+
+        <p>You can't fix what you can't see. Add these three pillars of observability:</p>
+
+        <h3>1. Structured Logging</h3>
+
+        <pre><code class="language-python">import logging
+import json
+from datetime import datetime
+
+class JsonFormatter(logging.Formatter):
+    """Format logs as JSON for easier parsing by log aggregators."""
+    def format(self, record):
+        log_data = {
+            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "level": record.levelname,
+            "message": record.getMessage(),
+            "module": record.module,
+            "function": record.funcName,
+            "line": record.lineno,
+        }
+        if record.exc_info:
+            log_data["exception"] = self.formatException(record.exc_info)
+        if hasattr(record, "request_id"):
+            log_data["request_id"] = record.request_id
+        return json.dumps(log_data)
+
+# Configure
+logger = logging.getLogger("app")
+logger.setLevel(logging.INFO)
+handler = logging.StreamHandler()
+handler.setFormatter(JsonFormatter())
+logger.addHandler(handler)</code></pre>
+
+        <h3>2. Request/Response Logging Middleware</h3>
+
+        <pre><code class="language-python">import time
+import uuid
+from starlette.middleware.base import BaseHTTPMiddleware
+
+class RequestLoggingMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        request_id = str(uuid.uuid4())
+        start_time = time.time()
+
+        # Log request
+        logger.info(
+            f"{request.method} {request.url.path}",
+            extra={"request_id": request_id}
+        )
+
+        try:
+            response = await call_next(request)
+            duration = time.time() - start_time
+
+            # Log response
+            logger.info(
+                f"{request.method} {request.url.path} -> {response.status_code} "
+                f"({duration:.3f}s)",
+                extra={"request_id": request_id}
+            )
+            response.headers["X-Request-ID"] = request_id
+            return response
+        except Exception as e:
+            duration = time.time() - start_time
+            logger.error(
+                f"{request.method} {request.url.path} -> ERROR: {str(e)} "
+                f"({duration:.3f}s)",
+                extra={"request_id": request_id},
+                exc_info=True
+            )
+            raise
+
+app.add_middleware(RequestLoggingMiddleware)</code></pre>
+
+        <h3>3. Basic Metrics (without external tools)</h3>
+
+        <pre><code class="language-python">from collections import defaultdict
+import time
+
+# Simple in-memory metrics
+metrics = {
+    "requests": defaultdict(int),
+    "errors": defaultdict(int),
+    "latency": defaultdict(list),
+}
+
+# Add to your middleware:
+metrics["requests"][f"{method} {path}"] += 1
+if response.status_code >= 500:
+    metrics["errors"][f"{method} {path}"] += 1
+metrics["latency"][f"{method} {path}"].append(duration)
+
+# Periodically log metrics
+@app.on_event("shutdown")
+async def log_metrics():
+    logger.info("=== Request Counts ===")
+    for endpoint, count in sorted(metrics["requests"].items()):
+        logger.info(f"  {endpoint}: {count}")
+    logger.info("=== Error Counts ===")
+    for endpoint, count in sorted(metrics["errors"].items()):
+        logger.info(f"  {endpoint}: {count}")</code></pre>
+
+        <h2>Phase 5: Containerize and Deploy</h2>
+
+        <p>AI tools sometimes generate Dockerfiles, but they're rarely production-ready. Here's what a hardened Dockerfile looks like:</p>
+
+        <pre><code class="language-dockerfile"># Multi-stage build — production-ready
+FROM python:3.12-slim AS builder
+
+WORKDIR /build
+COPY requirements.txt .
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+# Production stage
+FROM python:3.12-slim AS production
+
+# Don't run as root
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+WORKDIR /app
+
+# Copy installed packages from builder
+COPY --from=builder /install /usr/local
+
+# Copy application code
+COPY . .
+
+# Remove dev dependencies and unnecessary files
+RUN rm -rf __pycache__ .pytest_cache .git .github tests/
+
+# Set proper permissions
+RUN chown -R appuser:appuser /app
+USER appuser
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
+
+# Expose and run
+EXPOSE 8000
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]</code></pre>
+
+        <p>And a production <code>docker-compose.yml</code>:</p>
+
+        <pre><code class="language-yaml">version: "3.9"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - API_KEY=${API_KEY}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:</code></pre>
+
+        <h2>The Complete Hardening Checklist</h2>
+
+        <p>Save this as a reference for every AI-generated project:</p>
+
+        <h3>Security</h3>
+        <ul>
+            <li> [ ] No hardcoded secrets (use environment variables)</li>
+            <li> [ ] Dependencies scanned for vulnerabilities (<code>safety check</code>)</li>
+            <li> [ ] Input validation on every endpoint (Pydantic models)</li>
+            <li> [ ] CORS configured with specific origins</li>
+            <li> [ ] Rate limiting enabled on public endpoints</li>
+            <li> [ ] SQL injection prevented (parameterized queries or ORM)</li>
+            <li> [ ] Authentication and authorization implemented</li>
+            <li> [ ] <code>.env</code> file in <code>.gitignore</code></li>
+        </ul>
+
+        <h3>Reliability</h3>
+        <ul>
+            <li> [ ] Global exception handler installed</li>
+            <li> [ ] Retry logic for external services</li>
+            <li> [ ] Health check endpoint at <code>/health</code></li>
+            <li> [ ] Graceful shutdown handling</li>
+            <li> [ ] Timeout set on all external HTTP calls</li>
+            <li> [ ] Database connection pooling configured</li>
+        </ul>
+
+        <h3>Testing</h3>
+        <ul>
+            <li> [ ] Happy path tests for every endpoint</li>
+            <li> [ ] Error case tests (invalid input, auth failures)</li>
+            <li> [ ] Edge case tests (empty data, max values)</li>
+            <li> [ ] Test coverage above 80%</li>
+            <li> [ ] Tests run in CI pipeline</li>
+        </ul>
+
+        <h3>Observability</h3>
+        <ul>
+            <li> [ ] Structured logging (JSON format)</li>
+            <li> [ ] Request/response logging middleware</li>
+            <li> [ ] Unique request IDs in logs and responses</li>
+            <li> [ ] Error logs include full stack traces</li>
+        </ul>
+
+        <h3>Deployment</h3>
+        <ul>
+            <li> [ ] Multi-stage Dockerfile (non-root user)</li>
+            <li> [ ] Docker HEALTHCHECK instruction</li>
+            <li> [ ] docker-compose with restart policies</li>
+            <li> [ ] Resource limits (memory, CPU)</li>
+            <li> [ ] Database persistence with volumes</li>
+            <li> [ ] CI/CD pipeline for automated testing and deployment</li>
+        </ul>
+
+        <h2>Summary</h2>
+
+        <p>AI is an incredible force multiplier — it can get you 80% of the way to a working application in minutes. But that last 20% (error handling, security, testing, observability) is what separates a demo from a production system. Use this checklist on every AI-generated project, and you'll ship software that's fast to build <em>and</em> safe to run.</p>
+
+        <p>Remember: <strong>AI writes code. You write reliability.</strong></p>
+
+    </article>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo Wong · Built with curiosity and Coffee</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528">GitHub</a>
+                <a href="https://hugow.dev">hugow.dev</a>
+                <a href="../sitemap.xml">Sitemap</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        if (savedTheme === 'light') { document.body.classList.add('light-mode'); themeToggle.textContent = '☀'; }
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            localStorage.setItem('theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
+            themeToggle.textContent = document.body.classList.contains('light-mode') ? '☀' : '◐';
+        });
+        window.addEventListener('scroll', () => {
+            const scrolled = (document.documentElement.scrollTop / (document.documentElement.scrollHeight - document.documentElement.clientHeight)) * 100;
+            document.getElementById('progressBar').style.width = scrolled + "%";
+        });
+    </script>
+</body>
+</html>

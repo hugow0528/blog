@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Copilot: Complete Pair Programming Workflow for Faster, Better Code</title>
+    <meta name="description" content="Master GitHub Copilot — inline suggestions, Copilot Chat, codebase indexing, custom instructions, inline chat, agent mode, and real-world pair programming workflows that actually improve code quality. Working examples for every concept.">
+    <meta name="keywords" content="github copilot, AI pair programming, inline chat, copilot chat, codebase indexing, coding workflow, developer productivity">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/github-copilot-complete-guide.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-detail">
+            <header class="post-header">
+                <div class="post-tags">
+                    <span class="tag vibe">AI Coding</span>
+                    <span class="tag devops">DevOps</span>
+                </div>
+                <h1>GitHub Copilot: Complete Pair Programming Workflow for Faster, Better Code</h1>
+                <div class="post-meta">
+                    <span class="post-date">July 18, 2026</span>
+                    <span class="read-time">12 min read</span>
+                </div>
+            </header>
+
+            <div class="post-content">
+                <p>GitHub Copilot isn't a toy — it's a pair programmer that sits in your editor, reads your codebase, and helps you write, understand, and fix code in real time. But most developers only use 10% of its capabilities. This guide covers the complete workflow: from basic inline suggestions to advanced codebase-aware editing, custom instructions, and agent-mode problem solving.</p>
+
+                <h2>What GitHub Copilot Actually Is</h2>
+                <p>Copilot combines three distinct features inside your editor (VS Code, JetBrains, Neovim, or the web):</p>
+                <ul style="margin: 16px 0 16px 24px; color: var(--text-secondary);">
+                    <li><strong>Inline Autocomplete</strong> — ghost-text suggestions as you type, powered by code context and your current file</li>
+                    <li><strong>Copilot Chat</strong> — a conversational AI that understands your codebase, explains code, generates tests, and fixes bugs</li>
+                    <li><strong>Inline Chat</strong> — press <code>Ctrl+I</code> (or <code>Cmd+I</code>) to have a conversation directly in your editor, editing selected code without leaving the file</li>
+                </ul>
+
+                <p>The key insight: Copilot gets dramatically better when it has context. A bare suggestion is useful. A suggestion that knows your project's naming conventions, imports, and architecture is transformative.</p>
+
+                <h2>Setup and Getting Context Right</h2>
+                <p>Install the Copilot extension in VS Code (or your editor of choice), sign in with your GitHub account, and you're ready. But the real setup is about <em>context configuration</em>:</p>
+
+<pre><code class="language-json">// .vscode/settings.json
+{
+    "github.copilot.enable": {
+        "*": true,
+        "plaintext": false,
+        "markdown": false
+    },
+    "github.copilot.editor.enableAutoTrigger": true,
+    "github.copilot.chat.codebase.enabled": true
+}</code></pre>
+
+                <p>Enable <code>codebase.enabled</code> to let Copilot index your repository. This takes a few minutes but dramatically improves suggestion quality — Copilot will reference your existing functions, classes, and patterns instead of guessing.</p>
+
+                <h2>Inline Autocomplete: The 80/20 Feature</h2>
+                <p>As you type, Copilot shows ghost text. Press <code>Tab</code> to accept, <code>Alt+[</code>/<code>Alt+]</code> to cycle through alternatives. The trick to great suggestions is giving Copilot the right <em>prompt context</em>:</p>
+
+<pre><code class="language-python"># ❌ Vague — Copilot guesses
+def process():
+
+# ✅ Specific — Copilot knows exactly what you want
+def process_user_input(raw_input: str) -> dict:
+    """Validate and parse user input from the API endpoint."""
+    # ...Copilot will suggest validation logic, error handling, return format
+
+def send_notification(user: dict, message: str, channel: str) -> None:
+    """Send a notification through the specified channel (email, slack, sms)."""
+    # ...Copilot will suggest channel routing, error handling, logging</code></pre>
+
+                <p>The pattern: <strong>name your functions descriptively, add type hints, write a docstring before the body.</strong> This gives Copilot maximum context for generating relevant code.</p>
+
+                <h2>Inline Chat (<code>Ctrl+I</code>): Edit Code in Place</h2>
+                <p>This is where Copilot becomes genuinely powerful. Instead of switching to a chat panel, you edit directly in your file:</p>
+
+<pre><code class="language-python"># Select this code, press Ctrl+I, and type:
+# "add retry logic with exponential backoff for network failures"
+
+# Before:
+import requests
+
+def fetch_data(url: str) -> dict:
+    response = requests.get(url, timeout=10)
+    response.raise_for_status()
+    return response.json()
+
+# After (Copilot-generated via inline chat):
+import requests
+from time import sleep
+
+def fetch_data(url: str, max_retries: int = 3) -> dict:
+    """Fetch data with exponential backoff retry logic."""
+    for attempt in range(max_retries + 1):
+        try:
+            response = requests.get(url, timeout=10)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            if attempt == max_retries:
+                raise
+            wait_time = 2 ** attempt
+            print(f"Retry {attempt + 1}/{max_retries} after {wait_time}s: {e}")
+            sleep(wait_time)</code></pre>
+
+                <p>The workflow: select code → <code>Ctrl+I</code> → describe the change → review → accept/reject. No context switching, no copy-pasting from a chat window.</p>
+
+                <h2>Copilot Chat: Codebase-Aware Questions</h2>
+                <p>The chat panel (@ button) lets you reference specific files, symbols, and even your entire codebase:</p>
+
+<pre><code class="language-text">@workspace How do I add a new API endpoint?
+→ Shows your existing route patterns and generates code matching your style
+
+@terminal Why did my last command fail?
+→ Reads terminal output and explains the error
+
+@filename What does this function do?
+→ Reads the specific file and explains the code</code></pre>
+
+                <p>Use the <code>@workspace</code> reference to make Copilot scan your entire project. It will match your naming conventions, import patterns, and architectural decisions. Without it, Copilot generates generic code that might not fit your project.</p>
+
+                <h2>Custom Instructions: Teach Copilot Your Style</h2>
+                <p>Go to Settings → GitHub Copilot → Custom Instructions. This is the single highest-ROI configuration:</p>
+
+<pre><code class="language-text">Always use type hints in Python functions.
+Prefer f-strings over .format() or concatenation.
+Write docstrings for all public functions using Google style.
+Use dataclasses instead of regular classes for data containers.
+Handle errors with specific exception types, not bare except.
+Name variables descriptively (user_list, not ul or items).
+Write unit tests using pytest with parameterized fixtures.
+Keep functions under 30 lines; refactor long functions into helpers.</code></pre>
+
+                <p>These instructions apply globally — every suggestion, every chat response, every inline edit will follow them. You'll spend less time correcting Copilot and more time reviewing production-ready code.</p>
+
+                <h2>Agent Mode: Let Copilot Plan and Execute</h2>
+                <p>Copilot's agent capabilities let it handle multi-step tasks autonomously. Instead of one-off suggestions, you describe a task and Copilot plans, edits, and tests:</p>
+
+<pre><code class="language-text">// Example: Create a new module via Copilot Chat
+// Type: "@workspace Create a new password_utils.py module with
+// functions for generating secure passwords, validating password
+// strength (min 12 chars, uppercase, lowercase, number, special),
+// and hashing passwords with bcrypt. Include pytest tests."
+
+# Copilot generates:
+
+# password_utils.py
+import secrets
+import string
+import bcrypt
+
+def generate_password(length: int = 16) -> str:
+    """Generate a cryptographically secure random password."""
+    if length < 12:
+        raise ValueError("Password must be at least 12 characters")
+    
+    charset = string.ascii_letters + string.digits + string.punctuation
+    password = "".join(secrets.choice(charset) for _ in range(length))
+    return password
+
+def validate_password(password: str) -> dict[str, bool]:
+    """Check password against strength requirements."""
+    return {
+        "length": len(password) >= 12,
+        "uppercase": any(c.isupper() for c in password),
+        "lowercase": any(c.islower() for c in password),
+        "digit": any(c.isdigit() for c in password),
+        "special": any(c in string.punctuation for c in password),
+    }
+
+def hash_password(password: str) -> str:
+    """Hash a password using bcrypt with auto-generated salt."""
+    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+
+def verify_password(password: str, hashed: str) -> bool:
+    """Verify a password against its bcrypt hash."""
+    return bcrypt.checkpw(password.encode(), hashed.encode())
+
+# test_password_utils.py
+import pytest
+from password_utils import generate_password, validate_password, hash_password, verify_password
+
+def test_generate_password_default():
+    pw = generate_password()
+    assert len(pw) == 16
+    assert validate_password(pw)["length"]
+
+def test_generate_password_custom_length():
+    pw = generate_password(20)
+    assert len(pw) == 20
+
+def test_generate_password_too_short():
+    with pytest.raises(ValueError):
+        generate_password(5)
+
+@pytest.mark.parametrize("password,expected_valid", [
+    ("Short1!", False),
+    ("NoSpecialChar123", False),
+    ("ValidPass1!", True),
+])
+def test_validate_password(password, expected_valid):
+    result = validate_password(password)
+    assert all(result.values()) == expected_valid
+
+def test_hash_and_verify():
+    password = "MySecureP@ss1"
+    hashed = hash_password(password)
+    assert verify_password(password, hashed)
+    assert not verify_password("WrongPass1!", hashed)</code></pre>
+
+                <p>Copilot didn't just write the code — it matched your project's style (type hints, docstrings, pytest), included edge cases, and even generated the tests. Your job: review, maybe tweak, and commit.</p>
+
+                <h2>Real Pair Programming Workflow</h2>
+                <p>Here's a proven workflow for using Copilot as a daily pair programmer:</p>
+
+                <ol style="margin: 16px 0 16px 24px; color: var(--text-secondary);">
+                    <li><strong>Scaffold with a comment</strong> — write a descriptive comment/docstring first, let Copilot generate the implementation</li>
+                    <li><strong>Select + Ctrl+I for edits</strong> — never delete and rewrite; always select existing code and describe the change</li>
+                    <li><strong>Ask for tests</strong> — after writing code, select it and ask "@workspace Generate pytest tests for this code"</li>
+                    <li><strong>Debug with chat</strong> — paste errors into chat with @terminal or @workspace for context-aware fixes</li>
+                    <li><strong>Refactor iteratively</strong> — select a long function → "extract this into a helper called..." → accept → repeat</li>
+                    <li><strong>Review everything</strong> — Copilot can hallucinate. Always read the generated code, understand it, and verify it works</li>
+                </ol>
+
+                <h2>What NOT to Do with Copilot</h2>
+                <p>Avoid these common mistakes that make Copilot worse than no AI at all:</p>
+                <ul style="margin: 16px 0 16px 24px; color: var(--text-secondary);">
+                    <li><strong>Don't accept suggestions blindly</strong> — always review. Copilot sometimes generates code that looks right but has subtle bugs</li>
+                    <li><strong>Don't use vague prompts</strong> — "fix this" is useless. "add input validation that rejects negative numbers" is actionable</li>
+                    <li><strong>Don't paste secrets</strong> — never put API keys, passwords, or tokens in Copilot prompts. They go to an external service</li>
+                    <li><strong>Don't replace learning</strong> — Copilot accelerates coding but doesn't teach fundamentals. Learn the language first, use Copilot to be faster</li>
+                    <li><strong>Don't ignore custom instructions</strong> — configuring your style preferences takes 5 minutes and saves hours of correction</li>
+                </ul>
+
+                <h2>Measuring the Impact</h2>
+                <p>After a week of consistent Copilot usage, track these metrics:</p>
+                <ul style="margin: 16px 0 16px 24px; color: var(--text-secondary);">
+                    <li><strong>Acceptance rate</strong> — how many suggestions do you accept? Above 60% means good context; below 40% means your prompts or setup need work</li>
+                    <li><strong>Code review time</strong> — are you spending less time on boilerplate and more on architecture?</li>
+                    <li><strong>Test generation</strong> — Copilot-generated tests should cover edge cases you might miss</li>
+                    <li><strong>Bug rate</strong> — with proper review, Copilot should not increase bugs (it often decreases them via better error handling)</li>
+                </ul>
+
+                <h2>Summary</h2>
+                <p>GitHub Copilot is most powerful when you treat it as a pair programmer, not a code generator. Give it good context (descriptive names, type hints, docstrings), configure custom instructions for your style, use inline chat for surgical edits, and always review its output. The developers who benefit most aren't those who accept every suggestion — they're those who use Copilot to explore solutions, generate scaffolding, and accelerate the parts of coding where human creativity matters less than speed.</p>
+
+                <p><strong>Key takeaways:</strong></p>
+                <ul style="margin: 16px 0 16px 24px; color: var(--text-secondary);">
+                    <li>Enable codebase indexing for context-aware suggestions</li>
+                    <li>Write descriptive function names + type hints + docstrings as prompts</li>
+                    <li>Use <code>Ctrl+I</code> inline chat to edit code without leaving your file</li>
+                    <li>Configure custom instructions to enforce your coding standards</li>
+                    <li>Use <code>@workspace</code> in chat to reference your entire project</li>
+                    <li>Always review AI-generated code before committing</li>
+                    <li>Combine Copilot suggestions with your existing testing and review workflows</li>
+                </ul>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Hugo's Dev Notes. Built with curiosity and copy-paste.</p>
+        </div>
+    </footer>
+
+    <script src="../script.js"></script>
+</body>
+</html>

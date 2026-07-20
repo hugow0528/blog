@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Dataclasses and Enums: Cleaner, Safer Structured Data — Complete Beginner's Guide</title>
+    <meta name="description" content="Master Python dataclasses and enums — cleaner class definitions, automatic __init__, type hints, field defaults, validation, enum members, and real-world patterns. Working code for every concept.">
+    <meta name="keywords" content="python dataclasses, python enums, dataclass, enum, type hints, python tutorial, beginner">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-dataclasses-enums.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-detail">
+            <header class="post-header">
+                <div class="post-tags">
+                    <span class="tag python">Python</span>
+                </div>
+                <h1>Python Dataclasses and Enums: Cleaner, Safer Structured Data — Complete Beginner's Guide</h1>
+                <div class="post-meta">
+                    <span class="post-date">July 18, 2026</span>
+                    <span class="read-time">11 min read</span>
+                </div>
+            </header>
+
+            <div class="post-content">
+                <p>If you've ever found yourself writing the same boilerplate <code>__init__</code> method for every Python class, or reaching for dictionaries when you really want structured data, dataclasses and enums will transform your code. They're built into Python's standard library (3.7+), require zero dependencies, and make your data models expressive, type-safe, and virtually bug-free.</p>
+
+                <h2>The Problem: Boilerplate-Heavy Classes</h2>
+                <p>Before dataclasses, every new class meant repetitive boilerplate — defining <code>__init__</code>, writing <code>__repr__</code>, and manually implementing <code>__eq__</code> for comparison:</p>
+
+<pre><code class="language-python"># ❌ The old way — lots of boilerplate
+class User:
+    def __init__(self, username, email, age, active=True):
+        self.username = username
+        self.email = email
+        self.age = age
+        self.active = active
+
+    def __repr__(self):
+        return f"User(username={self.username!r}, email={self.email!r})"
+
+    def __eq__(self, other):
+        if not isinstance(other, User):
+            return False
+        return (self.username == other.username and
+                self.email == other.email and
+                self.age == other.age)</code></pre>
+
+                <p>That's twelve lines just to hold four values. With dataclasses, it collapses into four lines:</p>
+
+<pre><code class="language-python"># ✅ The dataclass way — Python writes the boilerplate for you
+from dataclasses import dataclass
+
+@dataclass
+class User:
+    username: str
+    email: str
+    age: int
+    active: bool = True</code></pre>
+
+                <p>Python automatically generates <code>__init__</code>, <code>__repr__</code>, <code>__eq__</code>, and more. The type hints aren't just documentation — they make your code self-documenting and IDE-friendly.</p>
+
+                <h2>Defining Your First Dataclass</h2>
+                <p>Import <code>@dataclass</code> from the standard library and decorate any class. Each field is declared as a class variable with a type annotation:</p>
+
+<pre><code class="language-python">from dataclasses import dataclass
+
+@dataclass
+class Product:
+    name: str
+    price: float
+    sku: str
+    in_stock: bool = True
+
+# Instantiation is clean and keyword-friendly
+laptop = Product(
+    name="MacBook Pro",
+    price=1999.99,
+    sku="MBP-2024",
+)
+
+print(laptop)
+# Product(name='MacBook Pro', price=1999.99, sku='MBP-2024', in_stock=True)
+
+print(laptop.price)  # 1999.99
+print(laptop.in_stock)  # True</code></pre>
+
+                <p>Notice how <code>print(laptop)</code> outputs a clean, readable representation? That's the auto-generated <code>__repr__</code>. And comparison just works:</p>
+
+<pre><code class="language-python">p1 = Product("Widget", 9.99, "W-001")
+p2 = Product("Widget", 9.99, "W-001")
+
+print(p1 == p2)  # True — fields match
+print(p1.name)   # "Widget"</code></pre>
+
+                <h2>Field Defaults and factory Functions</h2>
+                <p>Simple defaults work like regular function defaults. But mutable defaults (lists, dicts) need <code>field(default_factory=...)</code> to avoid the classic Python mutable default trap:</p>
+
+<pre><code class="language-python">from dataclasses import dataclass, field
+from typing import List
+
+@dataclass
+class Order:
+    order_id: str
+    items: List[dict] = field(default_factory=list)
+    notes: str = ""
+    discount: float = 0.0
+
+    def total(self, item_prices: dict) -> float:
+        subtotal = sum(item_prices.get(i["sku"], 0) for i in self.items)
+        return subtotal - discount
+
+# ✅ Each Order gets its own list — no shared state bugs
+order1 = Order("ORD-001", items=[{"sku": "A"}, {"sku": "B"}])
+order2 = Order("ORD-002")
+
+prices = {"A": 10.00, "B": 25.00}
+print(order1.total(prices))  # 35.0
+print(order2.total(prices))  # 0.0</code></pre>
+
+                <p>Without <code>default_factory</code>, all orders would share the same list object — a subtle bug that causes hours of debugging.</p>
+
+                <h2>Validation with <code>__post_init__</code></h2>
+                <p>Use <code>__post_init__</code> to add custom validation after fields are set:</p>
+
+<pre><code class="language-python">@dataclass
+class EmailAccount:
+    username: str
+    domain: str
+    _email: str = field(init=False, repr=False)
+
+    def __post_init__(self):
+        self._email = f"{self.username}@{self.domain}"
+        # Validate
+        if "@" not in self.domain:
+            raise ValueError(f"Invalid domain: {self.domain}")
+        if len(self.username) < 3:
+            raise ValueError("Username must be at least 3 characters")
+
+    @property
+    def email(self) -> str:
+        return self._email
+
+account = EmailAccount("hugo", "hugow.dev")
+print(account.email)  # hugo@hugow.dev
+
+# Raises ValueError
+# bad = EmailAccount("ab", "example.com")</code></pre>
+
+                <p>Here, <code>_email</code> is a derived field — it's computed from other fields and not part of the constructor. The <code>init=False</code> tells dataclass not to include it in <code>__init__</code>, and <code>repr=False</code> hides it from <code>__repr__</code>.</p>
+
+                <h2>Freezing Dataclasses (Immutable Objects)</h2>
+                <p>Set <code>frozen=True</code> to make instances immutable — great for config objects and constants:</p>
+
+<pre><code class="language-python">@dataclass(frozen=True)
+class Config:
+    api_key: str
+    base_url: str
+    timeout: int = 30
+
+config = Config("sk-123", "https://api.example.com", 60)
+print(config.api_key)  # sk-123
+
+# This raises FrozenInstanceError
+# config.timeout = 10  ❌ Can't modify frozen dataclass</code></pre>
+
+                <h2>Introduction to Enums</h2>
+                <p>Enums (from the <code>enum</code> module) replace magic strings and numbers with named constants. They make your code self-documenting and prevent invalid values:</p>
+
+<pre><code class="language-python">from enum import Enum, auto
+
+class OrderStatus(Enum):
+    PENDING = auto()
+    PROCESSING = auto()
+    SHIPPED = auto()
+    DELIVERED = auto()
+    CANCELLED = auto()
+
+class Permission(Enum):
+    READ = "read"
+    WRITE = "write"
+    ADMIN = "admin"</code></pre>
+
+                <p>Use <code>auto()</code> when the actual value doesn't matter (it auto-increments from 1). Use explicit values (like strings) when the value matters — for example, storing in a database or sending over an API.</p>
+
+                <h2>Enums in Practice</h2>
+                <p>Enums shine when combined with dataclasses:</p>
+
+<pre><code class="language-python">from dataclasses import dataclass
+from enum import Enum, auto
+
+class Role(Enum):
+    GUEST = auto()
+    USER = auto()
+    MODERATOR = auto()
+    ADMIN = auto()
+
+class Priority(Enum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    CRITICAL = "critical"
+
+@dataclass
+class Task:
+    title: str
+    assignee: str
+    role: Role
+    priority: Priority = Priority.MEDIUM
+    completed: bool = False
+
+    def can_assign(self, user_role: Role) -> bool:
+        role_hierarchy = [Role.GUEST, Role.USER, Role.MODERATOR, Role.ADMIN]
+        return role_hierarchy.index(user_role) >= role_hierarchy.index(self.role)
+
+task = Task("Fix login bug", "hugo", Role.USER, Priority.HIGH)
+print(task)
+# Task(title='Fix login bug', assignee='hugo', role=&lt;Role.USER: 2&gt;, priority=&lt;Priority.HIGH: 'high'&gt;, completed=False)
+
+print(task.priority.value)  # "high"
+print(task.priority == Priority.HIGH)  # True</code></pre>
+
+                <p>Notice how <code>Priority.MEDIUM</code> is a default value — and the type system ensures you can't accidentally pass a string like <code>"urgent"</code> that doesn't exist.</p>
+
+                <h2>Real-World Example: API Request Builder</h2>
+                <p>Here's a complete example combining dataclasses and enums for an API client:</p>
+
+<pre><code class="language-python">from dataclasses import dataclass, field
+from enum import Enum, auto
+from typing import List, Optional
+import json
+
+class HttpMethod(Enum):
+    GET = "GET"
+    POST = "POST"
+    PUT = "PUT"
+    DELETE = "DELETE"
+
+class ContentType(Enum):
+    JSON = "application/json"
+    FORM = "application/x-www-form-urlencoded"
+    TEXT = "text/plain"
+
+@dataclass
+class ApiHeader:
+    key: str
+    value: str
+
+@dataclass
+class ApiRequest:
+    method: HttpMethod
+    url: str
+    content_type: ContentType = ContentType.JSON
+    headers: List[ApiHeader] = field(default_factory=list)
+    body: Optional[dict] = None
+    timeout: int = 30
+
+    def build(self) -> dict:
+        """Convert this request into a dictionary for requests library"""
+        result = {
+            "method": self.method.value,
+            "url": self.url,
+            "timeout": self.timeout,
+            "headers": {"Content-Type": self.content_type.value},
+        }
+        for h in self.headers:
+            result["headers"][h.key] = h.value
+        if self.body is not None:
+            result["json"] = self.body
+        return result
+
+    def as_curl(self) -> str:
+        """Generate an equivalent curl command for debugging"""
+        curl = f"curl -X {self.method.value} '{self.url}'"
+        for h in self.headers:
+            curl += f" -H '{h.key}: {h.value}'"
+        if self.body is not None:
+            curl += f" -d '{json.dumps(self.body)}'"
+        return curl
+
+# Usage
+req = ApiRequest(
+    method=HttpMethod.POST,
+    url="https://api.example.com/v1/users",
+    headers=[
+        ApiHeader("Authorization", "Bearer tok-123"),
+        ApiHeader("X-Request-ID", "abc-def"),
+    ],
+    body={"name": "Hugo", "email": "hugo@example.com"},
+)
+
+print(json.dumps(req.build(), indent=2))
+print(req.as_curl())
+# curl -X POST 'https://api.example.com/v1/users' -H 'Authorization: Bearer tok-123' ...</code></pre>
+
+                <p>This is production-grade structured data. The type hints catch mistakes at development time, the enum values prevent typos, and the dataclass gives you clean constructors, comparison, and representation for free.</p>
+
+                <h2>When to Use What</h2>
+                <p>Here's a quick decision guide:</p>
+                <ul style="margin: 16px 0 16px 24px; color: var(--text-secondary);">
+                    <li><strong>Dict</strong> — quick, throwaway data in scripts. No structure needed.</li>
+                    <li><strong>Dataclass</strong> — structured data with known fields. Use for config, API models, database records, and anything that crosses module boundaries.</li>
+                    <li><strong>Enum</strong> — fixed sets of named values. Use for states, statuses, roles, methods, and any "it can only be one of these" scenario.</li>
+                    <li><strong>Regular class</strong> — when you need complex behavior, inheritance, or custom methods beyond simple data holding.</li>
+                </ul>
+
+                <h2>Summary</h2>
+                <p>Dataclasses and enums are zero-cost abstractions — they don't add runtime overhead, they just make Python's class machinery work for you instead of against you. Every Python developer should use them as the default for structured data. The boilerplate savings alone justify switching, but the type safety and self-documenting code are the real win.</p>
+
+                <p><strong>Key takeaways:</strong></p>
+                <ul style="margin: 16px 0 16px 24px; color: var(--text-secondary);">
+                    <li><code>@dataclass</code> auto-generates <code>__init__</code>, <code>__repr__</code>, and <code>__eq__</code></li>
+                    <li>Use <code>field(default_factory=...)</code> for mutable defaults</li>
+                    <li>Use <code>__post_init__</code> for validation and derived fields</li>
+                    <li><code>frozen=True</code> creates immutable objects</li>
+                    <li>Enums replace magic strings with type-safe constants</li>
+                    <li>Combine dataclasses + enums for production-ready data models</li>
+                </ul>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Hugo's Dev Notes. Built with curiosity and copy-paste.</p>
+        </div>
+    </footer>
+
+    <script src="../script.js"></script>
+</body>
+</html>

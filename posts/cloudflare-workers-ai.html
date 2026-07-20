@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloudflare Workers AI: Run AI Models at the Edge — Complete Beginner's Guide</title>
+    <meta name="description" content="Learn Cloudflare Workers AI from scratch — text generation, image classification, embedding, and running AI models at the edge with Workers. Step-by-step code examples from basic inference to production patterns.">
+    <meta name="keywords" content="cloudflare workers ai, edge AI, serverless AI, text generation, image classification, embeddings, cloudflare tutorial, AI at the edge">
+    <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/cloudflare-workers-ai.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+            </nav>
+        </div>
+    </header>
+
+    <article class="post-content container">
+        <span class="tag cloudflare">Cloudflare</span>
+        <span class="tag vibe">AI Coding</span>
+        <h1>Cloudflare Workers AI: Run AI Models at the Edge — Complete Beginner's Guide</h1>
+        <div class="post-meta">
+            <span class="post-date">July 11, 2026</span>
+            <span class="read-time">11 min read</span>
+        </div>
+
+        <p>Cloudflare Workers AI lets you run <strong>AI/ML models at the edge</strong> — directly within Cloudflare's global network of 300+ data centers. No GPU servers to manage, no API keys to exchange, no cold starts to worry about. This guide walks you through every model type with working code examples.</p>
+
+        <h2>What is Workers AI?</h2>
+        <p>Workers AI is Cloudflare's serverless inference platform. You write a Cloudflare Worker that calls the <code>AI.run()</code> API, and Cloudflare executes the model at the edge data center closest to your user. The key benefits:</p>
+        <ul>
+            <li><strong>Low latency</strong> — models run within milliseconds of your users</li>
+            <li><strong>Free tier</strong> — 10,000 free requests per day for most models</li>
+            <li><strong>No infrastructure</strong> — just write code, deploy with one command</li>
+            <li><strong>Many model types</strong> — text generation, image classification, embeddings, speech-to-text, and more</li>
+        </ul>
+
+        <h2>Setup: wrangler CLI</h2>
+        <p>Workers AI requires the <code>wrangler</code> CLI (Cloudflare's build and deployment tool):</p>
+
+        <pre><code># Install wrangler (requires Node.js 18+)
+npm install -g wrangler
+
+# Log in to your Cloudflare account
+wrangler login</code></pre>
+
+        <p>Initialize a new Worker project:</p>
+
+        <pre><code>npx create-cloudflare@latest my-ai-worker
+cd my-ai-worker</code></pre>
+
+        <h2>Your First AI Request: Text Generation</h2>
+        <p>Let's start with the most popular use case — generating text with a large language model. Workers AI offers several models including Meta's Llama, Mistral, and others:</p>
+
+        <pre><code>// src/index.ts
+export default {
+  async fetch(request: Request): Promise&lt;Response&gt; {
+    const url = new URL(request.url);
+
+    if (url.pathname === "/generate") {
+      const prompt = url.searchParams.get("prompt") || "Tell me a joke";
+
+      try {
+        const result = await AI.run(
+          "@hf/nousresearch/hermes-2-pro-mistral-7b",
+          {
+            prompt: prompt,
+            max_tokens: 200,
+            temperature: 0.7,
+          }
+        );
+
+        return Response.json({ result });
+      } catch (error) {
+        return Response.json({ error: error.message }, { status: 500 });
+      }
+    }
+
+    return new Response("Try /generate?prompt=Hello", { status: 200 });
+  },
+};</code></pre>
+
+        <p>Add the AI binding to your <code>wrangler.toml</code>:</p>
+
+        <pre><code>[ai]
+binding = "AI"</code></pre>
+
+        <p>Deploy with one command:</p>
+
+        <pre><code>wrangler deploy</code></pre>
+
+        <p>Now hit your Worker URL with a prompt:</p>
+
+        <pre><code>curl "https://my-ai-worker.yourname.workers.dev/generate?prompt=Explain%20recursion%20simply"</code></pre>
+
+        <h2>Available Model Categories</h2>
+        <p>Workers AI supports multiple model types. Here's a cheat sheet:</p>
+
+        <h3>Text Generation (LLMs)</h3>
+        <pre><code>// Available models:
+"@cf/meta/llama-2-7b-chat-int8"      // Meta Llama 2
+"@cf/meta/llama-3-8b-instruct"        // Meta Llama 3
+"@hf/nousresearch/hermes-2-pro-mistral-7b"  // Hermes-2 Pro
+"@cf/mistral/mistral-7b-instruct"     // Mistral 7B
+
+const result = await AI.run("@cf/meta/llama-3-8b-instruct", {
+  prompt: "What is async programming?",
+  max_tokens: 300,
+  temperature: 0.5,       // Lower = more deterministic, Higher = more creative
+  top_p: 0.9,             // Nucleus sampling parameter
+});</code></pre>
+
+        <h3>Image Classification</h3>
+        <pre><code>// Classify what's in an image
+const result = await AI.run("@cf/cloudflare/esrgan-v1", {
+  image: [...imageArrayBuffer],  // Image as ArrayBuffer
+});
+
+// Or use the ResNet model for object detection:
+const result = await AI.run("@cf/facebook/resnet-50", {
+  image: [...imageArrayBuffer],
+});
+// Returns: [{ label: "tabby cat", confidence: 0.82 }, ...]</code></pre>
+
+        <h3>Text Embeddings</h3>
+        <pre><code>// Convert text to vector embeddings for search/similarity
+const result = await AI.run("@cf/baai/bge-base-en-v1.5", {
+  texts: [
+    "Cloudflare Workers run JavaScript at the edge",
+    "Edge computing reduces latency for users",
+    "A banana is a fruit",
+  ],
+});
+
+// Each text becomes a 768-dimensional vector you can store
+// and compare using cosine similarity</code></pre>
+
+        <h3>Sentiment Analysis</h3>
+        <pre><code>// Detect positive/negative sentiment
+const result = await AI.run("@cf/huggingface/distilbert-sst-2-int8", {
+  text: "This product exceeded my expectations!",
+});
+// Returns: { label: "positive", score: 0.97 }</code></pre>
+
+        <h3>Speech-to-Text (Whisper)</h3>
+        <pre><code>// Transcribe audio to text
+const result = await AI.run("@cf/openai/whisper", {
+  audio: [...audioArrayBuffer],
+  language: "en",
+});
+// Returns: { text: "Hello, how are you today?" }</code></pre>
+
+        <h2>Building a Real AI Search Engine</h2>
+        <p>Let's build something practical — a semantic search endpoint that finds the most relevant documents for a user query using embeddings:</p>
+
+        <pre><code>// src/index.ts
+interface Env {
+  AI: any;
+  SEARCH_INDEX: KVNamespace;  // Store embeddings in KV
+}
+
+export default {
+  async fetch(request: Request, env: Env): Promise&lt;Response&gt; {
+    const url = new URL(request.url);
+
+    // --- Index a document ---
+    if (url.pathname === "/index" && request.method === "POST") {
+      const { id, text } = await request.json();
+
+      // Generate embedding
+      const embeddingResult = await AI.run("@cf/baai/bge-base-en-v1.5", {
+        texts: [text],
+      });
+
+      const embedding = embeddingResult.embeddings[0];
+
+      // Store in KV: key = doc ID, value = { text, embedding }
+      await env.SEARCH_INDEX.put(id, JSON.stringify({ text, embedding }));
+
+      return Response.json({ success: true, id });
+    }
+
+    // --- Search for a query ---
+    if (url.pathname === "/search" && request.method === "POST") {
+      const { query, limit = 3 } = await request.json();
+
+      // Embed the query
+      const queryResult = await AI.run("@cf/baai/bge-base-en-v1.5", {
+        texts: [query],
+      });
+      const queryEmbedding = queryResult.embeddings[0];
+
+      // Fetch all indexed documents
+      const cursor = await env.SEARCH_INDEX.list();
+      const documents = await Promise.all(
+        cursor.keys.map(async (key) => {
+          const data = JSON.parse(await env.SEARCH_INDEX.get(key.name));
+          const similarity = cosineSimilarity(queryEmbedding, data.embedding);
+          return { id: key.name, text: data.text, similarity };
+        })
+      );
+
+      // Sort by similarity, return top N
+      const results = documents
+        .sort((a, b) => b.similarity - a.similarity)
+        .slice(0, limit);
+
+      return Response.json({ results });
+    }
+
+    return new Response("Use POST /index to add docs, POST /search to query");
+  },
+};
+
+// Cosine similarity utility
+function cosineSimilarity(a: number[], b: number[]): number {
+  const dot = a.reduce((sum, val, i) => sum + val * b[i], 0);
+  const magA = Math.sqrt(a.reduce((sum, val) => sum + val * val, 0));
+  const magB = Math.sqrt(b.reduce((sum, val) => sum + val * val, 0));
+  return dot / (magA * magB);
+}</code></pre>
+
+        <p>Configure the KV namespace in <code>wrangler.toml</code>:</p>
+
+        <pre><code>[ai]
+binding = "AI"
+
+[[kv_namespaces]]
+binding = "SEARCH_INDEX"
+id = "your-kv-namespace-id"
+preview_id = "your-kv-preview-id"</code></pre>
+
+        <p>Usage:</p>
+
+        <pre><code># Add documents
+curl -X POST https://your-worker.workers.dev/index \
+  -H "Content-Type: application/json" \
+  -d '{"id": "doc1", "text": "Python async/await enables concurrent programming"}'
+
+# Search
+curl -X POST https://your-worker.workers.dev/search \
+  -H "Content-Type: application/json" \
+  -d '{"query": "concurrent programming in Python", "limit": 5}'</code></pre>
+
+        <h2>Streaming LLM Responses</h2>
+        <p>For better user experience, stream LLM output token by token instead of waiting for the full response:</p>
+
+        <pre><code>export default {
+  async fetch(request: Request, env: Env): Promise&lt;Response&gt; {
+    const prompt = new URL(request.url).searchParams.get("prompt") || "Hello";
+
+    const stream = await env.AI.run(
+      "@cf/meta/llama-3-8b-instruct",
+      {
+        prompt: prompt,
+        max_tokens: 500,
+      },
+      { streaming: true }
+    );
+
+    return new Response(stream, {
+      headers: { "Content-Type": "text/event-stream" },
+    });
+  },
+};</code></pre>
+
+        <h2>Error Handling and Rate Limits</h2>
+        <p>Production Workers AI code needs robust error handling:</p>
+
+        <pre><code>async function safeAIrun(model, input) {
+  try {
+    return await AI.run(model, input);
+  } catch (error) {
+    if (error.message?.includes("rate limit")) {
+      // Retry after a delay
+      await new Promise(r => setTimeout(r, 1000));
+      return await AI.run(model, input);
+    }
+    console.error(`AI Error: ${error.message}`);
+    throw error;
+  }
+}</code></pre>
+
+        <h2>Cost Estimates</h2>
+        <p>Workers AI pricing varies by model:</p>
+        <ul>
+            <li><strong>Free tier</strong> — 10,000 requests/day for most models</li>
+            <li><strong>Text generation</strong> — charged per token (~$0.0002 per 1K tokens for Llama)</li>
+            <li><strong>Embeddings</strong> — charged per input (~$0.10 per million inputs)</li>
+            <li><strong>Image models</strong> — charged per image (~$0.01 per 1K images)</li>
+        </ul>
+        <p>The free tier is generous enough for development, testing, and low-traffic production use.</p>
+
+        <h2>Summary</h2>
+        <p>Cloudflare Workers AI makes AI accessible without infrastructure:</p>
+        <ul>
+            <li>Run <code>AI.run(model, input)</code> from any Cloudflare Worker</li>
+            <li>Supports text generation, embeddings, image classification, speech-to-text</li>
+            <li>10,000 free requests per day — great for side projects</li>
+            <li>Stream responses for real-time chat interfaces</li>
+            <li>Combine with KV/Workers AI for semantic search, chatbots, and content analysis</li>
+        </ul>
+
+        <p>The best part: you deploy once to Cloudflare's edge, and your AI runs within milliseconds of users in every continent. No GPU cluster to manage, no API key juggling, no scaling headaches.</p>
+
+        <footer class="post-footer">
+            <a href="../index.html" class="back-home">← Back to Home</a>
+            <a href="../cloudflare.html" class="category-link">More Cloudflare Tutorials →</a>
+        </footer>
+    </article>
+
+    <script>
+        // Progress bar
+        window.onscroll = function() {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById("progressBar").style.width = scrolled + "%";
+        };
+        // Theme toggle
+        const toggle = document.getElementById("themeToggle");
+        if (toggle) {
+            toggle.addEventListener("click", () => {
+                document.body.classList.toggle("dark");
+            });
+        }
+    </script>
+</body>
+</html>

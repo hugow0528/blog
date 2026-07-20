@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Regular Expressions: Pattern Matching and Text Processing — Complete Beginner's Guide | Hugo's Dev Notes</title>
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-regex.html">
+    <link rel="stylesheet" href="../style.css">
+
+    <meta name="description" content="Master Python regular expressions — regex patterns, search, match, findall, sub, groups, and real-world text processing. Working examples from basic to advanced.">
+    <meta name="keywords" content="python regex, regular expressions, re module, pattern matching, text processing, findall, sub, groups">
+    <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="Python Regular Expressions: Pattern Matching and Text Processing">
+    <meta property="og:description" content="Master Python regular expressions — regex patterns, search, match, findall, sub, groups, and real-world text processing.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.hugow.dev/posts/python-regex.html">
+    <meta property="og:site_name" content="Hugo's Dev Notes">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Python Regular Expressions: Pattern Matching and Text Processing">
+    <meta name="twitter:description" content="Master Python regex with working examples from basic to advanced.">
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "headline": "Python Regular Expressions: Pattern Matching and Text Processing — Complete Beginner's Guide",
+      "description": "Master Python regular expressions — regex patterns, search, match, findall, sub, groups, and real-world text processing.",
+      "datePublished": "2026-07-10",
+      "dateModified": "2026-07-10",
+      "author": {"@type": "Person", "name": "Hugo Wong"},
+      "publisher": {"@type": "Organization", "name": "Hugo's Dev Notes", "url": "https://blog.hugow.dev"},
+      "mainEntityOfPage": "https://blog.hugow.dev/posts/python-regex.html"
+    }
+    </script>
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-full">
+            <div class="post-header">
+                <div class="post-tags">
+                    <span class="tag python">Python</span>
+                </div>
+                <h1>Python Regular Expressions: Pattern Matching and Text Processing — Complete Beginner's Guide</h1>
+                <div class="post-meta">
+                    <span class="post-date">July 10, 2026</span>
+                    <span class="read-time">12 min read</span>
+                </div>
+            </div>
+
+            <div class="post-content">
+                <p>Regular expressions (regex) are a powerful tool for searching, validating, and transforming text. In Python, the built-in <code>re</code> module gives you a full-featured regex engine. Whether you're extracting email addresses from a file, validating user input, or processing log files, regex is an essential skill every Python developer should master.</p>
+
+                <h2 id="what-is-regex">1. What Are Regular Expressions?</h2>
+                <p>A regular expression is a pattern that describes a set of strings. Think of it as a mini-language for text matching. Instead of writing multiple <code>if</code> statements to check if a string contains certain characters, you write a single pattern that describes exactly what you're looking for.</p>
+
+                <p>For example, instead of checking if a string is a valid email with complex string operations, a regex pattern can express the entire rule in a single line:</p>
+
+                <pre><code>import re
+
+pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+email = "user@example.com"
+print(re.match(pattern, email))  # Match object (truthy)</code></pre>
+
+                <p>The <code>r</code> prefix creates a <strong>raw string</strong>, which prevents Python from interpreting backslashes as escape characters. Always use raw strings for regex patterns in Python.</p>
+
+                <h2 id="basic-patterns">2. Basic Regex Patterns</h2>
+                <p>Let's start with the building blocks of regex patterns:</p>
+
+                <h3>Literal Characters</h3>
+                <p>Most characters match themselves literally:</p>
+
+                <pre><code>import re
+
+text = "The cat sat on the mat"
+result = re.findall(r"cat", text)
+print(result)  # ['cat']</code></pre>
+
+                <h3>Character Classes</h3>
+                <p>Character classes let you match any one character from a set:</p>
+
+                <pre><code>import re
+
+# Match any digit
+print(re.findall(r"\d", "abc123def"))          # ['1', '2', '3']
+
+# Match any letter
+print(re.findall(r"\w", "abc-123!"))           # ['a', 'b', 'c', '1', '2', '3']
+
+# Match any whitespace
+print(re.findall(r"\s", "hello\nworld\t"))     # ['\n', '\t']
+
+# Custom character class: vowels only
+print(re.findall(r"[aeiou]", "python"))        # ['y', 'o']
+
+# Negated class: anything NOT a digit
+print(re.findall(r"\D", "abc123"))             # ['a', 'b', 'c']</code></pre>
+
+                <p>Common shortcuts:</p>
+                <table>
+                    <thead>
+                        <tr><th>Pattern</th><th>Matches</th><th>Example</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>\d</code></td><td>Any digit (0-9)</td><td><code>\d{3}</code> matches "123"</td></tr>
+                        <tr><td><code>\w</code></td><td>Word character (a-z, 0-9, _)</td><td><code>\w+</code> matches "hello_world"</td></tr>
+                        <tr><td><code>\s</code></td><td>Whitespace (space, tab, newline)</td><td><code>\s+</code> matches "  "\t</td></tr>
+                        <tr><td><code>\D</code></td><td>Any non-digit</td><td><code>\D</code> matches "a"</td></tr>
+                        <tr><td><code>\W</code></td><td>Non-word character</td><td><code>\W</code> matches "-"</td></tr>
+                        <tr><td><code>\S</code></td><td>Non-whitespace</td><td><code>\S+</code> matches "hello"</td></tr>
+                    </tbody>
+                </table>
+
+                <h3>Quantifiers</h3>
+                <p>Quantifiers specify how many times a pattern should repeat:</p>
+
+                <pre><code>import re
+
+text = "a, aa, aaa, aaaa"
+
+# One or more
+print(re.findall(r"a+", text))         # ['a', 'aa', 'aaa', 'aaaa']
+
+# Zero or more
+print(re.findall(r"ab*", "a ab abb"))  # ['a', 'ab', 'abb']
+
+# Exactly 3 digits
+print(re.findall(r"\d{3}", "id: 123")) # ['123']
+
+# 3 to 5 digits
+print(re.findall(r"\d{3,5}", "1 12 123 1234 12345"))  # ['123', '1234', '12345']
+
+# Optional (0 or 1)
+print(re.findall(r"colou?r", "color colour"))  # ['color', 'colour']</code></pre>
+
+                <h2 id="search-match-findall">3. re.search() vs re.match() vs re.findall()</h2>
+                <p>Python provides several functions for matching patterns. Understanding the difference is crucial:</p>
+
+                <h3>re.search() — Find First Match Anywhere</h3>
+                <pre><code>import re
+
+text = "The error occurred at line 42"
+
+# Find the first number anywhere in the string
+match = re.search(r"\d+", text)
+if match:
+    print(match.group())   # "42"
+    print(match.start())   # 27 (starting position)
+    print(match.end())     # 29 (ending position)</code></pre>
+
+                <h3>re.match() — Match Only at Start</h3>
+                <pre><code>import re
+
+text = "Hello World"
+
+# Match at the beginning
+print(re.match(r"Hello", text))  # Match object
+print(re.match(r"World", text))  # None (not at start)</code></pre>
+
+                <h3>re.findall() — Find All Matches</h3>
+                <pre><code>import re
+
+text = "Contact us at alice@example.com or bob@test.org"
+
+# Find all email-like patterns
+emails = re.findall(r"\w+@\w+\.\w+", text)
+print(emails)  # ['alice@example.com', 'bob@test.org']</code></pre>
+
+                <h3>re.finditer() — Iterate Over Matches</h3>
+                <p>For large texts, <code>finditer</code> is more memory-efficient since it returns an iterator:</p>
+
+                <pre><code>import re
+
+log = """
+ERROR at 10:30: Database connection failed
+ERROR at 10:35: Retry attempt 1
+WARNING at 10:36: High memory usage
+ERROR at 10:40: Connection timeout
+"""
+
+for match in re.finditer(r"(ERROR|WARNING) at (\d+:\d+): (.*)", log):
+    level, time, message = match.groups()
+    print(f"[{time}] {level}: {message}")
+# [10:30] ERROR: Database connection failed
+# [10:35] ERROR: Retry attempt 1
+# [10:36] WARNING: High memory usage
+# [10:40] ERROR: Connection timeout</code></pre>
+
+                <h2 id="groups">4. Capturing Groups</h2>
+                <p>Groups let you extract specific parts of a match using parentheses <code>()</code>:</p>
+
+                <pre><code>import re
+
+# Extract date components
+date_text = "Today is 2026-07-10"
+match = re.search(r"(\d{4})-(\d{2})-(\d{2})", date_text)
+
+if match:
+    print(match.group(0))  # Full match: "2026-07-10"
+    print(match.group(1))  # Year: "2026"
+    print(match.group(2))  # Month: "07"
+    print(match.group(3))  # Day: "10"
+    print(match.groups())  # Tuple: ('2026', '07', '10')</code></pre>
+
+                <h3>Named Groups</h3>
+                <p>Name your groups for clearer code:</p>
+
+                <pre><code>import re
+
+phone = "+1 (555) 123-4567"
+match = re.search(
+    r"(?P<country>\+\d+)\s*\((?P<area>\d{3})\)\s*(?P<prefix>\d{3})-(?P<line>\d{4})",
+    phone
+)
+
+if match:
+    print(match.group("country"))  # +1
+    print(match.group("area"))     # 555
+    print(match.group("prefix"))   # 123
+    print(match.group("line"))     # 4567
+    print(match.groupdict())       # Full dict</code></pre>
+
+                <h3>Non-Capturing Groups</h3>
+                <p>Use <code>(?:...)</code> when you need grouping but don't want to capture:</p>
+
+                <pre><code>import re
+
+# Match "color" or "colour" without capturing
+words = re.findall(r"colou?r", "color is a colour")
+print(words)  # ['color', 'colour']</code></pre>
+
+                <h2 id="substitution">5. Substitution with re.sub()</h2>
+                <p>Replace text that matches a pattern:</p>
+
+                <pre><code>import re
+
+# Replace phone number digits with X
+text = "Call 555-123-4567 for support"
+result = re.sub(r"\d", "X", text)
+print(result)  # Call XXX-XXX-XXXX for support
+
+# Remove all HTML tags
+html = "<p>Hello <b>World</b></p>"
+plain = re.sub(r"<[^>]+>", "", html)
+print(plain)  # Hello World
+
+# Replace with callback function
+text = "I saw $100 and $500 today"
+def double(match):
+    return str(int(match.group(1)) * 2)
+result = re.sub(r"\$(\d+)", lambda m: f"${int(m.group(1)) * 2}", text)
+print(result)  # I saw $200 and $1000 today</code></pre>
+
+                <h2 id="splitting">6. Splitting Strings with re.split()</h2>
+                <p>Split on complex patterns instead of fixed delimiters:</p>
+
+                <pre><code>import re
+
+# Split on any whitespace
+text = "  hello   world  foo  bar  "
+words = re.split(r"\s+", text.strip())
+print(words)  # ['hello', 'world', 'foo', 'bar']
+
+# Split on multiple delimiters
+csv_data = "name,age;city|country"
+parts = re.split(r"[,;|]", csv_data)
+print(parts)  # ['name', 'age', 'city', 'country']
+
+# Keep the delimiters using capture group
+text = "one-two:three,four"
+parts = re.split(r"(-|:|,)", text)
+print(parts)  # ['one', '-', 'two', ':', 'three', ',', 'four']</code></pre>
+
+                <h2 id="real-world">7. Real-World Examples</h2>
+
+                <h3>Email Validation</h3>
+                <pre><code>import re
+
+def is_valid_email(email):
+    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    return re.match(pattern, email) is not None
+
+print(is_valid_email("user@example.com"))   # True
+print(is_valid_email("invalid@"))            # False
+print(is_valid_email("no-at-sign.com"))     # False</code></pre>
+
+                <h3>URL Extraction</h3>
+                <pre><code>import re
+
+text = """
+Visit https://blog.hugow.dev for tutorials.
+Also check http://example.com/page?q=hello&lang=en
+Or the local link: /posts/python-regex.html
+"""
+
+# Extract full URLs
+urls = re.findall(r'https?://[^\s<>"]+|www\.[^\s<>"]+', text)
+for url in urls:
+    print(url)
+# https://blog.hugow.dev
+# http://example.com/page?q=hello&lang=en</code></pre>
+
+                <h3>Log File Parser</h3>
+                <pre><code>import re
+from collections import Counter
+
+log_data = """
+192.168.1.1 - - [10/Jul/2026:10:30:01] "GET /index.html HTTP/1.1" 200 1234
+192.168.1.2 - - [10/Jul/2026:10:30:02] "POST /api/login HTTP/1.1" 401 56
+192.168.1.1 - - [10/Jul/2026:10:30:03] "GET /style.css HTTP/1.1" 200 567
+10.0.0.5 - - [10/Jul/2026:10:30:04] "GET /api/data HTTP/1.1" 500 89
+192.168.1.3 - - [10/Jul/2026:10:30:05] "GET /index.html HTTP/1.1" 200 1234
+"""
+
+pattern = r'(\d+\.\d+\.\d+\.\d+) - - \[([^\]]+)\] "(\w+) ([^ ]+) HTTP/[\d.]+" (\d+) (\d+)'
+
+ips = []
+status_codes = []
+
+for match in re.finditer(pattern, log_data):
+    ip, timestamp, method, path, status, size = match.groups()
+    ips.append(ip)
+    status_codes.append(status)
+
+print("Top IPs:", Counter(ips).most_common(3))
+print("Status codes:", Counter(status_codes).most_common())
+# Top IPs: [('192.168.1.1', 2), ('192.168.1.2', 1), ...]
+# Status codes: [('200', 3), ('401', 1), ('500', 1)]</code></pre>
+
+                <h2 id="compiling">8. Compile Patterns for Reuse</h2>
+                <p>When using the same pattern multiple times, compile it for better performance:</p>
+
+                <pre><code>import re
+
+# Compile once, use many times
+email_pattern = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+
+emails = [
+    "valid@example.com",
+    "invalid@",
+    "also.valid+tag@domain.org"
+]
+
+for email in emails:
+    if email_pattern.match(email):
+        print(f"✓ {email}")
+    else:
+        print(f"✗ {email}")
+# ✓ valid@example.com
+# ✗ invalid@
+# ✓ also.valid+tag@domain.org</code></pre>
+
+                <h3>Flags for Flexible Matching</h3>
+                <pre><code>import re
+
+# Case-insensitive matching
+pattern = re.compile(r"hello", re.IGNORECASE)
+print(pattern.search("HeLLo World"))  # Match
+
+# Multiline mode (^ and $ match line boundaries)
+text = """First line
+Second line
+Third line"""
+
+matches = re.findall(r"^(\w+)", text, re.MULTILINE)
+print(matches)  # ['First', 'Second', 'Third']
+
+# DOTALL: dot matches newlines too
+text = "hello\nworld"
+result = re.findall(r"hello.*world", text, re.DOTALL)
+print(result)  # ['hello\nworld']</code></pre>
+
+                <h2 id="common-pitfalls">9. Common Pitfalls</h2>
+
+                <h3>Greedy vs Lazy Matching</h3>
+                <p>By default, quantifiers are <strong>greedy</strong> (match as much as possible). Add <code>?</code> to make them <strong>lazy</strong> (match as little as possible):</p>
+
+                <pre><code>import re
+
+html = "<b>bold</b> and <b>also bold</b>"
+
+# Greedy: matches from first <b> to last </b>
+greedy = re.findall(r"<b>.*</b>", html)
+print(greedy)  # ['<b>bold</b> and <b>also bold</b>']
+
+# Lazy: matches each pair separately
+lazy = re.findall(r"<b>.*?</b>", html)
+print(lazy)    # ['<b>bold</b>', '<b>also bold</b>']</code></pre>
+
+                <h3>Escaping Special Characters</h3>
+                <p>Characters like <code>.</code>, <code>*</code>, <code>+</code>, <code>[</code>, <code>(</code>, etc. have special meaning. Escape them with backslash or use <code>re.escape()</code>:</p>
+
+                <pre><code>import re
+
+# Dot means "any character" — escape it to match a literal dot
+text = "price: $10.99"
+result = re.findall(r"\$\d+\.\d+", text)
+print(result)  # ['$10.99']
+
+# Or use re.escape() for arbitrary strings
+pattern = re.escape("hello.world()")
+print(pattern)  # hello\.world\(\)</code></pre>
+
+                <h2 id="practice-exercises">10. Practice Exercises</h2>
+                <p>Try these exercises to solidify your understanding:</p>
+
+                <ol>
+                    <li><strong>Phone number validator:</strong> Write a regex that matches US phone numbers in formats like (555) 123-4567, 555-123-4567, or 555.123.4567</li>
+                    <li><strong>IPv4 address extractor:</strong> Extract all IPv4 addresses from a text file</li>
+                    <li><strong>CSV cleaner:</strong> Use regex to clean and normalize CSV data (remove quotes, handle commas within quotes)</li>
+                    <li><strong>Markdown parser:</strong> Extract all links from a Markdown document (both <code>[text](url)</code> and bare URLs)</li>
+                    <li><strong>Password strength checker:</strong> Validate passwords require 8+ chars, uppercase, lowercase, digit, and special character</li>
+                </ol>
+
+                <pre><code># Password strength example:
+import re
+
+def check_password(password):
+    rules = [
+        (r".{8,}", "at least 8 characters"),
+        (r"[A-Z]", "at least one uppercase letter"),
+        (r"[a-z]", "at least one lowercase letter"),
+        (r"\d", "at least one digit"),
+        (r"[!@#$%^&*]", "at least one special character")
+    ]
+    
+    for pattern, description in rules:
+        if not re.search(pattern, password):
+            return f"Missing: {description}"
+    return "Password is strong!"
+
+print(check_password("Str0ng!Pass"))     # Password is strong!
+print(check_password("weak"))            # Missing: at least 8 characters</code></pre>
+
+                <h2 id="summary">Summary</h2>
+                <p>Regular expressions are a powerful and versatile tool for text processing in Python. Here's what we covered:</p>
+                <ul>
+                    <li><strong>Basic patterns:</strong> character classes (<code>\d</code>, <code>\w</code>, <code>\s</code>), quantifiers (<code>*</code>, <code>+</code>, <code>{n}</code>), and special characters</li>
+                    <li><strong>Matching functions:</strong> <code>search()</code>, <code>match()</code>, <code>findall()</code>, <code>finditer()</code></li>
+                    <li><strong>Groups:</strong> capturing with <code>()</code>, named groups with <code>(?P&lt;name&gt;...)</code>, non-capturing with <code>(?:...)</code></li>
+                    <li><strong>Substitution:</strong> <code>re.sub()</code> with strings and callback functions</li>
+                    <li><strong>Splitting:</strong> <code>re.split()</code> for complex delimiters</li>
+                    <li><strong>Performance:</strong> compile patterns with <code>re.compile()</code> for reuse</li>
+                    <li><strong>Common pitfalls:</strong> greedy vs lazy matching, escaping special characters</li>
+                </ul>
+                <p>Practice with real data — log files, user input validation, web scraping, data cleaning — and regex will become second nature. The pattern reference table above is worth bookmarking for quick lookups.</p>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Hugo's Dev Notes. Built with curiosity.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Theme toggle
+        const toggle = document.getElementById('themeToggle');
+        const body = document.body;
+        toggle.addEventListener('click', () => {
+            body.classList.toggle('light-theme');
+            localStorage.setItem('theme', body.classList.contains('light-theme') ? 'light' : 'dark');
+        });
+        if (localStorage.getItem('theme') === 'light') body.classList.add('light-theme');
+
+        // Reading progress bar
+        window.addEventListener('scroll', () => {
+            const bar = document.getElementById('progressBar');
+            if (bar) {
+                const scrolled = window.scrollY / (document.body.scrollHeight - window.innerHeight) * 100;
+                bar.style.width = scrolled + '%';
+            }
+        });
+
+        // Copy code buttons
+        document.querySelectorAll('pre').forEach(pre => {
+            const btn = document.createElement('button');
+            btn.className = 'copy-btn';
+            btn.textContent = 'Copy';
+            btn.onclick = () => {
+                navigator.clipboard.writeText(pre.querySelector('code').textContent);
+                btn.textContent = 'Copied!';
+                setTimeout(() => btn.textContent = 'Copy', 2000);
+            };
+            pre.style.position = 'relative';
+            pre.appendChild(btn);
+        });
+
+        // Search functionality
+        function searchPosts() {
+            const query = document.getElementById('searchInput')?.value.toLowerCase();
+            document.querySelectorAll('.post').forEach(post => {
+                const text = post.textContent.toLowerCase();
+                post.classList.toggle('hidden', query && !text.includes(query));
+            });
+        }
+
+        // Filter functionality
+        function filterPosts(tag, btn) {
+            document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+            btn?.classList.add('active');
+            document.querySelectorAll('.post').forEach(post => {
+                if (tag === 'all') { post.classList.remove('hidden'); return; }
+                const tags = (post.dataset.tags || '').split(',');
+                post.classList.toggle('hidden', !tags.includes(tag));
+            });
+        }
+
+        // Table of contents scroll spy
+        document.querySelectorAll('h2[id]').forEach(h2 => {
+            h2.style.scrollMarginTop = '80px';
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Comprehensions: Lists, Dicts & Sets — Complete Beginner's Guide | Hugo's Dev Notes</title>
+    <meta name="description" content="Master Python comprehensions — list, dict, and set comprehensions plus generator expressions. Write cleaner, faster one-liners for data transformation. Working examples for every concept.">
+    <meta name="keywords" content="python comprehensions, list comprehension, dict comprehension, set comprehension, generator expression, python beginner">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-comprehensions.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="post-content">
+            <a href="../index.html" class="back-link">← Back to all posts</a>
+            <span class="tag python">Python</span>
+            <h1>Python Comprehensions: Lists, Dicts & Sets — Complete Beginner's Guide</h1>
+            <time datetime="2026-07-14">July 14, 2026</time>
+
+            <p>Python comprehensions are one of the most powerful and Pythonic features of the language. They let you create lists, dictionaries, and sets in a single, readable line of code — replacing verbose loops and making your data transformation code dramatically shorter and faster.</p>
+
+            <p>Whether you're filtering data, transforming collections, or building lookup tables, comprehensions are an essential skill every Python developer needs. Let's go from basic to advanced with working examples.</p>
+
+            <h2>What Are Python Comprehensions?</h2>
+
+            <p>Comprehensions are a syntactic sugar feature in Python that combines a loop and an expression into a single line. Instead of writing a multi-line for loop to build a new collection, you write a concise expression that describes <em>what</em> you want, not <em>how</em> to build it.</p>
+
+            <p>Python supports four types of comprehensions:</p>
+
+            <ul>
+                <li><strong>List comprehensions</strong> — create lists with square brackets <code>[]</code></li>
+                <li><strong>Dictionary comprehensions</strong> — create dicts with curly braces <code>{}</code></li>
+                <li><strong>Set comprehensions</strong> — create sets with curly braces <code>{}</code></li>
+                <li><strong>Generator expressions</strong> — create lazy iterators with parentheses <code>()</code></li>
+            </ul>
+
+            <h2>List Comprehensions: The Basics</h2>
+
+            <p>A list comprehension follows this pattern: <code>[expression for item in iterable]</code>. The expression is evaluated for each item and the results are collected into a new list.</p>
+
+            <h3>Basic Example: Squaring Numbers</h3>
+
+            <pre><code># Without comprehension — the "old" way
+squares = []
+for x in range(10):
+    squares.append(x ** 2)
+print(squares)  # [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
+
+# With list comprehension — the "Pythonic" way
+squares = [x ** 2 for x in range(10)]
+print(squares)  # [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]</code></pre>
+
+            <p>The comprehension reads almost like English: <em>"x squared, for x in range 10."</em> This is the core benefit — your intent is immediately clear.</p>
+
+            <h3>Filtering with Conditions</h3>
+
+            <p>Add an <code>if</code> clause to filter items. Only items where the condition is <code>True</code> are included:</p>
+
+            <pre><code># Even numbers only
+evens = [x for x in range(20) if x % 2 == 0]
+print(evens)  # [0, 2, 4, 6, 8, 10, 12, 14, 16, 18]
+
+# Filter strings longer than 3 characters
+words = ["hi", "hello", "hey", "goodbye", "yo", "world"]
+long_words = [w for w in words if len(w) > 3]
+print(long_words)  # ['hello', 'goodbye', 'world']</code></pre>
+
+            <h3>Transforming Strings</h3>
+
+            <p>Comprehensions work great for text processing:</p>
+
+            <pre><code># Convert a list of names to uppercase
+names = ["alice", "bob", "charlie", "diana"]
+upper_names = [name.upper() for name in names]
+print(upper_names)  # ['ALICE', 'BOB', 'CHARLIE', 'DIANA']
+
+# Strip whitespace and lowercase
+raw_data = ["  Alice  ", " Bob ", "Charlie", "  Diana  "]
+cleaned = [name.strip().lower() for name in raw_data]
+print(cleaned)  # ['alice', 'bob', 'charlie', 'diana']
+
+# Extract initials from full names
+full_names = ["John Smith", "Jane Doe", "Bob Wilson"]
+initials = [name[0] + n.split()[-1][0] for name in full_names for n in [name]]
+# Simpler approach:
+initials = [n[0] + n.split()[-1][0] for n in full_names]
+print(initials)  # ['JS', 'JD', 'BW']</code></pre>
+
+            <h2>Conditional Expressions (if/else)</h2>
+
+            <p>There's an important distinction: <strong>filtering</strong> (if at the end) vs <strong>transforming with condition</strong> (if/else in the expression).</p>
+
+            <pre><code># FILTERING — if at the end, items don't pass the test are excluded
+positive = [x for x in [-3, -1, 0, 2, 5] if x > 0]
+print(positive)  # [2, 5]
+
+# TRANSFORMING — if/else in the expression, all items are kept
+labels = ["positive" if x > 0 else "non-positive" for x in [-3, -1, 0, 2, 5]]
+print(labels)  # ['non-positive', 'non-positive', 'non-positive', 'positive', 'positive']
+
+# Practical example: classify ages
+ages = [15, 20, 35, 12, 55]
+status = ["adult" if a >= 18 else "minor" for a in ages]
+print(status)  # ['minor', 'adult', 'adult', 'minor', 'adult']</code></pre>
+
+            <blockquote>
+                <strong>Rule of thumb:</strong> <code>[expr if cond else other for x in iterable]</code> transforms every item. <code>[expr for x in iterable if cond]</code> keeps only items that pass the test.
+            </blockquote>
+
+            <h2>Nested List Comprehensions</h2>
+
+            <p>When you have nested data structures (lists of lists), you can use nested comprehensions:</p>
+
+            <pre><code># Flatten a 2D list
+matrix = [
+    [1, 2, 3],
+    [4, 5, 6],
+    [7, 8, 9]
+]
+
+# Flatten all values into a single list
+flat = [val for row in matrix for val in row]
+print(flat)  # [1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+# Extract diagonal elements
+diagonal = [matrix[i][i] for i in range(len(matrix))]
+print(diagonal)  # [1, 5, 9]
+
+# Transpose a matrix
+transposed = [[row[i] for row in matrix] for i in range(len(matrix[0]))]
+print(transposed)
+# [[1, 4, 7], [2, 5, 8], [3, 6, 9]]</code></pre>
+
+            <h2>Dictionary Comprehensions</h2>
+
+            <p>Dict comprehensions use <code>{key: value for item in iterable}</code> syntax. They're perfect for building lookup tables and flipping keys/values.</p>
+
+            <pre><code># Square numbers as a lookup table
+squares = {x: x**2 for x in range(10)}
+print(squares)  # {0: 0, 1: 1, 2: 4, 3: 9, ..., 9: 81}
+
+# Flip a dictionary (swap keys and values)
+original = {"a": 1, "b": 2, "c": 3}
+flipped = {v: k for k, v in original.items()}
+print(flipped)  # {1: 'a', 2: 'b', 3: 'c'}
+
+# Build a name-to-length lookup
+names = ["alice", "bob", "charlie", "diana"]
+name_lengths = {name: len(name) for name in names}
+print(name_lengths)  # {'alice': 5, 'bob': 3, 'charlie': 7, 'diana': 5}
+
+# Filter dict: keep entries where value > threshold
+prices = {"apple": 1.2, "banana": 0.5, "cherry": 3.0, "date": 2.5}
+expensive = {fruit: price for fruit, price in prices.items() if price > 1.5}
+print(expensive)  # {'cherry': 3.0, 'date': 2.5}</code></pre>
+
+            <h3>Grouping with Dictionary Comprehensions</h3>
+
+            <p>You can group items using a common key:</p>
+
+            <pre><code># Group names by their first letter
+from collections import defaultdict
+
+# Method 1: Using dict.setdefault
+grouped = {}
+for name in names:
+    first_letter = name[0]
+    grouped.setdefault(first_letter, []).append(name)
+print(grouped)
+# {'a': ['alice'], 'b': ['bob'], 'c': ['charlie'], 'd': ['diana']}
+
+# Method 2: Using defaultdict (cleaner)
+grouped = defaultdict(list)
+for name in names:
+    grouped[name[0]].append(name)
+print(dict(grouped))</code></pre>
+
+            <h2>Set Comprehensions</h2>
+
+            <p>Set comprehensions use <code>{expr for item in iterable}</code> syntax — same as dict comprehension but without the colon. They automatically remove duplicates:</p>
+
+            <pre><code># Get unique first letters
+letters = {name[0] for name in names}
+print(letters)  # {'a', 'b', 'c', 'd'}
+
+# Unique word lengths
+words = ["hi", "hello", "hey", "goodbye", "yo", "world"]
+lengths = {len(w) for w in words}
+print(lengths)  # {2, 3, 5, 7}
+
+# Set intersection using comprehension
+set_a = {1, 2, 3, 4, 5}
+set_b = {3, 4, 5, 6, 7}
+intersection = {x for x in set_a if x in set_b}
+print(intersection)  # {3, 4, 5}</code></pre>
+
+            <h2>Generator Expressions</h2>
+
+            <p>Generator expressions look identical to list comprehensions but use parentheses <code>()</code> instead of brackets. The key difference: they generate values <strong>lazily</strong> — one at a time — instead of building the entire collection in memory.</p>
+
+            <pre><code># List comprehension — creates full list in memory
+big_list = [x ** 2 for x in range(1000000)]  # Uses ~8MB RAM
+
+# Generator expression — creates items on demand
+big_gen = (x ** 2 for x in range(1000000))   # Uses ~0 bytes until consumed
+
+# Use with built-in functions that accept iterables
+total = sum(x ** 2 for x in range(100))  # No list created!
+print(total)  # 328350
+
+unique_words = len({word for word in words})  # Set comprehension
+# vs
+all_words = [word for word in words]  # List comprehension — full list in memory</code></pre>
+
+            <blockquote>
+                <strong>When to use generators:</strong> When dealing with large datasets, infinite sequences, or when you only need to iterate once. They save significant memory.
+            </blockquote>
+
+            <h2>Real-World Project: Log File Analyzer</h2>
+
+            <p>Let's build a practical project that combines multiple comprehension types:</p>
+
+            <pre><code># Sample log data
+logs = """2026-07-14 10:00 INFO User logged in
+2026-07-14 10:05 ERROR Database connection failed
+2026-07-14 10:10 WARNING High memory usage
+2026-07-14 10:15 INFO Request processed
+2026-07-14 10:20 ERROR Timeout exceeded
+2026-07-14 10:25 INFO User logged out
+2026-07-14 10:30 DEBUG Cache refreshed"""
+
+# Parse log lines into structured data
+parsed_logs = [
+    line.split()
+    for line in logs.strip().split("\n")
+    if len(line.split()) >= 4
+]
+
+# Extract only ERROR entries (filtering)
+errors = [
+    line.split()
+    for line in logs.strip().split("\n")
+    if "ERROR" in line
+]
+
+# Build a dict of error messages by timestamp
+error_dict = {
+    parts[0] + " " + parts[1]: " ".join(parts[3:])
+    for line in logs.strip().split("\n")
+    for parts in [line.split()]
+    if "ERROR" in line
+}
+print(error_dict)
+# {'2026-07-14 10:05': 'Database connection failed',
+#  '2026-07-14 10:20': 'Timeout exceeded'}
+
+# Count log levels (generator expression with Counter)
+from collections import Counter
+level_counts = Counter(
+    line.split()[2] for line in logs.strip().split("\n")
+)
+print(dict(level_counts))
+# {'INFO': 3, 'ERROR': 2, 'WARNING': 1, 'DEBUG': 1}
+
+# Unique log levels (set comprehension)
+unique_levels = {
+    line.split()[2]
+    for line in logs.strip().split("\n")
+}
+print(unique_levels)  # {'DEBUG', 'INFO', 'WARNING', 'ERROR'}</code></pre>
+
+            <h2>Common Mistakes and Anti-Patterns</h2>
+
+            <h3>1. Overcomplicating — Keep It Readable</h3>
+
+            <pre><code># BAD: Too complex for a comprehension
+# Hard to read, hard to debug
+result = [
+    (x, y) for x in range(10) for y in range(10)
+    if x % 2 == 0 and y % 3 == 0 and x + y > 5
+]
+
+# GOOD: Use a regular loop for complex logic
+result = []
+for x in range(10):
+    if x % 2 != 0:
+        continue
+    for y in range(10):
+        if y % 3 != 0:
+            continue
+        if x + y <= 5:
+            continue
+        result.append((x, y))</code></pre>
+
+            <h3>2. Forgetting That Generators Are Single-Use</h3>
+
+            <pre><code>gen = (x ** 2 for x in range(5))
+
+print(list(gen))  # [0, 1, 4, 9, 16]
+print(list(gen))  # [] — already consumed!</code></pre>
+
+            <h3>3. Using Comprehensions for Side Effects</h3>
+
+            <pre><code># BAD: Comprehensions are for building collections, not side effects
+results = [process(item) for item in data]  # if you ignore results, use a loop
+
+# GOOD: Use a regular loop when you don't need the result
+for item in data:
+    process(item)</code></pre>
+
+            <h2>Performance Comparison</h2>
+
+            <pre><code>import timeit
+
+# List comprehension vs regular loop
+# List comprehension is typically 2-3x faster
+timeit.timeit('[x**2 for x in range(1000)]', number=10000)
+# ~0.5 seconds
+
+timeit.timeit(
+    'r=[]; [r.append(x**2) for x in range(1000)]',
+    number=10000
+)
+# ~1.5 seconds
+
+# Why? The comprehension is executed in C-level loops internally,
+# avoiding Python-level append() method calls for each element.</code></pre>
+
+            <h2>Summary and Quick Reference</h2>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Syntax</th>
+                        <th>Use Case</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>List</td>
+                        <td><code>[expr for x in iterable]</code></td>
+                        <td>Transform/filter into a list</td>
+                    </tr>
+                    <tr>
+                        <td>Dict</td>
+                        <td><code>{k: v for x in iterable}</code></td>
+                        <td>Build lookup tables, mappings</td>
+                    </tr>
+                    <tr>
+                        <td>Set</td>
+                        <td><code>{expr for x in iterable}</code></td>
+                        <td>Unique values, set operations</td>
+                    </tr>
+                    <tr>
+                        <td>Generator</td>
+                        <td><code>(expr for x in iterable)</code></td>
+                        <td>Memory-efficient iteration</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p>Python comprehensions are one of those features that, once you learn them, you'll wonder how you ever coded without. They make data transformation code shorter, faster, and more readable. Practice with small examples first, then gradually apply them to your real projects.</p>
+
+            <h2>Practice Exercises</h2>
+
+            <ol>
+                <li>Create a list of the first 20 Fibonacci numbers using a comprehension</li>
+                <li>Given a list of filenames, extract the file extensions into a set</li>
+                <li>Build a dictionary mapping words to their character counts from a paragraph</li>
+                <li>Write a generator expression that yields prime numbers up to 1000</li>
+                <li>Flatten a 3D list into a 1D list using a nested comprehension</li>
+            </ol>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes. Built with curiosity and code.</p>
+            <div class="footer-links">
+                <a href="../index.html">Home</a>
+                <a href="https://github.com/hugow0528" target="_blank">GitHub</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Progress bar
+        window.addEventListener('scroll', () => {
+            const winScroll = document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + '%';
+        });
+
+        // Theme toggle
+        const toggle = document.getElementById('themeToggle');
+        toggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            localStorage.setItem('theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
+        });
+        if (localStorage.getItem('theme') === 'light') {
+            document.body.classList.add('light-mode');
+        }
+    </script>
+</body>
+</html>

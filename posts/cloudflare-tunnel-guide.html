@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloudflare Tunnels: Expose Services Securely Without Opening Ports — Complete Beginner's Guide</title>
+    <meta name="description" content="Learn Cloudflare Tunnels (cloudflared) to securely expose web apps, APIs, and internal services to the internet — without opening firewall ports or managing public IPs. Step-by-step setup with Docker, systemd, and routing rules.">
+    <meta name="keywords" content="cloudflare tunnel, cloudflared, trycloudflare, zero trust, secure tunnel, reverse proxy, no public IP, python tutorial">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/cloudflare-tunnel-guide.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-detail">
+            <header class="post-header">
+                <div class="post-tags">
+                    <span class="tag cloudflare">Cloudflare</span>
+                    <span class="tag devops">DevOps</span>
+                </div>
+                <h1>Cloudflare Tunnels: Expose Services Securely Without Opening Ports — Complete Beginner's Guide</h1>
+                <div class="post-meta">
+                    <span class="post-date">July 17, 2026</span>
+                    <span class="read-time">12 min read</span>
+                </div>
+            </header>
+
+            <div class="post-content">
+                <p>You have a web app running on your server. To let the world access it, the old way was: assign a public IP, open port 80/443 on the firewall, configure a reverse proxy, and manage SSL certificates manually. Cloudflare Tunnels eliminate every single one of those steps. Your server makes an outbound connection to Cloudflare — no inbound ports, no public IP, no cert management. Everything is encrypted by default.</p>
+
+                <h2>How Cloudflare Tunnels Work</h2>
+                <p>A tunnel is a persistent, encrypted connection from your server to Cloudflare's edge. Think of it like a reverse SSH tunnel, but managed by Cloudflare and infinitely more capable.</p>
+                <p>Here's the flow:</p>
+                <ol>
+                    <li>You install <code>cloudflared</code> on your server</li>
+                    <li><code>cloudflared</code> opens an outbound HTTPS connection to Cloudflare</li>
+                    <li>When someone visits your domain, Cloudflare routes the request through the tunnel to your local service</li>
+                    <li>The response comes back through the same encrypted path</li>
+                </ol>
+                <p><strong>Your server never receives direct connections from the internet.</strong> No ports open, no firewall rules, no public IP needed. This is a massive security win.</p>
+
+                <h2>Quick Test: trycloudflare</h2>
+                <p>Before committing, test instantly with the <code>trycloudflare</code> tool. It creates a temporary public URL for your local service:</p>
+
+<pre><code class="language-bash"># Install trycloudflare (requires Go)
+go install github.com/cloudflare/trycloudflare@latest
+
+# Point it at a local service
+trycloudflare --url http://localhost:8080
+
+# You'll get a URL like:
+# https://random-name.trycloudflare.com</code></pre>
+
+                <p>That URL works immediately from anywhere on the internet. No account needed. When you kill the process, the URL disappears. Perfect for demos, quick sharing, and testing.</p>
+
+                <h2>Production Setup: Named Tunnels</h2>
+                <p>For anything permanent, use a <strong>named tunnel</strong>. It survives restarts, can be managed from the dashboard, and supports multiple services on one tunnel.</p>
+
+<h3>Step 1: Install cloudflared</h3>
+
+<pre><code class="language-bash"># Debian/Ubuntu
+curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb \
+  -o cloudflared.deb
+sudo dpkg -i cloudflared.deb
+
+# Verify installation
+cloudflared --version</code></pre>
+
+<h3>Step 2: Authenticate with Cloudflare</h3>
+
+<pre><code class="language-bash"># This opens a browser for OAuth login
+cloudflared tunnel login
+
+# A file is created at ~/.cloudflared/&lt;fingerprint&gt;.cert
+# This cert authenticates your machine to Cloudflare</code></pre>
+
+<h3>Step 3: Create a Named Tunnel</h3>
+
+<pre><code class="language-bash"># Create the tunnel (stores metadata in Cloudflare)
+cloudflared tunnel create my-app-tunnel
+
+# Output: Tunnel credentials written to /home/user/.cloudflared/&lt;uuid&gt;.json
+# Keep this file safe — it's your tunnel's identity</code></pre>
+
+<h3>Step 4: Configure Routing</h3>
+
+<pre><code class="language-bash"># Edit or create the config file
+cloudflared tunnel route dns my-app-tunnel myapp.example.com
+
+# This automatically adds a CNAME DNS record pointing to your tunnel</code></pre>
+
+<h3>Step 5: Define What the Tunnel Proxies</h3>
+<p>Create <code>~/.cloudflared/config.yml</code>:</p>
+
+<pre><code class="language-yaml">tunnel: &lt;your-tunnel-uuid&gt;
+credentials-file: /home/user/.cloudflared/&lt;uuid&gt;.json
+
+ingress:
+  # Route 1: Your web app
+  - hostname: myapp.example.com
+    service: http://localhost:8080
+
+  # Route 2: API on a different port
+  - hostname: api.example.com
+    service: http://localhost:3000
+
+  # Route 3: Admin dashboard with Zero Trust auth
+  - hostname: admin.example.com
+    service: http://localhost:9090
+
+  # Catch-all — return 404 for anything else
+  - service: http_status:404</code></pre>
+
+                <p>The <code>ingress</code> rules are evaluated top-to-bottom. The first match wins. Always end with a catch-all to reject unexpected traffic.</p>
+
+<h3>Step 6: Start the Tunnel</h3>
+
+<pre><code class="language-bash"># Test it manually first
+cloudflared tunnel --config ~/.cloudflared/config.yml run my-app-tunnel
+
+# If everything works, run as a systemd service
+sudo cloudflared service install
+sudo systemctl enable cloudflared
+sudo systemctl start cloudflared</code></pre>
+
+                <h2>Docker Deployment</h2>
+                <p>Running cloudflared inside Docker is common. Here's a production-ready <code>docker-compose.yml</code>:</p>
+
+<pre><code class="language-yaml">services:
+  webapp:
+    image: my-python-app:latest
+    ports:
+      - "127.0.0.1:8080:8080"  # Only accessible locally!
+    environment:
+      - DATABASE_URL=postgresql://db:5432/myapp
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel run
+    environment:
+      - TUNNEL_TOKEN=&lt;your-token&gt;
+      # Or use the config file approach:
+      # command: tunnel --config /etc/cloudflared/config.yml run
+    depends_on:
+      - webapp
+
+  db:
+    image: postgres:16
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=myapp
+
+volumes:
+  pgdata:</code></pre>
+
+                <p>Notice that <code>webapp</code> binds to <code>127.0.0.1</code> only — it's <strong>never</strong> exposed to the public network. The tunnel connects to it via Docker's internal network.</p>
+
+                <h2>Using a Tunnel Token Instead of Config Files</h2>
+                <p>For containerized or ephemeral deployments, tokens are cleaner than config files:</p>
+
+<pre><code class="language-bash"># Generate a token from your tunnel
+cloudflared tunnel token &lt;tunnel-name-or-uuid&gt;
+
+# Copy the output — it's a long base64 string
+
+# Use it in Docker/Kubernetes as an environment variable
+export TUNNEL_TOKEN="sk...long-string..."
+cloudflared tunnel run</code></pre>
+
+                <h2>Advanced: Multiple Tunnels per Server</h2>
+                <p>You can run multiple tunnels from the same server, each with its own config:</p>
+
+<pre><code class="language-bash"># Tunnel 1: Production
+cloudflared tunnel run prod-tunnel \
+  --config /etc/cloudflared/prod.yml
+
+# Tunnel 2: Staging
+cloudflared tunnel run staging-tunnel \
+  --config /etc/cloudflared/staging.yml</code></pre>
+
+                <p>Or in Docker Compose, run separate cloudflared containers for each environment.</p>
+
+                <h2>Traffic Rules and Load Balancing</h2>
+                <p>Cloudflare Tunnels integrate with Cloudflare Load Balancing. You can have multiple tunnels behind one hostname for high availability:</p>
+
+<pre><code class="language-bash"># Two servers, each running the same tunnel configuration
+# Cloudflare routes traffic to whichever tunnel is healthy
+
+# Server 1 (US East)
+cloudflared tunnel run my-app-tunnel
+
+# Server 2 (EU West)  
+cloudflared tunnel run my-app-tunnel
+
+# Configure load balancing in Cloudflare Dashboard or API</code></pre>
+
+                <h2>Monitoring and Debugging</h2>
+                <p>Check tunnel status and logs:</p>
+
+<pre><code class="language-bash"># View running tunnels
+cloudflared tunnel list
+
+# View logs (if running as systemd)
+journalctl -u cloudflared -f
+
+# Check a specific tunnel's connections
+cloudflared tunnel info &lt;tunnel-name&gt;
+
+# Test connectivity from Cloudflare's edge
+curl https://myapp.example.com</code></pre>
+
+                <h2>Security Best Practices</h2>
+                <ul>
+                    <li><strong>Always end ingress rules with <code>http_status:404</code></strong> — prevents accidental exposure of services you forgot to configure</li>
+                    <li><strong>Combine with Cloudflare Access</strong> for internal tools — add MFA/SSO without touching your app code</li>
+                    <li><strong>Use HTTPS locally too</strong> — <code>service: https://localhost:8443</code> with <code>originRequest: noTLSVerify: true</code> for self-signed certs</li>
+                    <li><strong>Rotate credentials</strong> — periodically re-authenticate with <code>cloudflared tunnel login</code></li>
+                    <li><strong>Monitor connections</strong> — set up alerts if a tunnel goes down using Cloudflare's API</li>
+                </ul>
+
+                <h2>Tunnel vs Traditional Reverse Proxy</h2>
+                <p>Here's why tunnels win for most use cases:</p>
+
+<pre><code class="language-text">Traditional Nginx Setup:
+  Internet → Firewall (open 80/443) → Nginx → App
+  - You manage SSL certs (Let's Encrypt, renewal)
+  - You manage firewall rules
+  - Your server has a public IP (attack surface)
+  - DDoS hits your server's bandwidth first
+
+Cloudflare Tunnel:
+  Internet → Cloudflare Edge → Tunnel → App
+  - Cloudflare manages SSL (Automatic HTTPS)
+  - No firewall rules needed
+  - No public IP required (NAT works)
+  - DDoS absorbed by Cloudflare first</code></pre>
+
+                <h2>Python Script: Tunnel Health Monitor</h2>
+                <p>Here's a quick Python script that monitors your tunnel and sends alerts:</p>
+
+<pre><code class="language-python">import subprocess
+import sys
+import time
+
+def check_tunnel_status(tunnel_name):
+    """Check if a Cloudflare tunnel is running and healthy."""
+    try:
+        result = subprocess.run(
+            ["cloudflared", "tunnel", "info", tunnel_name],
+            capture_output=True, text=True, timeout=10
+        )
+        if result.returncode == 0:
+            print(f"✅ Tunnel '{tunnel_name}' is active")
+            return True
+        else:
+            print(f"❌ Tunnel '{tunnel_name}' error: {result.stderr.strip()}")
+            return False
+    except subprocess.TimeoutExpired:
+        print(f"⚠️  Tunnel check timed out")
+        return False
+    except FileNotFoundError:
+        print("❌ cloudflared not found. Install it first.")
+        return False
+
+def monitor_tunnels(tunnels, interval=60):
+    """Continuously monitor multiple tunnels."""
+    print(f"Monitoring {len(tunnels)} tunnel(s) every {interval}s...")
+    while True:
+        for name in tunnels:
+            check_tunnel_status(name)
+        time.sleep(interval)
+
+if __name__ == "__main__":
+    if len(sys.argv) &lt; 2:
+        print("Usage: python tunnel_monitor.py &lt;tunnel1&gt; [&lt;tunnel2&gt; ...]")
+        sys.exit(1)
+    monitor_tunnels(sys.argv[1:])</code></pre>
+
+                <h2>Summary</h2>
+                <p>Cloudflare Tunnels are one of the most impactful changes to how we expose services. Key takeaways:</p>
+                <ul>
+                    <li>Use <code>trycloudflare</code> for instant, no-setup testing</li>
+                    <li>Use <strong>named tunnels</strong> for production — they survive restarts</li>
+                    <li><code>ingress</code> rules let you route multiple hostnames on one tunnel</li>
+                    <li>Always end ingress with <code>http_status:404</code> as a catch-all</li>
+                    <li>Run as a systemd service or Docker container for reliability</li>
+                    <li>Combine with Cloudflare Access for authentication</li>
+                    <li>No open ports, no public IP, no SSL cert management needed</li>
+                </ul>
+
+                <p>The mental model shift: instead of pulling traffic to your server, you push an outbound connection to Cloudflare. It feels backward until you realize it solves 80% of the operational complexity of exposing services to the internet.</p>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo Wong · Built with curiosity and Coffee</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528">GitHub</a>
+                <a href="https://hugow.dev">hugow.dev</a>
+                <a href="/sitemap.xml">Sitemap</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-mode');
+            themeToggle.textContent = '☀';
+        }
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            themeToggle.textContent = isLight ? '☀' : '◐';
+        });
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + "%";
+        });
+    </script>
+</body>
+</html>

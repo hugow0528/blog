@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Security: JWT Authentication and Rate Limiting — Complete Beginner's Guide</title>
+    <meta name="description" content="Learn API security fundamentals — JWT token authentication, password hashing with bcrypt, rate limiting with sliding windows, input validation, CORS, and SQL injection prevention. Working Python code for every concept.">
+    <meta name="keywords" content="api security, jwt authentication, rate limiting, bcrypt, python security, web security, input validation, cors, sql injection">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/api-security-jwt-rate-limiting.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn active">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-detail">
+            <header class="post-header">
+                <div class="post-tags">
+                    <span class="tag security">Security</span>
+                    <span class="tag python">Python</span>
+                    <span class="tag web">Web Dev</span>
+                </div>
+                <h1>API Security: JWT Authentication and Rate Limiting — Complete Beginner's Guide</h1>
+                <div class="post-meta">
+                    <span class="post-date">July 18, 2026</span>
+                    <span class="read-time">13 min read</span>
+                </div>
+            </header>
+
+            <div class="post-content">
+                <p>Every API you build needs two things: a way to verify who is calling it, and a way to prevent abuse. JWT (JSON Web Tokens) solves authentication — verifying user identity without storing session state on your server. Rate limiting solves abuse prevention — stopping bots, brute force attacks, and accidental overload. Together, they form the security foundation of virtually every modern web application.</p>
+
+                <p>We'll build these from scratch in Python, so you understand exactly how they work under the hood before you reach for a library.</p>
+
+                <h2>How JWT Authentication Works</h2>
+                <p>JWT follows a three-step flow:</p>
+                <ol style="margin-left: 24px; margin-bottom: 16px;">
+                    <li><strong>Login:</strong> User sends credentials (username + password). Server verifies them and issues a signed JWT token.</li>
+                    <li><strong>Request:</strong> Client sends the token in the <code>Authorization: Bearer &lt;token&gt;</code> header with every request.</li>
+                    <li><strong>Verification:</strong> Server checks the token's signature and expiry. If valid, it extracts the user data and proceeds.</li>
+                </ol>
+
+                <p>A JWT token has three parts separated by dots: <code>header.payload.signature</code>. The header specifies the algorithm (usually HS256), the payload contains the claims (user ID, expiry time), and the signature proves nobody tampered with the token.</p>
+
+                <h2>Installing Dependencies</h2>
+                <p>We'll use <code>PyJWT</code> for token handling and <code>bcrypt</code> for password hashing:</p>
+
+<pre><code class="language-bash">pip install PyJWT bcrypt</code></pre>
+
+                <h2>Password Hashing with bcrypt</h2>
+                <p>Never store plain-text passwords. Hash them with bcrypt, which is designed to be slow — that's the point. If a database is leaked, bcrypt makes it computationally expensive to crack:</p>
+
+<pre><code class="language-python">import bcrypt
+
+def hash_password(password: str) -> bytes:
+    """Hash a password with bcrypt and a random salt."""
+    salt = bcrypt.gensalt(rounds=12)  # Higher rounds = slower = more secure
+    return bcrypt.hashpw(password.encode("utf-8"), salt)
+
+def verify_password(password: str, hashed: bytes) -> bool:
+    """Verify a password against a bcrypt hash."""
+    return bcrypt.checkpw(password.encode("utf-8"), hashed)
+
+# Example usage
+stored_hash = hash_password("my-secret-password")
+print(verify_password("my-secret-password", stored_hash))  # True
+print(verify_password("wrong-password", stored_hash))       # False</code></pre>
+
+                <p>Each call to <code>hash_password()</code> produces a different hash because bcrypt generates a random salt internally. That's why you can't compare hashes directly — you always use <code>bcrypt.checkpw()</code>, which extracts the salt from the stored hash and re-hashes the input for comparison.</p>
+
+                <h2>Creating and Verifying JWT Tokens</h2>
+                <p>Here's a complete authentication module with token creation and verification:</p>
+
+<pre><code class="language-python">import jwt
+import time
+from datetime import datetime, timedelta, timezone
+
+# NEVER commit this to Git — use environment variables
+SECRET_KEY = "your-super-secret-key-change-in-production"
+ALGORITHM = "HS256"
+TOKEN_EXPIRY_HOURS = 1
+
+def create_token(user_id: str, email: str) -> str:
+    """Create a JWT token for an authenticated user."""
+    now = datetime.now(timezone.utc)
+    payload = {
+        "sub": user_id,             # Subject (user ID)
+        "email": email,             # Custom claim
+        "iat": now,                 # Issued at
+        "exp": now + timedelta(hours=TOKEN_EXPIRY_HOURS),  # Expiry
+    }
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+
+def verify_token(token: str) -> dict:
+    """Verify a JWT token and return its payload."""
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload
+    except jwt.ExpiredSignatureError:
+        return None  # Token has expired
+    except jwt.InvalidTokenError:
+        return None  # Token is invalid or tampered
+
+# Example usage
+token = create_token("user-123", "alice@example.com")
+print(f"Token: {token[:50]}...")
+
+payload = verify_token(token)
+print(f"User: {payload['sub']}, Email: {payload['email']}")
+
+# This returns None — expired or invalid
+print(verify_token("invalid.token.here"))  # None</code></pre>
+
+                <p>Key security points:</p>
+                <ul style="margin-left: 24px; margin-bottom: 16px;">
+                    <li><strong>Short expiry:</strong> Set <code>TOKEN_EXPIRY_HOURS</code> to 1 or fewer. Use refresh tokens for longer sessions.</li>
+                    <li><strong>Strong secret:</strong> Your <code>SECRET_KEY</code> should be at least 32 random characters. Use <code>python -c "import secrets; print(secrets.token_urlsafe(32))"</code> to generate one.</li>
+                    <li><strong>Always specify <code>algorithms</code>:</strong> Without it, PyJWT might accept a less-secure algorithm, opening you to algorithm confusion attacks.</li>
+                </ul>
+
+                <h2>Building a Simple Auth API with Flask</h2>
+                <p>Now let's put it together in a working API:</p>
+
+<pre><code class="language-python">from flask import Flask, request, jsonify
+import bcrypt
+import jwt
+from datetime import datetime, timedelta, timezone
+
+app = Flask(__name__)
+
+SECRET_KEY = "change-me-in-production"
+ALGORITHM = "HS256"
+
+# In-memory user store (use a real database in production)
+users = {
+    "alice": bcrypt.hashpw("password123".encode(), bcrypt.gensalt()),
+    "bob": bcrypt.hashpw("secure456".encode(), bcrypt.gensalt()),
+}
+
+def create_token(username: str) -> str:
+    payload = {
+        "sub": username,
+        "iat": datetime.now(timezone.utc),
+        "exp": datetime.now(timezone.utc) + timedelta(hours=1),
+    }
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+
+def get_current_user(token: str):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload["sub"]
+    except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
+        return None
+
+def require_auth(f):
+    """Decorator to protect routes with JWT authentication."""
+    from functools import wraps
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        auth_header = request.headers.get("Authorization")
+        if not auth_header or not auth_header.startswith("Bearer "):
+            return jsonify({"error": "Missing or invalid authorization header"}), 401
+        token = auth_header.split(" ")[1]
+        username = get_current_user(token)
+        if username is None:
+            return jsonify({"error": "Invalid or expired token"}), 401
+        request.current_user = username
+        return f(*args, **kwargs)
+    return decorated
+
+@app.route("/api/login", methods=["POST"])
+def login():
+    data = request.get_json()
+    username = data.get("username", "")
+    password = data.get("password", "")
+
+    if not username or not password:
+        return jsonify({"error": "Username and password required"}), 400
+
+    stored_hash = users.get(username)
+    if not stored_hash or not bcrypt.checkpw(password.encode(), stored_hash):
+        return jsonify({"error": "Invalid credentials"}), 401
+
+    token = create_token(username)
+    return jsonify({"token": token, "expires_in": 3600})
+
+@app.route("/api/profile", methods=["GET"])
+@require_auth
+def profile():
+    return jsonify({
+        "username": request.current_user,
+        "message": "This is your private profile data"
+    })
+
+@app.route("/api/secret", methods=["GET"])
+@require_auth
+def secret():
+    return jsonify({"secret": "The answer is 42"})
+
+if __name__ == "__main__":
+    app.run(debug=True, port=5000)</code></pre>
+
+                <p>Test it with curl:</p>
+
+<pre><code class="language-bash"># 1. Login to get a token
+curl -X POST http://localhost:5000/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "alice", "password": "password123"}'
+
+# 2. Use the token to access protected routes
+curl http://localhost:5000/api/profile \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE"
+
+# 3. Access without a token — should get 401
+curl http://localhost:5000/api/secret</code></pre>
+
+                <h2>Rate Limiting: Preventing Abuse</h2>
+                <p>Even with authentication, attackers can hammer your login endpoint with thousands of password guesses per minute. Rate limiting throttles requests per client, making brute force attacks impractical. We'll implement a <strong>sliding window</strong> rate limiter using a Python dictionary:</p>
+
+<pre><code class="language-python">import time
+import threading
+from collections import defaultdict
+
+class RateLimiter:
+    """Sliding window rate limiter per client IP."""
+
+    def __init__(self, max_requests: int = 10, window_seconds: int = 60):
+        self.max_requests = max_requests
+        self.window_seconds = window_seconds
+        self.requests = defaultdict(list)  # ip -> [timestamp, ...]
+        self.lock = threading.Lock()
+
+    def is_allowed(self, client_ip: str) -> bool:
+        """Check if a request from client_ip is allowed right now."""
+        now = time.time()
+        cutoff = now - self.window_seconds
+
+        with self.lock:
+            # Remove expired timestamps
+            self.requests[client_ip] = [
+                ts for ts in self.requests[client_ip] if ts > cutoff
+            ]
+
+            # Check limit
+            if len(self.requests[client_ip]) >= self.max_requests:
+                return False
+
+            # Record this request
+            self.requests[client_ip].append(now)
+            return True
+
+    def remaining(self, client_ip: str) -> int:
+        """How many requests are left in the current window."""
+        now = time.time()
+        cutoff = now - self.window_seconds
+
+        with self.lock:
+            active = [ts for ts in self.requests[client_ip] if ts > cutoff]
+            return max(0, self.max_requests - len(active))
+
+    def reset(self, client_ip: str):
+        """Reset rate limit for a specific client."""
+        with self.lock:
+            self.requests[client_ip] = []
+
+# Example usage
+limiter = RateLimiter(max_requests=5, window_seconds=60)
+
+for i in range(7):
+    allowed = limiter.is_allowed("192.168.1.100")
+    print(f"Request {i+1}: {'Allowed' if allowed else 'Blocked'} — {limiter.remaining('192.168.1.100')} remaining")</code></pre>
+
+                <p>Output:</p>
+<pre><code>Request 1: Allowed — 4 remaining
+Request 2: Allowed — 3 remaining
+Request 3: Allowed — 2 remaining
+Request 4: Allowed — 1 remaining
+Request 5: Allowed — 0 remaining
+Request 6: Blocked — 0 remaining
+Request 7: Blocked — 0 remaining</code></pre>
+
+                <h2>Integrating Rate Limiting with Flask</h2>
+                <p>Add rate limiting as middleware using Flask's <code>before_request</code> hook:</p>
+
+<pre><code class="language-python">from flask import request, jsonify
+
+# Create a stricter limiter for the login endpoint
+login_limiter = RateLimiter(max_requests=5, window_seconds=60)
+
+@app.before_request
+def check_rate_limit():
+    """Block requests that exceed the rate limit."""
+    client_ip = request.remote_addr
+
+    # Stricter limits for authentication endpoints
+    if request.path == "/api/login" and request.method == "POST":
+        if not login_limiter.is_allowed(client_ip):
+            return jsonify({
+                "error": "Rate limit exceeded. Try again later.",
+                "retry_after": 60
+            }), 429
+
+    # General API rate limit (20 requests per minute)
+    if request.path.startswith("/api/"):
+        general_limiter = RateLimiter(max_requests=20, window_seconds=60)
+        if not general_limiter.is_allowed(client_ip):
+            return jsonify({
+                "error": "Too many requests. Slow down.",
+                "retry_after": 60
+            }), 429</code></pre>
+
+                <p>The HTTP 429 status code (<strong>Too Many Requests</strong>) tells the client to back off. The <code>retry_after</code> field tells them how many seconds to wait.</p>
+
+                <h2>Input Validation and Sanitization</h2>
+                <p>Rate limiting stops volume attacks. Input validation stops injection attacks. Always validate and reject bad input before it reaches your business logic:</p>
+
+<pre><code class="language-python">import re
+from typing import Optional
+
+def validate_username(username: str) -> Optional[str]:
+    """Validate a username. Returns error message or None if valid."""
+    if not username:
+        return "Username is required"
+    if len(username) < 3:
+        return "Username must be at least 3 characters"
+    if len(username) > 30:
+        return "Username must be at most 30 characters"
+    if not re.match(r"^[a-zA-Z0-9_-]+$", username):
+        return "Username can only contain letters, numbers, underscores, and hyphens"
+    return None
+
+def validate_password(password: str) -> Optional[str]:
+    """Validate password strength."""
+    if not password:
+        return "Password is required"
+    if len(password) < 8:
+        return "Password must be at least 8 characters"
+    if len(password) > 128:
+        return "Password must be at most 128 characters"
+    if not re.search(r"[A-Z]", password):
+        return "Password must contain at least one uppercase letter"
+    if not re.search(r"[a-z]", password):
+        return "Password must contain at least one lowercase letter"
+    if not re.search(r"[0-9]", password):
+        return "Password must contain at least one digit"
+    return None
+
+def validate_email(email: str) -> Optional[str]:
+    """Basic email validation."""
+    pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+    if not re.match(pattern, email):
+        return "Invalid email format"
+    if len(email) > 254:
+        return "Email must be at most 254 characters"
+    return None
+
+# Usage in a signup endpoint
+@app.route("/api/signup", methods=["POST"])
+def signup():
+    data = request.get_json()
+
+    # Validate all inputs first
+    errors = []
+    username = data.get("username", "")
+    password = data.get("password", "")
+    email = data.get("email", "")
+
+    error = validate_username(username)
+    if error: errors.append(error)
+
+    error = validate_password(password)
+    if error: errors.append(error)
+
+    error = validate_email(email)
+    if error: errors.append(error)
+
+    if errors:
+        return jsonify({"errors": errors}), 400
+
+    # Input is clean — proceed with registration
+    return jsonify({"message": "Validation passed, registering..."}), 200</code></pre>
+
+                <h2>SQL Injection Prevention</h2>
+                <p>SQL injection is one of the most common web vulnerabilities. It occurs when user input is concatenated directly into SQL queries:</p>
+
+<pre><code class="language-python"># ❌ DANGEROUS — SQL injection vulnerability
+query = f"SELECT * FROM users WHERE username = '{username}'"
+
+# ✅ SAFE — use parameterized queries
+cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
+
+# ✅ ALSO SAFE — use an ORM like SQLAlchemy
+user = User.query.filter_by(username=username).first()</code></pre>
+
+                <p>Parameterized queries separate the SQL structure from the data. The database driver handles escaping, so <code>' OR '1'='1</code> becomes a literal search string, not a logic exploit.</p>
+
+                <h2>Security Headers</h2>
+                <p>Add these HTTP headers to every API response for defense in depth:</p>
+
+<pre><code class="language-python">@app.after_request
+def add_security_headers(response):
+    """Add security headers to every response."""
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Strict-Transport-Security"] = \
+        "max-age=31536000; includeSubDomains"
+    response.headers["Content-Security-Policy"] = \
+        "default-src 'none'"
+    response.headers["Cache-Control"] = "no-store"
+    return response</code></pre>
+
+                <p>Each header addresses a specific attack vector: MIME sniffing, clickjacking, XSS, protocol downgrade, resource injection, and sensitive data caching.</p>
+
+                <h2>Complete Security Checklist</h2>
+                <p>Before deploying any API, verify:</p>
+                <ul style="margin-left: 24px; margin-bottom: 16px;">
+                    <li><strong>Passwords hashed</strong> with bcrypt, scrypt, or argon2 — never plain text or MD5</li>
+                    <li><strong>JWT tokens expire</strong> within 1 hour, with a secure refresh mechanism</li>
+                    <li><strong>Rate limiting</strong> on login (5/min) and general API (20-60/min)</li>
+                    <li><strong>Input validation</strong> on every endpoint — reject bad data early</li>
+                    <li><strong>Parameterized queries</strong> for all database access — zero string concatenation</li>
+                    <li><strong>HTTPS enforced</strong> in production — never serve auth over plain HTTP</li>
+                    <li><strong>CORS configured</strong> to allow only your frontend domain</li>
+                    <li><strong>Security headers</strong> added to every response</li>
+                    <li><strong>Secrets in environment variables</strong> — never in code or config files</li>
+                    <li><strong>Error messages sanitized</strong> — no stack traces, no database details</li>
+                </ul>
+
+                <h2>Summary</h2>
+                <p>API security starts with two pillars: authentication (JWT) and abuse prevention (rate limiting). Layer in input validation, parameterized queries, security headers, and proper secret management, and you have a solid foundation. Build the JWT auth module first — login, token creation, and a protected route decorator. Then add rate limiting to the login endpoint. Together, they stop the vast majority of automated attacks. Security is not a feature you bolt on later; it's something you build from line one. Start protecting your APIs today, and you'll save yourself from the nightmare of a production breach tomorrow.</p>
+            </div>
+        </article>
+    </main>
+
+    <footer class="container" style="text-align:center;padding:24px 0 48px;color:var(--text-quaternary);font-size:12px;">
+        <p>Built with ☕ by Hugo Wong · Hosted on Cloudflare Pages</p>
+    </footer>
+
+    <script>
+    window.addEventListener('scroll', () => {
+        const bar = document.getElementById('progressBar');
+        if (bar) {
+            const scrollTop = window.scrollY;
+            const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+            bar.style.width = (scrollTop / docHeight * 100) + '%';
+        }
+    });
+    </script>
+</body>
+</html>

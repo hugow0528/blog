@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSH Config File: Manage Multiple Servers Like a Pro — Complete Guide | Hugo's Dev Notes</title>
+    
+    <meta name="description" content="Learn to configure ~/.ssh/config for managing multiple servers — hosts, aliases, keys, port forwarding, multiplexing, and security settings. Working examples for every concept.">
+    <meta name="keywords" content="ssh config, ssh aliases, port forwarding, ssh multiplexing, server management, devops">
+    <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/ssh-config.html">
+    
+    <meta property="og:title" content="SSH Config File: Manage Multiple Servers Like a Pro — Complete Guide">
+    <meta property="og:description" content="Master SSH config file for managing multiple servers with aliases, keys, and port forwarding.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.hugow.dev/posts/ssh-config.html">
+    
+    <link rel="stylesheet" href="../style.css">
+    <link rel="sitemap" type="application/xml" href="/sitemap.xml">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn active">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <article class="post-content container">
+        <span class="tag devops">DevOps</span>
+        <span class="tag security">Security</span>
+        <h1>SSH Config File: Manage Multiple Servers Like a Pro — Complete Guide</h1>
+        <div class="post-meta">
+            <span class="post-date">July 15, 2026</span>
+            <span class="read-time">10 min read</span>
+        </div>
+
+        <p>If you manage more than two servers, you've probably memorized long SSH commands with custom ports, key files, and jump hosts. Something like:</p>
+
+        <pre><code class="language-bash">ssh -i ~/.ssh/prod_key -p 2222 deploy@192.168.1.100</code></pre>
+
+        <p>This works — until you need to do it five times a day across ten different machines. The <strong>SSH config file</strong> (<code>~/.ssh/config</code>) lets you define all these connections once, then access them with simple aliases like <code>ssh prod</code>.</p>
+
+        <p>This guide covers everything from basic host aliases to advanced features like multiplexing, proxy jumping, and local port forwarding.</p>
+
+        <h2 id="location">Where Is the SSH Config File?</h2>
+
+        <p>The SSH config file lives at <code>~/.ssh/config</code> in your home directory. There's no config file by default — you create it:</p>
+
+        <pre><code class="language-bash"># Create the .ssh directory (usually already exists)
+mkdir -p ~/.ssh
+
+# Create/edit the config file
+nano ~/.ssh/config
+
+# ⚠️ IMPORTANT: Set correct permissions
+chmod 600 ~/.ssh/config</code></pre>
+
+        <p>The <code>chmod 600</code> step is critical. SSH will <strong>refuse to use</strong> a config file with permissions that are too open (no one else should be able to read your SSH settings). You'll get the error: <code>Permissions 0644 for '~/.ssh/config' are too open</code> if you skip this.</p>
+
+        <h2 id="basic-config">Basic Host Entries</h2>
+
+        <p>The simplest config entry maps a friendly name to a server:</p>
+
+        <pre><code class="language-config"># ~/.ssh/config
+Host prod
+    HostName 192.168.1.100
+    User deploy
+    Port 2222
+    IdentityFile ~/.ssh/prod_key</code></pre>
+
+        <p>Now instead of typing the full command, you just type:</p>
+
+        <pre><code class="language-bash">ssh prod</code></pre>
+
+        <p>This connects as user <code>deploy</code> to <code>192.168.1.100</code> on port <code>2222</code> using the key at <code>~/.ssh/prod_key</code>. The entire verbose command is reduced to two words.</p>
+
+        <h2 id="multiple-hosts">Managing Multiple Servers</h2>
+
+        <p>Define every server you use. Here's a realistic config for a developer managing a small infrastructure:</p>
+
+        <pre><code class="language-config"># ~/.ssh/config
+
+# Development server
+Host dev
+    HostName dev.example.com
+    User ubuntu
+    IdentityFile ~/.ssh/id_ed25519
+
+# Staging environment
+Host staging
+    HostName staging.example.com
+    User deploy
+    IdentityFile ~/.ssh/staging_key
+    Port 22
+
+# Production — restricted access
+Host prod
+    HostName 10.0.0.50
+    User deploy
+    IdentityFile ~/.ssh/prod_key
+    Port 2222
+    ServerAliveInterval 60
+    ServerAliveCountMax 3
+
+# Database server (SSH-tunneled)
+Host db-prod
+    HostName 10.0.0.100
+    User postgres
+    IdentityFile ~/.ssh/prod_key
+    Port 2222</code></pre>
+
+        <p>Each <code>Host</code> block defines everything needed to connect. The <code>ServerAliveInterval</code> and <code>ServerAliveCountMax</code> settings send a keep-alive ping every 60 seconds and disconnect after 3 missed responses — preventing stale connections from hanging.</p>
+
+        <h2 id="wildcards">Wildcards and Patterns</h2>
+
+        <p>Use wildcards (<code>*</code>) and question marks (<code>?</code>) to match multiple hosts:</p>
+
+        <pre><code class="language-config"># All web servers share the same settings
+Host web-*
+    User deploy
+    IdentityFile ~/.ssh/web_key
+    ServerAliveInterval 60
+
+# Each web server
+Host web-1
+    HostName 10.0.1.10
+
+Host web-2
+    HostName 10.0.1.11
+
+Host web-3
+    HostName 10.0.1.12</code></pre>
+
+        <p>Now <code>ssh web-1</code> connects as <code>deploy</code> using <code>web_key</code> with keep-alive enabled — all inherited from the <code>web-*</code> pattern. If you later add <code>web-4</code>, it automatically inherits the same settings.</p>
+
+        <p>You can also use the <code>Host *</code> pattern to set <strong>global defaults</strong> that apply to every connection:</p>
+
+        <pre><code class="language-config"># Global defaults — applied to every SSH connection
+Host *
+    ServerAliveInterval 60
+    ServerAliveCountMax 3
+    AddKeysToAgent yes
+    IdentitiesOnly yes
+    ForwardAgent no
+    Compression yes</code></pre>
+
+        <h2 id="proxyjump">Proxy Jump (Bastion Host)</h2>
+
+        <p>Many production setups require you to connect to an internal server through a <strong>bastion host</strong> (also called a jump box). Instead of manually chaining SSH sessions, use <code>ProxyJump</code>:</p>
+
+        <pre><code class="language-config"># Bastion / jump host
+Host bastion
+    HostName jump.example.com
+    User ubuntu
+    IdentityFile ~/.ssh/bastion_key
+
+# Internal servers accessed through bastion
+Host internal-*
+    ProxyJump bastion
+    User deploy
+    IdentityFile ~/.ssh/internal_key</code></pre>
+
+        <p>Now <code>ssh internal-db</code> automatically connects to the bastion first, then jumps through to the internal database server — all in one command. The <code>ProxyJump</code> directive handles the entire chain.</p>
+
+        <p>You can also chain multiple jumps:</p>
+
+        <pre><code class="language-config">Host deep-internal
+    HostName 10.10.0.50
+    ProxyJump bastion, internal-jump
+    User deploy</code></pre>
+
+        <p>This connects: <strong>your laptop → bastion → internal-jump → deep-internal</strong>. Three hops, one command.</p>
+
+        <h2 id="local-forwarding">Local Port Forwarding</h2>
+
+        <p>SSH can tunnel network traffic. A common use case is accessing a database or admin panel that only listens on <code>localhost</code> on a remote server:</p>
+
+        <pre><code class="language-config"># PostgreSQL on prod, accessible locally
+Host prod-db-tunnel
+    HostName 10.0.0.50
+    User deploy
+    IdentityFile ~/.ssh/prod_key
+    LocalForward 5432 localhost:5432
+    NLazyConnect yes</code></pre>
+
+        <pre><code class="language-bash"># Start the tunnel in the background
+ssh -fN prod-db-tunnel
+
+# Now connect to PostgreSQL locally
+psql -h localhost -p 5432 -U myuser mydb</code></pre>
+
+        <p>The <code>LocalForward 5432 localhost:5432</code> directive forwards your local port 5432 to the remote server's localhost:5432. The <code>-f</code> flag puts SSH in the background, and <code>-N</code> tells it not to execute any remote commands (tunnel only).</p>
+
+        <p>Other common forwarding scenarios:</p>
+
+        <pre><code class="language-config"># Django admin panel on prod
+Host prod-admin
+    HostName prod.example.com
+    User deploy
+    LocalForward 8080 localhost:8000
+
+# Redis on staging
+Host staging-redis
+    HostName staging.example.com
+    User deploy
+    LocalForward 6379 localhost:6379</code></pre>
+
+        <h2 id="remote-forwarding">Remote Port Forwarding</h2>
+
+        <p>Remote forwarding does the opposite — it exposes your <strong>local</strong> service on the <strong>remote</strong> server. Useful for exposing a local development server to teammates:</p>
+
+        <pre><code class="language-config"># Expose local dev server on remote machine
+Host dev-share
+    HostName dev.example.com
+    User ubuntu
+    RemoteForward 8080 localhost:3000</code></pre>
+
+        <pre><code class="language-bash"># Start the tunnel
+ssh -fN dev-share
+
+# Your local port 3000 is now accessible at dev.example.com:8080</code></pre>
+
+        <h2 id="multiplexing">Connection Multiplexing</h2>
+
+        <p>Every SSH connection performs a handshake (key exchange, authentication) that takes 1-3 seconds. If you frequently open new connections to the same server — say, running <code>ssh prod</code>, then <code>scp file.txt prod:~/</code>, then <code>ssh prod</code> again — each one repeats the full handshake.</p>
+
+        <p><strong>Connection multiplexing</strong> reuses a single TCP connection for multiple sessions:</p>
+
+        <pre><code class="language-config"># ~/.ssh/config
+Host *
+    # Master socket file location
+    ControlMaster auto
+    ControlPath ~/.ssh/control-%r@%h-%p
+    ControlPersist 10m</code></pre>
+
+        <p>How it works:</p>
+
+        <ul>
+            <li><strong><code>ControlMaster auto</code></strong>: SSH automatically creates a master connection when the first session starts</li>
+            <li><strong><code>ControlPath</code></strong>: Defines where the Unix socket file lives. The variables expand to the username, hostname, and port — ensuring each server gets a unique socket</li>
+            <li><strong><code>ControlPersist 10m</code></strong>: The master connection stays alive for 10 minutes after the last session closes, ready for the next connection</li>
+        </ul>
+
+        <p>After the first connection, subsequent SSH sessions to the same server are nearly instant — they piggyback on the existing master connection. SCP, SFTP, and SSH all benefit.</p>
+
+        <p>To check active multiplexed connections:</p>
+
+        <pre><code class="language-bash"># List active SSH control connections
+ssh -O check prod
+
+# Stop the master connection
+ssh -O exit prod
+
+# List all control socket files
+ls -la ~/.ssh/control-*</code></pre>
+
+        <h2 id="scp-sftp">SCP and SFTP with Config</h2>
+
+        <p>Both <code>scp</code> and <code>sftp</code> read <code>~/.ssh/config</code>, so your host aliases work for file transfer too:</p>
+
+        <pre><code class="language-bash"># Copy a file to prod
+scp app.tar.gz prod:/opt/deploy/
+
+# Download logs from staging
+scp staging:/var/log/app.log ./app.log
+
+# Interactive file browser on prod
+sftp prod
+
+# Copy recursively
+scp -r ./dist prod:/var/www/html/</code></pre>
+
+        <p>Since you've already defined the user, port, and key in your config, these commands work with zero extra arguments.</p>
+
+        <h2 id="security-settings">Security Settings</h2>
+
+        <p>Add these settings to your config to harden your SSH connections:</p>
+
+        <pre><code class="language-config">Host *
+    # Only use protocol 2 (protocol 1 is insecure)
+    Protocol 2
+
+    # Don't add keys to the agent unless explicitly allowed
+    AddKeysToAgent no
+
+    # Don't forward your SSH agent (prevent credential theft)
+    ForwardAgent no
+
+    # Only use the specified key, not all loaded keys
+    IdentitiesOnly yes
+
+    # Hash known hosts to prevent hostname leaks
+    HashKnownHosts yes
+
+    # Strict host key checking
+    StrictHostKeyChecking ask
+
+    # Don't save known hosts interactively
+    UpdateHostKeys no
+
+    # Set a per-connection timeout
+    ConnectTimeout 10
+
+    # Keep-alive to detect dead connections
+    ServerAliveInterval 60
+    ServerAliveCountMax 3</code></pre>
+
+        <p><strong>Exception for <code>ForwardAgent</code>:</code> You might need <code>ForwardAgent yes</code> for proxy jumps or when you need to access GitHub from the remote server using your local keys. Only enable it when necessary and on trusted servers:</p>
+
+        <pre><code class="language-config">Host bastion
+    HostName jump.example.com
+    User ubuntu
+    ForwardAgent yes  # Only on the jump host</code></pre>
+
+        <h2 id="complete-example">Complete Example Config</h2>
+
+        <p>Here's a comprehensive config you can use as a starting point:</p>
+
+        <pre><code class="language-config"># ~/.ssh/config
+
+# ── Global Defaults ──────────────────────────────────────
+Host *
+    ServerAliveInterval 60
+    ServerAliveCountMax 3
+    AddKeysToAgent yes
+    IdentitiesOnly yes
+    ForwardAgent no
+    Compression yes
+    ConnectTimeout 10
+    HashKnownHosts yes
+    StrictHostKeyChecking ask
+
+    # Connection multiplexing
+    ControlMaster auto
+    ControlPath ~/.ssh/control-%r@%h-%p
+    ControlPersist 10m
+
+# ── Personal Keys ────────────────────────────────────────
+Host *
+    IdentityFile ~/.ssh/id_ed25519
+    IdentityFile ~/.ssh/id_ed25519_work
+
+# ── Development ──────────────────────────────────────────
+Host dev
+    HostName dev.example.com
+    User ubuntu
+    LocalForward 3000 localhost:3000
+    LocalForward 5432 localhost:5432
+
+# ── Staging ──────────────────────────────────────────────
+Host staging
+    HostName staging.example.com
+    User deploy
+    IdentityFile ~/.ssh/staging_key
+
+# ── Production ───────────────────────────────────────────
+Host prod
+    HostName 10.0.0.50
+    User deploy
+    IdentityFile ~/.ssh/prod_key
+    Port 2222
+
+Host prod-db
+    HostName 10.0.0.100
+    User postgres
+    IdentityFile ~/.ssh/prod_key
+    Port 2222
+    LocalForward 5432 localhost:5432
+
+# ── Bastion / Jump Host ─────────────────────────────────
+Host bastion
+    HostName jump.example.com
+    User ubuntu
+    ForwardAgent yes
+
+# Internal servers accessed through bastion
+Host internal-*
+    ProxyJump bastion
+    User deploy
+    IdentityFile ~/.ssh/internal_key</code></pre>
+
+        <h2 id="summary">Summary</h2>
+
+        <p>The SSH config file transforms a collection of long, hard-to-remember commands into simple, consistent aliases. Key features covered:</p>
+
+        <ul>
+            <li><strong>Host entries</strong> — Define aliases with hostname, user, port, and key</li>
+            <li><strong>Wildcards</strong> — Share settings across groups of servers with <code>Host web-*</code></li>
+            <li><strong>ProxyJump</strong> — Chain connections through bastion hosts transparently</li>
+            <li><strong>LocalForward</strong> — Access remote services on your local machine</li>
+            <li><strong>RemoteForward</strong> — Expose local services to remote machines</li>
+            <li><strong>Multiplexing</strong> — Reuse connections for instant subsequent sessions</li>
+            <li><strong>Security settings</strong> — Harden connections with agent forwarding controls, key policies, and timeouts</li>
+        </ul>
+
+        <p>Once your config is set up, commands like <code>ssh prod</code>, <code>scp logs.txt prod:~/</code>, and <code>sftp dev</code> become second nature. Spend an hour building your config, save minutes every day.</p>
+
+        <div class="back-link">
+            <a href="../devops.html">← Back to DevOps tutorials</a>
+        </div>
+    </article>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes · Built with HTML, CSS &amp; Cloudflare Pages</p>
+        </div>
+    </footer>
+
+    <script>
+        // Progress bar
+        window.addEventListener('scroll', () => {
+            const winScroll = document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + '%';
+        });
+        // Theme toggle
+        const toggle = document.getElementById('themeToggle');
+        toggle.addEventListener('click', () => document.body.classList.toggle('light-theme'));
+    </script>
+</body>
+</html>

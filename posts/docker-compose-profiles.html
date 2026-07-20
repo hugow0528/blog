@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docker Compose Profiles: Manage Multi-Environment Setups — Complete Beginner's Guide | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn Docker Compose profiles to selectively start services — dev databases, test workers, staging overrides, and production-like environments with one docker-compose.yml file.">
+    <meta name="keywords" content="docker compose profiles, docker compose multi-environment, docker profiles, selective service startup, docker devops">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/docker-compose-profiles.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <article class="post-content">
+        <a href="../index.html" class="back-link">← All Posts</a>
+        <span class="tag devops">DevOps</span>
+        <h1>Docker Compose Profiles: Manage Multi-Environment Setups — Complete Beginner's Guide</h1>
+        <time datetime="2026-07-17">July 17, 2026 · 10 min read</time>
+
+        <p>You've been using <code>docker-compose.yml</code> files to orchestrate multi-container applications. Your stack works great in development — your web app, database, and cache all spin up together. But now you want to run some services only during testing, skip the heavy analytics pipeline in local dev, or swap in a mock service for staging. Creating separate compose files for each scenario is messy and hard to maintain.</p>
+
+        <p><strong>Docker Compose profiles</strong> solve this elegantly. With a single <code>docker-compose.yml</code>, you can define which services belong to which profile and selectively start them. No more juggling multiple compose files or commenting out services. This guide covers everything from your first <code>profiles:</code> declaration to production-grade multi-environment setups.</p>
+
+        <h2>What Are Docker Compose Profiles?</h2>
+
+        <p>Profiles are a way to group services in your Docker Compose file. When you run <code>docker compose up</code> without specifying a profile, only services without a profile (or with an empty profile list) start. Services assigned to a profile only launch when you explicitly enable that profile using <code>--profile</code>.</p>
+
+        <p>Think of profiles as <strong>environment switches</strong> baked into your compose file. One file, multiple environments, zero duplication.</p>
+
+        <h2>Basic Profile Setup</h2>
+
+        <p>Here's the simplest example — a web app with an optional Redis cache that you only want during performance testing:</p>
+
+        <pre><code class="language-yaml"># docker-compose.yml
+services:
+  web:
+    image: myapp:latest
+    ports:
+      - "8000:8000"
+    environment:
+      - REDIS_URL=redis://cache:6379
+
+  cache:
+    image: redis:7-alpine
+    profiles:
+      - perf-test</code></pre>
+
+        <p>Run the web app alone:</p>
+
+        <pre><code class="language-bash"># Only 'web' starts (no profile assigned)
+docker compose up -d</code></pre>
+
+        <p>Run the full stack with Redis:</p>
+
+        <pre><code class="language-bash"># Both 'web' and 'cache' start
+docker compose --profile perf-test up -d</code></pre>
+
+        <h2>Real-World Example: Full Development Stack</h2>
+
+        <p>Let's build a realistic compose file for a Python application. This stack includes your core services plus optional tools for different workflows:</p>
+
+        <pre><code class="language-yaml"># docker-compose.yml
+services:
+  # ── Core Services (always run) ──
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://app:secret@db:5432/app
+      - REDIS_URL=redis://cache:6379
+      - ENVIRONMENT=development
+    depends_on:
+      db:
+        condition: service_healthy
+      cache:
+        condition: service_started
+    volumes:
+      - ./backend:/app
+    profiles:
+      - core
+      - dev
+      - staging
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=app
+      - POSTGRES_PASSWORD=secret
+      - POSTGRES_DB=app
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    profiles:
+      - core
+      - dev
+      - staging
+
+  cache:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    profiles:
+      - core
+      - dev
+      - staging
+
+  # ── Development Tools (only in dev) ──
+  admin:
+    image: adminer:latest
+    ports:
+      - "8080:8080"
+    environment:
+      - ADMINER_DEFAULT_SERVER=db
+    profiles:
+      - dev
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    ports:
+      - "1025:1025"  # SMTP
+      - "8025:8025"  # Web UI
+    profiles:
+      - dev
+
+  # ── Testing Services ──
+  test-db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=test
+      - POSTGRES_PASSWORD=test
+      - POSTGRES_DB=test_app
+    profiles:
+      - test
+
+  # ── Monitoring (only for staging/production) ──
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    profiles:
+      - staging
+      - monitoring
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    profiles:
+      - staging
+      - monitoring
+
+volumes:
+  pgdata:</code></pre>
+
+        <p>This single file handles <strong>four different scenarios</strong>:</p>
+
+        <ul>
+          <li><code>docker compose --profile dev up -d</code> — Full development stack with Adminer and MailHog</li>
+          <li><code>docker compose --profile test up -d</code> — Clean test database for running pytest</li>
+          <li><code>docker compose --profile staging up -d</code> — Production-like stack with monitoring</li>
+          <li><code>docker compose --profile core up -d</code> — Minimal stack, just the essentials</li>
+        </ul>
+
+        <h2>Multiple Profiles per Service</h2>
+
+        <p>A service can belong to multiple profiles. If a service has profiles <code>[dev, staging]</code>, it starts when you enable <strong>either</strong> profile. This is how the core services (api, db, cache) work in the example above — they're available in both <code>core</code>, <code>dev</code>, and <code>staging</code>.</p>
+
+        <p>You can also pass <strong>multiple profiles at once</strong>:</p>
+
+        <pre><code class="language-bash"># Start dev + monitoring together
+docker compose --profile dev --profile monitoring up -d</code></pre>
+
+        <h2>Using <code>COMPOSE_PROFILES</code> Environment Variable</h2>
+
+        <p>Instead of passing <code>--profile</code> every time, set the <code>COMPOSE_PROFILES</code> environment variable. Docker Compose reads this and applies the profiles automatically:</p>
+
+        <pre><code class="language-bash"># In your .env file
+COMPOSE_PROFILES=dev
+
+# Now this starts all dev services automatically
+docker compose up -d</code></pre>
+
+        <p>Or set it in your shell for a temporary session:</p>
+
+        <pre><code class="language-bash"># Bash/Zsh
+export COMPOSE_PROFILES="dev,monitoring"
+docker compose up -d</code></pre>
+
+        <h2>Profiles with Dockerfile Multi-Stage Builds</h2>
+
+        <p>Profiles pair beautifully with multi-stage Dockerfiles. You can define different build stages for different profiles:</p>
+
+        <pre><code class="language-yaml">services:
+  api:
+    build:
+      context: ./backend
+      target: ${BUILD_TARGET:-production}
+    profiles:
+      - core
+      - dev
+
+  api-debug:
+    build:
+      context: ./backend
+      target: debug
+    volumes:
+      - ./backend:/app
+    command: ["python", "-m", "flask", "run", "--debugger"]
+    profiles:
+      - dev</code></pre>
+
+        <p>Now your dev profile gets the debug build with live code reloading, while staging gets the optimized production build.</p>
+
+        <h2>Profile-Based Environment Overrides</h2>
+
+        <p>Combine profiles with <code>.env</code> files for clean environment-specific configuration:</p>
+
+        <pre><code class="language-bash"># .env.dev
+COMPOSE_PROFILES=dev
+DATABASE_URL=postgresql://app:secret@db:5432/app
+ENVIRONMENT=development
+DEBUG=true
+
+# .env.staging
+COMPOSE_PROFILES=staging
+DATABASE_URL=postgresql://staging:***@staging-db:5432/app
+ENVIRONMENT=staging
+DEBUG=false</code></pre>
+
+        <p>Then use them explicitly:</p>
+
+        <pre><code class="language-bash"># Dev environment
+docker compose --env-file .env.dev up -d
+
+# Staging environment
+docker compose --env-file .env.staging up -d</code></pre>
+
+        <h2>Python Integration: Automated Environment Switching</h2>
+
+        <p>Write a simple Python script to switch between environments without remembering docker commands:</p>
+
+        <pre><code class="language-python">#!/usr/bin/env python3
+"""switch-env.py — Switch Docker Compose environments with one command."""
+
+import subprocess
+import sys
+import os
+
+ENVIRONMENTS = {
+    "dev": {
+        "profiles": ["dev"],
+        "env_file": ".env.dev",
+        "description": "Development (Adminer, MailHog, hot reload)"
+    },
+    "test": {
+        "profiles": ["test"],
+        "env_file": ".env.test",
+        "description": "Testing (clean test database)"
+    },
+    "staging": {
+        "profiles": ["staging", "monitoring"],
+        "env_file": ".env.staging",
+        "description": "Staging (production-like + Prometheus + Grafana)"
+    },
+    "core": {
+        "profiles": ["core"],
+        "env_file": ".env.core",
+        "description": "Core only (API, database, cache)"
+    },
+}
+
+def list_envs():
+    """Print available environments."""
+    print("\nAvailable environments:\n")
+    for name, config in ENVIRONMENTS.items():
+        print(f"  {name:10} — {config['description']}")
+    print()
+
+def switch_env(env_name, action="up"):
+    """Switch to an environment."""
+    if env_name not in ENVIRONMENTS:
+        print(f"❌ Unknown environment: {env_name}")
+        print(f"Run '{sys.argv[0]} list' to see available environments")
+        sys.exit(1)
+
+    config = ENVIRONMENTS[env_name]
+    profile_args = []
+    for profile in config["profiles"]:
+        profile_args.extend(["--profile", profile])
+
+    # Stop current containers first
+    subprocess.run(
+        ["docker", "compose", "--env-file", config["env_file"], "down"],
+        capture_output=True
+    )
+
+    # Start new environment
+    cmd = ["docker", "compose", "--env-file", config["env_file"]] + profile_args + [action]
+    print(f"🚀 Starting environment: {env_name}")
+    print(f"   Profiles: {', '.join(config['profiles'])}")
+    print(f"   Env file: {config['env_file']}")
+    print()
+    subprocess.run(cmd)
+
+def run_tests():
+    """Run tests against the test environment."""
+    print("🧪 Starting test environment and running pytest...")
+    subprocess.run(["python", sys.argv[0], "switch", "test"])
+    subprocess.run(["python", "-m", "pytest", "tests/", "-v"])
+    subprocess.run(["docker", "compose", "--env-file", ".env.test", "down"])
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        list_envs()
+        sys.exit(0)
+
+    command = sys.argv[1]
+
+    if command == "list":
+        list_envs()
+    elif command == "switch":
+        switch_env(sys.argv[2], action=sys.argv[3] if len(sys.argv) > 3 else "up")
+    elif command == "test":
+        run_tests()
+    else:
+        print(f"Usage: {sys.argv[0]} [list|switch|test]")</code></pre>
+
+        <p>Usage is dead simple:</p>
+
+        <pre><code class="language-bash"># List available environments
+python switch-env.py list
+
+# Switch to dev environment
+python switch-env.py switch dev
+
+# Switch to staging
+python switch-env.py switch staging
+
+# Run tests (starts test env, runs pytest, tears down)
+python switch-env.py test</code></pre>
+
+        <h2>Common Profile Patterns</h2>
+
+        <p>Here are patterns I use in every project:</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Pattern</th>
+                    <th>Profile Name</th>
+                    <th>Services Included</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Minimal dev</td>
+                    <td><code>dev</code></td>
+                    <td>API, database, cache + Adminer, MailHog</td>
+                </tr>
+                <tr>
+                    <td>CI/CD testing</td>
+                    <td><code>ci</code></td>
+                    <td>API, test database (no ports exposed)</td>
+                </tr>
+                <tr>
+                    <td>Load testing</td>
+                    <td><code>perf</code></td>
+                    <td>API + k6/Locust load generator</td>
+                </tr>
+                <tr>
+                    <td>Debugging</td>
+                    <td><code>debug</code></td>
+                    <td>API with debugger, port-forwarded IDE</td>
+                </tr>
+                <tr>
+                    <td>Staging</td>
+                    <td><code>staging</code></td>
+                    <td>API, database, cache, Prometheus, Grafana</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Profiles in CI/CD (GitHub Actions)</h2>
+
+        <p>Profiles shine in CI/CD pipelines where you only need specific services:</p>
+
+        <pre><code class="language-yaml"># .github/workflows/test.yml
+name: Test
+on: [push]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      # You can't use profiles directly in GHA services,
+      # but you can start only what you need:
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start test services
+        run: docker compose --profile test up -d --wait
+      - name: Run tests
+        run: python -m pytest tests/ -v
+      - name: Collect coverage
+        run: python -m pytest tests/ --cov=app --cov-report=xml
+      - name: Teardown
+        run: docker compose --profile test down</code></pre>
+
+        <h2>Best Practices and Gotchas</h2>
+
+        <p>Keep these rules in mind when working with profiles:</p>
+
+        <ul>
+          <li><strong>No default profile:</strong> Services without a <code>profiles</code> key always start. This is intentional — use it for services that should run everywhere.</li>
+          <li><strong>Profile is not a network:</strong> Profiles only control which services start. All running services still share the default network.</li>
+          <li><strong>Depends_on works across profiles:</strong> A service in the <code>dev</code> profile can depend on a core service. It just won't start unless the dependency is also started.</li>
+          <li><strong>Use <code>--wait</code> in CI:</code> <code>docker compose up -d --wait</code> blocks until all services with healthchecks are healthy. Essential for CI pipelines.</li>
+          <li><strong>Name profiles descriptively:</strong> <code>dev</code>, <code>test</code>, <code>staging</code> are clear. Avoid <code>profile1</code>, <code>profile2</code>.</li>
+          <li><strong>Combine with env files:</strong> Profiles + <code>--env-file</code> give you complete environment control without duplicating compose files.</li>
+        </ul>
+
+        <blockquote>
+          <p><strong>Pro tip:</strong> If you find yourself writing more than 3 profiles for similar environments, consider whether separate compose files (e.g., <code>docker-compose.dev.yml</code>) would be clearer. Profiles excel when you have 3-5 distinct scenarios in one project.</p>
+        </blockquote>
+
+        <h2>Complete Quick Reference</h2>
+
+        <pre><code class="language-bash"># Start default (no-profile) services
+docker compose up -d
+
+# Start with one profile
+docker compose --profile dev up -d
+
+# Start with multiple profiles
+docker compose --profile dev --profile monitoring up -d
+
+# Set profile via environment variable
+export COMPOSE_PROFILES="dev,monitoring"
+docker compose up -d
+
+# Wait for health checks to pass
+docker compose --profile dev up -d --wait
+
+# Stop only dev profile services
+docker compose --profile dev down
+
+# List services in a profile
+docker compose --profile dev config --services</code></pre>
+
+        <h2>Summary</h2>
+
+        <p>Docker Compose profiles eliminate the need for multiple compose files while giving you precise control over which services run. The key concepts:</p>
+
+        <ol>
+          <li>Assign <code>profiles:</code> to services to make them conditional</li>
+          <li>Use <code>--profile</code> or <code>COMPOSE_PROFILES</code> to enable them</li>
+          <li>Combine with <code>.env</code> files for environment-specific config</li>
+          <li>One service can belong to multiple profiles</li>
+          <li>Services without profiles always start</li>
+        </ol>
+
+        <p>Start with a simple <code>dev</code> and <code>test</code> profile split in your next project. Once you see how cleanly it replaces your commented-out services, you'll never go back.</p>
+    </article>
+
+    <footer>
+        <div class="container">
+            <p>Hugo's Dev Notes © 2026</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528">GitHub</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Progress bar
+        window.addEventListener('scroll', () => {
+            const bar = document.getElementById('progressBar');
+            if (bar) {
+                const scrolled = window.scrollY / (document.documentElement.scrollHeight - window.innerHeight) * 100;
+                bar.style.width = scrolled + '%';
+            }
+        });
+
+        // Theme toggle
+        document.getElementById('themeToggle')?.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            localStorage.setItem('theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
+        });
+        if (localStorage.getItem('theme') === 'light') {
+            document.body.classList.add('light-mode');
+        }
+    </script>
+</body>
+</html>

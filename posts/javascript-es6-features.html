@@ -3,512 +3,647 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JavaScript ES6+ Modern Features Every Developer Should Know</title>
-    <meta name="description" content="Learn modern JavaScript features — let/const, arrow functions, template literals, destructuring, modules, and more. Write cleaner code today.">
-    <meta name="keywords" content="javascript ES6, ES2015, arrow functions, destructuring, template literals, spread operator, modules, modern javascript tutorial">
-        <link rel="canonical" href="https://blog.hugow.dev/posts/javascript-es6-features.html">
+    <title>JavaScript ES6+ Features Every Developer Should Know — Complete Beginner's Guide</title>
+    <meta name="description" content="Learn modern JavaScript ES6+ features — arrow functions, destructuring, template literals, spread/rest, modules, promises, async/await, map/filter/reduce, and more. Working examples for every concept.">
+    <meta name="keywords" content="javascript ES6, arrow functions, destructuring, template literals, spread operator, ES modules, promises, async await, map filter reduce, modern javascript">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/javascript-es6-features.html">
     <link rel="stylesheet" href="../style.css">
-
-    <!-- SEO Structured Data -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "BlogPosting",
-      "headline": "JavaScript ES6+ Modern Features Every Developer Should Know",
-      "description": "Learn modern JavaScript features — let/const, arrow functions, template literals, destructuring, modules, and more. Write cleaner code today.",
-      "datePublished": "2026-07-08",
-      "dateModified": "2026-07-08",
-      "author": {"@type": "Person", "name": "Hugo Wong"},
-      "publisher": {"@type": "Organization", "name": "Hugo's Dev Notes", "url": "https://blog.hugow.dev"},
-      "mainEntityOfPage": "{"@id": "https://blog.hugow.dev/posts/javascript-es6-features.html")}",
-      "keywords": "Web Dev"
-    }
-    </script>
-
-    <!-- Social Meta -->
-    <!-- Open Graph -->
-    <meta property="og:title" content="JavaScript ES6+ Modern Features Every Developer Should Know">
-    <meta property="og:description" content="Learn modern JavaScript features — let/const, arrow functions, template literals, destructuring, modules, and more. Write cleaner code today.">
-    <meta property="og:type" content="article">
-    <meta property="og:url" content="https://blog.hugow.dev/posts/javascript-es6-features.html">
-    <meta property="og:site_name" content="Hugo's Dev Notes">
-    <meta property="article:published_time" content="2026-07-08">
-    <meta property="article:modified_time" content="2026-07-08">
-    <meta property="article:section" content="devops">
-    <meta property="article:tag" content="Web Dev">
-    
-    <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="JavaScript ES6+ Modern Features Every Developer Should Know">
-    <meta name="twitter:description" content="Learn modern JavaScript features — let/const, arrow functions, template literals, destructuring, modules, and more. Write cleaner code today.">
-    
 </head>
 <body>
     <div class="progress-bar" id="progressBar"></div>
-    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
 
     <header>
         <div class="container">
             <div class="logo">
-                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
                 <p class="subtitle">Cloudflare · Python · AI Coding</p>
             </div>
             <nav>
-                <a href="../index.html" class="nav-btn">🏠 Home</a>
-                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
-                <a href="../python.html" class="nav-btn">🐍 Python</a>
-                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
-                <a href="../devops.html" class="nav-btn">🐳 DevOps</a>
-                <a href="../security.html" class="nav-btn">🔐 Security</a>
-                <a href="../webdev.html" class="nav-btn active">💻 Web Dev</a>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
             </nav>
         </div>
     </header>
 
     <main class="container">
-        <article class="post">
-            <div class="post-header">
-                <span class="tag web">Web Dev</span>
-                <h1>JavaScript ES6+ Modern Features Every Developer Should Know</h1>
-            </div>
-            <div class="post-meta">
-                <time>2026-06-24</time>
-                <span class="read-time">9 min read</span>
-                <span class="post-status">New</span>
-            </div>
+        <article class="post-detail">
+            <header class="post-header">
+                <div class="post-tags">
+                    <span class="tag web">Web Dev</span>
+                </div>
+                <h1>JavaScript ES6+ Features Every Developer Should Know — Complete Beginner's Guide</h1>
+                <div class="post-meta">
+                    <span class="post-date">July 17, 2026</span>
+                    <span class="read-time">11 min read</span>
+                </div>
+            </header>
 
             <div class="post-content">
-                <p>JavaScript has evolved dramatically since the ES6 (ECMAScript 2015) release. Modern JavaScript is cleaner, more expressive, and less error-prone than the old way. Whether you're building web apps, Node.js servers, or anything in between, these features will make your code better.</p>
+                <p>If you learned JavaScript before 2015, you remember <code>var</code>, string concatenation with <code>+</code>, and writing <code>function</code> declarations everywhere. Modern JavaScript (ES6 and beyond) is a dramatically different language — more expressive, more readable, and more powerful. This guide covers every ES6+ feature you'll actually use in production, with working examples you can try in your browser console right now.</p>
 
-                <p>In this tutorial, we'll cover the most important ES6+ features with practical examples you can use right away.</p>
+                <h2>1. let and const (Goodbye, var)</h2>
+                <p>ES6 replaced <code>var</code> with <code>let</code> and <code>const</code>. Both are <strong>block-scoped</strong> (limited to the nearest <code>{ }</code> block), unlike <code>var</code> which is function-scoped and can cause subtle bugs.</p>
 
-                <h2>1. let and const: Block-Safe Variables</h2>
+<pre><code class="language-javascript">// ❌ var — leaks out of loops
+for (var i = 0; i < 3; i++) {}
+console.log(i); // 3 — i leaked out!
 
-                <p>Before ES6, JavaScript only had <code>var</code> for declaring variables. The problem? <code>var</code> is function-scoped, not block-scoped, which leads to confusing bugs:</p>
+// ✅ let — block-scoped
+for (let j = 0; j < 3; j++) {}
+console.log(j); // ReferenceError: j is not defined
 
-                <pre><code>// The old way — problematic
-for (var i = 0; i < 3; i++) {
-    setTimeout(() => console.log(i), 100);
-}
-// Output: 3, 3, 3 (not 0, 1, 2!)</code></pre>
-
-                <p>ES6 introduced <code>let</code> and <code>const</code>, which are <strong>block-scoped</strong> (limited to the nearest curly braces):</p>
-
-                <pre><code>// The modern way — correct
-for (let i = 0; i < 3; i++) {
-    setTimeout(() => console.log(i), 100);
-}
-// Output: 0, 1, 2 ✅
-
-// const for values that shouldn't change
-const API_URL = 'https://api.example.com';
-const MAX_RETRIES = 3;
-
-// let for values that do change
-let counter = 0;
-counter++; // works fine
-// counter = {}; // ❌ TypeError — can't reassign const, but let works</code></pre>
-
-                <p><strong>Rule of thumb:</strong> Use <code>const</code> by default. Switch to <code>let</code> only when you need to reassign. Never use <code>var</code> in new code.</p>
-
-                <h2>2. Template Literals: String Interpolation</h2>
-
-                <p>Forget string concatenation with <code>+</code>. Template literals use backticks and <code>${}</code> for clean string building:</p>
-
-                <pre><code>// Old way — messy
+// ✅ const — cannot be reassigned
 const name = "Hugo";
+name = "Other"; // TypeError!
+
+// const arrays/objects are still mutable
+const users = ["Alice", "Bob"];
+users.push("Charlie"); // ✅ Works — the array reference didn't change
+console.log(users); // ["Alice", "Bob", "Charlie"]</code></pre>
+
+                <p><strong>Rule of thumb:</strong> Use <code>const</code> by default. Only use <code>let</code> when you need to reassign. Never use <code>var</code>.</p>
+
+                <h2>2. Template Literals</h2>
+                <p>Forget string concatenation. Template literals use backticks (<code>`</code>) and let you embed variables and expressions directly in strings:</p>
+
+<pre><code class="language-javascript">// ❌ Old way
 const greeting = "Hello, " + name + "! You have " + count + " messages.";
 
-// Modern way — clean
-const name = "Hugo";
-const count = 5;
+// ✅ Template literals
 const greeting = `Hello, ${name}! You have ${count} messages.`;
 
-// Multi-line strings (newlines preserved!)
+// Expressions work too
+const total = `Price: $${price * quantity} (tax: $${(price * quantity * 0.08).toFixed(2)})`;
+
+// Multi-line strings (no more \n!)
 const html = `
-    &lt;div class="card"&gt;
-        &lt;h2&gt;${title}&lt;/h2&gt;
-        &lt;p&gt;${description}&lt;/p&gt;
-        &lt;button&gt;Click Me&lt;/button&gt;
-    &lt;/div&gt;
+  &lt;div class="card"&gt;
+    &lt;h2&gt;${title}&lt;/h2&gt;
+    &lt;p&gt;${description}&lt;/p&gt;
+  &lt;/div&gt;
 `;
 
-// Expressions inside ${} work
-const total = `Your total: $${price * quantity}`;
-const status = count > 0 ? "available" : "sold out";
-const message = `Items ${status} — ${count} in stock.`;</code></pre>
-
-                <h2>3. Arrow Functions: Concise Function Syntax</h2>
-
-                <p>Arrow functions provide a shorter syntax and lexically bind <code>this</code> (no more <code>bind()</code> or <code>.that = this</code> hacks):</p>
-
-                <pre><code>// Old way
-function add(a, b) {
-    return a + b;
+// Tagged templates (advanced)
+function highlight(strings, ...values) {
+  return strings.reduce((result, str, i) => {
+    return result + str + (values[i] ? `<mark>${values[i]}</mark>` : "");
+  }, "");
 }
 
-// Arrow function — much shorter
+const message = highlight`Found ${count} matches in ${fileName}.`;
+// &lt;span&gt;Found &lt;mark&gt;5&lt;/mark&gt; matches in &lt;mark&gt;report.txt&lt;/mark&gt;.&lt;/span&gt;</code></pre>
+
+                <h2>3. Arrow Functions</h2>
+                <p>Arrow functions (<code>=></code>) are shorter syntax for functions that don't need their own <code>this</code> binding:</p>
+
+<pre><code class="language-javascript">// ❌ Old way
+const square = function(x) {
+  return x * x;
+};
+
+// ✅ Arrow function (single expression auto-returns)
+const square = (x) => x * x;
+
+// Multiple parameters need parentheses
 const add = (a, b) => a + b;
 
-// Single parameter — parentheses optional
+// Multiple lines need curly braces and explicit return
+const processUser = (user) => {
+  const name = user.name.trim().toLowerCase();
+  const age = parseInt(user.age);
+  return { name, age, valid: age >= 18 };
+};
+
+// Single parameter — no parentheses needed
 const double = x => x * 2;
 
-// With a block — use curly braces and return keyword
-const greet = (name, time) => {
-    const hour = time.getHours();
-    const greeting = hour < 12 ? "Good morning" : "Good afternoon";
-    return `${greeting}, ${name}!`;
-};
+// Object literal return needs parentheses
+const createUser = (name) => ({ name, id: Date.now() });
 
-// Arrow functions shine in callbacks
-const numbers = [1, 2, 3, 4, 5];
+// Arrow functions inherit `this` from parent scope
+const obj = {
+  name: "Hugo",
+  // Regular function — `this` is the element, not obj
+  greetOld() {
+    setTimeout(function() {
+      console.log(this.name); // undefined
+    }, 100);
+  },
+  // Arrow function — `this` is captured from obj
+  greetNew() {
+    setTimeout(() => {
+      console.log(this.name); // "Hugo" ✅
+    }, 100);
+  }
+};</code></pre>
 
-// Filter and map in one chain
-const result = numbers
-    .filter(n => n > 2)       // [3, 4, 5]
-    .map(n => n * n)          // [9, 16, 25]
-    .reduce((sum, n) => sum + n); // 50
+                <h2>4. Destructuring</h2>
+                <p>Extract values from arrays and objects in one clean line:</p>
 
-console.log(result); // 50</code></pre>
-
-                <p><strong>Warning:</strong> Don't use arrow functions as object methods or constructors — they don't have their own <code>this</code>:</p>
-
-                <pre><code>// ❌ BAD — 'this' won't reference the object
+<pre><code class="language-javascript">// === Object Destructuring ===
 const user = {
-    name: "Hugo",
-    greet: () => console.log(`Hi, I'm ${this.name}`)
+  name: "Hugo",
+  age: 28,
+  email: "hugo@example.com",
+  address: { city: "San Francisco", zip: "94102" }
 };
-user.greet(); // "Hi, I'm undefined"
 
-// ✅ GOOD — regular method for object methods
-const user = {
-    name: "Hugo",
-    greet() {
-        console.log(`Hi, I'm ${this.name}`);
-    }
-};
-user.greet(); // "Hi, I'm Hugo"</code></pre>
-
-                <h2>4. Destructuring: Extract Values Cleanly</h2>
-
-                <p>Destructuring lets you unpack values from arrays and objects into variables:</p>
-
-                <h3>Object Destructuring</h3>
-                <pre><code>// Old way
-const user = { name: "Hugo", age: 28, city: "London", role: "developer" };
-const userName = user.name;
-const userAge = user.age;
-const userCity = user.city;
-
-// Modern way — clean one-liner
-const { name, age, city } = user;
+// Extract specific properties
+const { name, email } = user;
 console.log(name); // "Hugo"
-console.log(age);  // 28
-console.log(city); // "London"
 
 // Rename variables
 const { name: userName, age: userAge } = user;
 
-// Default values for missing properties
-const { email = "no-email@example.com" } = user;
-console.log(email); // "no-email@example.com" (user has no email)
+// Default values
+const { phone = "N/A" } = user; // "N/A"
 
-// Common: extracting from function parameters
-function updateUser({ name, age, city = "Unknown" }) {
-    console.log(`Updating ${name}, age ${age}, from ${city}`);
+// Nested destructuring
+const { address: { city, zip } } = user;
+console.log(city); // "San Francisco"
+
+// Destructure remaining properties with rest
+const { name, ...rest } = user;
+console.log(rest); // { age: 28, email: "...", address: {...} }
+
+// === Array Destructuring ===
+const colors = ["red", "green", "blue", "yellow"];
+const [first, second, , fourth] = colors;
+// first = "red", second = "green", fourth = "yellow"
+
+// Swap variables (no temp variable!)
+let a = 1, b = 2;
+[a, b] = [b, a];
+// a = 2, b = 1
+
+// Default values
+const [one, two, three = 3, four = 4] = [1, 2];
+// three = 3, four = 4
+
+// Rest pattern
+const [head, ...tail] = colors;
+// head = "red", tail = ["green", "blue", "yellow"]
+
+// === Function Parameter Destructuring ===
+function greet({ name, greeting = "Hello" }) {
+  return `${greeting}, ${name}!`;
 }
 
-updateUser({ name: "Hugo", age: 28 });
-// "Updating Hugo, age 28, from Unknown"</code></pre>
+greet({ name: "Hugo", greeting: "Hi" }); // "Hi, Hugo!"
+greet({ name: "Hugo" }); // "Hello, Hugo!"
 
-                <h3>Array Destructuring</h3>
-                <pre><code>const colors = ["red", "green", "blue"];
+// Combine everything
+function createUser({ name, email }, [role, permissions]) {
+  return { name, email, role, permissions };
+}
 
-// Unpack by position
-const [first, second, third] = colors;
-console.log(first);  // "red"
-console.log(second); // "green"
-
-// Skip values
-const [first, , last] = colors;
-console.log(last); // "blue" (skipped "green")
-
-// Rest pattern — collect remaining items
-const [head, ...tail] = colors;
-console.log(head); // "red"
-console.log(tail); // ["green", "blue"]
-
-// Swap variables without a temp variable
-let a = 1;
-let b = 2;
-[a, b] = [b, a];
-console.log(a, b); // 2, 1</code></pre>
+const user = createUser(
+  { name: "Hugo", email: "hugo@example.com" },
+  ["admin", ["read", "write", "delete"]]
+);
+// { name: "Hugo", email: "...", role: "admin", permissions: [...] }</code></pre>
 
                 <h2>5. Spread and Rest Operators</h2>
+                <p>The spread operator (<code>...</code>) "spreads" elements into individual items. The rest operator collects remaining items into an array.</p>
 
-                <p>The spread operator (<code>...</code>) expands arrays and objects:</p>
+<pre><code class="language-javascript">// === Spread ===
 
-                <pre><code>// Spread arrays
-const fruits = ["apple", "banana"];
-const vegetables = ["carrot", "broccoli"];
+// Spread an array
+const arr1 = [1, 2, 3];
+const arr2 = [...arr1, 4, 5]; // [1, 2, 3, 4, 5]
 
-// Combine arrays
-const food = [...fruits, ...vegetables];
-console.log(food); // ["apple", "banana", "carrot", "broccoli"]
+// Merge arrays
+const merged = [...arr1, ...arr2]; // [1, 2, 3, 1, 2, 3, 4, 5]
 
-// Add to beginning
-const newFood = ["orange", ...fruits, ...vegetables];
+// Deep copy (shallow — objects inside still share references)
+const original = { a: 1, b: { c: 2 } };
+const copy = { ...original };
+copy.a = 10;
+console.log(original.a); // 1 (unchanged)
+copy.b.c = 20;
+console.log(original.b.c); // 20 (shared reference!)
 
-// Spread objects
-const defaults = { theme: "dark", lang: "en", fontSize: 14 };
-const userPrefs = { theme: "light", fontSize: 18 };
+// Spread in function calls
+const nums = [1, 2, 3, 4, 5];
+Math.max(...nums); // 5
+Math.min(...nums); // 1
 
-// Merge — later values override earlier
-const settings = { ...defaults, ...userPrefs };
-console.log(settings);
-// { theme: "light", lang: "en", fontSize: 18 }
+// Add class to an element
+element.classList.add(...newClasses);
 
-// Rest parameter in functions — collects all remaining args
-const sum = (...numbers) => numbers.reduce((a, b) => a + b, 0);
-console.log(sum(1, 2, 3, 4, 5)); // 15
+// === Rest ===
 
-// Rest in destructuring
-const [first, ...rest] = [1, 2, 3, 4, 5];
-console.log(first); // 1
-console.log(rest);  // [2, 3, 4, 5]</code></pre>
+// Rest in function parameters
+function sum(...numbers) {
+  return numbers.reduce((total, n) => total + n, 0);
+}
+sum(1, 2, 3, 4); // 10
+
+// Rest with destructuring
+function logUser({ name, ...rest }) {
+  console.log(`${name} has extra data:`, rest);
+}
+
+const [first, ...others] = [1, 2, 3, 4];
+// first = 1, others = [2, 3, 4]</code></pre>
 
                 <h2>6. Default Parameters</h2>
+                <p>Set default values for function parameters directly in the function signature:</p>
 
-                <p>No more checking for <code>undefined</code> — just set defaults right in the function signature:</p>
+<pre><code class="language-javascript">// ❌ Old way
+function createConnection(host, port, timeout) {
+  host = host || "localhost";
+  port = port || 3000;
+  timeout = timeout || 5000;
+}
+// Problem: host = host || "localhost" fails if host is 0 or ""
 
-                <pre><code>// Old way
-function createLink(url, text) {
-    text = text || "Click here"; // breaks if text is "" or 0
+// ✅ Default parameters
+function createConnection(
+  host = "localhost",
+  port = 3000,
+  timeout = 5000
+) {
+  console.log(`Connecting to ${host}:${port} with ${timeout}ms timeout`);
 }
 
-// Modern way
-function createLink(url, text = "Click here", target = "_blank") {
-    return `<a href="${url}" target="${target}">${text}</a>`;
-}
+createConnection(); // localhost:3000, 5000ms
+createConnection("api.example.com"); // api.example.com:3000, 5000ms
+createConnection("api.example.com", 8080, 10000);
 
-createLink("https://example.com");
-// &lt;a href="https://example.com" target="_blank"&gt;Click here&lt;/a&gt;
+// Default values can be expressions
+function greet(name, greeting = `Hello, ${name}!`) {
+  return greeting;
+}</code></pre>
 
-createLink("https://example.com", "Visit us", "_self");
-// &lt;a href="https://example.com" target="_self"&gt;Visit us&lt;/a&gt;</code></pre>
+                <h2>7. Enhanced Object Literals</h2>
+                <p>Write object literals more concisely:</p>
 
-                <h2>7. Modules: Import and Export</h2>
+<pre><code class="language-javascript">// Shorthand property names (name matches variable name)
+const name = "Hugo";
+const age = 28;
 
-                <p>ES6 modules let you split code into reusable files:</p>
+// ❌ Old way
+const user = { name: name, age: age };
 
-                <pre><code>// ─── mathUtils.js ───
-// Named exports
-export function add(a, b) { return a + b; }
-export function subtract(a, b) { return a - b; }
+// ✅ Shorthand
+const user = { name, age };
 
-// Default export (one per file)
-export default class Calculator {
-    history = [];
-    calculate(expr) {
-        this.history.push(expr);
-        return eval(expr); // simplified — don't eval in production!
-    }
-}
-
-// ─── main.js ───
-// Import named exports (use curly braces)
-import { add, subtract } from './mathUtils.js';
-console.log(add(5, 3)); // 8
-
-// Import default export (no curly braces)
-import Calculator from './mathUtils.js';
-
-// Import everything under an alias
-import * as math from './mathUtils.js';
-console.log(math.add(10, 20)); // 30</code></pre>
-
-                <p>In your HTML, use <code>&lt;script type="module"&gt;</code>:</p>
-
-                <pre><code>&lt;script type="module" src="main.js"&gt;&lt;/script&gt;</code></pre>
-
-                <h2>8. Optional Chaining and Nullish Coalescing</h2>
-
-                <p>Two operators that prevent runtime errors when dealing with potentially null/undefined values:</p>
-
-                <pre><code>// Optional chaining (?.) — stops at null/undefined instead of crashing
-const user = {
-    name: "Hugo",
-    address: {
-        city: "London"
-    }
+// Shorthand method definitions
+const calculator = {
+  base: 10,
+  // ❌ Old: multiply: function(x) { return this.base * x; }
+  // ✅ Shorthand
+  multiply(x) { return this.base * x; },
+  divide(x) { return this.base / x; }
 };
 
-// Safe access — returns undefined instead of throwing
-console.log(user.address?.city); // "London"
-console.log(user.phone?.number); // undefined (no crash!)
+// Computed property names
+const key = "email";
+const user = {
+  name: "Hugo",
+  [key]: "hugo@example.com" // property name is "email"
+};
+console.log(user.email); // "hugo@example.com"</code></pre>
 
-// Nullish coalescing (??) — default only for null/undefined
-const count = null;
-const display = count ?? 0;
-console.log(display); // 0 (not the empty string, not 0 from falsy)
+                <h2>8. Array Methods: map, filter, reduce</h2>
+                <p>Three methods that replace most <code>for</code> loops in JavaScript:</p>
 
-// Difference from || operator
-const emptyString = "";
-console.log(emptyString || "default");  // "default" (empty string is falsy)
-console.log(emptyString ?? "default");   // "" (empty string is not null/undefined)</code></pre>
+<pre><code class="language-javascript">const users = [
+  { name: "Alice", age: 25, role: "admin" },
+  { name: "Bob", age: 17, role: "user" },
+  { name: "Charlie", age: 30, role: "admin" },
+  { name: "Diana", age: 22, role: "user" }
+];
 
-                <h2>9. Practical Example: Building a Mini API Client</h2>
+// .map() — transform each element (returns new array, same length)
+const names = users.map(user => user.name);
+// ["Alice", "Bob", "Charlie", "Diana"]
 
-                <p>Let's combine several features into a practical project:</p>
+const upperNames = users.map(u => u.name.toUpperCase());
+// ["ALICE", "BOB", "CHARLIE", "DIANA"]
 
-                <pre><code>// apiClient.js — Reusable API client using modern JS
-class APIClient {
-    #apiKey; // Private field (ES2022)
+// .filter() — keep elements that match a condition
+const adults = users.filter(user => user.age >= 18);
+// [{ name: "Alice", ... }, { name: "Charlie", ... }, { name: "Diana", ... }]
 
-    constructor(baseUrl, apiKey) {
-        this.baseUrl = baseUrl;
-        this.#apiKey = apiKey;
-        this.timeout = 10000; // 10 seconds
-    }
+const admins = users.filter(user => user.role === "admin");
+// [{ name: "Alice", ... }, { name: "Charlie", ... }]
 
-    async fetch(endpoint, options = {}) {
-        const url = `${this.baseUrl}${endpoint}`;
+// .reduce() — combine all elements into a single value
+const totalAge = users.reduce((sum, user) => sum + user.age, 0);
+// 94
 
-        // Spread operator for combining default + custom options
-        const config = {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${this.#apiKey}`,
-                ...options.headers
-            },
-            ...options
-        };
+const nameCount = users.reduce((acc, user) => {
+  acc[user.name[0]]++;
+  return acc;
+}, {});
+// { A: 2, B: 1, D: 1 }
 
-        try {
-            const response = await fetch(url, config);
+// Chain them (most powerful pattern!)
+const adminNames = users
+  .filter(u => u.role === "admin")  // filter first
+  .map(u => u.name)                // then transform
+  .sort()                          // then sort
+  .join(", ");                     // then join to string
+// "Alice, Charlie"</code></pre>
 
-            // Optional chaining for safe property access
-            if (!response?.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
+                <h2>9. Promises and async/await</h2>
+                <p>Modern JavaScript handles asynchronous code with promises and the cleaner <code>async/await</code> syntax:</p>
 
-            const data = await response.json();
+<pre><code class="language-javascript">// === Promises ===
 
-            // Nullish coalescing for default value
-            return {
-                success: true,
-                data: data ?? null,
-                count: data?.length ?? 0
-            };
-        } catch (error) {
-            return {
-                success: false,
-                error: error?.message ?? 'Unknown error',
-                data: null
-            };
+// Creating a promise
+function fetchData(url) {
+  return new Promise((resolve, reject) => {
+    fetch(url)
+      .then(response => {
+        if (!response.ok) {
+          reject(new Error(`HTTP ${response.status}`));
         }
-    }
+        return response.json();
+      })
+      .then(data => resolve(data))
+      .catch(error => reject(error));
+  });
 }
+
+// Using promises with .then()
+fetchData("/api/users")
+  .then(users => console.log(users))
+  .catch(error => console.error(error));
+
+// === async/await (cleaner!) ===
+
+async function loadUsers() {
+  try {
+    const users = await fetchData("/api/users");
+    const filtered = users.filter(u => u.active);
+    console.log(filtered);
+  } catch (error) {
+    console.error("Failed to load users:", error.message);
+  }
+}
+
+// Parallel execution with Promise.all
+async function loadDashboard() {
+  const [users, posts, settings] = await Promise.all([
+    fetchData("/api/users"),
+    fetchData("/api/posts"),
+    fetchData("/api/settings")
+  ]);
+  // All three requests run simultaneously, not sequentially!
+  return { users, posts, settings };
+}
+
+// Sequential execution (wait for each before the next)
+async function processUser(userId) {
+  const user = await fetchData(`/api/users/${userId}`);
+  const profile = await fetchData(`/api/profiles/${user.profileId}`);
+  const stats = await fetchData(`/api/stats/${userId}`);
+  return { ...user, profile, stats };
+}
+
+// Promise.race — return whichever finishes first
+const result = await Promise.race([
+  fetchData("/api/fast-endpoint"),
+  new Promise((_, reject) =>
+    setTimeout(() => reject(new Error("Timeout")), 5000)
+  )
+]);</code></pre>
+
+                <h2>10. ES Modules (import/export)</h2>
+                <p>Organize code into modules that can be imported:</p>
+
+<pre><code class="language-javascript">// === utilities.js (export) ===
+
+// Named exports
+export function slugify(text) {
+  return text.toLowerCase().replace(/\s+/g, '-');
+}
+
+export const API_URL = "https://api.example.com";
+export const VERSION = "1.0.0";
+
+// Default export (one per file)
+export default function formatDate(date) {
+  return new Date(date).toLocaleDateString('en-US', {
+    year: 'numeric', month: 'long', day: 'numeric'
+  });
+}
+
+// === app.js (import) ===
+
+// Import default
+import formatDate from './utilities.js';
+
+// Import named exports
+import { slugify, API_URL } from './utilities.js';
+
+// Import with renaming
+import { API_URL as baseUrl } from './utilities.js';
+
+// Import everything as namespace
+import * as utils from './utilities.js';
 
 // Usage
-const api = new APIClient('https://jsonplaceholder.typicode.com', 'your-key');
+console.log(formatDate("2026-01-15")); // "January 15, 2026"
+console.log(slugify("Hello World"));    // "hello-world"
+console.log(API_URL);                  // "https://api.example.com"
+console.log(utils.VERSION);            // "1.0.0"</code></pre>
 
-async function loadPosts() {
-    const result = await api.fetch('/posts');
+                <p><strong>HTML setup:</strong> To use ES modules in the browser, add <code>type="module"</code> to your script tag:</p>
 
-    if (result.success) {
-        // Destructuring + arrow functions + template literals
-        const recentPosts = result.data
-            .filter(post => post.id <= 3)
-            .map(({ id, title, body }) => ({
-                id,
-                title: title?.slice(0, 50) ?? 'Untitled',
-                preview: body?.slice(0, 100) + '...' ?? ''
-            }));
+<pre><code class="language-html">&lt;!-- This enables import/export --&gt;
+&lt;script type="module" src="app.js"&gt;&lt;/script&gt;
 
-        console.table(recentPosts);
+&lt;!-- Old style (no import/export support) --&gt;
+&lt;script src="app.js"&gt;&lt;/script&gt;</code></pre>
+
+                <h2>11. Optional Chaining and Nullish Coalescing</h2>
+                <p>Two features that prevent the most common JavaScript errors:</p>
+
+<pre><code class="language-javascript">const response = {
+  data: {
+    user: {
+      profile: {
+        avatar: null
+      }
     }
+  }
+};
+
+// === Optional Chaining (?.) ===
+// ❌ Old way — crashes if any intermediate is null/undefined
+// const avatar = response.data.user.profile.avatar.url;
+
+// ✅ Safe access — returns undefined instead of crashing
+const avatar = response.data?.user?.profile?.avatar?.url;
+console.log(avatar); // undefined (not an error!)
+
+// Safe function call
+const name = response.data?.user?.getName?.();
+
+// Safe array access
+const first = items?.[0]?.name;
+
+// === Nullish Coalescing (??) ===
+// Returns right-hand value only if left is null or undefined (NOT falsy)
+const count = response.data?.user?.count ?? 0;
+
+// Difference from ||:
+const value1 = "" ?? "default";   // "" (empty string is valid!)
+const value2 = "" || "default";   // "default" (empty string is falsy!)
+const value3 = 0 ?? "default";    // 0 (zero is valid!)
+const value4 = 0 || "default";    // "default" (zero is falsy!)
+
+// Combined pattern — the most common use
+const avatar = response.data?.user?.profile?.avatar?.url ?? '/default-avatar.png';</code></pre>
+
+                <h2>12. Set and Map</h2>
+                <p>Two data structures missing from pre-ES6 JavaScript:</p>
+
+<pre><code class="language-javascript">// === Set (unique values) ===
+const tags = new Set(["javascript", "python", "javascript"]);
+tags.add("docker");
+tags.delete("python");
+
+console.log(tags.has("javascript")); // true
+console.log(tags.size);              // 2
+
+// Remove duplicates from an array
+const unique = [...new Set([1, 2, 2, 3, 3, 4])];
+// [1, 2, 3, 4]
+
+// Set operations
+const setA = new Set([1, 2, 3, 4]);
+const setB = new Set([3, 4, 5, 6]);
+
+// Intersection
+const intersection = new Set([...setA].filter(x => setB.has(x)));
+// {3, 4}
+
+// Union
+const union = new Set([...setA, ...setB]);
+// {1, 2, 3, 4, 5, 6}
+
+// === Map (key-value with any type keys) ===
+const cache = new Map();
+cache.set("users", [/* ... */]);
+cache.set("posts", [/* ... */]);
+cache.set(Symbol("key"), "value"); // Symbol keys work!
+
+console.log(cache.get("users"));
+console.log(cache.has("posts"));
+cache.delete("posts");
+console.log(cache.size); // 2
+
+// vs Object — Map maintains insertion order, allows any key type
+const obj = {};
+obj["1"] = "string";
+obj[1] = "number";
+console.log(obj); // { "1": "number" } — keys merged!
+
+const map = new Map();
+map.set(1, "number");
+map.set("1", "string");
+console.log(map.size); // 2 — different keys!</code></pre>
+
+                <h2>13. for...of vs for...in</h2>
+                <p>Two loops that do different things:</p>
+
+<pre><code class="language-javascript">const arr = ["a", "b", "c"];
+const obj = { a: 1, b: 2, c: 3 };
+
+// for...of — iterates over VALUES
+for (const value of arr) {
+  console.log(value); // "a", "b", "c"
 }
 
-loadPosts();</code></pre>
+for (const [key, value] of Object.entries(obj)) {
+  console.log(`${key}: ${value}`); // "a: 1", "b: 2", "c: 3"
+}
 
-                <h2>Summary</h2>
+// for...in — iterates over KEYS (use for objects)
+for (const key in obj) {
+  console.log(`${key}: ${obj[key]}`); // "a: 1", "b: 2", "c: 3"
+}
 
-                <p>Modern JavaScript (ES6+) makes your code cleaner, safer, and more maintainable. Here's your quick-reference cheat sheet:</p>
+// ❌ Don't use for...in on arrays (iterates over indices as strings)
+for (const index in arr) {
+  console.log(index); // "0", "1", "2" (strings, not numbers!)
+}</code></pre>
 
-                <ul>
-                    <li><strong>const/let</strong> instead of var</li>
-                    <li><strong>Template literals</strong> with backticks instead of string concatenation</li>
-                    <li><strong>Arrow functions</strong> for callbacks and short functions</li>
-                    <li><strong>Destructuring</strong> to unpack objects and arrays</li>
-                    <li><strong>Spread/rest</strong> for combining and collecting values</li>
-                    <li><strong>Default parameters</strong> for clean function signatures</li>
-                    <li><strong>Modules</strong> for organized, reusable code</li>
-                    <li><strong>Optional chaining</strong> (<code>?.</code>) for safe property access</li>
-                    <li><strong>Nullish coalescing</strong> (<code>??</code>) for smart defaults</li>
-                </ul>
+                <h2>Cheat Sheet</h2>
 
-                <p>Start applying these features in your next project. Your future self (and your teammates) will thank you.</p>
+<pre><code class="language-javascript">// Quick reference for all features:
+
+const name = "Hugo";                        // const (not var!)
+const greet = (n) => `Hello, ${n}!`;       // arrow + template
+const { a, b } = { a: 1, b: 2 };          // destructuring
+const merged = [...arr1, ...arr2];         // spread
+const func = (x = 1, y = 2) => x + y;    // defaults
+const user = { name, age };                // shorthand
+const result = arr.map(f).filter(g).reduce(h, init);  // chaining
+const data = await fetch(url);            // async/await
+const safe = obj?.data?.value ?? "default"; // optional + nullish
+const unique = [...new Set(arr)];          // Set dedup
+</code></pre>
+
+                <h2>Browser Support</h2>
+                <p>All features covered in this guide are supported in all modern browsers (Chrome, Firefox, Safari, Edge) and Node.js 14+. For older browser support, use <strong>Babel</strong> or <strong>ESBuild</strong> to transpile:</p>
+
+<pre><code class="language-bash"># Install a transpiler
+npm install -D esbuild
+
+# Transpile ES modules to browser-compatible code
+npx esbuild app.js --bundle --outfile=bundle.js
+
+# Or for development with hot reload
+npx esbuild app.js --bundle --outfile=bundle.js --watch</code></pre>
+
+                <p>Master these ES6+ features and your JavaScript code will be cleaner, shorter, and less error-prone. Start by replacing <code>var</code> with <code>const</code>, using template literals instead of <code>+</code> concatenation, and reaching for <code>map</code>/<code>filter</code>/<code>reduce</code> instead of <code>for</code> loops. The rest will follow naturally.</p>
             </div>
         </article>
     </main>
 
     <footer>
         <div class="container">
-            <p>© 2026 Hugo's Dev Notes | Built with ❤️ & AI</p>
+            <p>© 2026 Hugo Wong · Built with curiosity and Coffee</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528">GitHub</a>
+                <a href="https://hugow.dev">hugow.dev</a>
+                <a href="/sitemap.xml">Sitemap</a>
+            </div>
         </div>
     </footer>
 
-    <button class="back-to-top" id="backToTop" title="Back to top">↑</button>
-
     <script>
-    const themeToggle = document.getElementById('themeToggle');
-    themeToggle.addEventListener('click', () => {
-        document.body.classList.toggle('dark-mode');
-        themeToggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
-    });
-    if (localStorage.getItem('theme') === 'dark') {
-        document.body.classList.add('dark-mode');
-        themeToggle.textContent = '☀️';
-    }
-
-    const backToTop = document.getElementById('backToTop');
-    window.addEventListener('scroll', () => {
-        backToTop.style.display = window.pageYOffset > 300 ? 'block' : 'none';
-        const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
-        const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-        const scrolled = (winScroll / height) * 100;
-        document.getElementById('progressBar').style.width = scrolled + '%';
-    });
-    backToTop.addEventListener('click', () => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-    </script>
-    <script>
-        // Theme toggle
         const themeToggle = document.getElementById('themeToggle');
-        if (themeToggle) {{
-            const savedTheme = localStorage.getItem('theme') || 'dark';
-            if (savedTheme === 'light') {{
-                document.body.classList.add('light-mode');
-                themeToggle.textContent = '☀';
-            }}
-            themeToggle.addEventListener('click', () => {{
-                document.body.classList.toggle('light-mode');
-                const isLight = document.body.classList.contains('light-mode');
-                localStorage.setItem('theme', isLight ? 'light' : 'dark');
-                themeToggle.textContent = isLight ? '☀' : '◐';
-            }});
-        }}
-        // Progress bar
-        window.addEventListener('scroll', () => {{
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-mode');
+            themeToggle.textContent = '☀';
+        }
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            themeToggle.textContent = isLight ? '☀' : '◐';
+        });
+        window.addEventListener('scroll', () => {
             const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
             const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
             const scrolled = (winScroll / height) * 100;
-            const bar = document.getElementById('progressBar');
-            if (bar) bar.style.width = scrolled + "%";
-        }});
+            document.getElementById('progressBar').style.width = scrolled + "%";
+        });
     </script>
 </body>
 </html>

@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vibe Coding with Cursor: Build a Full App in One Session — Complete Guide | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn to build a complete full-stack application using Cursor AI in a single session. Step-by-step workflow with real prompts, tips, and techniques for productive vibe coding.">
+    <meta name="keywords" content="Cursor AI, vibe coding, AI coding workflow, full-stack development, AI pair programming, Cursor editor, coding with AI">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/vibe-coding-cursor-workflow.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <article class="post-content">
+        <a href="../index.html" class="back-link">← All Posts</a>
+        <span class="tag vibe">AI Coding</span>
+        <h1>Vibe Coding with Cursor: Build a Full App in One Session — Complete Guide</h1>
+        <time datetime="2026-07-13">July 13, 2026 · 13 min read</time>
+
+        <p>"Vibe coding" means writing software by describing what you want in plain English and letting an AI tool generate the code. Cursor — an AI-powered code editor based on VS Code — is currently one of the most capable tools for this workflow. But most people use it wrong: they ask tiny questions one at a time, getting scattered code fragments instead of a coherent application.</p>
+
+        <p>In this guide, I'll show you the <strong>complete workflow</strong> for building a full-stack Python task management API with Cursor in a single session. You'll learn how to structure prompts, review AI output, iterate on problems, and ship working code — not just experiments.</p>
+
+        <h2>The Project: Task Management API</h2>
+
+        <p>We'll build a REST API with these features:</p>
+
+        <ul>
+            <li>Create, read, update, and delete tasks (CRUD)</li>
+            <li>SQLite database with SQLAlchemy ORM</li>
+            <li>Pydantic models for request/response validation</li>
+            <li>FastAPI as the web framework</li>
+            <li>Automated tests with pytest</li>
+            <li>Docker support</li>
+        </ul>
+
+        <p>Normally this would take a developer 2-4 hours of coding. With Cursor and the right workflow, you can do it in 20-30 minutes.</p>
+
+        <h2>Phase 1: Set the Context (The Most Important Step)</h2>
+
+        <p>The biggest mistake beginners make is jumping straight into coding. Cursor doesn't know what you're building unless you tell it. The first prompt should establish <strong>the entire project context</strong>.</p>
+
+        <p>Open Cursor, create a new empty folder called <code>task-api/</code>, and open the Composer (Cmd+I on Mac, Ctrl+I on Windows). Here's your first prompt:</p>
+
+        <pre><code class="language-text">Build a task management REST API using FastAPI and SQLAlchemy.
+
+Project structure requirements:
+- main.py — FastAPI app with all endpoints
+- models.py — SQLAlchemy database models
+- schemas.py — Pydantic schemas for request/response validation
+- database.py — SQLite database setup with async support
+- tests/ — pytest test files
+- requirements.txt — dependencies
+- Dockerfile — production-ready container
+- .env.example — environment variable template
+
+Technical specifications:
+- Use async SQLAlchemy with SQLite (aiosqlite)
+- Use Pydantic v2 for all request/response models
+- Implement CRUD: GET /tasks, POST /tasks, GET /tasks/{id}, PUT /tasks/{id}, DELETE /tasks/{id}
+- Each task has: id (UUID), title (required, max 200 chars), description (optional), completed (boolean, default False), created_at, updated_at
+- Return proper HTTP status codes (201 for created, 204 for deleted, 404 for not found, 422 for validation errors)
+- Include health check endpoint at /health
+- Database should initialize automatically on first request
+- Use Alembic for migrations (include initial migration)</code></pre>
+
+        <p><strong>Why this prompt works:</strong></p>
+
+        <ul>
+            <li><strong>Specific tech stack</strong> — FastAPI, SQLAlchemy, Pydantic v2, SQLite, aiosqlite</li>
+            <li><strong>Explicit file structure</strong> — Cursor knows exactly which files to create</li>
+            <li><strong>Technical constraints</strong> — async, UUID, validation rules, status codes</li>
+            <li><strong>Complete feature list</strong> — no ambiguity about what "done" looks like</li>
+        </ul>
+
+        <p>Cursor will generate multiple files at once. This is where it shines — it understands the relationships between files.</p>
+
+        <h2>Phase 2: Review and Validate the Output</h2>
+
+        <p>Never blindly accept AI-generated code. Review each file systematically:</p>
+
+        <h3>Check the Database Model (models.py)</h3>
+
+        <pre><code class="language-python"># What Cursor should generate:
+from sqlalchemy import Column, String, Boolean, DateTime
+from sqlalchemy.sql import func
+from sqlalchemy.dialects.postgresql import UUID
+import uuid
+from database import Base
+
+class Task(Base):
+    __tablename__ = "tasks"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    title = Column(String(200), nullable=False)
+    description = Column(String(1000), nullable=True)
+    completed = Column(Boolean, default=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    def __repr__(self):
+        return f"&lt;Task {self.title}&gt;"</code></pre>
+
+        <p><strong>What to verify:</strong></p>
+
+        <ul>
+            <li>Is <code>id</code> properly typed? (String(36) for SQLite, since SQLite doesn't have a native UUID type)</li>
+            <li>Are timestamps using timezone-aware datetimes?</li>
+            <li>Does <code>updated_at</code> update on every change?</li>
+            <li>Are nullable fields correct? (title is required, description is optional)</li>
+        </ul>
+
+        <h3>Check the Pydantic Schemas (schemas.py)</h3>
+
+        <pre><code class="language-python"># What Cursor should generate:
+from pydantic import BaseModel, Field
+from typing import Optional
+from datetime import datetime
+from uuid import UUID
+
+class TaskCreate(BaseModel):
+    title: str = Field(..., min_length=1, max_length=200, description="Task title")
+    description: Optional[str] = Field(None, max_length=1000, description="Task description")
+
+class TaskUpdate(BaseModel):
+    title: Optional[str] = Field(None, min_length=1, max_length=200)
+    description: Optional[str] = Field(None, max_length=1000)
+    completed: Optional[bool] = None
+
+class TaskResponse(BaseModel):
+    id: str
+    title: str
+    description: Optional[str]
+    completed: bool
+    created_at: datetime
+    updated_at: Optional[datetime]
+
+    model_config = {"from_attributes": True}
+
+class TaskListResponse(BaseModel):
+    tasks: list[TaskResponse]
+    total: int</code></pre>
+
+        <p><strong>What to verify:</strong> The <code>TaskUpdate</code> schema should have all fields as optional — you only update what the client sends. The <code>from_attributes: True</code> config is critical for SQLAlchemy compatibility with Pydantic v2.</p>
+
+        <h2>Phase 3: Run and Fix Issues</h2>
+
+        <p>Start the app and you'll likely hit your first real-world issue. This is <strong>normal and expected</strong> — AI-generated code is a great draft, not a finished product.</p>
+
+        <p>Common issues and how to fix them with Cursor:</p>
+
+        <h3>Issue 1: Dependency Conflicts</h3>
+
+        <p>If you see <code>ModuleNotFoundError</code> or import errors, paste the full error into Cursor's chat:</p>
+
+        <pre><code class="language-text">I'm getting this error when running the app:
+
+    ModuleNotFoundError: No module named 'aiosqlite'
+
+Here's my requirements.txt: [paste contents]
+
+Fix the requirements and ensure all imports are correct.</code></pre>
+
+        <h3>Issue 2: Database Schema Mismatches</h3>
+
+        <p>If the database doesn't initialize properly:</p>
+
+        <pre><code class="language-text">The database tables aren't being created on startup. My database.py uses async SQLAlchemy with async engine. Fix the startup event to create tables properly using async metadata.create_all().</code></pre>
+
+        <h3>Issue 3: Pydantic Serialization Errors</h3>
+
+        <p>If you get JSON serialization errors with UUID or datetime objects:</p>
+
+        <pre><code class="language-text">Getting a serialization error when returning TaskResponse. UUID objects aren't serializable by default in FastAPI. Fix the schema to handle UUID serialization properly.</code></pre>
+
+        <p><strong>Key principle:</strong> Always paste the <strong>full error message</strong> and <strong>relevant code</strong> when asking Cursor to fix something. Vague error descriptions get vague fixes.</p>
+
+        <h2>Phase 4: Add Tests</h3>
+
+        <p>Once the API works, add tests. This is where Cursor really accelerates development — it can generate comprehensive test suites from your existing code.</p>
+
+        <p>Select your <code>main.py</code> file in Cursor, then open Composer with Cmd+I:</p>
+
+        <pre><code class="language-text">Create a comprehensive test suite in tests/test_api.py for the task API. Use pytest with httpx AsyncClient for async testing.
+
+Test requirements:
+- Use a test SQLite database in memory
+- Test all CRUD operations (create, read, update, delete)
+- Test validation (empty title, title too long, invalid JSON)
+- Test 404 responses for non-existent tasks
+- Test the health check endpoint
+- Test creating many tasks and listing them
+- Use pytest fixtures for the test client and database setup
+- Each test should be independent (clean database state)</code></pre>
+
+        <p>Cursor will generate tests like this:</p>
+
+        <pre><code class="language-python"># tests/test_api.py
+import pytest
+import httpx
+from main import app
+from database import Base, engine
+from sqlalchemy.ext.asyncio import AsyncSession
+
+@pytest.fixture
+async def client():
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app),
+        base_url="http://test"
+    ) as c:
+        yield c
+
+async def test_health_check(client):
+    response = await client.get("/health")
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+
+async def test_create_task(client):
+    response = await client.post("/tasks", json={
+        "title": "Learn Cursor AI",
+        "description": "Read the vibe coding tutorial"
+    })
+    assert response.status_code == 201
+    data = response.json()
+    assert data["title"] == "Learn Cursor AI"
+    assert data["completed"] is False
+    assert "id" in data
+
+async def test_create_task_validation_empty_title(client):
+    response = await client.post("/tasks", json={"title": ""})
+    assert response.status_code == 422
+
+async def test_create_task_title_too_long(client):
+    response = await client.post("/tasks", json={"title": "x" * 201})
+    assert response.status_code == 422
+
+async def test_get_nonexistent_task(client):
+    response = await client.get("/tasks/nonexistent-uuid")
+    assert response.status_code == 404</code></pre>
+
+        <p>Run the tests with <code>pytest tests/ -v</code>. Fix any failures by pasting errors back into Cursor.</p>
+
+        <h2>Phase 5: Dockerize</h2>
+
+        <p>With the API working and tested, add Docker support. Select your project in Cursor:</p>
+
+        <pre><code class="language-text">Create a production-ready Dockerfile for this FastAPI application. Requirements:
+- Use python:3.12-slim as base image
+- Install dependencies in a separate layer for caching
+- Use a non-root user for security
+- Run with uvicorn in production mode
+- Include a .dockerignore file
+- Include a docker-compose.yml for local development with hot reload</code></pre>
+
+        <p>Cursor generates:</p>
+
+        <pre><code class="language-dockerfile"># Dockerfile
+FROM python:3.12-slim
+
+WORKDIR /app
+
+# Install dependencies first (for Docker layer caching)
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY . .
+
+# Create non-root user
+RUN useradd --create-home appuser
+USER appuser
+
+EXPOSE 8000
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]</code></pre>
+
+        <pre><code class="language-yaml"># docker-compose.yml
+version: "3.9"
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:///./tasks.db
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload</code></pre>
+
+        <h2>Pro Tips for Cursor Workflow</h2>
+
+        <h3>1. Use @ References for Context</h3>
+
+        <p>Cursor's <code>@</code> feature lets you reference specific files, folders, or documentation in your prompts. When fixing a bug, reference the relevant files:</p>
+
+        <pre><code class="language-text">@models.py @schemas.py The TaskResponse schema is missing the updated_at field. Add it with Optional[datetime] type and update all related endpoints.</code></pre>
+
+        <h3>2. Iterate with "Also" Prompts</h3>
+
+        <p>Instead of rewriting entire prompts, add to your existing context:</p>
+
+        <pre><code class="language-text">Also add a /tasks/completed endpoint that returns only completed tasks. Follow the same patterns used in the existing endpoints.</code></pre>
+
+        <h3>3. Use Cursor's Multi-File Edit</h3>
+
+        <p>Cursor can edit multiple files in a single operation. When you need changes across files (like adding a new field), reference all affected files:</p>
+
+        <pre><code class="language-text">Add a "priority" field (integer, 1-5, default 3) to the task model. Update all related files:
+@models.py — add column
+@schemas.py — add to all schemas
+@main.py — add to endpoints that create/update tasks</code></pre>
+
+        <h3>4. Keep a Project Brief</h3>
+
+        <p>Create a <code>PROJECT.md</code> file at the root describing your architecture. Reference it at the start of every new session:</p>
+
+        <pre><code class="language-text"># Project Brief: Task API
+# Stack: FastAPI, async SQLAlchemy, SQLite, Pydantic v2
+# Testing: pytest + httpx
+# Container: Docker with python:3.12-slim
+# Convention: All responses are JSON, all IDs are UUIDs</code></pre>
+
+        <h3>5. When to Code Manually</h3>
+
+        <p>Even with Cursor, you should write code yourself when:</p>
+
+        <ul>
+            <li>The logic is <strong>domain-specific</strong> (business rules, industry knowledge)</li>
+            <li>You need to <strong>understand deeply</strong> (learning new patterns, debugging complex issues)</li>
+            <li>It's a <strong>critical security component</strong> (auth logic, encryption, key management)</li>
+            <li>The AI keeps getting it <strong>wrong after 3+ iterations</strong> — sometimes it's faster to write it yourself</li>
+        </ul>
+
+        <h2>The Full Session Recap</h2>
+
+        <p>Here's the complete workflow timeline:</p>
+
+        <ol>
+            <li><strong>Minute 0-3:</strong> Write the context prompt with full specs</li>
+            <li><strong>Minute 3-8:</strong> Cursor generates all files — review each one</li>
+            <li><strong>Minute 8-12:</strong> Run the app, fix import/dependency issues</li>
+            <li><strong>Minute 12-15:</strong> Test the API with curl or the browser</li>
+            <li><strong>Minute 15-20:</strong> Generate and run tests</li>
+            <li><strong>Minute 20-25:</strong> Dockerize the application</li>
+            <li><strong>Minute 25-30:</strong> Final review, commit to Git</li>
+        </ol>
+
+        <p>30 minutes from empty folder to working, tested, containerized API. That's the power of vibe coding done right.</p>
+
+        <h2>Common Pitfalls to Avoid</h2>
+
+        <ul>
+            <li><strong>Too much code without reviewing</strong> — Always read generated code before accepting it. A small bug in the database model cascades into broken tests and endpoints.</li>
+            <li><strong>Vague prompts</strong> — "Make it better" produces inconsistent results. "Add input validation to handle null values" produces exact results.</li>
+            <li><strong>Skip testing</strong> — Just because the API responds with 200 doesn't mean it's correct. Write tests that assert specific values.</li>
+            <li><strong>Ignoring error messages</strong> — Error messages are free debugging help. Paste them into Cursor with context, and you'll get fixes in seconds.</li>
+            <li><strong>No Git commits between changes</strong> — Commit after each phase (setup, models, endpoints, tests, docker). When Cursor generates something broken, you can always revert.</li>
+        </ul>
+
+        <h2>Next Steps</h2>
+
+        <p>Once you're comfortable with this workflow, try these challenges:</p>
+
+        <ul>
+            <li>Add <strong>user authentication</strong> with JWT tokens</li>
+            <li>Replace SQLite with <strong>PostgreSQL</strong> using Docker Compose</li>
+            <li>Add <strong>pagination</strong> to the list endpoint</li>
+            <li>Build a <strong>React frontend</strong> using Cursor with a new prompt</li>
+            <li>Set up <strong>GitHub Actions CI/CD</strong> to run tests on every push</li>
+        </ul>
+
+        <p>The vibe coding workflow scales. Start with small projects like this API, and gradually build more complex applications. The key is always: set context clearly, review everything, iterate with specific prompts, and commit often.</p>
+
+        <footer class="post-footer">
+            <p class="post-author">Written by Hugo Wong · July 13, 2026</p>
+        </footer>
+    </article>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes · Built with Cloudflare Workers &amp; Pages</p>
+        </div>
+    </footer>
+</body>
+</html>

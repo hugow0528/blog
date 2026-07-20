@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JavaScript Modules &amp; ES Module System: Organize Code Like a Pro — Complete Beginner's Guide</title>
+    <meta name="description" content="Master JavaScript modules from scratch — ES module imports/exports, CommonJS, dynamic imports, named vs default exports, module bundling with Vite, and real-world patterns. Working code for every concept.">
+    <meta name="keywords" content="javascript modules, es modules, import export, commonjs, dynamic import, module bundling, vite, javascript architecture">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/javascript-modules.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn active">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-detail">
+            <header class="post-header">
+                <div class="post-tags">
+                    <span class="tag web">Web Dev</span>
+                </div>
+                <h1>JavaScript Modules &amp; ES Module System: Organize Code Like a Pro — Complete Beginner's Guide</h1>
+                <div class="post-meta">
+                    <span class="post-date">July 19, 2026</span>
+                    <span class="read-time">11 min read</span>
+                </div>
+            </header>
+
+            <div class="post-content">
+                <p>Before modules, JavaScript had one giant problem: everything shared the same global scope. If two libraries used a variable named <code>data</code>, they'd collide and break each other. Modules solve this by letting you split your code into separate files, each with its own scope, and explicitly share only what you need. This post covers ES modules (the modern standard), CommonJS (still everywhere), dynamic imports, and how to bundle your modules for production.</p>
+
+                <h2>The Problem: Global Scope Hell</h2>
+                <p>Imagine building a web app without modules. Every variable, function, and object lives in the global namespace:</p>
+
+<pre><code class="language-javascript">// utils.js — loaded in the browser
+function formatDate(date) {
+  return date.toISOString().split('T')[0];
+}
+
+let data = []; // Oops! "data" is now global
+
+// other-utils.js — loaded after utils.js
+function processData(data) { // Shadows the global "data"
+  return data.filter(Boolean);
+}
+
+// main.js
+let data = [1, 2, 3]; // Collision! Which "data" wins?
+console.log(formatDate(new Date())); // Works, but why?</code></pre>
+
+                <p>Every file pollutes the global scope. Modules give each file its own private scope, and you <em>choose</em> what to share.</p>
+
+                <h2>ES Modules: The Modern Standard</h2>
+                <p>ES modules (ESM) are the official JavaScript module system, supported natively in all modern browsers and Node.js. To use them, add <code type="text/javascript">&lt;script type="module"&gt;</code> in your HTML or use <code> "type": "module" </code> in <code>package.json</code>.</p>
+
+                <h3>Named Exports — Export Anything, Import Anything</h3>
+                <p>Named exports let you export multiple items from a file and import them by name:</p>
+
+<pre><code class="language-javascript">// math.js — export multiple functions
+export function add(a, b) {
+  return a + b;
+}
+
+export function subtract(a, b) {
+  return a - b;
+}
+
+export const PI = 3.14159;</code></pre>
+
+<pre><code class="language-javascript">// app.js — import by name
+import { add, subtract, PI } from './math.js';
+
+console.log(add(5, 3));       // 8
+console.log(subtract(10, 4)); // 6
+console.log(PI);              // 3.14159</code></pre>
+
+                <p>You can also import everything as a single object using <code>import * as</code>:</p>
+
+<pre><code class="language-javascript">import * as MathUtils from './math.js';
+
+MathUtils.add(5, 3);
+MathUtils.subtract(10, 4);
+MathUtils.PI;</code></pre>
+
+                <h3>Default Export — One Main Thing Per File</h3>
+                <p>Each file can have one <code>default</code> export. This is useful when a file produces one primary thing:</p>
+
+<pre><code class="language-javascript">// button.js — one main export
+export default class Button {
+  constructor(label) {
+    this.label = label;
+    this.element = document.createElement('button');
+    this.element.textContent = label;
+  }
+
+  onClick(handler) {
+    this.element.addEventListener('click', handler);
+    return this; // Enable chaining
+  }
+
+  render(container) {
+    container.appendChild(this.element);
+  }
+}</code></pre>
+
+<pre><code class="language-javascript">// app.js — import with any name you choose
+import Button from './button.js';
+
+const btn = new Button('Click me')
+  .onClick(() => alert('Hello!'));
+
+btn.render(document.body);</code></pre>
+
+                <p>Notice you don't use curly braces for default imports. And you can name it anything on the import side — that's the deal with "default".</p>
+
+                <h3>Mixing Named and Default Exports</h3>
+                <p>You can combine both in one file:</p>
+
+<pre><code class="language-javascript">// api.js
+export const BASE_URL = 'https://api.example.com';
+
+export async function fetchUsers() {
+  const res = await fetch(`${BASE_URL}/users`);
+  return res.json();
+}
+
+export default class ApiClient {
+  async getUsers() {
+    return fetchUsers();
+  }
+
+  async getUser(id) {
+    const res = await fetch(`${BASE_URL}/users/${id}`);
+    return res.json();
+  }
+}</code></pre>
+
+<pre><code class="language-javascript">// app.js — import both default and named
+import ApiClient, { BASE_URL, fetchUsers } from './api.js';
+
+console.log(BASE_URL);       // https://api.example.com
+console.log(await fetchUsers()); // [...]
+
+const client = new ApiClient();
+console.log(await client.getUser(1)); // {...}</code></pre>
+
+                <h2>Dynamic Imports: Load Modules On Demand</h2>
+                <p>Static imports (at the top of the file) load everything upfront. Dynamic imports let you load modules when you need them — reducing initial page load time:</p>
+
+<pre><code class="language-javascript">// Lazy-load a heavy chart library only when needed
+document.getElementById('loadChart').addEventListener('click', async () => {
+  const Chart = await import('./chart.js');
+  Chart.draw(document.getElementById('chart'));
+});</code></pre>
+
+                <p>Dynamic imports return a <code>Promise</code> that resolves to the entire module. This is called <strong>code splitting</strong> — splitting your bundle into smaller pieces loaded on demand.</p>
+
+<pre><code class="language-javascript">// Conditional loading based on user role
+async function loadDashboard(user) {
+  if (user.role === 'admin') {
+    const AdminPanel = await import('./admin-panel.js');
+    AdminPanel.init();
+  } else {
+    const UserPanel = await import('./user-panel.js');
+    UserPanel.init();
+  }
+}</code></pre>
+
+                <h2>CommonJS: The Legacy System (Still Everywhere)</h2>
+                <p>Node.js originally used CommonJS (CJS) with <code>require()</code> and <code>module.exports</code>. Many npm packages still use it:</p>
+
+<pre><code class="language-javascript">// CommonJS (Node.js style)
+// math.js
+module.exports = {
+  add: (a, b) => a + b,
+  subtract: (a, b) => a - b,
+  PI: 3.14159
+};
+
+// app.js
+const { add, subtract, PI } = require('./math.js');
+console.log(add(5, 3)); // 8</code></pre>
+
+                <p>Key differences between CommonJS and ES modules:</p>
+
+<pre><code class="language-text">CommonJS              ES Modules
+require()             import
+module.exports        export
+Synchronous           Can be async
+Node.js default       Browser default
+No top-level await    Top-level await supported</code></pre>
+
+                <h2>Top-Level Await</h2>
+                <p>ES modules support <code>await</code> at the top level (not just inside async functions):</p>
+
+<pre><code class="language-javascript">// config.js — top-level await is allowed in ES modules
+const response = await fetch('/config.json');
+const config = await response.json();
+
+export const API_URL = config.apiUrl;
+export const DEBUG = config.debug;
+
+// app.js
+import { API_URL, DEBUG } from './config.js';
+// API_URL is already resolved when this runs!</code></pre>
+
+                <p>This is incredibly useful for initializing async data before your app starts — database connections, config loading, feature flag fetching — all without wrapping everything in an async IIFE.</p>
+
+                <h2>Relative vs Absolute Imports</h2>
+                <p>ES module imports must be explicit about their path:</p>
+
+<pre><code class="language-javascript">// ✅ ES Modules require explicit paths
+import { add } from './math.js';        // Relative — must include ./
+import { add } from '../utils/math.js'; // Relative — go up one level
+import React from 'react';              // Bare specifier — npm package
+
+// ❌ This won't work in ES modules (no .js, no ./):
+// import { add } from 'math';</code></pre>
+
+                <p>Many developers find the <code>./</code> prefix tedious. Tools like Vite, Webpack, and TypeScript let you configure <strong>path aliases</strong> for cleaner imports:</p>
+
+<pre><code class="language-javascript">// With path alias configured (e.g., @/ = src/)
+import Button from '@/components/Button.js';
+import { formatDate } from '@/utils/date.js';
+import store from '@/store/index.js';
+
+// Instead of:
+// import Button from '../../../components/Button.js';
+// import { formatDate } from '../../../utils/date.js';</code></pre>
+
+                <h2>Building a Real-World Module Architecture</h2>
+                <p>Let's put it all together. Here's a practical module structure for a web app:</p>
+
+<pre><code class="language-text">src/
+├── index.js          # Entry point
+├── store.js          # State management
+├── api/
+│   ├── client.js     # API client
+│   ├── users.js      # User endpoints
+│   └── posts.js      # Post endpoints
+├── components/
+│   ├── Button.js     # Reusable button
+│   ├── Card.js       # Card component
+│   └── Header.js     # Header component
+└── utils/
+    ├── format.js     # Formatting helpers
+    └── validators.js # Input validation</code></pre>
+
+<pre><code class="language-javascript">// store.js — central state
+export const state = {
+  users: [],
+  posts: [],
+  currentUser: null
+};
+
+export function setState(key, value) {
+  state[key] = value;
+  // In a real app, emit an event or call observers
+}</code></pre>
+
+<pre><code class="language-javascript">// api/client.js — shared HTTP client
+export async function request(url, options = {}) {
+  const res = await fetch(url, {
+    headers: { 'Content-Type': 'application/json' },
+    ...options
+  });
+
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}</code></pre>
+
+<pre><code class="language-javascript">// api/users.js — user-specific endpoints
+import { request } from './client.js';
+
+export function getUsers() {
+  return request('/api/users');
+}
+
+export function getUser(id) {
+  return request(`/api/users/${id}`);
+}
+
+export function createUser(data) {
+  return request('/api/users', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
+}</code></pre>
+
+<pre><code class="language-javascript">// components/Card.js — reusable UI component
+import { formatName, formatDate } from '../utils/format.js';
+
+export class Card {
+  constructor(user) {
+    this.user = user;
+  }
+
+  render() {
+    return `
+      <div class="card">
+        <h3>${formatName(this.user)}</h3>
+        <p>Joined: ${formatDate(this.user.createdAt)}</p>
+      </div>
+    `;
+  }
+}</code></pre>
+
+<pre><code class="language-javascript">// index.js — entry point
+import { getUsers, createUser } from './api/users.js';
+import { Card } from './components/Card.js';
+import { state, setState } from './store.js';
+
+// Top-level await — load data before anything else
+const users = await getUsers();
+setState('users', users);
+
+// Render cards
+const container = document.getElementById('app');
+users.forEach(user => {
+  container.innerHTML += new Card(user).render();
+});
+
+console.log(`Loaded ${users.length} users`);</code></pre>
+
+                <h2>Module Bundling: Vite for Production</h2>
+                <p>Browsers can't always handle many small module files (too many HTTP requests). A <strong>bundler</strong> combines your modules into optimized bundles. Vite is the modern choice:</p>
+
+<pre><code class="language-bash"># Install Vite
+npm create vite@latest my-app -- --template vanilla
+cd my-app
+npm install
+npm run dev      # Development server with HMR
+npm run build    # Production bundle</code></pre>
+
+<pre><code class="language-json">// vite.config.js
+export default defineConfig({
+  resolve: {
+    alias: {
+      '@': '/src'  // Path alias for clean imports
+    }
+  }
+});</code></pre>
+
+                <p>Vite handles module resolution, tree-shaking (removing unused code), code splitting, and minification automatically. In development, it uses native ES modules for lightning-fast hot module replacement (HMR). In production, it bundles everything with Rollup.</p>
+
+                <h2>Module Patterns: Best Practices</h2>
+                <p>Follow these patterns to keep your modules clean:</p>
+
+<pre><code class="language-javascript">// 1. One responsibility per module
+// ✅ utils/format.js — only formatting
+export function formatDate(date) { /* ... */ }
+export function formatCurrency(amount) { /* ... */ }
+
+// ❌ utils.js — formatting, validation, HTTP, storage
+// Don't do this!
+
+// 2. Export from a central index for convenience
+// utils/index.js
+export * from './format.js';
+export * from './validators.js';
+export * from './helpers.js';
+
+// Now import everything from one place:
+import { formatDate, isValidEmail } from '../utils/index.js';
+
+// 3. Keep imports organized (alphabetical, grouped)
+import React from 'react';                      // External
+import { useState, useEffect } from 'react';
+
+import { Button } from '@/components/Button';    // Internal
+import { formatDate } from '@/utils';
+
+import './styles.css';                           // Side-effect only
+
+// 4. Prefer named exports for tree-shaking
+// ✅ Bundle only what you use
+export function add() { /* ... */ }
+export function subtract() { /* ... */ }
+
+// ❌ Default exports prevent tree-shaking of unused code
+export default { add, subtract, multiply, divide, power }</code></pre>
+
+                <h2>Browser Module Map (importmap)</h2>
+                <p>Browsers now support <code>&lt;script type="importmap"&gt;</code> to map bare module specifiers:</p>
+
+<pre><code class="language-html">&lt;script type="importmap"&gt;
+{
+  "imports": {
+    "lodash-es": "https://cdn.jsdelivr.net/npm/lodash-es/+esm",
+    "d3": "https://cdn.jsdelivr.net/npm/d3@7/+esm"
+  }
+}
+&lt;/script&gt;
+
+&lt;script type="module"&gt;
+import { debounce } from 'lodash-es';
+import * as d3 from 'd3';
+
+// No bundler needed — just works in the browser!
+&lt;/script&gt;</code></pre>
+
+                <p>This eliminates the need for a bundler when you want to use ES modules directly in the browser. Perfect for small projects and prototyping.</p>
+
+                <h2>Summary</h2>
+                <p>JavaScript modules are the foundation of modern JavaScript architecture. ES modules give you:</p>
+                <ul>
+                    <li><strong>Named exports</strong> for multiple exports, <strong>default exports</strong> for one primary export</li>
+                    <li><strong>Dynamic imports</strong> for lazy loading and code splitting</li>
+                    <li><strong>Top-level await</strong> for async initialization</li>
+                    <li><strong>import maps</strong> for bare specifiers without bundlers</li>
+                    <li><strong>Tree-shaking</strong> for smaller production bundles</li>
+                </ul>
+                <p>Start by splitting your code into modules with clear responsibilities. Use Vite for bundling. And always prefer named exports for better tree-shaking. Your future self (and your teammates) will thank you.</p>
+
+                <h2>What's Next?</h2>
+                <p>Now that you understand modules, check out our guides on <a href="posts/javascript-es6-features.html">ES6+ Features</a>, <a href="posts/javascript-fetch-api.html">Fetch API</a>, and <a href="posts/javascript-event-handling-delegation.html">Event Handling</a> to round out your JavaScript toolkit.</p>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Hugo's Dev Notes. Built with curiosity and too much caffeine.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('themeToggle').addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            document.getElementById('themeToggle').textContent = isLight ? '☀' : '◐';
+        });
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-mode');
+            document.getElementById('themeToggle').textContent = '☀';
+        }
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + "%";
+        });
+    </script>
+</body>
+</html>

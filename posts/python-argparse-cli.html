@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python argparse: Build Professional CLI Tools — Complete Beginner's Guide | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn Python argparse to build command-line interfaces — positional arguments, optional flags, subcommands, help text, and validation. Working code for every concept.">
+    <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-argparse-cli.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn active">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <article class="post-content">
+        <span class="tag python">Python</span>
+        <h1>Python argparse: Build Professional CLI Tools — Complete Beginner's Guide</h1>
+        <div class="post-meta">
+            <span class="post-date">July 20, 2026</span>
+            <span class="read-time">10 min read</span>
+        </div>
+
+        <p>Command-line interfaces (CLIs) are one of the most practical ways to build tools that other developers (and your future self) will actually use. Python's built-in <code>argparse</code> module makes it easy to create professional-grade CLIs with automatic help text, type validation, and subcommands — all without installing any third-party packages.</p>
+
+        <p>In this guide, you'll learn everything from your first positional argument to building a complete multi-command tool with subcommands, custom types, and configuration file support.</p>
+
+        <h2>Why argparse Over sys.argv?</h2>
+        <p>Before argparse existed, developers parsed command-line arguments manually using <code>sys.argv</code>. This approach quickly becomes messy:</p>
+
+        <pre><code>import sys
+
+# Manual parsing — fragile and error-prone
+args = sys.argv
+if len(args) &lt; 2:
+    print("Usage: mytool.py &lt;filename&gt;")
+    sys.exit(1)
+
+filename = args[1]
+verbose = "--verbose" in args
+output = None
+for i, arg in enumerate(args):
+    if arg == "--output" and i + 1 &lt; len(args):
+        output = args[i + 1]</code></pre>
+
+        <p>This approach has no validation, no help text, no type conversion, and no handling of flags in different orders. <code>argparse</code> solves all of these problems:</p>
+
+        <pre><code>import argparse
+
+parser = argparse.ArgumentParser(
+    description="Process a file and generate a report."
+)
+parser.add_argument("filename", help="Input file to process")
+parser.add_argument("--verbose", "-v", action="store_true",
+                    help="Enable verbose output")
+parser.add_argument("--output", "-o", default="report.txt",
+                    help="Output file path (default: report.txt)")
+
+args = parser.parse_args()
+print(f"Processing: {args.filename}")
+print(f"Output: {args.output}")
+print(f"Verbose: {args.verbose}")</code></pre>
+
+        <p>Run <code>python mytool.py --help</code> and you get beautifully formatted help text automatically. Try passing invalid arguments and argparse handles the error messages for you.</p>
+
+        <h2>Positional vs Optional Arguments</h2>
+        <p>There are two types of arguments in argparse: <strong>positional</strong> (required, order matters) and <strong>optional</strong> (start with <code>--</code> or <code>-</code>, order doesn't matter).</p>
+
+        <h3>Positional Arguments</h3>
+        <p>Positional arguments are required by default. They must be provided in the order they're defined:</p>
+
+        <pre><code>import argparse
+
+parser = argparse.ArgumentParser(description="Convert between units")
+parser.add_argument("value", type=float, help="The numeric value to convert")
+parser.add_argument("from_unit", choices=["cm", "m", "ft", "in"],
+                    help="Source unit")
+parser.add_argument("to_unit", choices=["cm", "m", "ft", "in"],
+                    help="Target unit")
+
+args = parser.parse_args()
+
+# Conversion logic
+conversion = {
+    "cm": 1, "m": 100, "ft": 30.48, "in": 2.54
+}
+
+result = args.value * conversion[args.from_unit] / conversion[args.to_unit]
+print(f"{args.value} {args.from_unit} = {result:.4f} {args.to_unit}")</code></pre>
+
+        <p>Try running this:</p>
+        <pre><code>$ python converter.py 5 ft cm
+5 ft = 152.4000 cm
+
+$ python converter.py 100 inches
+# Error: too few arguments
+
+$ python converter.py 5 ft km
+# Error: invalid choice: 'km'</code></pre>
+
+        <p>The <code>choices</code> parameter validates input against a predefined set. The <code>type=float</code> parameter ensures the value is converted from string to float automatically.</p>
+
+        <h3>Optional Arguments (Flags and Values)</h3>
+        <p>Optional arguments start with <code>--</code> (long form) or <code>-</code> (short form). They can be provided in any order:</p>
+
+        <pre><code>import argparse
+
+parser = argparse.ArgumentParser(description="Download files from URLs")
+parser.add_argument("url", help="URL to download from")
+parser.add_argument("-o", "--output", default=None,
+                    help="Output filename (default: from URL)")
+parser.add_argument("-r", "--retries", type=int, default=3,
+                    help="Number of retries on failure (default: 3)")
+parser.add_argument("--timeout", type=int, default=30,
+                    help="Request timeout in seconds (default: 30)")
+parser.add_argument("--verbose", "-v", action="store_true",
+                    help="Print detailed progress")
+parser.add_argument("--format", "-f", choices=["json", "csv", "txt"],
+                    default="json", help="Output format (default: json)")
+
+args = parser.parse_args()</code></pre>
+
+        <p>Key parameter types:</p>
+        <ul>
+            <li><code>type=int</code> — automatically converts the string to an integer</li>
+            <li><code>default=3</code> — value used when the flag is not provided</li>
+            <li><code>action="store_true"</code> — turns the flag into a boolean (True if present, False otherwise)</li>
+            <li><code>choices=["json", "csv"]</code> — validates against a set of allowed values</li>
+            <li><code>nargs="?"</code> — makes the argument optional even without default</li>
+        </ul>
+
+        <h2>Required Optional Arguments</h2>
+        <p>Some optional arguments should be mandatory — for example, an API key. Use <code>required=True</code>:</p>
+
+        <pre><code>parser.add_argument("--api-key", required=True,
+                    help="Your API key (env: MY_API_KEY)")
+
+# Better pattern: check environment first
+import os
+default_key = os.environ.get("MY_API_KEY")
+parser.add_argument("--api-key", required=not default_key,
+                    default=default_key,
+                    help="API key (or set MY_API_KEY env var)")</code></pre>
+
+        <h2>Custom Type Validation</h2>
+        <p>You can define custom validation functions with the <code>type</code> parameter:</p>
+
+        <pre><code>def positive_int(value):
+    """Validate that the value is a positive integer."""
+    ivalue = int(value)
+    if ivalue &lt;= 0:
+        raise argparse.ArgumentTypeError(f"{value} is not a positive integer")
+    return ivalue
+
+def port_number(value):
+    """Validate a TCP port number (1-65535)."""
+    port = int(value)
+    if not 1 &lt;= port &lt;= 65535:
+        raise argparse.ArgumentTypeError(
+            f"{port} is not a valid port number (1-65535)"
+        )
+    return port
+
+parser.add_argument("--count", type=positive_int, help="Number of items")
+parser.add_argument("--port", type=port_number, default=8080, help="Port number")</code></pre>
+
+        <p>When validation fails, argparse prints a clear error message and exits with code 2:</p>
+        <pre><code>$ python tool.py --port 0
+error: argument --port: 0 is not a valid port number (1-65535)</code></pre>
+
+        <h2>Subcommands</h2>
+        <p>Many real-world CLIs have subcommands (like <code>git commit</code>, <code>docker build</code>). argparse supports this with <code>add_subparsers()</code>:</p>
+
+        <pre><code>import argparse
+
+def cmd_create(args):
+    """Handle the 'create' subcommand."""
+    print(f"Creating user: {args.name}")
+    print(f"  Email: {args.email}")
+    if args.admin:
+        print("  Role: admin")
+
+def cmd_list(args):
+    """Handle the 'list' subcommand."""
+    print(f"Listing users...")
+    if args.active_only:
+        print("  Filter: active only")
+
+def cmd_delete(args):
+    """Handle the 'delete' subcommand."""
+    print(f"Deleting user ID: {args.user_id}")
+    if args.force:
+        print("  Force delete: yes")
+    else:
+        print("  Confirm before deleting...")
+
+# Main parser
+parser = argparse.ArgumentParser(
+    prog="user-manager",
+    description="Manage user accounts in the system."
+)
+subparsers = parser.add_subparsers(dest="command", help="Available commands")
+
+# 'create' subcommand
+create_parser = subparsers.add_parser("create", help="Create a new user")
+create_parser.add_argument("--name", "-n", required=True, help="User's full name")
+create_parser.add_argument("--email", "-e", required=True, help="User's email address")
+create_parser.add_argument("--admin", "-a", action="store_true", help="Make admin user")
+create_parser.set_defaults(func=cmd_create)
+
+# 'list' subcommand
+list_parser = subparsers.add_parser("list", help="List all users")
+list_parser.add_argument("--active-only", action="store_true", help="Show only active users")
+list_parser.add_argument("--limit", type=int, default=50, help="Max results (default: 50)")
+list_parser.set_defaults(func=cmd_list)
+
+# 'delete' subcommand
+delete_parser = subparsers.add_parser("delete", help="Delete a user")
+delete_parser.add_argument("user_id", type=int, help="ID of user to delete")
+delete_parser.add_argument("--force", "-f", action="store_true", help="Skip confirmation")
+delete_parser.set_defaults(func=cmd_delete)
+
+# Parse and dispatch
+args = parser.parse_args()
+if args.command is None:
+    parser.print_help()
+else:
+    args.func(args)</code></pre>
+
+        <p>Now you get a rich CLI experience:</p>
+        <pre><code>$ python user-manager.py --help
+usage: user-manager [-h] {create,list,delete} ...
+
+Manage user accounts in the system.
+
+positional arguments:
+  {create,list,delete}  Available commands
+    create              Create a new user
+    list                List all users
+    delete              Delete a user
+
+$ python user-manager.py create -n "Alice" -e "alice@example.com"
+Creating user: Alice
+  Email: alice@example.com</code></pre>
+
+        <h2>Complete Real-World Example: Log File Analyzer</h2>
+        <p>Let's put everything together into a practical CLI tool that analyzes log files:</p>
+
+        <pre><code>#!/usr/bin/env python3
+"""Log file analyzer — search, filter, and summarize log files."""
+
+import argparse
+import sys
+from datetime import datetime
+
+def parse_log_line(line):
+    """Parse a single log line into components."""
+    # Expected format: [2026-07-20 10:30:00] LEVEL: message
+    parts = line.strip().split("] ", 1)
+    if len(parts) != 2:
+        return None
+    timestamp_str = parts[0].strip("[")
+    rest = parts[1]
+    level_msg = rest.split(": ", 1)
+    if len(level_msg) != 2:
+        return None
+    return {
+        "timestamp": timestamp_str,
+        "level": level_msg[0].strip(),
+        "message": level_msg[1].strip()
+    }
+
+def cmd_analyze(args):
+    """Analyze and summarize a log file."""
+    try:
+        with open(args.file, "r") as f:
+            lines = f.readlines()
+    except FileNotFoundError:
+        print(f"Error: File '{args.file}' not found.", file=sys.stderr)
+        sys.exit(1)
+
+    levels = {"INFO": 0, "WARNING": 0, "ERROR": 0, "DEBUG": 0}
+    errors = []
+
+    for line in lines:
+        parsed = parse_log_line(line)
+        if parsed:
+            level = parsed["level"]
+            if level in levels:
+                levels[level] += 1
+            if level == "ERROR" and not args.exclude_errors:
+                errors.append(parsed["message"])
+
+    print(f"\n📊 Log Analysis: {args.file}")
+    print(f"   Total lines: {len(lines)}")
+    for level, count in levels.items():
+        print(f"   {level}: {count}")
+
+    if errors and args.show_errors:
+        print(f"\n   Recent errors:")
+        for err in errors[-5:]:
+            print(f"     - {err}")
+
+def cmd_search(args):
+    """Search for text in a log file."""
+    try:
+        with open(args.file, "r") as f:
+            lines = f.readlines()
+    except FileNotFoundError:
+        print(f"Error: File '{args.file}' not found.", file=sys.stderr)
+        sys.exit(1)
+
+    results = []
+    for i, line in enumerate(lines):
+        if args.pattern.lower() in line.lower():
+            results.append((i + 1, line.strip()))
+
+    print(f"Found {len(results)} matches for '{args.pattern}':")
+    for num, match in results[:args.max_results]:
+        print(f"  Line {num}: {match}")
+    if len(results) > args.max_results:
+        print(f"  ... and {len(results) - args.max_results} more")
+
+def main():
+    parser = argparse.ArgumentParser(
+        prog="log-analyzer",
+        description="Analyze and search through log files.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  %(prog)s analyze app.log
+  %(prog)s analyze app.log --show-errors
+  %(prog)s search app.log "connection timeout"
+  %(prog)s search app.log "error" --max 20
+"""
+    )
+    subparsers = parser.add_subparsers(dest="command", help="Commands")
+
+    analyze = subparsers.add_parser("analyze", help="Analyze a log file")
+    analyze.add_argument("file", help="Path to the log file")
+    analyze.add_argument("--show-errors", action="store_true",
+                        help="Display recent error messages")
+    analyze.add_argument("--exclude-errors", action="store_true",
+                        help="Don't count errors in analysis")
+    analyze.set_defaults(func=cmd_analyze)
+
+    search = subparsers.add_parser("search", help="Search log file")
+    search.add_argument("file", help="Path to the log file")
+    search.add_argument("pattern", help="Text to search for")
+    search.add_argument("--max", type=int, default=10,
+                       help="Max results to show (default: 10)")
+    search.set_defaults(func=cmd_search)
+
+    args = parser.parse_args()
+    if args.command is None:
+        parser.print_help()
+        sys.exit(1)
+    args.func(args)
+
+if __name__ == "__main__":
+    main()</code></pre>
+
+        <h2>Pro Tips</h2>
+        <ul>
+            <li><strong>Use <code>__main__.py</code></strong> — package your tool so users can run it with <code>python -m mytool</code></li>
+            <li><strong>Group related arguments</strong> — use <code>parser.add_argument_group("Network options")</code> to organize help output</li>
+            <li><strong>Read defaults from config files</strong> — merge a YAML/JSON config with CLI args using <code>set_defaults(**config)</code></li>
+            <li><strong>Use <code>nargs="*"</code></strong> for arguments that accept zero or more values (like a list of filenames)</li>
+            <li><strong>Consider <code>typer</code> or <code>click</code></strong> for more complex CLIs — they build on argparse ideas with cleaner syntax</li>
+        </ul>
+
+        <h2>Summary</h2>
+        <p><code>argparse</code> is Python's built-in answer to building command-line tools. It handles help text, validation, type conversion, subcommands, and error messages — all automatically. Start with simple positional and optional arguments, then add subcommands as your tool grows. The key pattern is <code>set_defaults(func=handler)</code> to dispatch to the right handler function based on which subcommand the user called.</p>
+
+    </article>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes. Built with care.</p>
+        </div>
+    </footer>
+
+    <script>
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + '%';
+        });
+        const toggle = document.getElementById('themeToggle');
+        if (toggle) {
+            toggle.addEventListener('click', () => {
+                document.body.classList.toggle('light');
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python APIs with FastAPI: Build Your First REST API — Complete Beginner's Guide | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn to build production-ready REST APIs with FastAPI — routing, request/response, Pydantic validation, middleware, authentication, and deployment. Working code for every concept.">
+    <meta name="keywords" content="fastapi, python api, rest api, pydantic, web framework, python backend, async api">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-fastapi-apis.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../python.html" class="nav-btn active">Python</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post">
+            <header class="post-header">
+                <div class="post-tags">
+                    <span class="tag python">Python</span>
+                    <span class="tag web">Web Dev</span>
+                </div>
+                <h1>Python APIs with FastAPI: Build Your First REST API — Complete Beginner's Guide</h1>
+                <div class="post-meta">
+                    <span class="post-date">July 16, 2026</span>
+                    <span class="read-time">11 min read</span>
+                    <span class="post-badge">New</span>
+                </div>
+            </header>
+
+            <div class="post-content">
+                <p>You've learned Python basics — variables, loops, functions, classes. Now it's time to build something that other programs can talk to. An API (Application Programming Interface) is exactly that: a set of endpoints that accept requests and return responses, usually as JSON. FastAPI is the fastest-growing Python web framework, and for good reason: it's fast (pun intended), auto-generates documentation, validates your data automatically, and supports async natively.</p>
+
+                <p>In this guide, you'll build a complete Task Management API from scratch — from a single endpoint to a production-ready service with validation, error handling, middleware, and deployment with Docker. Every code example is complete and runnable.</p>
+
+                <h2>Why FastAPI?</h2>
+                <p>Before we dive in, let's compare FastAPI with other Python web frameworks:</p>
+                <ul>
+                    <li><strong>Flask</strong> — Simple, but you need extra packages for validation and async support</li>
+                    <li><strong>Django</strong> — Full-featured but heavy; overkill for simple APIs</li>
+                    <li><strong>FastAPI</strong> — Modern, fast, auto-docs, built-in validation, async-ready</li>
+                </ul>
+                <p>FastAPI uses Python type hints to define what data your endpoints expect and return. It validates incoming data, generates OpenAPI documentation, and returns proper HTTP errors — all automatically.</p>
+
+                <h2>Step 1: Install and Your First Endpoint</h2>
+                <p>Create a project directory and install FastAPI with Uvicorn (the ASGI server that runs it):</p>
+
+<pre><code># Create and enter project directory
+mkdir my-api && cd my-api
+
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install fastapi uvicorn
+
+# Create the main file
+touch main.py</code></pre>
+
+                <p>Now write your first API in <code>main.py</code>:</p>
+
+<pre><code>from fastapi import FastAPI
+
+app = FastAPI(title="Task Manager API", version="1.0.0")
+
+@app.get("/")
+def read_root():
+    return {"message": "Welcome to the Task Manager API", "version": "1.0.0"}
+
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}</code></pre>
+
+                <p>Run it with:</p>
+
+<pre><code>uvicorn main:app --reload</code></pre>
+
+                <p>The <code>--reload</code> flag restarts the server when you edit files (dev only). Visit <code>http://localhost:8000</code> to see your JSON response. Visit <code>http://localhost:8000/docs</code> to see the auto-generated Swagger UI — try it!</p>
+
+                <h2>Step 2: Path Parameters and Query Parameters</h2>
+                <p>APIs need to accept data. Path parameters are part of the URL; query parameters come after a <code>?</code>. Let's add routes to list and get tasks:</p>
+
+<pre><code>from fastapi import FastAPI, Query, Path
+
+app = FastAPI()
+
+# In-memory "database" for this tutorial
+tasks = [
+    {"id": 1, "title": "Learn FastAPI", "completed": False},
+    {"id": 2, "title": "Build an API", "completed": True},
+]
+
+@app.get("/tasks")
+def list_tasks(completed: bool | None = None):
+    """List all tasks, optionally filtered by completion status."""
+    if completed is not None:
+        return [t for t in tasks if t["completed"] == completed]
+    return tasks
+
+@app.get("/tasks/{task_id}")
+def get_task(task_id: int = Path(ge=1)):
+    """Get a single task by ID."""
+    for task in tasks:
+        if task["id"] == task_id:
+            return task
+    return {"error": "Task not found"}, 404
+
+# Test in browser:
+# GET /tasks                → all tasks
+# GET /tasks?completed=true → only completed tasks
+# GET /tasks/1              → task with id=1
+# GET /tasks/999            → 404 error</code></pre>
+
+                <p>Notice how we used <code>Path(ge=1)</code> to validate that <code>task_id</code> is at least 1. FastAPI rejects invalid requests with a 422 error before your code even runs.</p>
+
+                <h2>Step 3: Pydantic Models for Request Validation</h2>
+                <p>Pydantic models define the shape of your data. They handle type conversion, validation, and serialization. This is where FastAPI shines:</p>
+
+<pre><code>from pydantic import BaseModel, Field
+from typing import Optional
+from datetime import datetime
+
+class TaskCreate(BaseModel):
+    """Model for creating a new task."""
+    title: str = Field(min_length=1, max_length=200, description="Task title")
+    description: Optional[str] = Field(None, max_length=1000)
+    priority: int = Field(default=3, ge=1, le=5, description="1=urgent, 5=low")
+
+class TaskUpdate(BaseModel):
+    """Model for updating an existing task — all fields optional."""
+    title: Optional[str] = Field(None, min_length=1, max_length=200)
+    description: Optional[str] = Field(None, max_length=1000)
+    completed: Optional[bool] = None
+    priority: Optional[int] = Field(None, ge=1, le=5)
+
+class TaskResponse(BaseModel):
+    """Model for the API response — adds server-side fields."""
+    id: int
+    title: str
+    description: Optional[str]
+    completed: bool
+    priority: int
+    created_at: str
+
+    class Config:
+        from_attributes = True</code></pre>
+
+                <p>Now use these models in your endpoint:</p>
+
+<pre><code>@app.post("/tasks", status_code=201)
+def create_task(task: TaskCreate):
+    """Create a new task. Returns 201 with the created task."""
+    new_id = max((t["id"] for t in tasks), default=0) + 1
+    new_task = {
+        "id": new_id,
+        "title": task.title,
+        "description": task.description,
+        "completed": False,
+        "priority": task.priority,
+        "created_at": datetime.utcnow().isoformat(),
+    }
+    tasks.append(new_task)
+    return new_task</code></pre>
+
+                <p>Test with curl:</p>
+
+<pre><code>curl -X POST http://localhost:8000/tasks \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Write unit tests", "priority": 2}'
+
+# Response (201 Created):
+# {"id": 3, "title": "Write unit tests", "description": null, 
+#  "completed": false, "priority": 2, "created_at": "2026-07-16T..."}
+
+# Try invalid data:
+curl -X POST http://localhost:8000/tasks \
+  -H "Content-Type: application/json" \
+  -d '{"title": "", "priority": 10}'
+
+# Response (422 Unprocessable Entity) — FastAPI validates for you!</code></pre>
+
+                <h2>Step 4: Full CRUD — Update and Delete</h2>
+                <p>Complete the API with PUT and DELETE endpoints:</p>
+
+<pre><code>@app.put("/tasks/{task_id}")
+def update_task(task_id: int, updates: TaskUpdate):
+    """Update a task. Only provided fields are changed."""
+    for task in tasks:
+        if task["id"] == task_id:
+            # Update only fields that were provided
+            update_data = updates.model_dump(exclude_unset=True)
+            task.update(update_data)
+            return task
+    raise HTTPException(status_code=404, detail="Task not found")
+
+@app.delete("/tasks/{task_id}", status_code=204)
+def delete_task(task_id: int):
+    """Delete a task. Returns 204 No Content on success."""
+    for i, task in enumerate(tasks):
+        if task["id"] == task_id:
+            tasks.pop(i)
+            return None  # 204 No Content
+    raise HTTPException(status_code=404, detail="Task not found")</code></pre>
+
+                <p>Key concepts here:</p>
+                <ul>
+                    <li><code>model_dump(exclude_unset=True)</code> — only updates fields the client actually sent</li>
+                    <li><code>HTTPException</code> — raises proper HTTP errors with status codes</li>
+                    <li><code>status_code=204</code> — delete returns no body on success (REST best practice)</li>
+                </ul>
+
+                <h2>Step 5: Middleware and Error Handling</h2>
+                <p>Middleware runs on every request. Let's add request logging and timing:</p>
+
+<pre><code>import time
+import logging
+from fastapi import Request, Response
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("api")
+
+@app.middleware("http")
+async def add_process_time(request: Request, call_next):
+    """Middleware: log every request and measure response time."""
+    start = time.time()
+    
+    response = await call_next(request)
+    
+    duration = time.time() - start
+    logger.info(f"{request.method} {request.url.path} — {response.status_code} — {duration:.3f}s")
+    
+    # Add custom header to every response
+    response.headers["X-Process-Time"] = f"{duration:.3f}s"
+    
+    return response</code></pre>
+
+                <p>Customize the default error response:</p>
+
+<pre><code>from fastapi.exceptions import RequestValidationError
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """Custom 422 error responses."""
+    errors = []
+    for error in exc.errors():
+        errors.append({
+            "field": ".".join(str(loc) for loc in error["loc"]),
+            "message": error["msg"],
+        })
+    return JSONResponse(
+        status_code=422,
+        content={"error": "Validation failed", "details": errors},
+    )</code></pre>
+
+                <h2>Step 6: Dependency Injection</h2>
+                <p>FastAPI's dependency injection system lets you share logic across endpoints:</p>
+
+<pre><code>from fastapi import Depends
+
+def get_db():
+    """Simulated database connection. Replace with real DB in production."""
+    return tasks
+
+@app.get("/tasks/count")
+def task_count(db: list = Depends(get_db)):
+    """Count tasks by status."""
+    return {
+        "total": len(db),
+        "completed": sum(1 for t in db if t["completed"]),
+        "pending": sum(1 for t in db if not t["completed"]),
+    }</code></pre>
+
+                <h2>Step 7: Async Endpoints</h2>
+                <p>FastAPI supports async natively. For I/O-bound operations (database queries, HTTP calls), use <code>async def</code>:</p>
+
+<pre><code>import httpx
+
+@app.get("/weather/{city}")
+async def get_weather(city: str):
+    """Fetch weather data from an external API using async."""
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            f"https://api.openweathermap.org/data/2.5/weather",
+            params={"q": city, "appid": "your_api_key", "units": "metric"},
+        )
+        return response.json()
+
+# Without async, each request blocks the thread.
+# With async, the server handles other requests while waiting for the HTTP call.</code></pre>
+
+                <h2>Step 8: Deployment with Docker</h2>
+                <p>Containerize your API with a multi-stage Dockerfile:</p>
+
+<pre><code># Dockerfile
+FROM python:3.12-slim AS builder
+
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+FROM python:3.12-slim
+
+WORKDIR /app
+COPY --from=builder /install /usr/local
+COPY main.py .
+
+# Run as non-root user for security
+RUN useradd -m appuser && chown -R appuser /app
+USER appuser
+
+EXPOSE 8000
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]</code></pre>
+
+                <p>Your <code>requirements.txt</code>:</p>
+
+<pre><code>fastapi>=0.110.0
+uvicorn>=0.27.0
+httpx>=0.27.0</code></pre>
+
+                <p>Build and run:</p>
+
+<pre><code>docker build -t my-api .
+docker run -p 8000:8000 my-api</code></pre>
+
+                <h2>Complete Project Structure</h2>
+                <p>For a larger API, organize your code:</p>
+
+<pre><code>my-api/
+├── main.py              # App creation, router mounting
+├── requirements.txt     # Python dependencies
+├── Dockerfile           # Container build instructions
+├── docker-compose.yml   # Local dev environment
+├── app/
+│   ├── __init__.py
+│   ├── models.py        # Pydantic models
+│   ├── routes/
+│   │   ├── __init__.py
+│   │   ├── tasks.py     # Task CRUD endpoints
+│   │   └── auth.py      # Authentication endpoints
+│   ├── services/
+│   │   ├── __init__.py
+│   │   └── task_service.py  # Business logic
+│   └── middleware/
+│       ├── __init__.py
+│       └── logging.py   # Request logging
+└── tests/
+    ├── __init__.py
+    └── test_tasks.py    # pytest tests</code></pre>
+
+                <h2>Next Steps</h2>
+                <p>You've built a working REST API. Here's where to go next:</p>
+                <ol>
+                    <li><strong>Add a real database</strong> — SQLite for dev, PostgreSQL for production (see SQLAlchemy or Tortoise ORM)</li>
+                    <li><strong>Add authentication</strong> — JWT tokens, OAuth2, or API keys</li>
+                    <li><strong>Add rate limiting</strong> — protect against abuse with slowapi</li>
+                    <li><strong>Add background tasks</strong> — use FastAPI BackgroundTasks for email sending, cleanup</li>
+                    <li><strong>Add CORS</strong> — enable frontend access with CORSMiddleware</li>
+                    <li><strong>Add health checks</strong> — probe endpoints for load balancers</li>
+                    <li><strong>Write tests</strong> — use TestClient with pytest</li>
+                </ol>
+
+                <p>FastAPI's auto-generated docs at <code>/docs</code> (Swagger) and <code>/redoc</code> (ReDoc) are invaluable for API consumers. They update automatically when you change your code — no manual documentation needed.</p>
+            </div>
+        </article>
+    </main>
+
+    <footer class="container">
+        <p>© 2026 Hugo's Dev Notes · Built with curiosity and caffeine</p>
+    </footer>
+
+    <script src="../script.js"></script>
+</body>
+</html>

@@ -3,10 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Git Hooks & Pre-Commit: Automate Your Development Workflow | Hugo's Dev Notes</title>
-    <meta name="description" content="Learn Git hooks and pre-commit — automate code formatting, linting, and tests before every commit. Ship cleaner code with zero effort.">
-    <meta name="keywords" content="git hooks, pre-commit, code quality, automation, development workflow, linting, formatting, git automation">
-    <meta name="author" content="Hugo Wong">
+    <title>Git Hooks and Pre-commit: Automate Code Quality Checks | Hugo's Dev Notes</title>
     <link rel="canonical" href="https://blog.hugow.dev/posts/git-hooks-pre-commit.html">
     <link rel="stylesheet" href="../style.css">
 
@@ -15,481 +12,492 @@
     {
       "@context": "https://schema.org",
       "@type": "BlogPosting",
-      "headline": "Git Hooks & Pre-Commit: Automate Your Development Workflow",
-      "description": "Learn Git hooks and pre-commit — automate code formatting, linting, and tests before every commit. Ship cleaner code with zero effort.",
-      "datePublished": "2026-06-26",
-      "dateModified": "2026-06-26",
+      "headline": "Git Hooks and Pre-commit: Automate Code Quality Checks",
+      "description": "Learn Git hooks and the pre-commit framework — automatically run linters, formatters, tests, and security scans before every commit. Set up your first pre-commit config with working examples for Python, JavaScript, and Markdown.",
+      "datePublished": "2026-07-11",
+      "dateModified": "2026-07-11",
       "author": {"@type": "Person", "name": "Hugo Wong"},
       "publisher": {"@type": "Organization", "name": "Hugo's Dev Notes", "url": "https://blog.hugow.dev"},
-      "mainEntityOfPage": "{"@id": "https://blog.hugow.dev/posts/git-hooks-pre-commit.html")}",
-      "keywords": "DevOps"
+      "mainEntityOfPage": "https://blog.hugow.dev/posts/git-hooks-pre-commit.html",
+      "keywords": "git, hooks, pre-commit, code quality, linting, devops, CI/CD"
     }
     </script>
 
     <!-- Social Meta -->
-    <!-- Open Graph -->
-    <meta property="og:title" content="Git Hooks & Pre-Commit: Automate Your Development Workflow">
-    <meta property="og:description" content="Learn Git hooks and pre-commit — automate code formatting, linting, and tests before every commit. Ship cleaner code with zero effort.">
+    <meta property="og:title" content="Git Hooks and Pre-commit: Automate Code Quality Checks">
+    <meta property="og:description" content="Learn Git hooks and pre-commit framework — automatically run linters, formatters, and tests before every commit.">
     <meta property="og:type" content="article">
     <meta property="og:url" content="https://blog.hugow.dev/posts/git-hooks-pre-commit.html">
     <meta property="og:site_name" content="Hugo's Dev Notes">
-    <meta property="article:published_time" content="2026-06-26">
-    <meta property="article:modified_time" content="2026-06-26">
+    <meta property="article:published_time" content="2026-07-11">
+    <meta property="article:modified_time" content="2026-07-11">
     <meta property="article:section" content="devops">
-    <meta property="article:tag" content="DevOps">
-    
-    <!-- Twitter Card -->
+    <meta property="article:tag" content="Git, Pre-commit, DevOps">
+
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Git Hooks & Pre-Commit: Automate Your Development Workflow">
-    <meta name="twitter:description" content="Learn Git hooks and pre-commit — automate code formatting, linting, and tests before every commit. Ship cleaner code with zero effort.">
-    
+    <meta name="twitter:title" content="Git Hooks and Pre-commit: Automate Code Quality Checks">
+    <meta name="twitter:description" content="Automatically run linters, formatters, and tests before every commit with Git hooks and pre-commit.">
 </head>
 <body>
     <div class="progress-bar" id="progressBar"></div>
-    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
 
     <header>
         <div class="container">
             <div class="logo">
-                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
                 <p class="subtitle">Cloudflare · Python · AI Coding</p>
             </div>
             <nav>
-                <a href="../index.html" class="nav-btn">🏠 Home</a>
-                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
-                <a href="../python.html" class="nav-btn">🐍 Python</a>
-                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
-                <a href="../devops.html" class="nav-btn">🐳 DevOps</a>
-                <a href="../security.html" class="nav-btn">🔐 Security</a>
-                <a href="../webdev.html" class="nav-btn">💻 Web Dev</a>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
             </nav>
         </div>
     </header>
 
     <main class="container">
         <a href="../index.html" class="back-link">← Back to posts</a>
-        
+
         <article class="post-content">
             <span class="tag devops">DevOps</span>
-            <h1>Git Hooks & Pre-Commit: Automate Your Development Workflow</h1>
-            <time>June 26, 2026 · 10 min read</time>
+            <h1>Git Hooks and Pre-commit: Automate Code Quality Checks</h1>
+            <time>July 11, 2026 · 9 min read</time>
 
-            <p>Here's a scenario that's happened to every developer: you push code, the CI pipeline runs for 5 minutes, and then it fails because you forgot to format your Python file, or you committed a <code>console.log</code> statement, or worse — you accidentally included a <code>.env</code> file.</p>
+            <p>Every developer has committed code with trailing whitespace, missing imports, or unformatted files. Then the CI pipeline fails, the PR gets rejected, and you start the awkward blame dance. <strong>Git hooks</strong> solve this problem by automatically running checks <em>before</em> you commit.</p>
 
-            <p>Git hooks let you <strong>catch these problems before they ever leave your machine</strong>. They run automatically when you commit, push, or perform other Git actions. Combined with the <code>pre-commit</code> framework, you get a bulletproof quality gate that runs locally for every developer on your team.</p>
+            <p>The <strong>pre-commit framework</strong> makes it dead simple to set up automated checks that run across any language, shared with your team via version control. In this guide, you'll learn how Git hooks work, set up pre-commit from scratch, and configure a battery of checks for any project.</p>
 
             <h2>What Are Git Hooks?</h2>
 
-            <p>Git hooks are scripts that Git executes automatically in response to specific events. They live in the <code>.git/hooks/</code> directory of every repository. Git ships with sample hooks — rename <code>pre-commit.sample</code> to <code>pre-commit</code> and make it executable, and it runs every time you run <code>git commit</code>.</p>
+            <p>Git hooks are scripts that Git executes automatically at specific points in its lifecycle. They live in the <code>.git/hooks/</code> directory and are triggered by events like committing, pushing, or merging.</p>
 
-            <h3>Common Hook Types</h3>
-
-            <pre><code>hook name       | when it runs
-───────────────────────────────────────────────
-pre-commit      | before commit, checks staged files
-commit-msg      | after pre-commit, validates commit message
-pre-push        | before push, runs before sending to remote
-post-commit     | after commit succeeds
-post-merge      | after a successful merge
-pre-rebase      | before a rebase begins</code></pre>
-
-            <p>The most useful hooks for daily development are <code>pre-commit</code> (runs before every commit) and <code>pre-push</code> (runs before every push).</p>
-
-            <h2>Manual Git Hooks (The Basic Way)</h2>
-
-            <p>Let's create a simple pre-commit hook that prevents committing Python files with syntax errors:</p>
-
-            <pre><code>#!/bin/bash
-# .git/hooks/pre-commit
-
-# Check Python syntax on staged files
-python_files=$(git diff --cached --name-only --diff-filter=ACM | grep '\.py$')
-
-if [ -n "$python_files" ]; then
-    for file in $python_files; do
-        if ! python -m py_compile "$file" 2>/dev/null; then
-            echo "❌ Syntax error in $file — commit aborted"
-            exit 1
-        fi
-    done
-    echo "✅ Python syntax check passed"
-fi
-
-# Prevent committing .env files
-env_files=$(git diff --cached --name-only --diff-filter=ACM | grep '^\.(env|env\.)')
-
-if [ -n "$env_files" ]; then
-    echo "❌ Refusing to commit sensitive files: $env_files"
-    exit 1
-fi
-
-# Prevent committing large files (>10MB)
-large_files=$(git diff --cached --name-only --diff-filter=ACM | while read file; do
-    if [ -f "$file" ]; then
-        size=$(stat -f%z "$file" 2>/dev/null || stat -c%s "$file" 2>/dev/null || echo 0)
-        if [ "$size" -gt 10485760 ]; then
-            echo "$file"
-        fi
-    fi
-done)
-
-if [ -n "$large_files" ]; then
-    echo "❌ Files over 10MB detected: $large_files"
-    echo "Consider using Git LFS for large files"
-    exit 1
-fi
-
-exit 0</code></pre>
-
-            <p>Save this as <code>.git/hooks/pre-commit</code> and make it executable:</p>
-
-            <pre><code>chmod +x .git/hooks/pre-commit</code></pre>
-
-            <p>Now try committing a Python file with a syntax error:</p>
-
-            <pre><code># Create a file with a syntax error
-echo "def hello(:" > broken.py
-git add broken.py
-git commit -m "test hook"
-
-# Output:
-# ❌ Syntax error in broken.py — commit aborted</code></pre>
-
-            <h2>The Problem With Manual Hooks</h2>
-
-            <p>Manual hooks live in <code>.git/hooks/</code>, which is <strong>not tracked by Git</strong> (it's in <code>.gitignore</code> by design). This means:</p>
+            <p>Common hooks include:</p>
 
             <ul>
-                <li>🚫 New team members don't get them automatically</li>
-                <li>🚫 You can't share hooks across projects easily</li>
-                <li>🚫 No version control for your hooks themselves</li>
-                <li>🚫 Different team members have different hooks, leading to inconsistent quality</li>
+                <li><strong>pre-commit</strong> — Runs before <code>git commit</code>. Most useful for linting and formatting.</li>
+                <li><strong>prepare-commit-msg</strong> — Modifies the default commit message.</li>
+                <li><strong>commit-msg</strong> — Validates the commit message format.</li>
+                <li><strong>pre-push</strong> — Runs before <code>git push</code>. Good for running tests.</li>
+                <li><strong>post-merge</strong> — Runs after a merge. Useful for running dependency installs.</li>
             </ul>
 
-            <p>Enter the <strong>pre-commit framework</strong>.</p>
+            <h2>The Problem with Raw Git Hooks</h2>
 
-            <h2>Pre-Commit Framework: Shareable, Versioned Hooks</h2>
+            <p>You can write a raw hook by creating a script in <code>.git/hooks/pre-commit</code>:</p>
 
-            <p><a href="https://pre-commit.com" target="_blank">pre-commit.com</a> solves all the manual hook problems. You define hooks in a YAML file <strong>that is committed to your repository</strong>. Every team member gets the same hooks automatically.</p>
+            <pre><code>#!/bin/sh
+# .git/hooks/pre-commit
 
-            <h3>Step 1: Install pre-commit</h3>
+echo "Running linting..."
+flake8 --select=E9,F63,F7,F82 .
+black --check .
+echo "All checks passed!"
+exit 0</code></pre>
 
-            <pre><code># Install with pip
+            <p>Then make it executable: <code>chmod +x .git/hooks/pre-commit</code></p>
+
+            <p>This works fine for a single developer. But it breaks down in teams because:</p>
+
+            <ol>
+                <li><code>.git/</code> isn't tracked — hooks aren't shared with teammates.</li>
+                <li>Different developers have different tools installed.</li>
+                <li>Hooks drift apart — someone updates the script but forgets to share it.</li>
+            </ol>
+
+            <h2>The Solution: pre-commit Framework</h2>
+
+            <p>The <a href="https://pre-commit.com/" target="_blank">pre-commit</a> framework solves all these problems. It uses a single <code>.pre-commit-config.yaml</code> file that lives in your repo. Everyone who clones the repo gets the same hooks, the same versions, running in isolated virtual environments.</p>
+
+            <h3>Install pre-commit</h3>
+
+            <pre><code># Option 1: pip (Python required)
 pip install pre-commit
 
-# Or with Homebrew (macOS)
-brew install pre-commit</code></pre>
+# Option 2: Homebrew (macOS/Linux)
+brew install pre-commit
 
-            <h3>Step 2: Create a Configuration File</h3>
+# Option 3: pipx (recommended, isolated)
+pipx install pre-commit</code></pre>
+
+            <h2>Your First pre-commit Config</h2>
+
+            <p>Create a <code>.pre-commit-config.yaml</code> file in your project root:</p>
 
             <pre><code># .pre-commit-config.yaml
 repos:
-  # Auto-format Python code
-  - repo: https://github.com/psf/black
-    rev: 24.4.2
-    hooks:
-      - id: black
-        args: [--line-length=100]
-
-  # Sort Python imports
-  - repo: https://github.com/pycqa/isort
-    rev: 5.13.2
-    hooks:
-      - id: isort
-        args: ["--profile", "black"]
-
-  # Check Python syntax and common errors
-  - repo: https://github.com/pycqa/flake8
-    rev: 7.1.0
-    hooks:
-      - id: flake8
-
-  # Remove trailing whitespace
+  # Fix common issues automatically
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
       - id: check-yaml
-      - id: check-added-large-files
-        args: ['--maxkb=5000']
+      - id: check-json
       - id: check-merge-conflict
       - id: detect-private-key
+      - id: check-added-large-files
+        args: ['--maxkb=1024']
 
-  # Auto-fix common typos
-  - repo: https://github.com/codespell-project/codespell
-    rev: v2.3.0
+  # Auto-format Python code
+  - repo: https://github.com/psf/black
+    rev: 24.8.0
     hooks:
-      - id: codespell
+      - id: black
+        args: ['--line-length=88']
 
-  # Format JSON files
-  - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v4.0.0-alpha.8
+  # Sort Python imports
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
     hooks:
-      - id: prettier
-        types_or: [json, yaml, markdown, javascript, css]</code></pre>
+      - id: isort
+        args: ['--profile', 'black', '--line-length=88']
 
-            <h3>Step 3: Install the Git Hook</h3>
+  # Lint Python for errors
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.1.1
+    hooks:
+      - id: flake8
+        args: ['--max-line-length=88', '--extend-ignore=E203']</code></pre>
 
-            <pre><code># Install hooks into .git/hooks/
+            <p>Then install the hooks:</p>
+
+            <pre><code># Install the hook script into .git/hooks/
 pre-commit install
 
-# Output: pre-commit installed at .git/hooks/pre-commit
+# Run against all files (first time only)
+pre-commit run --all-files
 
-# Run against ALL files (not just staged)
-pre-commit run --all-files</code></pre>
+# Future commits will run automatically!
+git add .
+git commit -m "add pre-commit config"</code></pre>
 
-            <h3>Step 4: Watch It Work</h3>
+            <h2>How It Works on Your First Commit</h2>
 
-            <p>Now every time you run <code>git commit</code>, pre-commit runs automatically:</p>
+            <p>When you commit with pre-commit installed, here's what happens:</p>
 
-            <pre><code>git add my_script.py
-git commit -m "add new feature"
+            <pre><code>$ git add .
+$ git commit -m "add feature"
 
-# Output:
-# [INFO] Installing hooks for the first time...
-# trailing-whitespace....................Passed
-# end-of-file-fixer......................Passed
-# check-yaml.............................Passed
-# black..................................Modifying fixable files
-# isort..................................Modifying fixable files
-# flake8.................................Passed
-# codespell..............................Passed
-# prettier...............................Passed
+[INFO] Initializing environment for https://github.com/pre-commit/pre-commit-hooks.
+[INFO] Installing environment for https://github.com/pre-commit/pre-commit-hooks.
+[INFO] Once installed, environments are reused until you change a hook's version.
 
-# Notice: black and isort modified your files!
-# You need to `git add` the fixed files, then commit again:
-git add my_script.py
-git commit -m "add new feature"
+trim trailing whitespace..............................................Passed
+fix end of files.....................................................Modified  1 files
+check yaml...........................................................Passed
+check json...........................................................Passed
+check for merge conflicts............................................Passed
+detect private key...................................................Passed
+black................................................................Modified  3 files
+isort.................................................................Modified  2 files
+flake8...............................................................Passed
 
-# Now everything passes ✅</code></pre>
+All checks passed! 🎉
 
-            <h2>Hooking Into JavaScript Projects</h2>
+# Note: black and isort modified files — they're auto-staged.
+# Git pauses and lets you review the changes before finalizing.</code></pre>
 
-            <p>Pre-commit works with any language. Here's a configuration for a JavaScript/Node.js project:</p>
+            <h2>Multi-Language Configuration</h2>
+
+            <p>pre-commit works with any language. Here's a config for a full-stack project:</p>
 
             <pre><code># .pre-commit-config.yaml
 repos:
-  - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v9.14.0
-    hooks:
-      - id: eslint
-        args: [--fix]
-        additional_dependencies:
-          - eslint@9.14.0
-          - eslint-plugin-react@7.35.0
-
-  - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v4.0.0-alpha.8
-    hooks:
-      - id: prettier
-        types_or: [javascript, jsx, json, markdown, yaml]
-
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
-      - id: no-commit-to-branch
-        args: ['--branch', 'main']  # Don't commit directly to main
-      - id: check-case-conflict</code></pre>
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-merge-conflict
+      - id: detect-private-key
 
-            <h2>Advanced: Custom Hooks With Python</h2>
+  # Python tools
+  - repo: https://github.com/psf/black
+    rev: 24.8.0
+    hooks:
+      - id: black
 
-            <p>You can write your own hooks and define them locally in the same config file:</p>
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.1.1
+    hooks:
+      - id: flake8
+
+  # JavaScript / TypeScript tools
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v4.0.0-alpha.8
+    hooks:
+      - id: prettier
+        types_or: [javascript, jsx, ts, tsx, json, css, markdown, yaml]
+        additional_dependencies:
+          - prettier@3.3.3
+
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v9.12.0
+    hooks:
+      - id: eslint
+        types: [file]
+        files: \.[jt]sx?$
+        additional_dependencies:
+          - eslint@9.11.1
+          - '@typescript-eslint/parser'
+          - '@typescript-eslint/eslint-plugin'
+
+  # Markdown
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.41.0
+    hooks:
+      - id: markdownlint
+        args: ['--disable', 'MD013', '--']
+
+  # Shell scripts
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.10.0.1
+    hooks:
+      - id: shellcheck</code></pre>
+
+            <h2>Custom Hooks</h2>
+
+            <p>pre-commit can also run your own scripts. Create a local hook for project-specific checks:</p>
 
             <pre><code># .pre-commit-config.yaml
 repos:
+  # ... other repos ...
+
   - repo: local
     hooks:
-      # Custom hook: check that .gitignore exists
-      - id: check-gitignore
-        name: Check .gitignore
-        entry: bash -c 'test -f .gitignore || { echo "❌ Missing .gitignore!"; exit 1; }'
-        language: system
-        pass_filenames: false
-        always_run: true
-
-      # Custom hook: run tests before committing
+      # Run project tests on commit
       - id: run-tests
-        name: Run Python tests
-        entry: python -m pytest tests/ -q
+        name: Run unit tests
+        entry: pytest tests/unit/ -v
         language: system
         pass_filenames: false
-        stages: [pre-push]  # Only run before push, not every commit
-        verbose: true
+        stages: [pre-push]  # Only runs on push, not commit
 
-      # Custom hook: check no TODOs in production code
-      - id: no-todos
-        name: Check for TODOs in source
-        entry: bash -c 'grep -rn "TODO\|FIXME\|HACK" src/ || true'
+      # Custom Python check
+      - id: check-migrations
+        name: Check for uncommitted migrations
+        entry: python check_migrations.py
         language: system
         pass_filenames: false
         always_run: true</code></pre>
 
-            <h2>Hook Stages: Control When Hooks Run</h2>
+            <p>In this example, <code>check_migrations.py</code> might look like:</p>
 
-            <p>Pre-commit supports multiple stages. Assign hooks to stages for optimal performance:</p>
+            <pre><code>#!/usr/bin/env python3
+"""Check that there are no uncommitted database migrations."""
+import subprocess
+import sys
 
-            <pre><code>repos:
-  - repo: https://github.com/psf/black
-    rev: 24.4.2
-    hooks:
-      - id: black
-        stages: [commit]  # Run on every commit (fast auto-fix)
+result = subprocess.run(
+    ["python", "manage.py", "makemigrations", "--check", "--dry-run"],
+    capture_output=True,
+    text=True
+)
 
+if result.returncode != 0:
+    print("❌ Uncommitted migrations detected!")
+    print(result.stdout)
+    sys.exit(1)
+
+print("✅ No uncommitted migrations.")
+sys.exit(0)</code></pre>
+
+            <h2>Hook Stages</h2>
+
+            <p>Hooks can run at different stages of the Git workflow:</p>
+
+            <pre><code># .pre-commit-config.yaml
+repos:
   - repo: local
     hooks:
-      - id: run-integration-tests
-        name: Integration Tests
+      - id: fast-checks
+        name: Fast auto-fix
+        entry: black
+        language: system
+        stages: [commit]  # Default — runs on git commit
+
+      - id: slow-tests
+        name: Integration tests
         entry: pytest tests/integration/
         language: system
-        stages: [pre-push]  # Only before push (slower, less frequent)
-        pass_filenames: false</code></pre>
+        stages: [pre-push]  # Runs on git push (slower)
 
-            <h3>Available Stages</h3>
+      - id: post-commit-cleanup
+        name: Cleanup temp files
+        entry: find . -name "*.pyc" -delete
+        language: system
+        stages: [post-checkout]  # After git checkout</code></pre>
 
-            <pre><code>commit      = runs during `git commit` (most common)
-merge-commit = runs during `git commit --no-verify` for merges
-push        = runs during `git push`
-post-checkout = runs after `git checkout`
-post-commit = runs after a successful commit
-manual      = runs only when called explicitly</code></pre>
+            <p>Available stages: <code>commit</code>, <code>merge-commit</code>, <code>prepare-commit-msg</code>, <code>commit-msg</code>, <code>post-commit</code>, <code>manual</code>, <code>pre-push</code>, <code>pre-rebase</code>, <code>post-checkout</code>.</p>
 
-            <h2>Team Setup: Making It Work for Everyone</h2>
+            <h2>Common Workflow Tips</h2>
 
-            <h3>Commit the Config, Not the Hooks</h3>
-            <p>The <code>.pre-commit-config.yaml</code> file <strong>is tracked in Git</strong>. The <code>.git/hooks/pre-commit</code> file is <strong>NOT tracked</strong> (it's a thin wrapper installed by pre-commit).</p>
+            <h3>Run Against All Files</h3>
 
-            <pre><code># What's in your repo:
-✅ .pre-commit-config.yaml  (shared, versioned)
-✅ .gitignore
-❌ .git/hooks/pre-commit   (generated locally, not tracked)</code></pre>
+            <pre><code># First time setup — check every file in the repo
+pre-commit run --all-files
 
-            <h3>Onboard New Team Members</h3>
-            <pre><code># After cloning the repo, just run:
-git clone https://github.com/your-org/project.git
-cd project
-pip install pre-commit
-pre-commit install
+# After adding a new hook — run it against everything
+pre-commit run black --all-files</code></pre>
 
-# That's it. Hooks are active immediately.</code></pre>
+            <h3>Skip Hooks (When You Really Need To)</h3>
 
-            <h3>Update Hooks for the Whole Team</h3>
-            <pre><code># Auto-update all hook versions
+            <pre><code># Skip ALL hooks for one commit
+git commit --no-verify -m "emergency fix"
+
+# Skip a specific hook
+pre-commit run --hook-stage commit --hook-id flake8
+
+# Temporarily disable in config by commenting out the hook</code></pre>
+
+            <blockquote>
+                <strong>Warning:</strong> Use <code>--no-verify</code> sparingly. It defeats the purpose of hooks and can introduce problems that CI would have caught.
+            </blockquote>
+
+            <h3>Autoupdate All Hook Versions</h3>
+
+            <pre><code># Update all repos to their latest release
 pre-commit autoupdate
 
-# Output:
-# [https://github.com/psf/black] updating 24.4.2 -> 24.8.0
-# [https://github.com/pycqa/isort] updating 5.13.2 -> 5.13.3
-# ...
+# This edits .pre-commit-config.yaml with new versions
+# Always review the diff before committing!</code></pre>
 
-# Commit the updated config:
-git add .pre-commit-config.yaml
-git commit -m "chore: update pre-commit hooks"</code></pre>
+            <h2>Integrating with CI/CD</h2>
 
-            <h2>Combining Pre-Commit With CI/CD</h2>
+            <p>Even with pre-commit locally, you should run it in CI as a safety net:</p>
 
-            <p>Pre-commit is a <strong>local</strong> safeguard. Always back it up with CI:</p>
-
-            <pre><code># .github/workflows/lint.yml
-name: Lint & Format
-on: [push, pull_request]
+            <pre><code># .github/workflows/pre-commit.yml
+name: Pre-commit
+on: [pull_request]
 
 jobs:
-  lint:
+  pre-commit:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-      - uses: pre-commit/action@v3.0.1
-        # This runs the SAME hooks as your local pre-commit</code></pre>
+        with:
+          python-version: '3.12'
+      - uses: pre-commit/action@v3.0.1</code></pre>
 
-            <p>Now the quality gate exists both locally (fast feedback) and in CI (catches anyone who bypassed local hooks with <code>--no-verify</code>).</p>
+            <p>This ensures that anyone who clones the repo and forgets to run <code>pre-commit install</code> still has their code checked by CI.</p>
 
-            <h2>Common Pitfalls & Solutions</h2>
+            <h2>pre-commit vs CI: When to Use Each</h2>
 
-            <ul>
-                <li><strong>Hook too slow:</strong> Move heavy checks (full test suites) to <code>pre-push</code> stage instead of <code>commit</code>. Commit hooks should finish in under 10 seconds.</li>
-                <li><strong>Auto-fixing hooks modify files:</strong> This is expected! black, isort, and prettier fix files automatically. Just <code>git add</code> the modified files and re-commit.</li>
-                <li><strong>Skipping hooks:</strong> Use <code>git commit --no-verify</code> sparingly. Only for emergency fixes, and document why.</li>
-                <li><strong>Language-specific hooks on wrong files:</strong> Use <code>types: [python]</code> or <code>files: \.py$</code> to scope hooks to specific file types.</li>
-            </ul>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Check</th>
+                        <th>Where to Run</th>
+                        <th>Why</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Formatting (black, prettier)</td>
+                        <td>pre-commit</td>
+                        <td>Auto-fixes are fast and improve developer experience</td>
+                    </tr>
+                    <tr>
+                        <td>Linting (flake8, eslint)</td>
+                        <td>Both</td>
+                        <td>Catch early locally, enforce in CI</td>
+                    </tr>
+                    <tr>
+                        <td>Type checking (mypy, tsc)</td>
+                        <td>Both</td>
+                        <td>Fast feedback locally, gate in CI</td>
+                    </tr>
+                    <tr>
+                        <td>Unit tests</td>
+                        <td>CI</td>
+                        <td>Can be slow; developers should run manually</td>
+                    </tr>
+                    <tr>
+                        <td>Integration tests</td>
+                        <td>CI</td>
+                        <td>Require external services / slow</td>
+                    </tr>
+                    <tr>
+                        <td>Secret scanning</td>
+                        <td>Both</td>
+                        <td>Never let secrets reach the repo</td>
+                    </tr>
+                </tbody>
+            </table>
 
-            <h2>Summary</h2>
-
-            <p>Git hooks and pre-commit transform your development workflow from "hope nobody forgets" to "it just works." The key takeaways:</p>
+            <h2>Best Practices</h2>
 
             <ol>
-                <li><strong>Git hooks</strong> run automatically at specific Git events (commit, push, merge)</li>
-                <li><strong>Manual hooks</strong> in <code>.git/hooks/</code> work but aren't shareable</li>
-                <li><strong>pre-commit framework</strong> makes hooks shareable via a YAML config file in your repo</li>
-                <li><strong>Stages</strong> let you control when hooks run (commit vs push)</li>
-                <li><strong>Always pair</strong> local pre-commit with CI for a complete quality gate</li>
+                <li><strong>Auto-fix over manual warnings</strong> — Use formatters (black, prettier) that automatically fix code. Fewer warnings to argue about in code reviews.</li>
+                <li><strong>Keep hooks fast</strong> — Pre-commit hooks should finish in seconds. Slow checks belong in CI.</li>
+                <li><strong>Pin hook versions</strong> — Always use a specific <code>rev</code> in your config. Never use <code>master</code> or <code>main</code>.</li>
+                <li><strong>Run pre-commit in CI</strong> — Catch developers who skip local hooks.</li>
+                <li><strong>Use <code>pass_filenames: false</code> for global checks</strong> — Don't pass file lists to commands that need the whole project.</li>
+                <li><strong>Add hooks gradually</strong> — Start with basic checks, then add language-specific tools.</li>
             </ol>
 
-            <p>Set this up on your next project. Your team will thank you when nobody ever commits a <code>.env</code file or unformatted code again.</p>
+            <h2>Popular Hook Repos</h2>
+
+            <p>The pre-commit ecosystem has thousands of repos. Here are the most useful:</p>
+
+            <ul>
+                <li><a href="https://github.com/pre-commit/pre-commit-hooks" target="_blank">pre-commit-hooks</a> — Core hooks: whitespace, YAML/JSON validation, conflict detection</li>
+                <li><a href="https://github.com/psf/black" target="_blank">black</a> — Python code formatter</li>
+                <li><a href="https://github.com/PyCQA/isort" target="_blank">isort</a> — Python import sorter</li>
+                <li><a href="https://github.com/PyCQA/flake8" target="_blank">flake8</a> — Python linter</li>
+                <li><a href="https://github.com/pre-commit/mirrors-prettier" target="_blank">prettier</a> — Universal code formatter</li>
+                <li><a href="https://github.com/pre-commit/mirrors-eslint" target="_blank">eslint</a> — JavaScript/TypeScript linter</li>
+                <li><a href="https://github.com/gitleaks/gitleaks" target="_blank">gitleaks</a> — Secret detection</li>
+                <li><a href="https://github.com/shellcheck-py/shellcheck-py" target="_blank">shellcheck</a> — Shell script static analysis</li>
+            </ul>
+
+            <h2>Next Steps</h2>
+
+            <p>Add <code>.pre-commit-config.yaml</code> to your next project. Start with the basic pre-commit-hooks repo and black, then gradually add more checks as you find pain points. Your future self — and your teammates — will thank you when every commit is automatically clean.</p>
+
+            <p>For the full reference, check out the <a href="https://pre-commit.com/" target="_blank">pre-commit documentation</a> and the <a href="https://github.com/pre-commit/pre-commit.com#all-hooks" target="_blank">registry of available hooks</a>.</p>
+
         </article>
     </main>
 
     <footer>
         <div class="container">
-            <p>© 2026 Hugo's Dev Notes | Built with ❤️ & AI</p>
+            <p>© 2026 Hugo Wong · Built with curiosity and Coffee</p>
             <div class="footer-links">
-                <a href="https://github.com/hugow0528" target="_blank">GitHub</a>
-                <a href="https://blog.hugow.dev/sitemap.xml">Sitemap</a>
-                <a href="https://blog.hugow.dev/robots.txt">Robots</a>
+                <a href="https://github.com/hugow0528">GitHub</a>
+                <a href="https://hugow.dev">hugow.dev</a>
+                <a href="/sitemap.xml">Sitemap</a>
             </div>
         </div>
     </footer>
 
-    <button class="back-to-top" id="backToTop" title="Back to top">↑</button>
-
     <script>
-    const themeToggle = document.getElementById('themeToggle');
-    themeToggle.addEventListener('click', () => {
-        document.body.classList.toggle('dark-mode');
-        themeToggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
-        localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
-    });
-    if (localStorage.getItem('theme') === 'dark') {
-        document.body.classList.add('dark-mode');
-        themeToggle.textContent = '☀️';
-    }
-    const backToTop = document.getElementById('backToTop');
-    window.addEventListener('scroll', () => {
-        backToTop.style.display = window.pageYOffset > 300 ? 'block' : 'none';
-        const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
-        const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-        const scrolled = (winScroll / height) * 100;
-        document.getElementById('progressBar').style.width = scrolled + '%';
-    });
-    backToTop.addEventListener('click', () => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-    </script>
-    <script>
-        // Theme toggle
         const themeToggle = document.getElementById('themeToggle');
-        if (themeToggle) {{
-            const savedTheme = localStorage.getItem('theme') || 'dark';
-            if (savedTheme === 'light') {{
-                document.body.classList.add('light-mode');
-                themeToggle.textContent = '☀';
-            }}
-            themeToggle.addEventListener('click', () => {{
-                document.body.classList.toggle('light-mode');
-                const isLight = document.body.classList.contains('light-mode');
-                localStorage.setItem('theme', isLight ? 'light' : 'dark');
-                themeToggle.textContent = isLight ? '☀' : '◐';
-            }});
-        }}
-        // Progress bar
-        window.addEventListener('scroll', () => {{
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-mode');
+            themeToggle.textContent = '☀';
+        }
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            themeToggle.textContent = isLight ? '☀' : '◐';
+        });
+        window.addEventListener('scroll', () => {
             const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
             const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
             const scrolled = (winScroll / height) * 100;
-            const bar = document.getElementById('progressBar');
-            if (bar) bar.style.width = scrolled + "%";
-        }});
+            document.getElementById('progressBar').style.width = scrolled + "%";
+        });
     </script>
 </body>
 </html>

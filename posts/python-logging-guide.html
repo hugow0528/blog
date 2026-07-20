@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Logging: Beyond print() — Complete Beginner's Guide</title>
+    <meta name="description" content="Learn Python logging from scratch — log levels, formatters, handlers, file logging, rotating logs, structured logging, and best practices for production applications.">
+    <link rel="stylesheet" href="../style.css">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-logging-guide.html">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-full">
+            <header class="post-header">
+                <div class="post-tags">
+                    <span class="tag python">Python</span>
+                </div>
+                <h1>Python Logging: Beyond print() — Complete Beginner's Guide</h1>
+                <div class="post-meta">
+                    <span class="post-date">July 12, 2026</span>
+                    <span class="read-time">10 min read</span>
+                </div>
+            </header>
+
+            <div class="post-content">
+                <p>Every Python developer starts with <code>print()</code> for debugging. It works for small scripts, but as your applications grow, <code>print()</code> becomes unmanageable. You can't filter output, route it to files, or control verbosity. Python's built-in <code>logging</code> module solves all of these problems — and it's already installed with Python.</p>
+
+                <h2>Why Not Just Use print()?</h2>
+                <p>Consider these problems with <code>print()</code>:</p>
+                <ul>
+                    <li><strong>No levels:</strong> Can't distinguish errors from info messages</li>
+                    <li><strong>No filtering:</strong> Can't disable debug output in production</li>
+                    <li><strong>No timestamps:</strong> You don't know when things happened</li>
+                    <li><strong>No file output:</strong> Everything goes to stdout, lost after the script ends</li>
+                    <li><strong>No formatting:</strong> Hard to read in a wall of text</li>
+                </ul>
+
+                <p>The <code>logging</code> module handles all of this automatically.</p>
+
+                <h2>Quick Start: Your First Logger</h2>
+                <p>Replace your <code>print()</code> calls with logging in three lines:</p>
+
+                <div class="code-block">
+                    <pre><code>import logging
+
+# Configure the root logger
+logging.basicConfig(level=logging.DEBUG)
+
+# Now log instead of print
+logging.debug("This is a debug message")
+logging.info("Application started successfully")
+logging.warning("Low disk space: 10% remaining")
+logging.error("Failed to connect to database")
+logging.critical("System shutdown initiated")</code></pre>
+                </div>
+
+                <p>Output:</p>
+                <div class="code-block">
+                    <pre><code>DEBUG:root:This is a debug message
+INFO:root:Application started successfully
+WARNING:root:Low disk space: 10% remaining
+ERROR:root:Failed to connect to database
+CRITICAL:System shutdown initiated</code></pre>
+                </div>
+
+                <h2>Log Levels Explained</h2>
+                <p>Logging has five standard levels, from lowest to highest severity:</p>
+
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Level</th>
+                            <th>Number</th>
+                            <th>When to Use</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>DEBUG</code></td>
+                            <td>10</td>
+                            <td>Detailed diagnostics during development</td>
+                        </tr>
+                        <tr>
+                            <td><code>INFO</code></td>
+                            <td>20</td>
+                            <td>Confirmation that things are working as expected</td>
+                        </tr>
+                        <tr>
+                            <td><code>WARNING</code></td>
+                            <td>30</td>
+                            <td>Something unexpected happened, but the app continues</td>
+                        </tr>
+                        <tr>
+                            <td><code>ERROR</code></td>
+                            <td>40</td>
+                            <td>A function or feature failed, but the app keeps running</td>
+                        </tr>
+                        <tr>
+                            <td><code>CRITICAL</code></td>
+                            <td>50</td>
+                            <td>The application itself may be unable to continue</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <p>When you set <code>level=logging.WARNING</code>, only WARNING, ERROR, and CRITICAL messages are shown. DEBUG and INFO are silently filtered out. This is perfect for production — you see problems without noise.</p>
+
+                <div class="code-block">
+                    <pre><code># Production: only warnings and above
+logging.basicConfig(level=logging.WARNING)
+
+logging.debug("Processing item...")      # NOT shown
+logging.info("Request received")          # NOT shown
+logging.warning("Slow response: 3.2s")   # SHOWN
+logging.error("Connection timeout")       # SHOWN</code></pre>
+                </div>
+
+                <h2>Customizing Log Format</h2>
+                <p>The default format is minimal. Let's add timestamps, log levels, and module names:</p>
+
+                <div class="code-block">
+                    <pre><code>import logging
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s | %(levelname)-8s | %(name)s | %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+
+logging.info("Server starting on port 8080")
+logging.error("Failed to bind to port 8080")</code></pre>
+                </div>
+
+                <p>Output:</p>
+                <div class="code-block">
+                    <pre><code>2026-07-12 14:30:00 | INFO     | root | Server starting on port 8080
+2026-07-12 14:30:01 | ERROR    | root | Failed to bind to port 8080</code></pre>
+                </div>
+
+                <p>Common format specifiers:</p>
+                <ul>
+                    <li><code>%(asctime)s</code> — human-readable timestamp</li>
+                    <li><code>%(levelname)s</code> — DEBUG, INFO, WARNING, etc.</li>
+                    <li><code>%(name)s</code> — the logger's name</li>
+                    <li><code>%(message)s</code> — your log message</li>
+                    <li><code>%(filename)s</code> — source file name</li>
+                    <li><code>%(lineno)d</code> — line number</li>
+                    <li><code>%(funcName)s</code> — function name</li>
+                    <li><code>%(threadName)s</code> — thread name</li>
+                </ul>
+
+                <h2>Named Loggers for Different Modules</h2>
+                <p>Instead of using the root logger, create named loggers for each module. This lets you control logging per-module:</p>
+
+                <div class="code-block">
+                    <pre><code># In database.py
+import logging
+logger = logging.getLogger(__name__)  # __name__ = "database"
+
+def connect():
+    logger.debug("Attempting database connection...")
+    try:
+        # connect logic here
+        logger.info("Connected to database successfully")
+    except Exception as e:
+        logger.error(f"Database connection failed: {e}")
+        raise
+
+# In api.py
+import logging
+logger = logging.getLogger(__name__)  # __name__ = "api"
+
+def handle_request(request):
+    logger.info(f"Received request: {request.path}")
+    logger.debug(f"Headers: {request.headers}")</code></pre>
+                </div>
+
+                <p>Now you can configure logging per module:</p>
+
+                <div class="code-block">
+                    <pre><code># Only show database logs, silence API debug
+logging.getLogger("database").setLevel(logging.DEBUG)
+logging.getLogger("api").setLevel(logging.WARNING)</code></pre>
+                </div>
+
+                <h2>Logging to Files</h2>
+                <p>In production, you need logs to persist. The <code>FileHandler</code> writes logs to a file:</p>
+
+                <div class="code-block">
+                    <pre><code>import logging
+
+# Create a logger
+logger = logging.getLogger("myapp")
+logger.setLevel(logging.DEBUG)
+
+# Create a file handler
+file_handler = logging.FileHandler("app.log")
+file_handler.setLevel(logging.DEBUG)
+
+# Create a console handler
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.INFO)
+
+# Create a formatter
+formatter = logging.Formatter(
+    '%(asctime)s | %(levelname)-8s | %(name)s | %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+
+# Attach formatter to handlers
+file_handler.setFormatter(formatter)
+console_handler.setFormatter(formatter)
+
+# Add handlers to logger
+logger.addHandler(file_handler)
+logger.addHandler(console_handler)
+
+# Now this logs to BOTH file and console
+logger.info("Application started")
+logger.error("Something went wrong")</code></pre>
+                </div>
+
+                <p>This pattern — debug to file, info to console — is a common production setup. You get detailed logs for later analysis while the terminal stays clean.</p>
+
+                <h2>Rotating Log Files</h2>
+                <p>Without rotation, log files grow forever and fill your disk. <code>RotatingFileHandler</code> automatically manages file size and number of backups:</p>
+
+                <div class="code-block">
+                    <pre><code>import logging
+from logging.handlers import RotatingFileHandler
+
+logger = logging.getLogger("myapp")
+logger.setLevel(logging.DEBUG)
+
+# Rotate when file reaches 5MB, keep 3 backup files
+handler = RotatingFileHandler(
+    "app.log",
+    maxBytes=5 * 1024 * 1024,  # 5 MB
+    backupCount=3               # Keep app.log.1, .2, .3
+)
+
+handler.setFormatter(logging.Formatter(
+    '%(asctime)s | %(levelname)-8s | %(message)s'
+))
+logger.addHandler(handler)
+
+# Files created automatically:
+# app.log      (current)
+# app.log.1    (previous)
+# app.log.2    (older)
+# app.log.3    (oldest)</code></pre>
+                </div>
+
+                <p>There's also <code>TimedRotatingFileHandler</code> for time-based rotation:</p>
+
+                <div class="code-block">
+                    <pre><code>from logging.handlers import TimedRotatingFileHandler
+
+# New file every midnight
+handler = TimedRotatingFileHandler(
+    "app.log",
+    when="midnight",
+    interval=1,
+    backupCount=30   # Keep 30 days of logs
+)</code></pre>
+                </div>
+
+                <h2>Logging Exceptions with Tracebacks</h2>
+                <p>Use <code>logger.exception()</code> inside <code>except</code> blocks to automatically include the full traceback:</p>
+
+                <div class="code-block">
+                    <pre><code>import logging
+logger = logging.getLogger(__name__)
+
+def divide(a, b):
+    try:
+        result = a / b
+        return result
+    except ZeroDivisionError:
+        # exception() logs at ERROR level + full traceback
+        logger.exception("Division by zero attempted: %d / %d", a, b)
+        return None
+
+divide(10, 0)
+# Output:
+# ERROR:__main__:Division by zero attempted: 10 / 0
+# Traceback (most recent call last):
+#   File "app.py", line 5, in divide
+#     result = a / b
+# ZeroDivisionError: division by zero</code></pre>
+                </div>
+
+                <h2>Structured Logging with JSON</h2>
+                <p>For production systems, parseable log formats like JSON are essential. Here's how to create a simple JSON formatter:</p>
+
+                <div class="code-block">
+                    <pre><code>import json
+import logging
+
+class JSONFormatter(logging.Formatter):
+    def format(self, record):
+        log_entry = {
+            "timestamp": self.formatTime(record),
+            "level": record.levelname,
+            "logger": record.name,
+            "message": record.getMessage(),
+            "module": record.module,
+            "function": record.funcName,
+            "line": record.lineno,
+        }
+        if record.exc_info:
+            log_entry["exception"] = self.formatException(record.exc_info)
+        return json.dumps(log_entry)
+
+# Use it
+handler = logging.StreamHandler()
+handler.setFormatter(JSONFormatter())
+logger = logging.getLogger("myapp")
+logger.addHandler(handler)
+logger.setLevel(logging.DEBUG)
+
+logger.info("User logged in", extra={"user_id": 42})
+# Output: {"timestamp": "...", "level": "INFO", "message": "User logged in", ...}</code></pre>
+                </div>
+
+                <p>For production use, consider libraries like <code>python-json-logger</code> or <code>structlog</code> which handle edge cases and extra fields automatically.</p>
+
+                <h2>Complete Production Example</h2>
+                <p>Here's a production-ready logging setup you can copy into any project:</p>
+
+                <div class="code-block">
+                    <pre><code>import logging
+import logging.handlers
+import os
+import sys
+
+def setup_logging(app_name="myapp", log_dir="logs", level=None):
+    """Set up production-grade logging."""
+    # Use environment variable for level, default to WARNING
+    log_level = level or os.environ.get("LOG_LEVEL", "WARNING").upper()
+    numeric_level = getattr(logging, log_level, logging.WARNING)
+
+    # Create log directory
+    os.makedirs(log_dir, exist_ok=True)
+
+    # Root logger
+    logger = logging.getLogger(app_name)
+    logger.setLevel(logging.DEBUG)  # Capture everything
+
+    # Formatter
+    fmt = '%(asctime)s | %(levelname)-8s | %(name)s | %(message)s'
+    formatter = logging.Formatter(fmt, datefmt='%Y-%m-%d %H:%M:%S')
+
+    # Console handler — always show at least WARNING
+    console = logging.StreamHandler(sys.stdout)
+    console.setLevel(logging.INFO)
+    console.setFormatter(formatter)
+    logger.addHandler(console)
+
+    # File handler — all debug info
+    file_handler = logging.handlers.RotatingFileHandler(
+        os.path.join(log_dir, f"{app_name}.log"),
+        maxBytes=10 * 1024 * 1024,  # 10 MB
+        backupCount=5
+    )
+    file_handler.setLevel(logging.DEBUG)
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+
+    # Error-only file — separate file for errors
+    error_handler = logging.handlers.RotatingFileHandler(
+        os.path.join(log_dir, f"{app_name}_error.log"),
+        maxBytes=5 * 1024 * 1024,
+        backupCount=3
+    )
+    error_handler.setLevel(logging.ERROR)
+    error_handler.setFormatter(formatter)
+    logger.addHandler(error_handler)
+
+    return logger
+
+# Usage
+logger = setup_logging("myapp", level="DEBUG")
+logger.info("App initialized")</code></pre>
+                </div>
+
+                <h2>Common Mistakes to Avoid</h2>
+                <ul>
+                    <li><strong>Using <code>print()</code> in production:</strong> Remove all print statements before deploying. Use <code>logger.debug()</code> instead.</li>
+                    <li><strong>Logging sensitive data:</strong> Never log passwords, API keys, tokens, or PII. Mask or omit sensitive fields.</li>
+                    <li><strong>Over-logging at DEBUG:</strong> Don't log every variable. Focus on state transitions, decisions, and external interactions.</li>
+                    <li><strong>Forgetting to propagate:</strong> Named loggers propagate to the root logger by default. If you've configured the root logger, child loggers inherit its handlers.</li>
+                    <li><strong>Logging inside tight loops:</strong> Logging has overhead. In a loop processing millions of items, log a summary instead of every iteration.</li>
+                </ul>
+
+                <div class="code-block">
+                    <pre><code># ❌ Bad: logging in a tight loop
+for item in items:  # 1,000,000 items
+    logger.debug(f"Processing {item}")  # Too slow!
+
+# ✅ Good: log summaries
+processed = 0
+for i, item in enumerate(items):
+    process(item)
+    processed += 1
+    if (i + 1) % 10000 == 0:  # Log every 10,000
+        logger.info(f"Processed {processed} items so far")
+
+logger.info(f"Completed: {processed} items processed")</code></pre>
+                </div>
+
+                <h2>Summary</h2>
+                <p>Python's <code>logging</code> module is your go-to tool for any application beyond a quick script. Use <code>DEBUG</code> for development diagnostics, <code>INFO</code> for important events, and <code>WARNING/ERROR</code> for problems. Add file handlers with rotation for production, format your logs with timestamps and levels, and never log secrets. The <code>setup_logging()</code> function above gives you a solid starting point for any project.</p>
+
+                <p>Good logging is like insurance — you hope you never need it, but when things break in production, it's the difference between a 5-minute fix and a 5-hour investigation.</p>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Hugo's Dev Notes. Built with passion and Cloudflare.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Reading progress bar
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + '%';
+        });
+
+        // Theme toggle
+        const toggle = document.getElementById('themeToggle');
+        toggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-theme');
+        });
+    </script>
+</body>
+</html>

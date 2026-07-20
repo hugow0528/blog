@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSH Keys: Secure Git, Servers, and Cloud Access — Complete Beginner's Guide | Hugo's Dev Notes</title>
+    <link rel="canonical" href="https://blog.hugow.dev/posts/ssh-keys-guide.html">
+    <link rel="stylesheet" href="../style.css">
+
+    <meta name="description" content="Master SSH keys for passwordless access to Git, servers, and cloud platforms. Generate keys, configure ssh-agent, use agents forwarding, and harden SSH security.">
+    <meta name="keywords" content="ssh keys, ssh-agent, git ssh, remote servers, ed25519, rsa, passwordless ssh, ssh config, ssh forwarding">
+    <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="SSH Keys: Secure Git, Servers, and Cloud Access">
+    <meta property="og:description" content="Master SSH keys for passwordless access to Git, servers, and cloud platforms. Generate, configure, and secure your SSH setup.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.hugow.dev/posts/ssh-keys-guide.html">
+    <meta property="og:site_name" content="Hugo's Dev Notes">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="SSH Keys: Secure Git, Servers, and Cloud Access">
+    <meta name="twitter:description" content="Master SSH keys for passwordless access to Git, servers, and cloud platforms.">
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "headline": "SSH Keys: Secure Git, Servers, and Cloud Access — Complete Beginner's Guide",
+      "description": "Master SSH keys for passwordless access to Git, servers, and cloud platforms.",
+      "datePublished": "2026-07-10",
+      "dateModified": "2026-07-10",
+      "author": {"@type": "Person", "name": "Hugo Wong"},
+      "publisher": {"@type": "Organization", "name": "Hugo's Dev Notes", "url": "https://blog.hugow.dev"},
+      "mainEntityOfPage": "https://blog.hugow.dev/posts/ssh-keys-guide.html"
+    }
+    </script>
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-full">
+            <div class="post-header">
+                <div class="post-tags">
+                    <span class="tag devops">DevOps</span>
+                    <span class="tag security">Security</span>
+                </div>
+                <h1>SSH Keys: Secure Git, Servers, and Cloud Access — Complete Beginner's Guide</h1>
+                <div class="post-meta">
+                    <span class="post-date">July 10, 2026</span>
+                    <span class="read-time">11 min read</span>
+                </div>
+            </div>
+
+            <div class="post-content">
+                <p>SSH (Secure Shell) keys are the foundation of secure, passwordless access to remote servers, Git repositories, and cloud platforms. Instead of typing a password every time you push code or log into a server, SSH keys use cryptographic authentication — faster, more secure, and essential for automation. This guide walks you through everything from generating your first key to advanced SSH configuration.</p>
+
+                <h2 id="what-are-ssh-keys">1. What Are SSH Keys?</h2>
+                <p>SSH keys come in pairs: a <strong>private key</strong> (kept secret on your machine) and a <strong>public key</strong> (shared with servers you want to access). When you connect to a server:</p>
+                <ol>
+                    <li>The server sends a challenge encrypted with your public key</li>
+                    <li>Your private key decrypts the challenge and proves your identity</li>
+                    <li>The server verifies the response and grants access</li>
+                </ol>
+                <p>This is more secure than passwords because:</p>
+                <ul>
+                    <li>The private key never leaves your machine</li>
+                    <li>Keys are resistant to brute-force attacks</li>
+                    <li>Each key can be named, scoped, and revoked independently</li>
+                </ul>
+
+                <h2 id="generating-keys">2. Generating Your First SSH Key</h2>
+                <p>Check if you already have keys:</p>
+                <pre><code># List existing SSH keys
+ls -la ~/.ssh/</code></pre>
+
+                <h3>ed25519 (Recommended)</h3>
+                <p>The Ed25519 algorithm is the modern default — smaller keys, faster, and more secure:</p>
+                <pre><code># Generate an Ed25519 key
+ssh-keygen -t ed25519 -C "your_email@example.com"
+
+# You'll be prompted:
+# Enter file in which to save the key (/home/user/.ssh/id_ed25519):
+#   → Press Enter for default
+# Enter passphrase (empty for no passphrase):
+#   → Set a strong passphrase!
+# Enter same passphrase again:
+#   → Confirm it</code></pre>
+
+                <h3>RSA (Legacy)</h3>
+                <p>Use RSA only if you need compatibility with older systems:</p>
+                <pre><code># Generate an RSA key with 4096 bits
+ssh-keygen -t rsa -b 4096 -C "your_email@example.com"</code></pre>
+
+                <h3>Project-Specific Keys</h3>
+                <p>For better organization, generate separate keys per project:</p>
+                <pre><code># Key for a specific project
+ssh-keygen -t ed25519 -C "work@example.com" -f ~/.ssh/id_work
+
+# Key for GitHub
+ssh-keygen -t ed25519 -C "personal@example.com" -f ~/.ssh/id_github
+
+# Key for a cloud server
+ssh-keygen -t ed25519 -C "deploy@example.com" -f ~/.ssh/id_deploy</code></pre>
+
+                <p>Your private key (<code>id_ed25519</code>) stays secret. Your public key (<code>id_ed25519.pub</code>) is what you share:</p>
+                <pre><code># View your public key
+cat ~/.ssh/id_ed25519.pub
+# ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA... your_email@example.com</code></pre>
+
+                <h2 id="ssh-agent">3. Managing Keys with ssh-agent</h2>
+                <p>SSH agent stores your decrypted private keys in memory so you don't have to type your passphrase every time:</p>
+
+                <pre><code># Start the SSH agent (usually auto-started on Linux/Mac)
+eval "$(ssh-agent -s)"
+
+# Add your key to the agent
+ssh-add ~/.ssh/id_ed25519
+
+# List keys currently in the agent
+ssh-add -l
+
+# Remove a key from the agent
+ssh-add -d ~/.ssh/id_ed25519
+
+# Remove all keys
+ssh-add -D</code></pre>
+
+                <p>On most modern systems (macOS, recent Linux), the SSH agent starts automatically. On macOS, keys are automatically loaded into the secure enclave when you authenticate.</p>
+
+                <h2 id="git-ssh">4. Setting Up SSH with GitHub</h2>
+                <p>Add your public key to GitHub:</p>
+                <pre><code># 1. Copy your public key to clipboard
+# Linux:
+clip < ~/.ssh/id_ed25519.pub
+# Or:
+xclip -selection clipboard < ~/.ssh/id_ed25519.pub
+
+# macOS:
+pbcopy < ~/.ssh/id_ed25519.pub
+
+# 2. Go to GitHub → Settings → SSH and GPG keys → New SSH key
+# 3. Paste the key and save
+
+# 3. Test the connection
+ssh -T git@github.com
+# Hi username! You've successfully authenticated...</code></pre>
+
+                <p>Now clone repositories using SSH instead of HTTPS:</p>
+                <pre><code># HTTPS (requires password/token)
+git clone https://github.com/user/repo.git
+
+# SSH (uses your SSH key)
+git clone git@github.com:user/repo.git</code></pre>
+
+                <h2 id="ssh-config">5. SSH Config File — Your Power Tool</h2>
+                <p>The <code>~/.ssh/config</code> file lets you define shortcuts and custom settings for each host. This is where SSH becomes truly powerful:</p>
+
+                <pre><code># ~/.ssh/config
+
+# Default settings for all connections
+Host *
+    AddKeysToAgent yes
+    UseKeychain yes          # macOS: use keychain
+    ServerAliveInterval 60
+    ServerAliveCountMax 3
+    IdentitiesOnly yes
+
+# GitHub — use specific key
+Host github.com
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/id_github
+    IdentitiesOnly yes
+
+# Personal server shortcut
+Host myserver
+    HostName 192.168.1.100
+    User deploy
+    Port 22
+    IdentityFile ~/.ssh/id_deploy
+
+# Cloud server with different port
+Host cloud
+    HostName cloud.example.com
+    User ubuntu
+    Port 2222
+    IdentityFile ~/.ssh/id_cloud
+
+# AWS EC2 instance
+Host my-ec2
+    HostName ec2-12-34-56-78.compute-1.amazonaws.com
+    User ec2-user
+    IdentityFile ~/.ssh/aws_key.pem
+    IdentitiesOnly yes
+
+# Proxy through a bastion/jump host
+Host internal-server
+    HostName 10.0.1.50
+    User admin
+    ProxyJump bastion
+    IdentityFile ~/.ssh/id_internal
+
+Host bastion
+    HostName bastion.example.com
+    User jumpuser
+    IdentityFile ~/.ssh/id_bastion</code></pre>
+
+                <p>Now you can use these shortcuts:</p>
+                <pre><code># Instead of this:
+ssh -i ~/.ssh/id_deploy -p 22 deploy@192.168.1.100
+
+# Use this:
+ssh myserver
+
+# Or for Git, add to ~/.gitconfig:
+# [url "git@github.com:"]
+#     insteadOf = https://github.com/</code></pre>
+
+                <h2 id="server-setup">6. Setting Up SSH on a Remote Server</h2>
+                <p>To enable key-based login on a server:</p>
+
+                <pre><code># 1. Copy your public key to the server
+ssh-copy-id deploy@192.168.1.100
+
+# Or manually:
+cat ~/.ssh/id_ed25519.pub | ssh deploy@192.168.1.100 "mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys"
+
+# 2. Verify you can log in without a password
+ssh deploy@192.168.1.100
+
+# 3. Harden SSH — edit /etc/ssh/sshd_config on the server:
+#    sudo nano /etc/ssh/sshd_config
+
+# Recommended settings in sshd_config:
+# PasswordAuthentication no
+# PermitRootLogin no
+# PubkeyAuthentication yes
+# AllowUsers deploy
+# Port 2222              # Non-standard port
+# MaxAuthTries 3
+# ClientAliveInterval 300
+# ClientAliveCountMax 2
+
+# 4. Restart SSH service
+sudo systemctl restart sshd</code></pre>
+
+                <h2 id="security">7. SSH Security Best Practices</h2>
+
+                <h3>File Permissions</h3>
+                <pre><code># Private keys must be readable only by you
+chmod 700 ~/.ssh
+chmod 600 ~/.ssh/id_*
+chmod 644 ~/.ssh/id_*.pub
+chmod 600 ~/.ssh/config
+
+# authorized_keys on server
+chmod 700 ~/.ssh
+chmod 600 ~/.ssh/authorized_keys</code></pre>
+
+                <h3>Use Passphrases</h3>
+                <p>Always protect your private key with a passphrase. The SSH agent handles it for you, so there's no inconvenience:</p>
+                <pre><code># Change passphrase on an existing key
+ssh-keygen -p -f ~/.ssh/id_ed25519
+
+# Generate new key with passphrase
+ssh-keygen -t ed25519 -C "you@example.com"
+# When prompted, enter a strong passphrase</code></pre>
+
+                <h3>Key Restriction with authorized_keys</h3>
+                <p>Restrict what a key can do on the server:</p>
+                <pre><code># In ~/.ssh/authorized_keys on the server, add restrictions:
+
+# Only allow specific command (e.g., for git)
+command="/usr/bin/git-shell" ssh-ed25519 AAAA...
+
+# Restrict to specific IPs
+from="192.168.1.0/24" ssh-ed25519 AAAA...
+
+# No port forwarding, no X11, no agent forwarding
+no-port-forwarding,no-X11-forwarding,no-agent-forwarding ssh-ed25519 AAAA...
+
+# Combined restrictions
+from="10.0.0.0/8",command="/usr/local/bin/deploy.sh",no-port-forwarding ssh-ed25519 AAAA...</code></pre>
+
+                <h2 id="ssh-tunneling">8. SSH Tunneling and Port Forwarding</h2>
+
+                <h3>Local Port Forwarding</h3>
+                <p>Access a service on the remote server through your local machine:</p>
+                <pre><code># Access remote PostgreSQL locally
+ssh -L 5432:localhost:5432 myserver
+# Now connect to localhost:5432 locally → goes to myserver:5432
+
+# Access a web dashboard behind a firewall
+ssh -L 8080:localhost:8080 myserver
+# Open http://localhost:8080 in your browser</code></pre>
+
+                <h3>Remote Port Forwarding</h3>
+                <p>Expose a local service through the remote server (useful for ngrok-like setups):</p>
+                <pre><code># Expose your local dev server on port 3000
+ssh -R 8080:localhost:3000 myserver
+# Anyone with access to myserver can reach your local dev at myserver:8080</code></pre>
+
+                <h3>Dynamic Port Forwarding (SSH SOCKS Proxy)</h3>
+                <pre><code># Create a SOCKS proxy through a remote server
+ssh -D 1080 myserver
+# Configure your browser to use SOCKS proxy at localhost:1080
+# All browser traffic routes through the remote server</code></pre>
+
+                <h2 id="agent-forwarding">9. SSH Agent Forwarding</h2>
+                <p>Use your local SSH keys from a remote server (e.g., deploy from a CI server using your GitHub key):</p>
+
+                <pre><code># Enable agent forwarding for a specific host in ~/.ssh/config
+Host myserver
+    ForwardAgent yes
+
+# Then SSH to your server
+ssh myserver
+
+# From the server, you can now use your LOCAL GitHub key:
+git clone git@github.com:user/private-repo.git</code></pre>
+
+                <p><strong>Warning:</strong> Agent forwarding gives the remote server access to your keys. Only use it on trusted servers. Prefer deployment keys or SSH certificates for production.</p>
+
+                <h2 id="troubleshooting">10. Troubleshooting Common Issues</h2>
+
+                <h3>"Permission denied (publickey)"</h3>
+                <pre><code># Debug SSH connection (run locally)
+ssh -vT git@github.com
+# Look for the line that says which key it's trying
+
+# Make sure the correct key is in your agent
+ssh-add -l
+
+# Try specifying the key explicitly
+ssh -i ~/.ssh/id_github -T git@github.com
+
+# Check file permissions
+ls -la ~/.ssh/
+# Private key should be 600, not 644</code></pre>
+
+                <h3>"Host key verification failed"</h3>
+                <pre><code># The server's fingerprint changed — common after server rebuild
+# Check the current fingerprint
+ssh-keyscan -H github.com >> ~/.ssh/known_hosts
+
+# Or remove the old entry
+ssh-keygen -R github.com
+
+# Then reconnect
+ssh -T git@github.com</code></pre>
+
+                <h3>Multiple Keys — Wrong Key Sent</h3>
+                <pre><code># Force which key to use
+ssh -i ~/.ssh/id_github git@github.com
+
+# Or configure in ~/.ssh/config (recommended)
+Host github.com
+    IdentityFile ~/.ssh/id_github
+    IdentitiesOnly yes    # Don't try other keys</code></pre>
+
+                <h2 id="summary">Summary</h2>
+                <p>SSH keys are essential for secure, efficient remote access. Here's the quick checklist:</p>
+                <ul>
+                    <li><strong>Generate:</strong> Use <code>ssh-keygen -t ed25519</code> with a passphrase</li>
+                    <li><strong>Manage:</strong> Add keys to <code>ssh-agent</code> to avoid repeated passphrase entry</li>
+                    <li><strong>Configure:</strong> Use <code>~/.ssh/config</code> for host shortcuts and per-host settings</li>
+                    <li><strong>Deploy:</strong> Copy public keys with <code>ssh-copy-id</code> or <code>authorized_keys</code></li>
+                    <li><strong>Secure:</strong> Lock down permissions, disable password auth, restrict key capabilities</li>
+                    <li><strong>Advanced:</strong> Use port forwarding, agent forwarding, and proxy jumps as needed</li>
+                </ul>
+                <p>Set up your SSH config early — it pays dividends every single time you connect to a server or push code. The <code>~/.ssh/config</code> file is your most used dev tool after your editor.</p>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Hugo's Dev Notes. Built with curiosity.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Theme toggle
+        const toggle = document.getElementById('themeToggle');
+        const body = document.body;
+        toggle.addEventListener('click', () => {
+            body.classList.toggle('light-theme');
+            localStorage.setItem('theme', body.classList.contains('light-theme') ? 'light' : 'dark');
+        });
+        if (localStorage.getItem('theme') === 'light') body.classList.add('light-theme');
+
+        // Reading progress bar
+        window.addEventListener('scroll', () => {
+            const bar = document.getElementById('progressBar');
+            if (bar) {
+                const scrolled = window.scrollY / (document.body.scrollHeight - window.innerHeight) * 100;
+                bar.style.width = scrolled + '%';
+            }
+        });
+
+        // Copy code buttons
+        document.querySelectorAll('pre').forEach(pre => {
+            const btn = document.createElement('button');
+            btn.className = 'copy-btn';
+            btn.textContent = 'Copy';
+            btn.onclick = () => {
+                navigator.clipboard.writeText(pre.querySelector('code').textContent);
+                btn.textContent = 'Copied!';
+                setTimeout(() => btn.textContent = 'Copy', 2000);
+            };
+            pre.style.position = 'relative';
+            pre.appendChild(btn);
+        });
+
+        // Search functionality
+        function searchPosts() {
+            const query = document.getElementById('searchInput')?.value.toLowerCase();
+            document.querySelectorAll('.post').forEach(post => {
+                const text = post.textContent.toLowerCase();
+                post.classList.toggle('hidden', query && !text.includes(query));
+            });
+        }
+
+        // Filter functionality
+        function filterPosts(tag, btn) {
+            document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+            btn?.classList.add('active');
+            document.querySelectorAll('.post').forEach(post => {
+                if (tag === 'all') { post.classList.remove('hidden'); return; }
+                const tags = (post.dataset.tags || '').split(',');
+                post.classList.toggle('hidden', !tags.includes(tag));
+            });
+        }
+
+        // Table of contents scroll spy
+        document.querySelectorAll('h2[id]').forEach(h2 => {
+            h2.style.scrollMarginTop = '80px';
+        });
+    </script>
+</body>
+</html>

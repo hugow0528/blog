@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python JSON & CSV: Read, Write & Process Data Files — Complete Beginner's Guide | Hugo's Dev Notes</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Learn Python JSON and CSV file handling from scratch — json.load(), json.dump(), csv.reader, csv.DictReader, data validation, error handling, and real-world data processing. Working code examples for every concept.">
+    <meta name="keywords" content="python json, python csv, python file handling, data processing, json load dump, csv reader writer, python tutorial">
+    <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-json-csv-files.html">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Python JSON & CSV: Read, Write & Process Data Files — Complete Beginner's Guide">
+    <meta property="og:description" content="Master Python JSON and CSV file handling with working examples. From your first json.load() to production data pipelines.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.hugow.dev/posts/python-json-csv-files.html">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Python JSON & CSV: Read, Write & Process Data Files — Complete Beginner's Guide">
+    <meta name="twitter:description" content="Master Python JSON and CSV file handling with working examples.">
+    
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "headline": "Python JSON & CSV: Read, Write & Process Data Files — Complete Beginner's Guide",
+      "author": {"@type": "Person", "name": "Hugo Wong"},
+      "datePublished": "2026-07-16",
+      "dateModified": "2026-07-16",
+      "publisher": {"@type": "Organization", "name": "Hugo's Dev Notes", "url": "https://blog.hugow.dev/"}
+    }
+    </script>
+    
+    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="../style-post.css">
+    <link rel="sitemap" type="application/xml" href="../sitemap.xml">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-article">
+            <!-- Post Header -->
+            <header class="post-header">
+                <div class="post-tags">
+                    <span class="tag python">Python</span>
+                </div>
+                <h1 class="post-title">Python JSON & CSV: Read, Write & Process Data Files — Complete Beginner's Guide</h1>
+                <div class="post-meta">
+                    <span class="post-date">July 16, 2026</span>
+                    <span class="read-time">10 min read</span>
+                    <span class="post-badge">New</span>
+                </div>
+            </header>
+
+            <!-- Table of Contents -->
+            <nav class="toc">
+                <h2>Table of Contents</h2>
+                <ul>
+                    <li><a href="#what-are-json-and-csv">What Are JSON and CSV?</a></li>
+                    <li><a href="#json-basics">JSON Basics</a></li>
+                    <li><a href="#json-reading">Reading JSON Files</a></li>
+                    <li><a href="#json-writing">Writing JSON Files</a></li>
+                    <li><a href="#json-errors">JSON Error Handling</a></li>
+                    <li><a href="#csv-basics">CSV Basics</a></li>
+                    <li><a href="#csv-reading">Reading CSV Files</a></li>
+                    <li><a href="#csv-writing">Writing CSV Files</a></li>
+                    <li><a href="#csv-dict">CSV with DictReader/DictWriter</a></li>
+                    <li><a href="#real-world">Real-World: Combine JSON and CSV</a></li>
+                    <li><a href="#best-practices">Best Practices</a></li>
+                    <li><a href="#summary">Summary</a></li>
+                </ul>
+            </nav>
+
+            <!-- Content -->
+            <div class="post-content">
+
+                <section id="what-are-json-and-csv">
+                    <h2>What Are JSON and CSV?</h2>
+                    <p>Data files are everywhere. APIs return JSON. Spreadsheets export as CSV. Configuration files use JSON. Logs are often CSV. As a Python developer, you'll need to read and write these formats daily.</p>
+                    <p><strong>JSON</strong> (JavaScript Object Notation) stores data as key-value pairs, lists, and nested structures. It's human-readable and the standard format for web APIs.</p>
+                    <p><strong>CSV</strong> (Comma-Separated Values) stores tabular data — rows and columns — with commas between values. It's the universal format for spreadsheets and databases.</p>
+                    <p>Python makes both incredibly easy to work with using built-in modules — no external libraries required. Let's start with JSON.</p>
+                </section>
+
+                <section id="json-basics">
+                    <h2>JSON Basics</h2>
+                    <p>JSON maps to Python data types as follows:</p>
+                    <div class="code-block">
+<pre><code>JSON          → Python
+object        → dict
+array         → list
+string        → str
+number        → int or float
+true/false    → True/False
+null          → None</code></pre>
+                    </div>
+                    <p>Python's built-in <code>json</code> module handles all conversions automatically. You just need to know two pairs of functions:</p>
+                    <ul>
+                        <li><code>json.load()</code> / <code>json.dump()</code> — work with files</li>
+                        <li><code>json.loads()</code> / <code>json.dumps()</code> — work with strings</li>
+                    </ul>
+                </section>
+
+                <section id="json-reading">
+                    <h2>Reading JSON Files</h2>
+                    <p>Let's create a sample data file and read it. Suppose we have a file called <code>users.json</code>:</p>
+                    <div class="code-block">
+<pre><code class="language-json">{
+    "users": [
+        {"id": 1, "name": "Alice", "email": "alice@example.com"},
+        {"id": 2, "name": "Bob", "email": "bob@example.com"},
+        {"id": 3, "name": "Charlie", "email": "charlie@example.com"}
+    ]
+}</code></pre>
+                    </div>
+                    <p>Here's how to read and process this file:</p>
+                    <div class="code-block">
+<pre><code class="language-python">import json
+
+# Read the entire JSON file into a Python dictionary
+with open("users.json", "r") as f:
+    data = json.load(f)
+
+# Access the data
+users = data["users"]
+print(f"Total users: {len(users)}")
+
+# Iterate through users
+for user in users:
+    print(f"User {user['id']}: {user['name']} &lt;{user['email']}&gt;")
+
+# Find a specific user
+alice = next((u for u in users if u["name"] == "Alice"), None)
+if alice:
+    print(f"Found Alice! Email: {alice['email']}")
+</code></pre>
+                    </div>
+                    <p><strong>Output:</strong></p>
+                    <div class="code-block">
+<pre><code>Total users: 3
+User 1: Alice &lt;alice@example.com&gt;
+User 2: Bob &lt;bob@example.com&gt;
+User 3: Charlie &lt;charlie@example.com&gt;
+Found Alice! Email: alice@example.com</code></pre>
+                    </div>
+                    <p>Notice we use <code>json.load(f)</code> with the file object, not <code>json.loads()</code>. The "s" in <code>loads</code> means "string" — use it when parsing JSON from a string instead of a file.</p>
+                    <p>Here's the string version, useful for API responses:</p>
+                    <div class="code-block">
+<pre><code class="language-python">import json
+
+# Parse JSON from a string (e.g., API response)
+json_string = '{"status": "ok", "count": 42}'
+data = json.loads(json_string)
+
+print(data["status"])   # ok
+print(data["count"])    # 42
+</code></pre>
+                    </div>
+                </section>
+
+                <section id="json-writing">
+                    <h2>Writing JSON Files</h2>
+                    <p>Writing JSON is equally simple. Use <code>json.dump()</code> to write to a file or <code>json.dumps()</code> to create a string:</p>
+                    <div class="code-block">
+<pre><code class="language-python">import json
+
+# Create data to save
+config = {
+    "app_name": "MyApp",
+    "version": "1.0.0",
+    "debug": False,
+    "database": {
+        "host": "localhost",
+        "port": 5432,
+        "name": "mydb"
+    },
+    "features": ["auth", "logging", "cache"]
+}
+
+# Write to file with pretty formatting
+with open("config.json", "w") as f:
+    json.dump(config, f, indent=4)
+
+# Or create a string
+json_string = json.dumps(config, indent=4, sort_keys=True)
+print(json_string)
+</code></pre>
+                    </div>
+                    <p><strong>Output (pretty-printed JSON):</strong></p>
+                    <div class="code-block">
+<pre><code class="language-json">{
+    "app_name": "MyApp",
+    "database": {
+        "host": "localhost",
+        "name": "mydb",
+        "port": 5432
+    },
+    "debug": false,
+    "features": [
+        "auth",
+        "logging",
+        "cache"
+    ],
+    "version": "1.0.0"
+}</code></pre>
+                    </div>
+                    <p>The <code>indent=4</code> parameter makes the output human-readable. Use <code>sort_keys=True</code> to alphabetize keys. For compact output (e.g., API responses), omit the indent parameter entirely.</p>
+                    <p><strong>Appending to JSON arrays:</strong> JSON files can't be appended like text. You need to read, modify, and rewrite:</p>
+                    <div class="code-block">
+<pre><code class="language-python">import json
+
+# Read existing data
+with open("users.json", "r") as f:
+    data = json.load(f)
+
+# Add a new user
+data["users"].append({
+    "id": 4,
+    "name": "Diana",
+    "email": "diana@example.com"
+})
+
+# Write back
+with open("users.json", "w") as f:
+    json.dump(data, f, indent=4)
+</code></pre>
+                    </div>
+                </section>
+
+                <section id="json-errors">
+                    <h2>JSON Error Handling</h2>
+                    <p>JSON files can be malformed. Always handle errors gracefully:</p>
+                    <div class="code-block">
+<pre><code class="language-python">import json
+
+def read_json(filepath):
+    """Safely read a JSON file with error handling."""
+    try:
+        with open(filepath, "r") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        print(f"Error: File '{filepath}' not found.")
+        return None
+    except json.JSONDecodeError as e:
+        print(f"Error: Invalid JSON in '{filepath}': {e}")
+        return None
+    except PermissionError:
+        print(f"Error: Cannot read '{filepath}' — permission denied.")
+        return None
+
+# Test with a bad file
+data = read_json("bad.json")
+if data:
+    print("Loaded successfully!")
+</code></pre>
+                    </div>
+                    <p>The three main errors to catch are <code>FileNotFoundError</code> (file doesn't exist), <code>json.JSONDecodeError</code> (invalid JSON format), and <code>PermissionError</code> (can't read the file).</p>
+                </section>
+
+                <section id="csv-basics">
+                    <h2>CSV Basics</h2>
+                    <p>CSV files look like this:</p>
+                    <div class="code-block">
+<pre><code>id,name,email,role
+1,Alice,alice@example.com,admin
+2,Bob,bob@example.com,user
+3,Charlie,charlie@example.com,user</code></pre>
+                    </div>
+                    <p>Each line is a row. Each comma separates a column. The first row is typically the header. Python's built-in <code>csv</code> module handles all the parsing.</p>
+                </section>
+
+                <section id="csv-reading">
+                    <h2>Reading CSV Files</h2>
+                    <p>Use <code>csv.reader</code> for simple row-by-row access:</p>
+                    <div class="code-block">
+<pre><code class="language-python">import csv
+
+# Read CSV with csv.reader
+with open("users.csv", "r") as f:
+    reader = csv.reader(f)
+    
+    # Get header row
+    headers = next(reader)
+    print(f"Columns: {headers}")
+    
+    # Read all rows
+    for row in reader:
+        print(f"ID={row[0]}, Name={row[1]}, Role={row[3]}")
+</code></pre>
+                    </div>
+                    <p><strong>Output:</strong></p>
+                    <div class="code-block">
+<pre><code>Columns: ['id', 'name', 'email', 'role']
+ID=1, Name=Alice, Role=admin
+ID=2, Name=Bob, Role=user
+ID=3, Name=Charlie, Role=user</code></pre>
+                    </div>
+                    <p>Calling <code>next(reader)</code> gets the first row (the header). After that, iterating over <code>reader</code> gives you each subsequent row as a list. Access columns by index.</p>
+                </section>
+
+                <section id="csv-writing">
+                    <h2>Writing CSV Files</h2>
+                    <p>Use <code>csv.writer</code> to create CSV files:</p>
+                    <div class="code-block">
+<pre><code class="language-python">import csv
+
+# Data to write
+headers = ["id", "name", "email", "role"]
+rows = [
+    [1, "Alice", "alice@example.com", "admin"],
+    [2, "Bob", "bob@example.com", "user"],
+    [3, "Charlie", "charlie@example.com", "moderator"],
+]
+
+# Write to CSV
+with open("output.csv", "w", newline="") as f:
+    writer = csv.writer(f)
+    writer.writerow(headers)   # Write header row
+    writer.writerows(rows)     # Write all data rows
+
+print("CSV file created!")
+</code></pre>
+                    </div>
+                    <p><strong>Output (output.csv):</strong></p>
+                    <div class="code-block">
+<pre><code>id,name,email,role
+1,Alice,alice@example.com,admin
+2,Bob,bob@example.com,user
+3,Charlie,charlie@example.com,moderator</code></pre>
+                    </div>
+                    <p>Important: always use <code>newline=""</code> when opening files for CSV writing. Without it, you'll get blank lines between rows on Windows.</p>
+                </section>
+
+                <section id="csv-dict">
+                    <h2>CSV with DictReader and DictWriter</h2>
+                    <p>Instead of accessing columns by index, use <code>csv.DictReader</code> and <code>csv.DictWriter</code> to work with dictionaries:</p>
+                    <div class="code-block">
+<pre><code class="language-python">import csv
+
+# --- Reading with DictReader ---
+with open("users.csv", "r") as f:
+    reader = csv.DictReader(f)
+    for row in reader:
+        # Each row is a dict: {'id': '1', 'name': 'Alice', ...}
+        print(f"{row['name']} is a {row['role']}")
+
+# --- Writing with DictWriter ---
+data = [
+    {"id": 1, "name": "Alice", "email": "alice@example.com", "role": "admin"},
+    {"id": 2, "name": "Bob", "email": "bob@example.com", "role": "user"},
+]
+
+with open("output2.csv", "w", newline="") as f:
+    fieldnames = ["id", "name", "email", "role"]
+    writer = csv.DictWriter(f, fieldnames=fieldnames)
+    writer.writeheader()       # Write header from fieldnames
+    writer.writerows(data)     # Write all rows as dicts
+</code></pre>
+                    </div>
+                    <p>DictReader/DictWriter are much cleaner when you care about column names rather than positions. They're the preferred approach for most real-world code.</p>
+                </section>
+
+                <section id="csv-special-cases">
+                    <h2>Handling Special Characters in CSV</h2>
+                    <p>CSV can get tricky with commas inside data, quotes, and line breaks. Python's csv module handles most cases automatically:</p>
+                    <div class="code-block">
+<pre><code class="language-python">import csv
+
+# Data with tricky characters
+data = [
+    ["id", "name", "bio"],
+    [1, 'Alice "The Coder"', "Loves Python, JavaScript"],
+    [2, "Bob Smith", "Works at Google, San Francisco"],
+    [3, "Charlie\nBrown", "Line breaks in bio"],
+]
+
+with open("special.csv", "w", newline="") as f:
+    writer = csv.writer(f)
+    writer.writerows(data)
+
+# Read it back — everything is preserved correctly
+with open("special.csv", "r") as f:
+    reader = csv.DictReader(f)
+    for row in reader:
+        print(f"Name: {row['name']}, Bio: {row['bio']}")
+</code></pre>
+                    </div>
+                    <p>The csv module automatically quotes fields containing commas, quotes, and newlines. Never try to parse CSV with <code>str.split(",")</code> — it breaks on these cases.</p>
+                </section>
+
+                <section id="real-world">
+                    <h2>Real-World: Convert JSON to CSV</h2>
+                    <p>Let's build a practical tool — a JSON-to-CSV converter. This is a common task when you get structured API data and need to analyze it in a spreadsheet:</p>
+                    <div class="code-block">
+<pre><code class="language-python">import json
+import csv
+
+def json_to_csv(json_path, csv_path):
+    """Convert a JSON array of objects to a CSV file."""
+    # Read JSON
+    with open(json_path, "r") as f:
+        data = json.load(f)
+    
+    # Handle both array format and wrapped format
+    if isinstance(data, dict):
+        # e.g., {"users": [...]}
+        for key, value in data.items():
+            if isinstance(value, list):
+                data = value
+                break
+        else:
+            raise ValueError("No array found in JSON object")
+    
+    if not data:
+        print("Empty dataset!")
+        return
+    
+    # Get headers from the first record
+    fieldnames = list(data[0].keys())
+    
+    # Write CSV
+    with open(csv_path, "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(data)
+    
+    print(f"Converted {len(data)} records to {csv_path}")
+
+# Usage
+json_to_csv("users.json", "users_converted.csv")
+</code></pre>
+                    </div>
+                    <p>This function handles both <code>[...]</code> (raw array) and <code>{"key": [...]}</code> (wrapped) JSON formats. It reads all records, extracts headers from the first record's keys, and writes a clean CSV.</p>
+                    
+                    <h3>Bonus: Reverse Conversion (CSV to JSON)</h3>
+                    <div class="code-block">
+<pre><code class="language-python">import csv
+import json
+
+def csv_to_json(csv_path, json_path):
+    """Convert a CSV file to a JSON array of objects."""
+    records = []
+    
+    with open(csv_path, "r") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            # Try to convert numeric strings to numbers
+            for key, value in row.items():
+                try:
+                    row[key] = int(value)
+                except ValueError:
+                    try:
+                        row[key] = float(value)
+                    except ValueError:
+                        pass  # Keep as string
+            records.append(row)
+    
+    with open(json_path, "w") as f:
+        json.dump(records, f, indent=2)
+    
+    print(f"Converted {len(records)} records to {json_path}")
+
+# Usage
+csv_to_json("users_converted.csv", "users_back_to_json.json")
+</code></pre>
+                    </div>
+                    <p>The <code>csv_to_json</code> function also attempts to convert string numbers back to integers and floats — so <code>"42"</code> becomes <code>42</code> in the JSON output.</p>
+                </section>
+
+                <section id="best-practices">
+                    <h2>Best Practices</h2>
+                    <ol>
+                        <li><strong>Always use context managers (<code>with</code>)</strong> — they automatically close files even if an error occurs.</li>
+                        <li><strong>Use <code>json.dumps()</code> for API responses</strong> and <code>json.dump()</code> for files.</li>
+                        <li><strong>Use <code>csv.DictReader</code> over <code>csv.reader</code></strong> when you have column headers — it's much more readable.</li>
+                        <li><strong>Always specify <code>newline=""</code></strong> when opening files for CSV writing to avoid blank lines.</li>
+                        <li><strong>Handle errors gracefully</strong> — JSON can be malformed, files can be missing, and permissions can fail.</li>
+                        <li><strong>Use <code>indent</code> for readable JSON</strong> in config files, but <strong>omit it for API responses</strong> to save bandwidth.</li>
+                        <li><strong>For large files, process line by line</strong> instead of loading everything into memory.</li>
+                    </ol>
+                </section>
+
+                <section id="summary">
+                    <h2>Summary</h2>
+                    <p>JSON and CSV are the two most common data formats you'll encounter as a Python developer. The built-in <code>json</code> and <code>csv</code> modules make working with them straightforward:</p>
+                    <ul>
+                        <li><code>json.load()</code> / <code>json.dump()</code> for file-based JSON</li>
+                        <li><code>json.loads()</code> / <code>json.dumps()</code> for string-based JSON</li>
+                        <li><code>csv.reader</code> / <code>csv.writer</code> for simple CSV access</li>
+                        <li><code>csv.DictReader</code> / <code>csv.DictWriter</code> for dictionary-based CSV access</li>
+                    </ul>
+                    <p>Start with these tools, add error handling for production code, and you'll be ready for any data processing task.</p>
+                </section>
+
+            </div>
+        </article>
+
+        <!-- Related Posts -->
+        <section class="related-posts">
+            <h2>Related Posts</h2>
+            <div class="related-grid">
+                <a href="python-file-operations.html" class="related-card">
+                    <span class="tag python">Python</span>
+                    <h3>Python File Operations: Open, Read, Write, Pathlib — Complete Beginner's Guide</h3>
+                </a>
+                <a href="python-os-pathlib.html" class="related-card">
+                    <span class="tag python">Python</span>
+                    <h3>Python os and pathlib: Navigate Filesystems Like a Pro — Complete Beginner's Guide</h3>
+                </a>
+                <a href="python-error-handling.html" class="related-card">
+                    <span class="tag python">Python</span>
+                    <h3>Python Error Handling: try, except, finally, raise — Complete Beginner's Guide</h3>
+                </a>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes · Built with Cloudflare · Powered by curiosity</p>
+        </div>
+    </footer>
+
+    <script src="../theme.js"></script>
+</body>
+</html>

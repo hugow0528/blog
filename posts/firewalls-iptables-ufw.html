@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firewalls 101: iptables, UFW & nftables Explained — Complete Beginner's Guide | Hugo's Dev Notes</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Learn how firewalls protect your servers — iptables chains, UFW simple firewall management, nftables modern alternative, allow/deny rules, and production hardening. Working examples for every concept.">
+    <meta name="keywords" content="firewall, iptables, UFW, nftables, linux security, network security, firewall rules, ssh access, python tutorial">
+    <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/firewalls-iptables-ufw.html">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Firewalls 101: iptables, UFW & nftables Explained — Complete Beginner's Guide">
+    <meta property="og:description" content="Master Linux firewalls from scratch. From your first iptables rule to a complete UFW setup.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.hugow.dev/posts/firewalls-iptables-ufw.html">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Firewalls 101: iptables, UFW & nftables Explained — Complete Beginner's Guide">
+    <meta name="twitter:description" content="Master Linux firewalls from scratch.">
+    
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "headline": "Firewalls 101: iptables, UFW & nftables Explained — Complete Beginner's Guide",
+      "author": {"@type": "Person", "name": "Hugo Wong"},
+      "datePublished": "2026-07-16",
+      "dateModified": "2026-07-16",
+      "publisher": {"@type": "Organization", "name": "Hugo's Dev Notes", "url": "https://blog.hugow.dev/"}
+    }
+    </script>
+    
+    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="../style-post.css">
+    <link rel="sitemap" type="application/xml" href="../sitemap.xml">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-article">
+            <!-- Post Header -->
+            <header class="post-header">
+                <div class="post-tags">
+                    <span class="tag security">Security</span>
+                    <span class="tag devops">DevOps</span>
+                </div>
+                <h1 class="post-title">Firewalls 101: iptables, UFW & nftables Explained — Complete Beginner's Guide</h1>
+                <div class="post-meta">
+                    <span class="post-date">July 16, 2026</span>
+                    <span class="read-time">11 min read</span>
+                    <span class="post-badge">New</span>
+                </div>
+            </header>
+
+            <!-- Table of Contents -->
+            <nav class="toc">
+                <h2>Table of Contents</h2>
+                <ul>
+                    <li><a href="#what-is-a-firewall">What Is a Firewall?</a></li>
+                    <li><a href="#how-firewalls-work">How Firewalls Work</a></li>
+                    <li><a href="#iptables-basics">iptables Basics</a></li>
+                    <li><a href="#iptables-chains">iptables Chains and Policies</a></li>
+                    <li><a href="#iptables-rules">Building iptables Rules</a></li>
+                    <li><a href="#iptables-saved">Saving and Loading Rules</a></li>
+                    <li><a href="#ufw-easy">UFW: The Easy Firewall</a></li>
+                    <li><a href="#ufw-commands">UFW Commands</a></li>
+                    <li><a href="#ufw-advanced">UFW Advanced Rules</a></li>
+                    <li><a href="#nftables-modern">nftables: The Modern Way</a></li>
+                    <li><a href="#comparison">Tool Comparison</a></li>
+                    <li><a href="#automation">Automate with Python</a></li>
+                    <li><a href="#best-practices">Best Practices</a></li>
+                    <li><a href="#summary">Summary</a></li>
+                </ul>
+            </nav>
+
+            <!-- Content -->
+            <div class="post-content">
+
+                <section id="what-is-a-firewall">
+                    <h2>What Is a Firewall?</h2>
+                    <p>A firewall is a security system that monitors and controls network traffic. Think of it as a bouncer at a club — it decides who gets in and who stays out based on a set of rules.</p>
+                    <p>On a Linux server, the firewall sits between the network interface and your applications. Every packet of data that arrives (or leaves) must pass through the firewall's rules before it reaches your web server, database, or SSH daemon.</p>
+                    <p>Without a firewall, your server is completely open to the internet. Any IP address can try to connect to any port. A properly configured firewall blocks everything except what you explicitly allow.</p>
+                    <p><strong>Why this matters:</strong> Most servers are scanned constantly by bots looking for open ports. A simple firewall rule set can block millions of unwanted connection attempts per day.</p>
+                </section>
+
+                <section id="how-firewalls-work">
+                    <h2>How Firewalls Work</h2>
+                    <p>Linux firewalls evaluate packets against rules in order. Each rule checks one or more attributes of the packet:</p>
+                    <ul>
+                        <li><strong>Source IP</strong> — where is the packet coming from?</li>
+                        <li><strong>Destination IP</strong> — where is it going?</li>
+                        <li><strong>Source port</strong> — which port on the sender?</li>
+                        <li><strong>Destination port</strong> — which port on the receiver?</li>
+                        <li><strong>Protocol</strong> — TCP, UDP, ICMP, etc.</li>
+                        <li><strong>Interface</strong> — which network interface?</li>
+                    </ul>
+                    <p>When a packet matches a rule, the firewall takes an action:</p>
+                    <ul>
+                        <li><strong>ACCEPT</strong> — allow the packet through</li>
+                        <li><strong>DROP</strong> — silently discard the packet (the sender hears nothing)</li>
+                        <li><strong>REJECT</strong> — send an error back to the sender</li>
+                        <li><strong>LOG</strong> — log the packet for analysis</li>
+                    </ul>
+                    <p>Rules are evaluated top to bottom. The <strong>first matching rule wins</strong>. If no rule matches, the chain's default policy applies.</p>
+                    <p>Linux provides three firewall tools: <strong>iptables</strong> (the classic), <strong>UFW</strong> (simple wrapper), and <strong>nftables</strong> (modern replacement). Let's cover all three.</p>
+                </section>
+
+                <section id="iptables-basics">
+                    <h2>iptables Basics</h2>
+                    <p><code>iptables</code> is the original Linux firewall tool. It's available on virtually every Linux distribution and forms the foundation that UFW and nftables build upon.</p>
+                    <p>Here's the basic command structure:</p>
+                    <div class="code-block">
+<pre><code>iptables [-t table] ACTION CHAIN CRITERIA -j TARGET</code></pre>
+                    </div>
+                    <p>Let's break this down with a real example. To allow incoming SSH connections:</p>
+                    <div class="code-block">
+<pre><code># Allow incoming SSH (port 22) on TCP protocol
+sudo iptables -A INPUT -p tcp --dport 22 -j ACCEPT
+
+# Breakdown:
+# -A INPUT     → Append to the INPUT chain
+# -p tcp       → Match TCP protocol
+# --dport 22   → Match destination port 22
+# -j ACCEPT    → Jump to ACCEPT (allow the packet)</code></pre>
+                    </div>
+                    <p>Each rule is a filter that checks packet attributes and takes an action. Let's explore the chains first, then build up to a complete rule set.</p>
+                </section>
+
+                <section id="iptables-chains">
+                    <h2>iptables Chains and Policies</h2>
+                    <p>iptables has three built-in chains for packet filtering:</p>
+                    <ul>
+                        <li><strong>INPUT</strong> — packets destined for the server itself (incoming connections)</li>
+                        <li><strong>FORWARD</strong> — packets passing through the server (routed traffic)</li>
+                        <li><strong>OUTPUT</strong> — packets leaving the server (outgoing connections)</li>
+                    </ul>
+                    <p>Each chain has a <strong>default policy</strong> — what happens to packets that don't match any rule. The recommended setup:</p>
+                    <div class="code-block">
+<pre><code># Set default policies: drop everything unless explicitly allowed
+sudo iptables -P INPUT DROP
+sudo iptables -P FORWARD DROP
+sudo iptables -P OUTPUT ACCEPT
+
+# Verify current policies
+sudo iptables -L -v --line-numbers</code></pre>
+                    </div>
+                    <p><strong>Warning: Never set INPUT to DROP before adding at least an SSH rule!</strong> You'll lock yourself out of your server. Always add your allow rules first, then set the default policy to DROP.</p>
+                    <p>Here's the safe order of operations:</p>
+                    <div class="code-block">
+<pre><code># Step 1: Allow SSH so you don't get locked out
+sudo iptables -A INPUT -p tcp --dport 22 -j ACCEPT
+
+# Step 2: Allow other services you need
+sudo iptables -A INPUT -p tcp --dport 80 -j ACCEPT    # HTTP
+sudo iptables -A INPUT -p tcp --dport 443 -j ACCEPT   # HTTPS
+
+# Step 3: Set default policy to DROP
+sudo iptables -P INPUT DROP</code></pre>
+                    </div>
+                </section>
+
+                <section id="iptables-rules">
+                    <h2>Building iptables Rules</h2>
+                    <p>Here are the most common rule patterns you'll need:</p>
+
+                    <h3>Allow Established Connections (Essential)</h3>
+                    <p>When your server sends a request out, the response comes back on the same connection. You must allow these "established" connections or your outgoing requests will fail:</p>
+                    <div class="code-block">
+<pre><code># Allow traffic that's part of an existing connection
+sudo iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT</code></pre>
+                    </div>
+                    <p>This is the <strong>first rule</strong> you should add to any INPUT chain. Without it, even simple tasks like DNS resolution or package updates break.</p>
+
+                    <h3>Allow Loopback Traffic</h3>
+                    <p>Your server needs to talk to itself via the loopback interface (<code>lo</code>):</p>
+                    <div class="code-block">
+<pre><code># Allow all traffic on the loopback interface
+sudo iptables -A INPUT -i lo -j ACCEPT
+sudo iptables -A OUTPUT -o lo -j ACCEPT</code></pre>
+                    </div>
+
+                    <h3>Allow Specific Ports</h3>
+                    <div class="code-block">
+<pre><code># Allow HTTP (80) and HTTPS (443)
+sudo iptables -A INPUT -p tcp --dport 80 -j ACCEPT
+sudo iptables -A INPUT -p tcp --dport 443 -j ACCEPT
+
+# Allow DNS (53) — both TCP and UDP
+sudo iptables -A INPUT -p udp --dport 53 -j ACCEPT
+sudo iptables -A INPUT -p tcp --dport 53 -j ACCEPT
+
+# Allow a range of ports (e.g., 8000-8080 for dev servers)
+sudo iptables -A INPUT -p tcp --dport 8000:8080 -j ACCEPT</code></pre>
+                    </div>
+
+                    <h3>Restrict SSH to Specific IPs</h3>
+                    <p>Instead of allowing SSH from anywhere, restrict it to your known IP addresses:</p>
+                    <div class="code-block">
+<pre><code># Allow SSH only from your home IP
+sudo iptables -A INPUT -p tcp -s 203.0.113.5 --dport 22 -j ACCEPT
+
+# Allow SSH from multiple IPs (use multiple rules)
+sudo iptables -A INPUT -p tcp -s 203.0.113.5 --dport 22 -j ACCEPT
+sudo iptables -A INPUT -p tcp -s 198.51.100.10 --dport 22 -j ACCEPT
+
+# Allow SSH from an entire network (/24 = 256 IPs)
+sudo iptables -A INPUT -p tcp -s 192.168.1.0/24 --dport 22 -j ACCEPT</code></pre>
+                    </div>
+
+                    <h3>Rate Limit SSH Brute-Force Attacks</h3>
+                    <p>Allow SSH but limit connection attempts to prevent brute-force attacks:</p>
+                    <div class="code-block">
+<pre><code># Allow max 4 SSH connections per minute
+sudo iptables -A INPUT -p tcp --dport 22 -m conntrack --ctstate NEW -m limit --limit 4/minute --limit-burst 4 -j ACCEPT
+
+# Drop new SSH connections exceeding the rate
+sudo iptables -A INPUT -p tcp --dport 22 -m conntrack --ctstate NEW -j DROP</code></pre>
+                    </div>
+
+                    <h3>Block Specific IPs or Networks</h3>
+                    <div class="code-block">
+<pre><code># Block a specific IP
+sudo iptables -I INPUT -s 198.51.100.50 -j DROP
+
+# Block an entire country's IP range (example)
+sudo iptables -I INPUT -s 10.0.0.0/8 -j DROP
+
+# Block all ICMP (ping) — optional
+sudo iptables -A INPUT -p icmp -j DROP</code></pre>
+                    </div>
+                    <p>Note: <code>-I</code> inserts at the top of the chain (position 1), while <code>-A</code> appends to the end. Use <code>-I</code> for block rules so they're evaluated before allow rules.</p>
+
+                    <h3>Log Dropped Packets</h3>
+                    <p>Before the final DROP policy, log rejected connections for analysis:</p>
+                    <div class="code-block">
+<pre><code># Log dropped packets (rate limited to avoid log flooding)
+sudo iptables -A INPUT -m limit --limit 5/min -j LOG --log-prefix "IPTABLES-DROP: " --log-level 4
+
+# This goes just before the default DROP policy takes effect</code></pre>
+                    </div>
+                </section>
+
+                <section id="iptables-saved">
+                    <h2>Saving and Loading Rules</h2>
+                    <p>iptables rules are <strong>not persistent</strong> by default — they disappear on reboot. Save your rules:</p>
+                    <div class="code-block">
+<pre><code># Debian/Ubuntu: install iptables-persistent
+sudo apt install iptables-persistent
+# During install, it asks if you want to save current rules — say Yes
+
+# Or manually save and restore:
+sudo iptables-save > /etc/iptables/rules.v4
+sudo iptables-restore < /etc/iptables/rules.v4
+
+# RedHat/CentOS:
+sudo service iptables save</code></pre>
+                    </div>
+
+                    <h3>Complete iptables Rule Set</h3>
+                    <p>Here's a production-ready iptables script you can save as <code>/usr/local/bin/setup-firewall.sh</code>:</p>
+                    <div class="code-block">
+<pre><code class="language-bash">#!/bin/bash
+# Production iptables firewall script
+
+# Flush existing rules
+iptables -F
+iptables -X
+
+# Set default policies
+iptables -P INPUT DROP
+iptables -P FORWARD DROP
+iptables -P OUTPUT ACCEPT
+
+# Allow loopback
+iptables -A INPUT -i lo -j ACCEPT
+iptables -A OUTPUT -o lo -j ACCEPT
+
+# Allow established connections
+iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+
+# Allow SSH with rate limiting
+iptables -A INPUT -p tcp --dport 22 -m conntrack --ctstate NEW \
+  -m limit --limit 4/minute --limit-burst 4 -j ACCEPT
+
+# Allow HTTP and HTTPS
+iptables -A INPUT -p tcp --dport 80 -j ACCEPT
+iptables -A INPUT -p tcp --dport 443 -j ACCEPT
+
+# Allow ICMP (ping) — useful for diagnostics
+iptables -A INPUT -p icmp --icmp-type echo-request -j ACCEPT
+
+# Log dropped packets
+iptables -A INPUT -m limit --limit 5/min \
+  -j LOG --log-prefix "IPTABLES-DROP: " --log-level 4
+
+echo "Firewall rules applied!"</code></pre>
+                    </div>
+                    <p>Make it executable with <code>chmod +x /usr/local/bin/setup-firewall.sh</code> and run with <code>sudo /usr/local/bin/setup-firewall.sh</code>.</p>
+                </section>
+
+                <section id="ufw-easy">
+                    <h2>UFW: The Easy Firewall</h2>
+                    <p><strong>UFW</strong> (Uncomplicated Firewall) is a front-end for iptables designed for simplicity. If you're on Ubuntu or any Debian-based system, UFW is likely pre-installed. It translates simple commands into iptables rules under the hood.</p>
+                    <p>UFW is perfect for 90% of use cases. You don't need raw iptables unless you need very specific packet filtering.</p>
+                    <p>Enable UFW:</p>
+                    <div class="code-block">
+<pre><code># Check current status
+sudo ufw status
+
+# Enable UFW (this sets default policies to deny incoming, allow outgoing)
+sudo ufw enable
+
+# Check status with verbose info
+sudo ufw status verbose</code></pre>
+                    </div>
+                    <p><strong>Important:</strong> On a remote server, make sure you've allowed SSH before enabling UFW, or you'll get locked out.</p>
+                </section>
+
+                <section id="ufw-commands">
+                    <h2>UFW Commands</h2>
+                    <p>UFW commands are intuitive and self-documenting:</p>
+
+                    <h3>Basic Allow/Deny</h3>
+                    <div class="code-block">
+<pre><code># Allow SSH
+sudo ufw allow ssh        # or: sudo ufw allow 22
+
+# Allow HTTP and HTTPS
+sudo ufw allow http       # port 80
+sudo ufw allow https      # port 443
+
+# Allow a port with protocol specified
+sudo ufw allow 3306/tcp   # MySQL (TCP only)
+
+# Deny a port
+sudo ufw deny 8080        # Block port 8080</code></pre>
+                    </div>
+
+                    <h3>Allow from Specific IP</h3>
+                    <div class="code-block">
+<pre><code># Allow SSH from a specific IP
+sudo ufw allow from 203.0.113.5 to any port 22 proto tcp
+
+# Allow a specific port from an IP range
+sudo ufw allow from 192.168.1.0/24 to any port 8080</code></pre>
+                    </div>
+
+                    <h3>Delete Rules</h3>
+                    <div class="code-block">
+<pre><code># List rules with numbers
+sudo ufw status numbered
+
+# Delete by rule number
+sudo ufw delete 3
+
+# Delete a specific rule
+sudo ufw delete allow 8080</code></pre>
+                    </div>
+
+                    <h3>Reset and Reload</h3>
+                    <div class="code-block">
+<pre><code># Reload without losing rules
+sudo ufw reload
+
+# Reset everything (disable + delete all rules) — DANGEROUS!
+sudo ufw reset</code></pre>
+                    </div>
+                </section>
+
+                <section id="ufw-advanced">
+                    <h2>UFW Advanced Rules</h2>
+                    <p>For more complex rules, UFW reads from configuration files. The main config is <code>/etc/ufw/ufw.conf</code> and app profiles go in <code>/etc/ufw/apps/</code>.</p>
+
+                    <h3>Create an App Profile</h3>
+                    <p>Create <code>/etc/ufw/apps/nginx.profile</code>:</p>
+                    <div class="code-block">
+<pre><code>[nginx]
+title=Web Server
+description=Nginx HTTP and HTTPS
+ports=80,443/tcp</code></pre>
+                    </div>
+                    <p>Then enable it:</p>
+                    <div class="code-block">
+<pre><code>sudo ufw app update nginx
+sudo ufw allow nginx</code></pre>
+                    </div>
+
+                    <h3>Port Forwarding with UFW</h3>
+                    <p>Edit <code>/etc/default/ufw</code> and set <code>DEFAULT_FORWARD_POLICY="ACCEPT"</code>, then add rules:</p>
+                    <div class="code-block">
+<pre><code># In /etc/ufw/before.rules, add:
+-A ufw-before-forward -i eth0 -p tcp --dport 80 -j ACCEPT
+-A POSTROUTING -t nat -o eth0 -j MASQUERADE</code></pre>
+                    </div>
+
+                    <h3>Limit Connections (Anti-Brute-Force)</h3>
+                    <p>UFW has a built-in <code>limit</code> option:</p>
+                    <div class="code-block">
+<pre><code># Limit SSH: allow 6 connections in 30 seconds, then block
+sudo ufw limit ssh
+
+# This is equivalent to the iptables rate-limit rule above</code></pre>
+                    </div>
+                </section>
+
+                <section id="nftables-modern">
+                    <h2>nftables: The Modern Way</h2>
+                    <p><strong>nftables</strong> is the modern replacement for iptables. It's faster, cleaner, and uses a more intuitive syntax. It's available on Linux kernel 3.13+ and is becoming the default on newer distributions.</p>
+                    <p>Unlike iptables' command-line chaos, nftables uses a single configuration file:</p>
+                    <div class="code-block">
+<pre><code># /etc/nftables.conf
+
+#!/usr/sbin/nft -f
+
+# Flush existing rules
+flush ruleset
+
+# Create a table and chain
+table inet filter {
+    chain input {
+        type filter hook input priority 0; policy drop;
+
+        # Allow loopback
+        iif lo accept
+
+        # Allow established connections
+        ct state established,related accept
+        ct state invalid drop
+
+        # Allow SSH with rate limiting
+        tcp dport ssh ct state new limit rate 4/minute accept
+        tcp dport ssh drop
+
+        # Allow HTTP and HTTPS
+        tcp dport { http, https } accept
+
+        # Allow ping (rate limited)
+        icmp type echo-request limit rate 5/second accept
+
+        # Log and drop everything else
+        log prefix "NFT-DROP: " drop
+    }
+
+    chain forward {
+        type filter hook forward priority 0; policy drop;
+    }
+
+    chain output {
+        type filter hook output priority 0; policy accept;
+    }
+}</code></pre>
+                    </div>
+                    <p>Apply with <code>sudo nft -f /etc/nftables.conf</code>. The configuration is declarative — you describe the desired state, and nftables handles the rest. No more worrying about rule order with <code>-I</code> vs <code>-A</code>.</p>
+
+                    <h3>Key nftables Concepts</h3>
+                    <table class="comparison-table">
+                        <thead>
+                            <tr>
+                                <th>iptables</th>
+                                <th>nftables</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>-A INPUT</code></td>
+                                <td><code>chain input { ... }</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>-p tcp --dport 22</code></td>
+                                <td><code>tcp dport ssh</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>-s 192.168.1.0/24</code></td>
+                                <td><code>ip saddr 192.168.1.0/24</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>-j ACCEPT</code></td>
+                                <td><code>accept</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>-P INPUT DROP</code></td>
+                                <td><code>policy drop;</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <section id="comparison">
+                    <h2>Tool Comparison</h2>
+                    <table class="comparison-table">
+                        <thead>
+                            <tr>
+                                <th>Feature</th>
+                                <th>iptables</th>
+                                <th>UFW</th>
+                                <th>nftables</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Complexity</td>
+                                <td>High</td>
+                                <td>Low</td>
+                                <td>Medium</td>
+                            </tr>
+                            <tr>
+                                <td>Performance</td>
+                                <td>Good</td>
+                                <td>Same as iptables</td>
+                                <td>Better</td>
+                            </tr>
+                            <tr>
+                                <td>Config Format</td>
+                                <td>CLI commands</td>
+                                <td>Simple CLI</td>
+                                <td>Declarative file</td>
+                            </tr>
+                            <tr>
+                                <td>Persistence</td>
+                                <td>Manual save</td>
+                                <td>Automatic</td>
+                                <td>File-based</td>
+                            </tr>
+                            <tr>
+                                <td>Best For</td>
+                                <td>Advanced users</td>
+                                <td>Everyone else</td>
+                                <td>Future-proof setups</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p><strong>My recommendation:</strong> Use <strong>UFW</strong> for most servers. It's simple, safe, and gets the job done. Use <strong>iptables</strong> when you need granular control. Start learning <strong>nftables</strong> — it's the future.</p>
+                </section>
+
+                <section id="automation">
+                    <h2>Automate with Python</h2>
+                    <p>You can manage UFW rules programmatically from Python. Here's a utility class:</p>
+                    <div class="code-block">
+<pre><code class="language-python">import subprocess
+
+class Firewall:
+    """Simple firewall management using UFW."""
+    
+    def __init__(self):
+        self.sudo = "sudo ufw"
+    
+    def _run(self, command: str) -> str:
+        """Run a UFW command and return output."""
+        result = subprocess.run(
+            f"{self.sudo} {command}",
+            shell=True,
+            capture_output=True,
+            text=True,
+            input="y\n"  # Auto-confirm prompts
+        )
+        return result.stdout.strip()
+    
+    def allow(self, port: int, proto: str = "tcp") -> None:
+        """Allow traffic on a port."""
+        self._run(f"allow {port}/{proto}")
+        print(f"Allowed {port}/{proto}")
+    
+    def deny(self, port: int, proto: str = "tcp") -> None:
+        """Deny traffic on a port."""
+        self._run(f"deny {port}/{proto}")
+        print(f"Denied {port}/{proto}")
+    
+    def allow_from(self, ip: str, port: int) -> None:
+        """Allow traffic from a specific IP to a port."""
+        self._run(f"allow from {ip} to any port {port} proto tcp")
+        print(f"Allowed {ip} -> port {port}")
+    
+    def limit(self, service: str) -> None:
+        """Rate limit a service (anti-brute-force)."""
+        self._run(f"limit {service}")
+        print(f"Limited {service}")
+    
+    def status(self) -> str:
+        """Show current firewall status."""
+        return self._run("status verbose")
+    
+    def reload(self) -> None:
+        """Reload firewall rules."""
+        self._run("reload")
+        print("Firewall reloaded")
+    
+    def enable(self) -> None:
+        """Enable the firewall."""
+        self._run("enable")
+        print("Firewall enabled")
+    
+    def disable(self) -> None:
+        """Disable the firewall."""
+        self._run("disable")
+        print("Firewall disabled")
+
+
+# --- Usage Example ---
+fw = Firewall()
+
+# Secure a new web server
+fw.enable()
+fw.allow(22)           # SSH
+fw.allow(80)           # HTTP
+fw.allow(443)          # HTTPS
+fw.limit("ssh")        # Anti-brute-force
+fw.deny(3306)          # Block MySQL from outside
+
+print("\nCurrent status:")
+print(fw.status())
+</code></pre>
+                    </div>
+                    <p>This class wraps UFW commands in Python methods. Use it in deployment scripts to configure firewalls consistently across servers.</p>
+                </section>
+
+                <section id="best-practices">
+                    <h2>Best Practices</h2>
+                    <ol>
+                        <li><strong>Default deny everything</strong> — start with a closed firewall and open only what's needed.</li>
+                        <li><strong>Allow SSH before enabling</strong> — always ensure you can SSH in before turning on the firewall, especially on remote servers.</li>
+                        <li><strong>Restrict SSH by IP</strong> — if your IP is static, allow SSH only from your address. Otherwise, use rate limiting.</li>
+                        <li><strong>Allow established connections</strong> — this rule is essential for any outbound connectivity to work.</li>
+                        <li><strong>Test before locking yourself out</strong> — use a separate SSH session when testing firewall rules on remote servers.</li>
+                        <li><strong>Log dropped packets</strong> — logging helps you identify legitimate traffic you may have accidentally blocked.</li>
+                        <li><strong>Save your rules</strong> — iptables rules are lost on reboot. Use UFW (auto-persistent) or save iptables rules manually.</li>
+                        <li><strong>Don't expose database ports</strong> — ports 3306 (MySQL), 5432 (PostgreSQL), 6379 (Redis) should never be accessible from the internet.</li>
+                        <li><strong>Combine with Cloudflare</strong> — for web traffic, Cloudflare provides DDoS protection and WAF before traffic even reaches your firewall.</li>
+                    </ol>
+                </section>
+
+                <section id="summary">
+                    <h2>Summary</h2>
+                    <p>Linux firewalls are your first line of defense. Here's the quick reference:</p>
+                    <ul>
+                        <li><strong>iptables</strong> — powerful, verbose, everywhere. Use <code>iptables -A INPUT -p tcp --dport PORT -j ACCEPT</code> to allow ports.</li>
+                        <li><strong>UFW</strong> — simple, safe, beginner-friendly. Use <code>sudo ufw allow PORT</code> to allow ports.</li>
+                        <li><strong>nftables</strong> — modern, fast, declarative. Use <code>tcp dport PORT accept</code> in a config file.</li>
+                    </ul>
+                    <p>For most servers, start with UFW: allow SSH, HTTP, and HTTPS, limit SSH connections, and deny everything else. That simple setup blocks the vast majority of automated attacks.</p>
+                    <p>Remember: a firewall is only as good as its rules. Keep your rule set minimal, document what each rule does, and review it regularly.</p>
+                </section>
+
+            </div>
+        </article>
+
+        <!-- Related Posts -->
+        <section class="related-posts">
+            <h2>Related Posts</h2>
+            <div class="related-grid">
+                <a href="https-tls-explained.html" class="related-card">
+                    <span class="tag security">Security</span>
+                    <h3>HTTPS and TLS Explained: How Encryption Protects Your Data Online</h3>
+                </a>
+                <a href="network-fundamentals.html" class="related-card">
+                    <span class="tag security">Security</span>
+                    <h3>Network Fundamentals: IPs, Ports, DNS & Routing — Complete Beginner's Guide</h3>
+                </a>
+                <a href="ssh-config.html" class="related-card">
+                    <span class="tag devops">DevOps</span>
+                    <h3>SSH Config File: Manage Multiple Servers Like a Pro</h3>
+                </a>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes · Built with Cloudflare · Powered by curiosity</p>
+        </div>
+    </footer>
+
+    <script src="../theme.js"></script>
+</body>
+</html>

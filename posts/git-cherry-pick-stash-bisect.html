@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Git Cherry-Pick, Stash, and Bisect: Power Tools Every Developer Needs — Complete Guide | Hugo's Dev Notes</title>
+    <meta name="description" content="Master Git cherry-pick, stash, and bisect — three essential tools for managing work-in-progress, selectively merging commits, and finding bugs. Practical examples for every concept.">
+    <meta name="keywords" content="git cherry-pick, git stash, git bisect, version control, bug hunting, git workflow, selective merge, developer tools, beginner guide">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/git-cherry-pick-stash-bisect.html">
+    <link rel="stylesheet" href="../style.css">
+
+    <!-- SEO Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "headline": "Git Cherry-Pick, Stash, and Bisect: Power Tools Every Developer Needs — Complete Guide",
+      "description": "Master Git cherry-pick, stash, and bisect — manage work-in-progress, selectively merge commits, and find bugs efficiently.",
+      "datePublished": "2026-07-13",
+      "dateModified": "2026-07-13",
+      "author": {"@type": "Person", "name": "Hugo Wong"},
+      "publisher": {"@type": "Organization", "name": "Hugo's Dev Notes", "url": "https://blog.hugow.dev"},
+      "mainEntityOfPage": {"@id": "https://blog.hugow.dev/posts/git-cherry-pick-stash-bisect.html"},
+      "keywords": "DevOps"
+    }
+    </script>
+
+    <!-- Social Meta -->
+    <meta property="og:title" content="Git Cherry-Pick, Stash, and Bisect: Power Tools Every Developer Needs">
+    <meta property="og:description" content="Master Git cherry-pick, stash, and bisect — three essential tools for managing work-in-progress, selectively merging commits, and finding bugs.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.hugow.dev/posts/git-cherry-pick-stash-bisect.html">
+    <meta property="og:site_name" content="Hugo's Dev Notes">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Git Cherry-Pick, Stash, and Bisect: Power Tools Every Developer Needs">
+    <meta name="twitter:description" content="Master Git cherry-pick, stash, and bisect — three essential Git tools you'll use regularly.">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post">
+            <div class="post-tags">
+                <span class="tag devops">DevOps</span>
+            </div>
+
+            <header class="post-header">
+                <h1>Git Cherry-Pick, Stash, and Bisect: Power Tools Every Developer Needs — Complete Guide</h1>
+                <div class="post-meta">
+                    <span class="post-date">July 13, 2026</span>
+                    <span class="post-read-time">10 min read</span>
+                    <span class="post-badge">New</span>
+                </div>
+            </header>
+
+            <div class="post-excerpt">
+                <p>Master three essential Git commands that separate beginners from power users — cherry-pick to selectively merge commits, stash to temporarily save work without committing, and bisect to find bugs using binary search. Real-world scenarios and working examples for each tool.</p>
+            </div>
+
+            <div class="post-content">
+                <p>You've learned <code>git add</code>, <code>git commit</code>, and <code>git push</code>. Now it's time for the tools that make Git truly powerful. Cherry-pick, stash, and bisect solve three everyday problems: "I need just this one commit," "I need to switch branches but my work isn't ready," and "something broke — when did it happen?"</p>
+
+                <p>Let's set up a demo repo first, then dive into each command with real scenarios.</p>
+
+                <h2>Setup: Demo Repository</h2>
+
+                <pre><code># Create a demo repo
+mkdir git-power-tools && cd git-power-tools
+git init
+
+# Create some initial commits on main
+echo "v1.0 - initial version" &gt; app.py
+git add app.py && git commit -m "feat: initial version"
+
+echo "v1.1 - added logging" &gt; app.py
+git add app.py && git commit -m "feat: add logging"
+
+echo "v1.2 - added config" &gt; app.py
+git add app.py && git commit -m "feat: add config system"
+
+# Create a feature branch with multiple commits
+git checkout -b feature/dashboard
+echo "dash v1" &gt; dashboard.py
+git add dashboard.py && git commit -m "feat: create dashboard layout"
+
+echo "dash v2 - with charts" &gt; dashboard.py
+git add dashboard.py && git commit -m "feat: add charts to dashboard"
+
+echo "bugfix in dashboard" &gt; dashboard.py
+git add dashboard.py && git commit -m "fix: resolve chart rendering bug"
+
+# Switch back to main
+git checkout main</code></pre>
+
+                <h2>1. git cherry-pick: Selectively Apply Commits</h2>
+
+                <p><strong>Problem:</strong> Your feature branch has 10 commits. You only need that one bug fix on main right now — the rest of the feature isn't ready.</p>
+
+                <h3>Basic Cherry-Pick</h3>
+
+                <pre><code># Find the commit hash you want
+git log feature/dashboard --oneline
+# abc1234 fix: resolve chart rendering bug
+# def5678 feat: add charts to dashboard
+# 901abcd feat: create dashboard layout
+
+# Apply just the bug fix to main
+git cherry-pick abc1234
+
+# main now has the fix, without the other feature commits
+git log --oneline
+# abc1234 fix: resolve chart rendering bug
+# ... (other main commits)</code></pre>
+
+                <h3>Cherry-Pick a Range of Commits</h3>
+
+                <pre><code># Apply multiple commits at once
+git cherry-pick abc1234^..def5678
+
+# The ^.. syntax means "from the parent of abc1234 through def5678"
+# This applies both the bug fix AND the chart commit</code></pre>
+
+                <h3>Handle Conflicts During Cherry-Pick</h3>
+
+                <pre><code># If the cherry-picked commit conflicts with your current branch:
+git cherry-pick abc1234
+# CONFLICT (content): Merge conflict in dashboard.py
+
+# Option 1: Fix the conflict manually, then continue
+vim dashboard.py          # Resolve the conflict
+git add dashboard.py
+git cherry-pick --continue
+
+# Option 2: Abort if you change your mind
+git cherry-pick --abort
+
+# Option 3: Skip this commit, continue with the next
+git cherry-pick --skip</code></pre>
+
+                <h3>Real-World Scenario: Hotfix from Feature Branch</h3>
+
+                <p>A bug was found in production. Your team member already fixed it on their feature branch. Instead of merging the whole branch:</p>
+
+                <pre><code># On production branch
+git checkout main
+
+# Get the fix commit hash from colleague's branch
+git log colleague/feature-branch --oneline | head -5
+# 7a3b2c1 fix: null pointer in payment module
+# ...
+
+# Apply just that fix
+git cherry-pick 7a3b2c1
+
+# Deploy the fix without the unfinished feature
+git push origin main
+
+# Later, when the feature is ready, merge the whole branch
+git merge colleague/feature-branch</code></pre>
+
+                <h3>Cherry-Pick Without Committing</h3>
+
+                <pre><code># Apply the changes but don't commit — useful for reviewing
+git cherry-pick -n abc1234
+
+# Check what changed
+git diff --staged
+
+# If it looks good, commit manually
+git commit -m "fix: backport chart rendering fix from feature branch"</code></pre>
+
+                <h2>2. git stash: Save Work-In-Progress</h2>
+
+                <p><strong>Problem:</strong> You're in the middle of a feature when your manager says "we have a production issue, fix it now." Your current work is half-done — committing it would pollute the history.</p>
+
+                <h3>Basic Stash and Pop</h3>
+
+                <pre><code># You're working on a feature
+echo "WIP: new feature code" &gt; feature.py
+git add feature.py
+
+# Need to switch branches urgently!
+git stash
+# Saved working directory and index state WIP on main: a1b2c3d
+
+# Your working directory is now clean
+git status
+# On branch main
+# nothing to commit, working tree clean
+
+# Switch to fix the production issue
+git checkout hotfix/production-bug
+# ... fix the bug ...
+git commit -m "fix: critical production issue"
+git push
+
+# Go back to your feature and restore your work
+git checkout feature/my-feature
+git stash pop
+# Dropped refs/stash@{0} (d4e5f6a)
+
+# Your changes are back!
+git status
+# Changes to be committed:
+#   new file:   feature.py</code></pre>
+
+                <h3>Stash with a Message</h3>
+
+                <pre><code># Name your stash so you remember what it is
+git stash save "WIP: dashboard chart component - need to finish tooltip"
+
+# List all stashes
+git stash list
+# stash@{0}: WIP: dashboard chart component - need to finish tooltip
+# stash@{1}: WIP: experiment with new color scheme
+# stash@{2}: On main: testing API integration</code></pre>
+
+                <h3>Apply Without Deleting</h3>
+
+                <pre><code># Apply a stash but keep it in the list (use stash apply, not pop)
+git stash apply stash@{0}
+
+# Check if it applied correctly
+git status
+
+# If good, drop it manually
+git stash drop stash@{0}
+
+# Or combine apply + drop
+git stash pop stash@{0}</code></pre>
+
+                <h3>Stash Untracked and Ignored Files</h3>
+
+                <pre><code># By default, stash only includes tracked files
+# Include untracked files too
+git stash -u
+# or: git stash --include-untracked
+
+# Include even .gitignore files (careful!)
+git stash -a
+# or: git stash --all
+
+# Stash only specific files
+git stash push -m "just the config" config.py settings.py</code></pre>
+
+                <h3>Create a Branch from a Stash</h3>
+
+                <pre><code># Turn a stash into its own branch (great for isolating experiments)
+git stash branch new-feature-name stash@{0}
+# Switched to a new branch "new-feature-name"
+
+# Now you have a clean branch with your stashed work
+git log --oneline
+# Your stashed changes are now proper commits</code></pre>
+
+                <h3>Clean Up Old Stashes</h3>
+
+                <pre><code># Drop a specific stash
+git stash drop stash@{1}
+
+# Drop all stashes
+git stash clear
+
+# View stash contents before deleting
+git stash show -p stash@{0}
+# diff --git a/feature.py b/feature.py
+# new file mode 100644
+# --- /dev/null
+# +++ b/feature.py
+# @@ -0,0 +1 @@
+# +WIP: new feature code</code></pre>
+
+                <h2>3. git bisect: Find the Bug-Introducing Commit</h2>
+
+                <p><strong>Problem:</strong> Your application worked 100 commits ago but is broken now. Manually checking each commit would take forever. Binary search finds the culprit in ~7 steps.</p>
+
+                <h3>Manual Bisect</h3>
+
+                <pre><code># Start bisect — tell Git where it was good and bad
+git bisect start
+
+# Mark the current (broken) commit as bad
+git bisect bad
+# We are currently bisecting, include all parents.
+
+# Mark a known-good commit as good
+git bisect good v1.0
+# Bisecting: 7 revisions left to test after this
+
+# Git checks out a middle commit. Test your app.
+# If it works → good, if broken → bad
+
+# Repeat telling Git the result
+git bisect good   # This commit works
+# Bisecting: 3 revisions left to test after this
+
+git bisect bad    # This one's broken
+# Bisecting: 1 revision left to test after this
+
+git bisect bad    # Found it!
+# a1b2c3d4e5 is the first bad commit
+# commit a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8
+# Author: Someone
+# Date:   Mon Jul 6 14:23:00 2026 +0000
+#
+#     feat: refactor user authentication module
+#
+# :0000000000000... 1234567890abc.. M src/auth.py
+# src/auth.py | 45 ++++++++++++++++++++++++++++++-------------
+# 1 file changed, 32 insertions(+), 13 deletions(-)
+
+# Done! Reset bisect
+git bisect reset
+# Previous HEAD was on branch 'main'</code></pre>
+
+                <h3>Automated Bisect with a Test Script</h3>
+
+                <p>If you have a test that passes/fails, Git can automate the entire search:</p>
+
+                <pre><code># Create a test script
+cat &gt; test.sh &lt;&lt; 'EOF'
+#!/bin/bash
+# Exit 0 = good (bug not present), exit 1 = bad (bug present)
+python3 -c "
+try:
+    from app import main
+    result = main()
+    if result == expected_output:
+        exit(0)
+    exit(1)
+except Exception:
+    exit(1)
+"
+EOF
+
+chmod +x test.sh
+
+# Run automated bisect
+git bisect start
+git bisect bad          # Current HEAD is bad
+git bisect good v1.0    # v1.0 was good
+git bisect run ./test.sh
+
+# Git automatically finds the first bad commit!
+# a1b2c3d4e5 is the first bad commit
+
+# Clean up
+git bisect reset</code></pre>
+
+                <h3>Real-World Bisect Example</h3>
+
+                <p>Imagine your test suite started failing. Here's the full workflow:</p>
+
+                <pre><code># 1. Make sure your working tree is clean
+git stash
+
+# 2. Start bisect
+git bisect start
+
+# 3. Mark current HEAD as bad
+git bisect bad HEAD
+
+# 4. Find a known-good tag or commit
+git tag -l
+# v2.0
+# v1.5
+# v1.0
+
+git bisect good v1.5
+
+# 5. Git checks out a middle point. Run tests:
+git checkout $(git rev-parse HEAD)  # Already checked out
+pytest tests/ -x
+# FAILURES: 3 tests failed
+
+# 6. Mark as bad and repeat
+git bisect bad
+
+# Git jumps to a new point. Test again.
+pytest tests/ -x
+# ====================== 42 passed in 3.2s ======================
+
+git bisect good
+
+# Continue until Git finds the culprit...
+# f3a8b2c1 is the first bad commit
+# commit f3a8b2c1d2e3
+# Author: dev@example.com
+# Date:   Thu Jul 10 09:15:00 2026
+#
+#     refactor: simplify database connection pooling
+#
+# :040000 040000 abc..def M src/db.py
+
+# 7. Investigate the change
+git show f3a8b2c1
+
+# 8. Fix the issue, then reset
+git bisect reset</code></pre>
+
+                <h2>4. Bonus: Combining These Tools</h2>
+
+                <p>These tools are even more powerful together:</p>
+
+                <h3>Scenario: Find and Fix a Regression</h3>
+
+                <pre><code># Step 1: Use bisect to find when things broke
+git bisect start
+git bisect bad
+git bisect good v2.0
+# ... (bisect process) ...
+# abc1234 is the first bad commit
+git bisect reset
+
+# Step 2: Create a fix branch
+git checkout -b fix/regression-from-abc1234
+
+# Step 3: Fix the issue and test
+# ... (write the fix) ...
+pytest tests/  # ✓ all pass
+
+# Step 4: Commit the fix
+git commit -m "fix: regression from commit abc1234"
+
+# Step 5: Cherry-pick the fix back to the affected branch
+git checkout main
+git cherry-pick fix/regression-from-abc1234
+
+# Step 6: Push and create PR
+git push -u origin fix/regression-from-abc1234</code></pre>
+
+                <h3>Scenario: Stash Experiment, Test, Then Decide</h3>
+
+                <pre><code># You have an idea but don't want to commit yet
+echo "# Experimental feature" &gt; experimental.py
+git stash push -m "experiment: new algorithm" experimental.py
+
+# Switch to another branch, do other work
+git checkout feature/other
+# ... work work work ...
+
+# Come back and test your experiment
+git checkout main
+git stash apply stash@{0}
+
+# Try it out
+python3 experimental.py
+# Works! Let's commit it.
+
+git add experimental.py
+git commit -m "feat: add experimental algorithm"
+git stash drop stash@{0}</code></pre>
+
+                <h2>Quick Reference Cheat Sheet</h2>
+
+                <pre><code>CHERRY-PICK (selectively apply commits):
+  git cherry-pick &lt;hash&gt;              Apply one commit
+  git cherry-pick &lt;hash&gt;..&lt;hash&gt;     Apply a range
+  git cherry-pick -n &lt;hash&gt;           Apply without committing
+  git cherry-pick --continue           After resolving conflict
+  git cherry-pick --abort             Cancel the cherry-pick
+  git cherry-pick --skip               Skip conflicting commit
+
+STASH (save work-in-progress):
+  git stash                            Save + clean working tree
+  git stash save "message"             Named stash
+  git stash -u                         Include untracked files
+  git stash push -m "msg" file.py     Stash specific files
+  git stash list                       List all stashes
+  git stash pop                        Apply + delete top stash
+  git stash apply stash@{0}           Apply without deleting
+  git stash branch &lt;name&gt;             Create branch from stash
+  git stash clear                      Delete all stashes
+
+BISECT (binary search for bugs):
+  git bisect start                     Begin bisecting
+  git bisect bad                       Mark as bad
+  git bisect good &lt;commit&gt;            Mark as good
+  git bisect good/bad                 Current revision status
+  git bisect run ./test.sh            Automated testing
+  git bisect reset                    End bisect, return to start</code></pre>
+
+                <h2>Summary</h2>
+
+                <p><strong>Cherry-pick</strong> lets you transplant individual commits between branches — essential for hotfixes and selective backports. <strong>Stash</strong> gives you a clean escape hatch when you need to switch context without committing incomplete work. <strong>Bisect</strong> uses binary search to find bug-introducing commits in logarithmic time instead of linear time.</p>
+
+                <p>Together, these three commands cover the "selective," "temporary," and "investigative" gaps that basic Git operations leave open. Master them and you'll navigate any Git situation with confidence. 🚀</p>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes. Built with ❤️ and Python.</p>
+        </div>
+    </footer>
+
+    <script src="../theme.js"></script>
+</body>
+</html>

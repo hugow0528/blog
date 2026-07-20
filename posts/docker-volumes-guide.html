@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docker Volumes and Persistent Data: Never Lose Your Data — Complete Beginner's Guide</title>
+    <meta name="description" content="Learn Docker volumes for persistent data — named volumes, bind mounts, tmpfs, volume drivers, backup and restore patterns. Step-by-step with working docker-compose.yml examples and Python automation.">
+    <meta name="keywords" content="docker volumes, bind mounts, persistent data, docker compose volumes, docker backup, container storage">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/docker-volumes-guide.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn active">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-detail">
+            <header class="post-header">
+                <div class="post-tags">
+                    <span class="tag devops">DevOps</span>
+                </div>
+                <h1>Docker Volumes and Persistent Data: Never Lose Your Data — Complete Beginner's Guide</h1>
+                <div class="post-meta">
+                    <span class="post-date">July 17, 2026</span>
+                    <span class="read-time">10 min read</span>
+                </div>
+            </header>
+
+            <div class="post-content">
+                <p>Containers are ephemeral by design. When a container stops and restarts, everything inside it resets. If your app writes a database, uploads a file, or caches data inside the container, <strong>all of that is lost</strong> on the next restart. Docker volumes solve this problem by creating persistent storage that survives container lifecycle events. Let's learn every way Docker handles persistent data.</p>
+
+                <h2>The Problem: Containers Are Temporary</h2>
+                <p>Run this and watch the data disappear:</p>
+
+<pre><code class="language-bash"># Create a container with some data
+docker run --name demo -d alpine sh -c "echo 'hello' > /data.txt && tail -f /dev/null"
+
+# Check the file exists
+docker exec demo cat /data.txt
+# Output: hello
+
+# Remove and recreate the container
+docker rm -f demo
+docker run --name demo -d alpine sh -c "tail -f /dev/null"
+
+# Check again — it's gone!
+docker exec demo cat /data.txt
+# Output: cat: can't open '/data.txt': No such file or directory</code></pre>
+
+                <p>The filesystem inside a container is built from the image layers + a thin writable layer. When the container is removed, that writable layer is destroyed. Volumes exist <em>outside</em> the container — on the host machine or a managed storage system.</p>
+
+                <h2>Three Types of Docker Storage</h2>
+                <p>Docker provides three mechanisms for persistent data, each with different tradeoffs:</p>
+                <ol>
+                    <li><strong>Named Volumes</strong> — Docker manages the storage location. Best for most use cases.</li>
+                    <li><strong>Bind Mounts</strong> — You specify an exact host path. Great for development and config files.</li>
+                    <li><strong>tmpfs Mounts</strong> — RAM-only storage. Fast, but lost on restart. Good for secrets and caches.</li>
+                </ol>
+
+                <h2>Named Volumes: The Docker Way</h2>
+                <p>Docker creates and manages the storage directory. You don't worry about the host path.</p>
+
+<pre><code class="language-bash"># Create a volume explicitly
+docker volume create mydata
+
+# Use it in a container
+docker run -d \
+  --name db \
+  -v mydata:/var/lib/postgresql/data \
+  postgres:16
+
+# The volume persists even if you delete the container
+docker rm -f db
+docker run -d \
+  --name db2 \
+  -v mydata:/var/lib/postgresql/data \
+  postgres:16
+# Data is still there! ✅</code></pre>
+
+                <p>The <code>-v mydata:/var/lib/postgresql/data</code> flag maps the volume named <code>mydata</code> to the path inside the container. Docker stores named volumes under <code>/var/lib/docker/volumes/mydata/_data</code> on Linux.</p>
+
+                <p>Use named volumes in <code>docker-compose.yml</code>:</p>
+
+<pre><code class="language-yaml"># docker-compose.yml
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD: secret
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  app:
+    image: my-app:latest
+    depends_on:
+      - db
+    volumes:
+      - uploads:/app/uploads
+
+volumes:
+  pgdata:        # Named volume for database
+  uploads:       # Named volume for user uploads</code></pre>
+
+                <p>Named volumes are the <strong>recommended default</strong> for production databases and any data that must survive container restarts.</p>
+
+                <h2>Bind Mounts: Direct Host Access</h2>
+                <p>Instead of a Docker-managed name, you point to an exact path on your host filesystem:</p>
+
+<pre><code class="language-bash"># Mount your local project code into the container
+docker run -d \
+  --name myapp \
+  -v /home/hugo/projects/myapp:/app \
+  python:3.12 \
+  python /app/main.py</code></pre>
+
+                <p>In docker-compose, use absolute paths or <code>./</code> relative to the compose file:</p>
+
+<pre><code class="language-yaml"># docker-compose.yml
+services:
+  web:
+    build: .
+    volumes:
+      - ./src:/app/src          # Live code sync for development
+      - ./config:/app/config    # Config files
+      - static_data:/app/data   # Named volume (mixed usage!)</code></pre>
+
+                <p>Bind mounts are <strong>ideal for development</strong> because changes to files on your host are immediately visible inside the container. No rebuild, no restart — edit and reload.</p>
+
+                <h3>Bind Mount: read_only for Security</h3>
+                <p>Prevent containers from modifying host files:</p>
+
+<pre><code class="language-yaml">volumes:
+  - ./config/app.env:/app/config.env:ro  # read-only mount</code></pre>
+
+                <p>The <code>:ro</code> suffix makes the mount read-only inside the container. Use this for config files, certificates, and anything the container should read but never write.</p>
+
+                <h2>tmpfs: RAM-Only Storage</h2>
+                <p>tmpfs stores data in the host's RAM. It's incredibly fast but completely lost when the container stops:</p>
+
+<pre><code class="language-bash"># Mount /run/secrets as tmpfs
+docker run -d \
+  --tmpfs /run/secrets:rw,noexec,nosuid,size=64m \
+  my-app:latest</code></pre>
+
+                <p>Use tmpfs for:</p>
+                <ul>
+                    <li>Sensitive data you never want on disk (tokens, keys)</li>
+                    <li>High-speed cache that doesn't need persistence</li>
+                    <li>Database temp directories for performance</li>
+                </ul>
+
+                <h2>Docker Volume Commands: The Essential Toolkit</h2>
+
+<pre><code class="language-bash"># List all volumes
+docker volume ls
+# local   mydb_data
+# local   uploads
+
+# Inspect a volume (see mountpoint, driver, labels)
+docker volume inspect mydb_data
+# [{
+#   "CreatedAt": "2026-07-17T10:30:00Z",
+#   "Mountpoint": "/var/lib/docker/volumes/mydb_data/_data",
+#   "Name": "mydb_data",
+#   "Driver": "local"
+# }]
+
+# Remove unused volumes
+docker volume prune
+# WARNING! This removes all volumes not attached to a container.
+
+# Remove a specific volume
+docker volume rm mydb_data</code></pre>
+
+                <h2>Back Up and Restore Docker Volumes</h2>
+                <p>This is the most important skill for Docker volumes. Here's a production-ready backup pattern:</p>
+
+<pre><code class="language-bash"># Step 1: Stop the container to ensure data consistency
+docker stop db
+
+# Step 2: Run a temporary container to copy volume data
+docker run --rm \
+  -v mydb_data:/source:ro \
+  -v $(pwd)/backups:/backup \
+  alpine \
+  tar czf /backup/db-$(date +%Y%m%d).tar.gz -C /source .
+
+# Step 3: Restart the container
+docker start db
+
+# Your backup is at: ./backups/db-20260717.tar.gz</code></pre>
+
+                <p>Restore from backup:</p>
+
+<pre><code class="language-bash"># Stop the running container
+docker stop db
+
+# Remove the old volume
+docker volume rm mydb_data
+
+# Create a fresh volume
+docker volume create mydb_data
+
+# Extract backup into the new volume
+docker run --rm \
+  -v mydb_data:/data \
+  -v $(pwd)/backups:/backup \
+  alpine \
+  tar xzf /backup/db-20260717.tar.gz -C /data
+
+# Start the container
+docker start db</code></pre>
+
+                <h2>Automated Backup with Python</h2>
+                <p>Schedule backups using a Python script that integrates with Docker:</p>
+
+<pre><code class="language-python">import subprocess
+import datetime
+import os
+from pathlib import Path
+
+BACKUP_DIR = Path("/home/hugo/backups/docker")
+MAX_BACKUPS = 7  # Keep last 7 days
+
+def backup_volume(volume_name, container_name=None):
+    """Create a timestamped backup of a Docker volume."""
+    BACKUP_DIR.mkdir(parents=True, exist_ok=True)
+
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
+    backup_file = BACKUP_DIR / f"{volume_name}_{timestamp}.tar.gz"
+
+    # Stop container if provided (for consistent backups)
+    if container_name:
+        print(f"Stopping {container_name}...")
+        subprocess.run(["docker", "stop", container_name], check=True)
+
+    try:
+        # Create backup using a temporary Alpine container
+        cmd = [
+            "docker", "run", "--rm",
+            "-v", f"{volume_name}:/source:ro",
+            "-v", f"{BACKUP_DIR}:/backup",
+            "alpine",
+            "tar", "czf", f"/backup/{backup_file.name}",
+            "-C", "/source", "."
+        ]
+        subprocess.run(cmd, check=True)
+        print(f"✅ Backed up {volume_name} -> {backup_file}")
+    finally:
+        if container_name:
+            subprocess.run(["docker", "start", container_name], check=True)
+
+    return backup_file
+
+def rotate_backups(volume_name):
+    """Delete old backups, keeping only MAX_BACKUPS most recent."""
+    backups = sorted(BACKUP_DIR.glob(f"{volume_name}_*.tar.gz"))
+    while len(backups) > MAX_BACKUPS:
+        oldest = backups.pop(0)
+        oldest.unlink()
+        print(f"🗑️  Removed old backup: {oldest}")
+
+# Usage
+backup_volume("pgdata", container_name="db")
+rotate_backups("pgdata")</code></pre>
+
+                <p>Schedule this script with cron to run daily:</p>
+
+<pre><code class="language-bash"># Add to crontab: crontab -e
+0 2 * * * /usr/bin/python3 /home/hugo/scripts/docker-backup.py</code></pre>
+
+                <h2>Docker Compose Volume Patterns</h2>
+                <p>Here's a production-ready docker-compose setup with all three volume types:</p>
+
+<pre><code class="language-yaml"># docker-compose.yml
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+      POSTGRES_DB: myapp
+    volumes:
+      - pgdata:/var/lib/postgresql/data    # Named volume — persistent DB
+    secrets:
+      - db_password
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - uploads:/app/uploads              # Named volume — user files
+      - ./config:/app/config:ro           # Bind mount — config (read-only)
+    tmpfs:
+      - /tmp:size=64m,exec                # tmpfs — temporary files
+    environment:
+      DATABASE_URL: postgresql://postgres:${DB_PASSWORD}@db:5432/myapp
+
+  backup:
+    image: alpine
+    entrypoint: []
+    volumes:
+      - pgdata:/source:ro                 # Read the DB volume
+      - ./backups:/backup                 # Write backups to host
+    profiles:
+      - maintenance                       # Only start manually
+
+volumes:
+  pgdata:
+    driver: local
+  uploads:
+    driver: local
+
+secrets:
+  db_password:
+    file: ./secrets/db_password.txt</code></pre>
+
+                <h2>Volume Driver Options</h2>
+                <p>Docker supports volume drivers beyond the default <code>local</code> driver. Here's how to configure options:</p>
+
+<pre><code class="language-yaml">volumes:
+  pgdata:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/fast-ssd/postgres  # Mount from a specific disk
+  uploads:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=nfs-server,port=2049,rw,nfsvers=4
+      device: ":/exports/uploads"      # NFS shared storage</code></pre>
+
+                <p>NFS volumes let multiple containers across different hosts share the same storage — useful for file uploads in a multi-node cluster.</p>
+
+                <h2>Common Mistakes and How to Avoid Them</h2>
+                <ul>
+                    <li><strong>❌ Mounting over important directories</strong> — Don't mount over <code>/</code> or <code>/etc</code>. Always mount to specific paths where data belongs.</li>
+                    <li><strong>❌ Forgetting volume names in compose</strong> — If you don't declare a volume at the bottom of your <code>docker-compose.yml</code>, Docker creates an anonymous volume with a long hash name that's hard to manage.</li>
+                    <li><strong>❌ Losing data on <code>docker-compose down</code></strong> — By default, <code>docker-compose down</code> does NOT remove named volumes. You need <code>docker-compose down -v</code> to destroy volumes. Remember this!</li>
+                    <li><strong>❌ Relying on bind mounts in production</strong> — Bind mounts tie your deployment to a specific host path. Named volumes are more portable and survive Docker reinstallation.</li>
+                    <li><strong>❌ Not testing backups</strong> — A backup script is useless if you never verify restoration. Test your restore process monthly.</li>
+                </ul>
+
+                <h2>Best Practices Summary</h2>
+                <ul>
+                    <li><strong>Use named volumes for databases</strong> — PostgreSQL, MySQL, Redis, MongoDB all need persistent storage</li>
+                    <li><strong>Use bind mounts for development</strong> — Mount your code directory with <code>:ro</code> for configs, writable for source code</li>
+                    <li><strong>Use tmpfs for secrets and caches</strong> — Never store tokens or session data on disk</li>
+                    <li><strong>Automate backups</strong> — Daily tar.gz backups with rotation, stored outside Docker</li>
+                    <li><strong>Test your restore process</strong> — Regularly practice restoring from backups in a staging environment</li>
+                    <li><strong>Document your volume names</strong> — Keep a README mapping volumes to services so your team knows what's where</li>
+                </ul>
+
+                <h2>What's Next</h2>
+                <p>Volumes are the foundation of reliable container deployments. Pair them with the <a href="posts/docker-healthcheck-guide.html">Docker HEALTHCHECK guide</a> for automatic container restart on failure, or combine with <a href="posts/docker-compose-dev-environment.html">Docker Compose development environments</a> for a complete local development workflow. Next up, learn about <a href="posts/docker-multi-stage-builds.html">multi-stage builds</a> to create smaller, more secure images that work seamlessly with your volume strategy.</p>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes · Built with Cloudflare · <a href="https://github.com/hugow0528/blog">Source</a></p>
+        </div>
+    </footer>
+
+    <script>
+        // Theme toggle
+        const toggle = document.getElementById('themeToggle');
+        toggle?.addEventListener('click', () => {
+            document.body.classList.toggle('light-theme');
+            localStorage.setItem('theme', document.body.classList.contains('light-theme') ? 'light' : 'dark');
+        });
+        if (localStorage.getItem('theme') === 'light') document.body.classList.add('light-theme');
+
+        // Progress bar
+        window.addEventListener('scroll', () => {
+            const bar = document.getElementById('progressBar');
+            if (bar) {
+                const scrolled = window.scrollY / (document.body.scrollHeight - window.innerHeight) * 100;
+                bar.style.width = scrolled + '%';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTTPS and TLS Explained: How Encryption Protects Your Data Online — Complete Beginner's Guide | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn how HTTPS and TLS work from scratch — the TLS handshake, certificates, public/private keys, cipher suites, HSTS, and how to verify security. Practical examples and commands.">
+    <meta name="keywords" content="HTTPS, TLS, SSL, certificates, encryption, public key, private key, handshake, HSTS, security, beginner guide, developer security">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/https-tls-explained.html">
+    <link rel="stylesheet" href="../style.css">
+
+    <!-- SEO Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "headline": "HTTPS and TLS Explained: How Encryption Protects Your Data Online — Complete Beginner's Guide",
+      "description": "Learn how HTTPS and TLS work — the TLS handshake, certificates, keys, cipher suites, HSTS, and practical security verification.",
+      "datePublished": "2026-07-13",
+      "dateModified": "2026-07-13",
+      "author": {"@type": "Person", "name": "Hugo Wong"},
+      "publisher": {"@type": "Organization", "name": "Hugo's Dev Notes", "url": "https://blog.hugow.dev"},
+      "mainEntityOfPage": {"@id": "https://blog.hugow.dev/posts/https-tls-explained.html"},
+      "keywords": "Security"
+    }
+    </script>
+
+    <!-- Social Meta -->
+    <meta property="og:title" content="HTTPS and TLS Explained: How Encryption Protects Your Data Online">
+    <meta property="og:description" content="Learn how HTTPS and TLS work — the handshake, certificates, keys, HSTS, and practical verification. Every developer should understand this.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.hugow.dev/posts/https-tls-explained.html">
+    <meta property="og:site_name" content="Hugo's Dev Notes">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="HTTPS and TLS Explained: How Encryption Protects Your Data Online">
+    <meta name="twitter:description" content="Learn how HTTPS and TLS work — certificates, handshake, keys, HSTS, and practical verification.">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post">
+            <div class="post-tags">
+                <span class="tag security">Security</span>
+            </div>
+
+            <header class="post-header">
+                <h1>HTTPS and TLS Explained: How Encryption Protects Your Data Online — Complete Beginner's Guide</h1>
+                <div class="post-meta">
+                    <span class="post-date">July 13, 2026</span>
+                    <span class="post-read-time">12 min read</span>
+                    <span class="post-badge">New</span>
+                </div>
+            </header>
+
+            <div class="post-excerpt">
+                <p>Understand how HTTPS and TLS actually work — the TLS handshake, certificates, public/private key cryptography, cipher suites, HSTS, certificate authorities, and how to verify a site's security. Practical commands and real-world examples. From the padlock icon to production certificate management.</p>
+            </div>
+
+            <div class="post-content">
+                <p>Every time you see that padlock icon in your browser, a complex cryptographic protocol is working behind the scenes. HTTPS isn't just "HTTP with encryption" — it's an entire trust system involving certificates, keys, and cryptographic handshakes that protect billions of connections every second.</p>
+
+                <p>This guide demystifies HTTPS and TLS from the ground up. By the end, you'll understand not just that your data is encrypted, but exactly how and why you can trust it.</p>
+
+                <h2>1. What Problem Does HTTPS Solve?</h2>
+
+                <p>Plain HTTP sends data in readable text. Anyone between you and the server — your ISP, a café WiFi admin, a government agency, or a malicious actor — can read everything: passwords, credit cards, messages, cookies.</p>
+
+                <pre><code># Plain HTTP — anyone can read this
+GET /login HTTP/1.1
+Host: example.com
+Content-Type: application/x-www-form-urlencoded
+
+username=hugo&password=secret123</code></pre>
+
+                <p>HTTPS wraps HTTP in <strong>Transport Layer Security</strong> (TLS), formerly called SSL. It provides three guarantees:</p>
+
+                <pre><code>✓ Confidentiality — Data is encrypted, nobody can read it
+✓ Integrity    — Data can't be modified in transit
+✓ Authentication — You're talking to the real server, not an imposter</code></pre>
+
+                <h2>2. The Foundation: Public/Private Key Cryptography</h2>
+
+                <p>TLS relies on asymmetric (public-key) cryptography. The core idea is simple but powerful: you have two keys that work as a pair.</p>
+
+                <pre><code>Public Key   → Anyone can use it to ENCRYPT data
+Private Key  → Only the owner can DECRYPT data
+
+What's encrypted with the public key can ONLY be
+decrypted with the matching private key. Ever.</code></pre>
+
+                <h3>Real Example: Generate a Key Pair</h3>
+
+                <p>Let's generate an RSA key pair from the command line:</p>
+
+                <pre><code># Generate a 4096-bit RSA private key
+openssl genrsa -out private.pem 4096
+
+# Extract the public key
+openssl rsa -in private.pem -pubout -out public.pem
+
+# Check the keys
+openssl rsa -in private.pem -check -noout
+# RSA key ok
+
+# View the public key
+cat public.pem
+# -----BEGIN PUBLIC KEY-----
+# MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...
+# -----END PUBLIC KEY-----</code></pre>
+
+                <p>Here's the magic in Python — encrypt with the public key, decrypt only with the private key:</p>
+
+                <pre><code>from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import padding
+
+# Load the private key
+with open("private.pem", "rb") as f:
+    private_key = serialization.load_pem_private_key(f.read(), password=None)
+
+# Load the public key
+with open("public.pem", "rb") as f:
+    public_key = serialization.load_pem_public_key(f.read())
+
+# Encrypt a message with the PUBLIC key
+message = b"My secret password"
+ciphertext = public_key.encrypt(
+    message,
+    padding.OAEP(
+        mgf=padding.MGF1(algorithm="sha256"),
+        algorithm="sha256",
+        label=None
+    )
+)
+print(f"Ciphertext: {ciphertext.hex()}")
+# Ciphertext: a1b2c3d4e5... (random bytes)
+
+# Decrypt with the PRIVATE key (works!)
+plaintext = private_key.decrypt(
+    ciphertext,
+    padding.OAEP(
+        mgf=padding.MGF1(algorithm="sha256"),
+        algorithm="sha256",
+        label=None
+    )
+)
+print(f"Decrypted: {plaintext}")
+# Decrypted: b'My secret password'</code></pre>
+
+                <h2>3. Digital Certificates: Proving Identity</h2>
+
+                <p>If anyone can generate a key pair, how do you know a server is who it claims to be? Enter <strong>digital certificates</strong>.</p>
+
+                <p>A certificate is a document signed by a trusted third party (Certificate Authority, or CA) that says: "Yes, this public key belongs to this domain."</p>
+
+                <pre><code>Certificate structure:
+┌─────────────────────────────────┐
+│ Certificate (X.509 format)      │
+├─────────────────────────────────┤
+│ Domain:    api.example.com      │
+│ Public Key: [the server's key]  │
+│ Valid:     2025-01-01 to ...    │
+│ Signed by: Let's Encrypt / ...  │
+│ Signature: [CA's digital sig]   │
+└─────────────────────────────────┘</code></pre>
+
+                <h3>Inspect a Certificate</h3>
+
+                <p>You can examine any website's certificate from the command line:</p>
+
+                <pre><code># Connect to a site and get its certificate
+openssl s_client -connect google.com:443 -servername google.com &lt;/dev/null 2&gt;/dev/null | openssl x509 -noout -text
+
+# Key info
+openssl s_client -connect google.com:443 -servername google.com &lt;/dev/null 2&gt;/dev/null | openssl x509 -noout -subject -issuer -dates
+
+# Output:
+# subject=CN = google.com
+# issuer=CN = WR2, O = Google Trust Services LLC, C = US
+# notBefore=Jun 22 00:00:00 2026 GMT
+# notAfter=Sep 14 23:59:59 2026 GMT</code></pre>
+
+                <p>You can also check certificates with Python:</p>
+
+                <pre><code>import ssl
+import socket
+
+def check_certificate(hostname, port=443):
+    context = ssl.create_default_context()
+    with socket.create_connection((hostname, port)) as sock:
+        with context.wrap_socket(sock, server_hostname=hostname) as ssock:
+            cert = ssock.getpeercert()
+            print(f"Subject: {cert['subject']}")
+            print(f"Issuer:  {cert['issuer']}")
+            print(f"Valid from: {cert['notBefore']}")
+            print(f"Valid until: {cert['notAfter']}")
+            print(f"Serial:  {cert['serialNumber']}")
+
+check_certificate("google.com")
+# Subject: ((('organizationName', 'Google Trust Services LLC'),), ...)
+# Issuer:  ((('commonName', 'WR2'), ...))
+# Valid from: Jul 28 00:00:00 2026 GMT
+# Valid until: Oct 21 23:59:59 2026 GMT</code></pre>
+
+                <h2>4. The TLS Handshake: Step by Step</h2>
+
+                <p>When you visit https://example.com, here's what happens:</p>
+
+                <pre><code>Step 1: Client Hello
+  Client → Server
+  "I speak TLS 1.3, here are my supported cipher suites and a random number"</code></pre>
+
+                <pre><code>Step 2: Server Hello + Certificate
+  Server → Client
+  "Great, let's use TLS 1.3 + AES-256-GCM. Here's my certificate and my random number."</code></pre>
+
+                <pre><code>Step 3: Client Verifies Certificate
+  Client checks:
+  ✓ Is the certificate signed by a trusted CA?
+  ✓ Does it match the domain I'm connecting to?
+  ✓ Is it not expired?
+  ✓ Is it not revoked? (CRL / OCSP)</code></pre>
+
+                <pre><code>Step 4: Key Exchange
+  Client generates a session key, encrypts it with the server's public key
+  Client → Server: [Encrypted session key]
+  Server decrypts with its private key → now both share a symmetric key</code></pre>
+
+                <pre><code>Step 5: Encrypted Communication
+  Client → Server: "Finished" (encrypted with session key)
+  Server → Client: "Finished" (encrypted with session key)
+  
+  All subsequent data is encrypted with the shared session key using
+  fast symmetric encryption (AES-GCM or ChaCha20)</code></pre>
+
+                <p>The session key uses symmetric encryption because it's much faster than asymmetric encryption for bulk data.</p>
+
+                <h3>Why the Handshake Matters</h3>
+
+                <p>The handshake is where most "security errors" come from. When your browser shows "Your connection is not private," the handshake failed. Common reasons:</p>
+
+                <pre><code>NET::ERR_CERT_DATE_INVALID     → Certificate expired
+NET::ERR_CERT_COMMON_NAME_INVALID → Domain mismatch
+NET::ERR_CERT_AUTHORITY_INVALID   → Unknown CA (self-signed cert)
+NET::ERR_CERT_REVOKED             → Certificate was revoked</code></pre>
+
+                <h2>5. Certificate Authorities (CAs) and Trust</h2>
+
+                <p>Your browser ships with a list of trusted CAs. When a server presents a certificate, your browser walks the chain of trust:</p>
+
+                <pre><code>Trust chain example:
+
+Root CA (built into your browser)
+  │
+  ▼ signed by Root
+Intermediate CA (e.g., "GTS CA 1C3")
+  │
+  ▼ signed by Intermediate
+Your Server Certificate (api.example.com)</code></pre>
+
+                <p>Major CAs include Let's Encrypt (free, automated), DigiCert, Sectigo, and GlobalSign. Let's Encrypt has democratized HTTPS — you can get free certificates in minutes.</p>
+
+                <h3>Self-Signed Certificates</h3>
+
+                <p>You can create your own certificate, but browsers won't trust it:</p>
+
+                <pre><code># Generate a self-signed certificate (for local dev)
+openssl req -x509 -newkey rsa:4096 -keyout key.pem \
+  -out cert.pem -days 365 -nodes -subj "/CN=localhost"
+
+# Use it with a local server
+python3 -c "
+import http.server, ssl
+server = http.server.HTTPServer(('localhost', 8443), http.server.SimpleHTTPRequestHandler)
+server.socket = ssl.wrap_socket(
+    server.socket,
+    certfile='cert.pem',
+    keyfile='key.pem',
+    server_side=True
+)
+print('Serving on https://localhost:8443')
+server.serve_forever()
+"</code></pre>
+
+                <p>Your browser will show a security warning because your system doesn't trust your self-signed CA. For production, always use a CA-signed certificate.</p>
+
+                <h2>6. Cipher Suites: The Encryption Algorithms</h2>
+
+                <p>A cipher suite defines the specific algorithms used during a TLS connection:</p>
+
+                <pre><code>TLS_AES_256_GCM_SHA384
+│       │      │      │
+│       │      │      └── Hash: SHA-384 (for HMAC/PRF)
+│       │      └────────── Auth: GCM (Galois/Counter Mode)
+│       └────────────────── Encryption: AES-256
+└────────────────────────── Protocol: TLS 1.3</code></pre>
+
+                <p>Check what cipher suites your system supports:</p>
+
+                <pre><code># List all supported cipher suites
+openssl ciphers -v 'ALL'
+
+# Check what a specific site uses
+openssl s_client -connect google.com:443 &lt;/dev/null 2&gt;/dev/null | grep "Cipher  :"
+# Cipher    : TLS_AES_256_GCM_SHA384</code></pre>
+
+                <p>TLS 1.3 simplified things by removing weak cipher suites and keeping only the best ones:</p>
+
+                <pre><code>TLS 1.3 cipher suites (all secure):
+  TLS_AES_128_GCM_SHA256
+  TLS_AES_256_GCM_SHA384
+  TLS_CHACHA20_POLY1305_SHA256
+  TLS_AES_128_CCM_SHA256
+  TLS_AES_128_CCM_8_SHA256
+
+TLS 1.2 suites removed (insecure):
+  ✗ RC4 (broken encryption)
+  ✗ 3DES (Sweet32 attack)
+  ✗ MD5-based MACs (collision attacks)
+  ✗ RSA key exchange (no forward secrecy)</code></pre>
+
+                <h2>7. HSTS: Forcing HTTPS Forever</h2>
+
+                <p>Even with HTTPS, a user could accidentally visit http://example.com first. An attacker could intercept that and redirect before encryption starts (a "downgrade attack").</p>
+
+                <p><strong>HTTP Strict Transport Security (HSTS)</strong> tells browsers: "Only use HTTPS for this domain, ever."</p>
+
+                <pre><code>Response header:
+Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+
+max-age=31536000   → Remember this rule for 1 year
+includeSubDomains  → Apply to all subdomains too
+preload            → Submit to browser preload lists</code></pre>
+
+                <p>Check if a site uses HSTS:</p>
+
+                <pre><code># Check HSTS headers
+curl -sI https://google.com | grep -i strict
+# strict-transport-security: max-age=31536000; includeSubDomains; preload
+
+# Check HSTS preload status
+curl -s https://hstspreload.org/api/v2/?domain=google.com
+# "status":"success"</code></pre>
+
+                <p>Once HSTS is set, browsers will refuse to connect via HTTP — they automatically redirect to HTTPS before any data is sent.</p>
+
+                <h2>8. Practical: Checking and Managing Certificates</h2>
+
+                <h3>Automatic Renewal with Certbot</h3>
+
+                <p>Let's Encrypt certificates expire after 90 days. Use certbot for automatic renewal:</p>
+
+                <pre><code># Install certbot
+sudo apt install certbot
+
+# Get a certificate (standalone mode)
+sudo certbot certonly --standalone -d example.com -d www.example.com
+
+# Get with Nginx plugin (auto-configures!)
+sudo certbot --nginx -d example.com
+
+# Certificates stored at:
+# /etc/letsencrypt/live/example.com/fullchain.pem
+# /etc/letsencrypt/live/example.com/privkey.pem
+
+# Auto-renewal via cron (certbot handles this)
+sudo certbot renew --dry-run  # Test renewal
+# ✅ Simulation successful!</code></pre>
+
+                <h3>Configure Nginx with HTTPS</h3>
+
+                <pre><code>server {
+    listen 443 ssl http2;
+    server_name example.com;
+
+    ssl_certificate     /etc/letsencrypt/live/example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/example.com/privkey.pem;
+
+    # Modern TLS settings
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256;
+    ssl_prefer_server_ciphers off;
+
+    # Security headers
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Content-Type-Options nosniff always;
+    add_header X-Frame-Options DENY always;
+
+    location / {
+        proxy_pass http://localhost:3000;
+    }
+}
+
+# Redirect HTTP → HTTPS
+server {
+    listen 80;
+    server_name example.com;
+    return 301 https://\$host\$request_uri;
+}</code></pre>
+
+                <h2>9. Common Misconceptions</h2>
+
+                <pre><code>MISCONCEPTION: "HTTPS means the site is safe"
+REALITY: HTTPS just means the connection is encrypted. The site itself
+         could still be a phishing page, serve malware, or leak your
+         data server-side. HTTPS is transport security, not content security.
+
+MISCONCEPTION: "SSL and TLS are different things"
+REALITY: SSL was deprecated in 2015 (v3.0 had critical flaws). TLS is
+         its successor. People still say "SSL certificate" out of habit,
+         but it's TLS.
+
+MISCONCEPTION: "Self-signed certs are just as secure"
+REALITY: They encrypt just as well, but provide ZERO authentication.
+         Anyone can create a cert for any domain. Without a CA, you
+         can't prove you're talking to the real server (MITM attack).</code></pre>
+
+                <h2>10. Quick Reference: Security Commands</h2>
+
+                <pre><code># Test a site's TLS configuration
+openssl s_client -connect example.com:443 -servername example.com
+
+# Check certificate details
+openssl s_client -connect example.com:443 -servername example.com \
+  &lt;/dev/null 2&gt;/dev/null | openssl x509 -noout -text
+
+# Check if a certificate is valid
+echo | openssl s_client -connect example.com:443 -servername example.com 2&gt;/dev/null \
+  | openssl x509 -noout -dates
+
+# Scan for common TLS issues (need testssl.sh)
+testssl.sh example.com
+
+# Python: verify a connection with full validation
+import ssl, socket
+ctx = ssl.create_default_context()
+ctx.check_hostname = True  # Verify hostname matches cert
+ctx.verify_mode = ssl.CERT_REQUIRED  # Require valid cert
+with socket.create_connection(('example.com', 443)) as sock:
+    with ctx.wrap_socket(sock, server_hostname='example.com') as ssock:
+        print('Connection verified ✓')</code></pre>
+
+                <h2>Summary</h2>
+
+                <p>HTTPS is built on a chain of trust: key pairs encrypt data, certificates prove identity, CAs validate certificates, and the TLS handshake negotiates secure parameters. Understanding this stack helps you debug connection issues, configure servers properly, and appreciate why the padlock matters.</p>
+
+                <p>The practical takeaway: always use HTTPS, get certificates from a trusted CA (Let's Encrypt is free), enable HSTS, and keep your TLS configuration modern (TLS 1.2+ only). Your users — and their data — will thank you. 🔒</p>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes. Built with ❤️ and Python.</p>
+        </div>
+    </footer>
+
+    <script src="../theme.js"></script>
+</body>
+</html>

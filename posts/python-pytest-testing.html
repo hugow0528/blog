@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Testing with pytest: Fixtures, Parametrization &amp; Coverage — Complete Beginner's Guide | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn Python testing with pytest — writing test functions, fixtures, parametrization, mocking, assertions, test coverage, and building a complete test suite. Working examples for every concept.">
+    <meta name="keywords" content="python testing, pytest, pytest fixtures, pytest parametrization, python unit testing, test coverage, python mock, pytest tutorial">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-pytest-testing.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="post-content">
+            <a href="../index.html" class="back-link">← Back to all posts</a>
+            <span class="tag python">Python</span>
+            <h1>Python Testing with pytest: Fixtures, Parametrization &amp; Coverage — Complete Beginner's Guide</h1>
+            <time datetime="2026-07-14">July 14, 2026</time>
+
+            <p>You've written a Python function that works — you tested it manually, maybe pasted values into a REPL, and it returned the right answer. Great. Now you refactor something three weeks later, accidentally break that function, and don't notice until your customer emails you. Tests prevent this.</p>
+
+            <p>pytest is the most popular testing framework in the Python ecosystem. It's simpler than Python's built-in <code>unittest</code>, doesn't require boilerplate classes, and discovers tests automatically. A pytest test is just a regular Python function with an <code>assert</code> statement. That's it.</p>
+
+            <p>In this guide, you'll learn pytest from scratch — writing your first test, organizing test files, using fixtures for setup, parametrizing tests with multiple inputs, mocking external dependencies, running with coverage, and building a complete test suite for a real project.</p>
+
+            <h2>Why pytest Over unittest?</h2>
+
+            <p>Python includes <code>unittest</code> in the standard library. It works, but pytest is more productive:</p>
+
+            <pre><code># unittest — verbose
+import unittest
+
+class TestAdd(unittest.TestCase):
+    def test_add(self):
+        self.assertEqual(add(2, 3), 5)
+
+    def test_add_negative(self):
+        self.assertEqual(add(-1, -1), -2)
+
+# pytest — simple
+def test_add():
+    assert add(2, 3) == 5
+
+def test_add_negative():
+    assert add(-1, -1) == -2</code></pre>
+
+            <p>No classes, no <code>self</code>, no importing <code>unittest</code>. pytest finds any function starting with <code>test_</code> and runs it. The <code>assert</code> statement gives you detailed failure messages automatically.</p>
+
+            <h2>Installation and Your First Test</h2>
+
+            <p>Install pytest (and coverage, which we'll use later):</p>
+
+            <pre><code>pip install pytest pytest-cov</code></pre>
+
+            <p>Create a simple module to test:</p>
+
+            <pre><code># calculator.py
+def add(a, b):
+    return a + b
+
+def divide(a, b):
+    if b == 0:
+        raise ValueError("Cannot divide by zero")
+    return a / b
+
+def factorial(n):
+    if n < 0:
+        raise ValueError("Factorial not defined for negative numbers")
+    if n == 0 or n == 1:
+        return 1
+    result = 1
+    for i in range(2, n + 1):
+        result *= i
+    return result</code></pre>
+
+            <p>Create a test file. pytest expects test files to follow the naming convention <code>test_*.py</code> or <code>*_test.py</code>:</p>
+
+            <pre><code># test_calculator.py
+from calculator import add, divide, factorial
+
+def test_add_positive():
+    assert add(2, 3) == 5
+
+def test_add_negative():
+    assert add(-1, -1) == -2
+
+def test_add_zeros():
+    assert add(0, 0) == 0
+
+def test_divide():
+    assert divide(10, 2) == 5.0
+
+def test_divide_float():
+    assert divide(7, 2) == 3.5
+
+def test_divide_by_zero():
+    try:
+        divide(10, 0)
+        assert False, "Should have raised ValueError"
+    except ValueError:
+        pass</code></pre>
+
+            <p>Run the tests:</p>
+
+            <pre><code>pytest
+# ======================== test session starts =========================
+# collected 6 items
+#
+# test_calculator.py ......                                   [100%]
+#
+# ========================= 6 passed in 0.02s =========================</code></pre>
+
+            <p>Run with verbose output:</p>
+
+            <pre><code>pytest -v
+# test_calculator.py::test_add_positive PASSED               [ 16%]
+# test_calculator.py::test_add_negative PASSED               [ 33%]
+# test_calculator.py::test_add_zeros PASSED                  [ 50%]
+# test_calculator.py::test_divide PASSED                     [ 66%]
+# test_calculator.py::test_divide_float PASSED               [ 83%]
+# test_calculator.py::test_divide_by_zero PASSED             [100%]</code></pre>
+
+            <h2>Testing Exceptions with pytest.raises</h2>
+
+            <p>That <code>test_divide_by_zero</code> was ugly. pytest provides a context manager for testing exceptions:</p>
+
+            <pre><code>import pytest
+from calculator import divide, factorial
+
+def test_divide_by_zero():
+    with pytest.raises(ValueError, match="Cannot divide by zero"):
+        divide(10, 0)
+
+def test_factorial_negative():
+    with pytest.raises(ValueError, match="negative"):
+        factorial(-1)</code></pre>
+
+            <p>The <code>match</code> parameter verifies the error message matches a regex pattern. Both the exception type AND the message must match for the test to pass.</p>
+
+            <h2>Fixtures: Clean Test Setup and Teardown</h2>
+
+            <p>Fixtures are pytest's way of managing test setup and teardown. Instead of repeating initialization code in every test, you define a fixture once and request it where needed.</p>
+
+            <p>A fixture is a function decorated with <code>@pytest.fixture</code>:</p>
+
+            <pre><code>import pytest
+
+@pytest.fixture
+def sample_users():
+    """Create a list of sample user dictionaries."""
+    return [
+        {"id": 1, "name": "Alice", "email": "alice@example.com", "active": True},
+        {"id": 2, "name": "Bob", "email": "bob@example.com", "active": True},
+        {"id": 3, "name": "Charlie", "email": "charlie@example.com", "active": False},
+    ]
+
+# Use the fixture by adding it as a parameter
+def test_find_active_users(sample_users):
+    active = [u for u in sample_users if u["active"]]
+    assert len(active) == 2
+    assert active[0]["name"] == "Alice"
+
+def test_find_inactive_users(sample_users):
+    inactive = [u for u in sample_users if not u["active"]]
+    assert len(inactive) == 1
+    assert inactive[0]["name"] == "Charlie"
+
+def test_total_users(sample_users):
+    assert len(sample_users) == 3</code></pre>
+
+            <p>The fixture runs once per test that requests it. No manual setup code needed.</p>
+
+            <h3>Fixture Scopes</h3>
+
+            <p>By default, fixtures run once per test function. You can change this with the <code>scope</code> parameter:</p>
+
+            <pre><code># Function scope (default) — runs once per test function
+@pytest.fixture
+def user_data():
+    ...
+
+# Class scope — runs once per test class
+@pytest.fixture(scope="class")
+def class_wide_data():
+    ...
+
+# Module scope — runs once per test file
+@pytest.fixture(scope="module")
+def database_connection():
+    conn = create_db_connection()
+    yield conn
+    conn.close()  # Teardown code runs after yield
+
+# Session scope — runs once per entire test session
+@pytest.fixture(scope="session")
+def global_config():
+    config = load_global_config()
+    yield config</code></pre>
+
+            <p>The <code>yield</code> keyword separates setup (before) from teardown (after). Everything before <code>yield</code> runs before the test; everything after runs after the test completes.</p>
+
+            <h3>Organizing Fixtures in conftest.py</h3>
+
+            <p>When you have many fixtures, extract them into <code>conftest.py</code>. pytest automatically discovers fixtures in this file without any imports:</p>
+
+            <pre><code># conftest.py
+import pytest
+
+@pytest.fixture
+def sample_users():
+    return [
+        {"id": 1, "name": "Alice", "active": True},
+        {"id": 2, "name": "Bob", "active": True},
+        {"id": 3, "name": "Charlie", "active": False},
+    ]
+
+@pytest.fixture
+def empty_database():
+    """Fixture that provides a clean in-memory database."""
+    db = InMemoryDatabase()
+    yield db
+    db.close()
+
+@pytest.fixture
+def populated_database(empty_database):
+    """Build on another fixture."""
+    empty_database.insert_many(sample_users())
+    return empty_database</code></pre>
+
+            <p>Fixtures can even depend on other fixtures! <code>populated_database</code> requests <code>empty_database</code> as a parameter, and pytest handles the ordering automatically.</p>
+
+            <h2>Parametrization: One Test, Many Inputs</h2>
+
+            <p>Instead of writing separate test functions for each input, parametrize a single test:</p>
+
+            <pre><code>import pytest
+from calculator import add, factorial
+
+@pytest.mark.parametrize("a, b, expected", [
+    (2, 3, 5),
+    (-1, 1, 0),
+    (0, 0, 0),
+    (100, 200, 300),
+    (-50, -50, -100),
+])
+def test_add_parametrized(a, b, expected):
+    assert add(a, b) == expected
+
+@pytest.mark.parametrize("n, expected", [
+    (0, 1),
+    (1, 1),
+    (5, 120),
+    (10, 3628800),
+])
+def test_factorial_parametrized(n, expected):
+    assert factorial(n) == expected</code></pre>
+
+            <p>pytest runs the test function once for each parameter set. In the output, you see:</p>
+
+            <pre><code>test_calculator.py::test_add_parametrized[2-3-5] PASSED     [ 12%]
+test_calculator.py::test_add_parametrized[-1-1-0] PASSED    [ 25%]
+test_calculator.py::test_add_parametrized[0-0-0] PASSED     [ 37%]
+test_calculator.py::test_add_parametrized[100-200-300] PASSED [ 50%]
+test_calculator.py::test_add_parametrized[-50--50--100] PASSED [ 62%]</code></pre>
+
+            <p>You can combine parametrization with fixtures:</p>
+
+            <pre><code>@pytest.mark.parametrize("threshold", [0, 1, 2, 5])
+def test_filter_by_count(sample_users, threshold):
+    """Filter users list by a count threshold."""
+    all_users = sample_users[:threshold]
+    assert len(all_users) == min(threshold, len(sample_users))</code></pre>
+
+            <h2>Mocking External Dependencies</h2>
+
+            <p>Real applications call external APIs, databases, file systems, and networks. Tests should be fast, deterministic, and not depend on external services. <strong>Mocking</strong> replaces these dependencies with controlled fakes.</p>
+
+            <p>pytest integrates with Python's built-in <code>unittest.mock</code> and provides the <code>mocker</code> fixture (from <code>pytest-mock</code>):</p>
+
+            <pre><code>pip install pytest-mock</code></pre>
+
+            <p>Example: testing a function that calls an external API:</p>
+
+            <pre><code># services.py
+import requests
+
+def fetch_user_profile(user_id):
+    """Fetch user profile from an external API."""
+    response = requests.get(f"https://api.example.com/users/{user_id}")
+    response.raise_for_status()
+    return response.json()
+
+def get_user_age(user_id):
+    """Get user age from the API."""
+    profile = fetch_user_profile(user_id)
+    return profile.get("age")</code></pre>
+
+            <pre><code># test_services.py
+import pytest
+from unittest.mock import patch, MagicMock
+from services import fetch_user_profile, get_user_age
+
+def test_fetch_user_profile_success(mocker):
+    """Test successful API response."""
+    # Mock the requests.get call
+    mock_response = MagicMock()
+    mock_response.json.return_value = {"id": 1, "name": "Alice", "age": 30}
+    mock_response.raise_for_status = MagicMock()
+
+    mocker.patch("services.requests.get", return_value=mock_response)
+
+    result = fetch_user_profile(1)
+
+    assert result == {"id": 1, "name": "Alice", "age": 30}
+    # Verify requests.get was called with the right URL
+    from services import requests
+    requests.get.assert_called_once_with("https://api.example.com/users/1")
+
+def test_fetch_user_profile_not_found(mocker):
+    """Test API returns 404."""
+    mock_response = MagicMock()
+    mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError("404")
+
+    mocker.patch("services.requests.get", return_value=mock_response)
+
+    with pytest.raises(requests.exceptions.HTTPError):
+        fetch_user_profile(999)
+
+def test_get_user_age(mocker):
+    """Test the dependent function."""
+    mocker.patch("services.fetch_user_profile", return_value={
+        "id": 1, "name": "Alice", "age": 30
+    })
+
+    assert get_user_age(1) == 30</code></pre>
+
+            <p>The key insight: <code>mocker.patch</code> replaces the function at the point where it's <strong>used</strong> (in <code>services</code>), not where it's defined. If <code>services.py</code> says <code>import requests</code>, you patch <code>services.requests</code>. If it says <code>from requests import get</code>, you patch <code>services.get</code>.</p>
+
+            <h2>Asserting with Confidence</h2>
+
+            <p>pytest rewrites Python's <code>assert</code> to provide detailed failure messages. You don't need special assertion methods:</p>
+
+            <pre><code>def test_assertions():
+    # Equality
+    assert 2 + 2 == 4
+
+    # Membership
+    assert "a" in "apple"
+    assert 3 not in [1, 2, 4]
+
+    # Truthiness
+    assert True
+    assert not False
+    assert "hello"    # Non-empty string is truthy
+
+    # Approximate equality (floating point)
+    assert 1 / 3 == pytest.approx(0.333333)
+
+    # Type checking
+    assert isinstance("hello", str)
+
+    # Exception testing
+    with pytest.raises(ValueError, match="negative"):
+        factorial(-1)
+
+    # Any of multiple exceptions
+    with pytest.raises((ValueError, TypeError)):
+        divide("a", 0)</code></pre>
+
+            <p>When an assertion fails, pytest shows the values involved:</p>
+
+            <pre><code># If add(2, 3) returned 6 instead of 5:
+# E       assert 6 == 5
+# E        +  where 6 = add(2, 3)</code></pre>
+
+            <h2>Test Organization and Structure</h2>
+
+            <p>As your project grows, organize tests in a dedicated directory:</p>
+
+            <pre><code>my_project/
+├── src/
+│   ├── __init__.py
+│   ├── calculator.py
+│   ├── services.py
+│   └── models.py
+├── tests/
+│   ├── conftest.py           # Shared fixtures
+│   ├── test_calculator.py    # Tests for calculator.py
+│   ├── test_services.py      # Tests for services.py
+│   └── test_models.py        # Tests for models.py
+├── pytest.ini                # pytest configuration
+└── pyproject.toml            # Dependencies</code></pre>
+
+            <p>A minimal <code>pytest.ini</code>:</p>
+
+            <pre><code># pytest.ini
+[pytest]
+testpaths = tests
+python_files = test_*.py
+python_classes = Test*
+python_functions = test_*
+addopts = -v --tb=short
+markers =
+    slow: marks tests as slow (deselect with '-m "not slow"')
+    integration: marks tests as integration tests</code></pre>
+
+            <p>Use <code>@pytest.mark.slow</code> to tag long-running tests:</p>
+
+            <pre><code>@pytest.mark.slow
+def test_heavy_computation():
+    """This test takes a while — skip in quick runs."""
+    result = heavy_computation()
+    assert result is not None
+
+# Run without slow tests:
+pytest -m "not slow"
+
+# Run only slow tests:
+pytest -m slow</code></pre>
+
+            <h2>Test Coverage</h2>
+
+            <p>Coverage tells you what percentage of your code is exercised by tests. Install and run:</p>
+
+            <pre><code>pip install pytest-cov
+
+# Run tests with coverage report
+pytest --cov=src --cov-report=term-missing
+
+# Output:
+# Name               Stmts   Miss  Cover   Missing
+# ------------------------------------------------
+# src/__init__.py        0      0   100%
+# src/calculator.py      12      1    92%   15
+# src/services.py        18      8    56%   8-12, 15-18
+# ------------------------------------------------
+# TOTAL                  30      9    70%
+
+# HTML coverage report (open in browser)
+pytest --cov=src --cov-report=html
+# Opens htmlcov/index.html</code></pre>
+
+            <p>Aim for 80%+ coverage on critical code paths, but don't obsess over 100%. Test behavior, not lines of code. A test that verifies correct output is worth more than a test that just touches a line.</p>
+
+            <p>Enforce a minimum coverage threshold in CI:</p>
+
+            <pre><code># Fail if coverage drops below 80%
+pytest --cov=src --cov-fail-under=80</code></pre>
+
+            <h2>Complete Project Example</h2>
+
+            <p>Here's a realistic module and its test suite:</p>
+
+            <pre><code># src/user_manager.py
+class UserManager:
+    """Manage a collection of users."""
+
+    def __init__(self):
+        self._users = {}
+
+    def add_user(self, user_id, name, email):
+        """Add a user to the manager."""
+        if user_id in self._users:
+            raise ValueError(f"User {user_id} already exists")
+        if not email or "@" not in email:
+            raise ValueError("Invalid email address")
+        self._users[user_id] = {
+            "id": user_id,
+            "name": name,
+            "email": email,
+        }
+        return self._users[user_id]
+
+    def get_user(self, user_id):
+        """Get a user by ID."""
+        if user_id not in self._users:
+            raise KeyError(f"User {user_id} not found")
+        return self._users[user_id]
+
+    def remove_user(self, user_id):
+        """Remove a user. Returns the removed user."""
+        if user_id not in self._users:
+            raise KeyError(f"User {user_id} not found")
+        return self._users.pop(user_id)
+
+    def list_users(self, active_only=False):
+        """List all users."""
+        return list(self._users.values())
+
+    def user_count(self):
+        """Return the number of users."""
+        return len(self._users)</code></pre>
+
+            <pre><code># tests/test_user_manager.py
+import pytest
+from src.user_manager import UserManager
+
+@pytest.fixture
+def user_manager():
+    """Provide a fresh UserManager for each test."""
+    return UserManager()
+
+@pytest.fixture
+def manager_with_users(user_manager):
+    """A manager pre-populated with users."""
+    user_manager.add_user(1, "Alice", "alice@example.com")
+    user_manager.add_user(2, "Bob", "bob@example.com")
+    return user_manager
+
+class TestAddUser:
+    def test_add_single_user(self, user_manager):
+        user = user_manager.add_user(1, "Alice", "alice@example.com")
+        assert user["name"] == "Alice"
+        assert user["email"] == "alice@example.com"
+
+    def test_add_duplicate_raises(self, manager_with_users):
+        with pytest.raises(ValueError, match="already exists"):
+            manager_with_users.add_user(1, "Alice2", "alice2@example.com")
+
+    @pytest.mark.parametrize("email", ["", "notanemail", "@missing.com", "no-at-sign"])
+    def test_invalid_email_raises(self, user_manager, email):
+        with pytest.raises(ValueError, match="Invalid email"):
+            user_manager.add_user(1, "Test", email)
+
+class TestGetUser:
+    def test_get_existing_user(self, manager_with_users):
+        user = manager_with_users.get_user(1)
+        assert user["name"] == "Alice"
+
+    def test_get_missing_user_raises(self, user_manager):
+        with pytest.raises(KeyError, match="not found"):
+            user_manager.get_user(999)
+
+class TestRemoveUser:
+    def test_remove_existing_user(self, manager_with_users):
+        removed = manager_with_users.remove_user(1)
+        assert removed["name"] == "Alice"
+        assert manager_with_users.user_count() == 1
+
+    def test_remove_missing_user_raises(self, user_manager):
+        with pytest.raises(KeyError, match="not found"):
+            user_manager.remove_user(999)
+
+class TestListAndCount:
+    def test_list_all_users(self, manager_with_users):
+        users = manager_with_users.list_users()
+        assert len(users) == 2
+
+    def test_empty_list(self, user_manager):
+        assert user_manager.list_users() == []
+
+    def test_user_count(self, manager_with_users):
+        assert manager_with_users.user_count() == 2</code></pre>
+
+            <h2>Running and Debugging Tests</h2>
+
+            <p>Useful pytest commands:</p>
+
+            <pre><code># Run all tests
+pytest
+
+# Run with verbose output
+pytest -v
+
+# Run a specific test file
+pytest tests/test_user_manager.py
+
+# Run a specific test function
+pytest tests/test_user_manager.py::TestAddUser::test_add_single_user
+
+# Run tests matching a keyword
+pytest -k "email"        # Tests with "email" in name
+pytest -k "add and not duplicate"  # Boolean keywords
+
+# Show print statements
+pytest -s                 # Enable stdout
+
+# Stop on first failure
+pytest -x
+
+# Run last-failed tests only
+pytest --lf
+
+# Watch mode (rerun on file changes)
+pytest-watch
+
+# Test with specific Python version
+pytest --pyargs my_package</code></pre>
+
+            <p>To debug failing tests, drop into the debugger:</p>
+
+            <pre><code># Install pytest-ipdb or pytest-pdb
+pip install pytest-ipdb
+
+# Add this in your test code to pause execution:
+import ipdb; ipdb.set_trace()
+
+# Or use the built-in breakpoint:
+breakpoint()</code></pre>
+
+            <h2>Best Practices</h2>
+
+            <ol>
+                <li><strong>One assertion per concept</strong> — each test verifies one behavior</li>
+                <li><strong>Name tests descriptively</strong> — <code>test_add_duplicate_raises</code> is better than <code>test_add2</code></li>
+                <li><strong>Use fixtures over setup methods</strong> — fixtures are reusable and composable</li>
+                <li><strong>Parametrize over duplication</strong> — test multiple inputs with one test function</li>
+                <li><strong>Mock external dependencies</strong> — no API calls, no databases, no file systems in unit tests</li>
+                <li><strong>Test edge cases</strong> — empty inputs, None values, boundary conditions, exceptions</li>
+                <li><strong>Run tests before committing</strong> — make it part of your workflow or use a pre-commit hook</li>
+                <li><strong>Aim for 80%+ coverage</strong> — but prioritize meaningful tests over line count</li>
+            </ol>
+
+            <h2>Summary</h2>
+
+            <p>You've learned the full pytest toolkit:</p>
+
+            <ol>
+                <li>Writing simple test functions with <code>assert</code></li>
+                <li>Testing exceptions with <code>pytest.raises</code></li>
+                <li>Creating fixtures for reusable test setup with different scopes</li>
+                <li>Organizing fixtures in <code>conftest.py</code></li>
+                <li>Parametrizing tests to cover many inputs with one function</li>
+                <li>Mocking external dependencies with <code>mocker</code></li>
+                <li>Measuring test coverage with <code>pytest-cov</code></li>
+                <li>Organizing a complete test suite with classes and markers</li>
+                <li>Running and debugging tests efficiently</li>
+            </ol>
+
+            <p>The best time to write tests is before you write the production code (test-driven development). The second best time is now, for the code you've already written. Start small — test your most critical functions first — and build the habit from there.</p>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes. Built with passion and too much coffee.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Progress bar
+        window.addEventListener('scroll', () => {
+            const winScroll = document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + '%';
+        });
+
+        // Theme toggle
+        const toggle = document.getElementById('themeToggle');
+        if (toggle) {
+            toggle.addEventListener('click', () => {
+                document.body.classList.toggle('dark');
+                localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+            });
+            if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark');
+        }
+    </script>
+</body>
+</html>

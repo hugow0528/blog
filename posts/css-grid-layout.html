@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS Grid Layout: Build Complex Responsive Layouts with Ease — Complete Beginner's Guide</title>
+    <meta name="description" content="Learn CSS Grid from scratch — grid containers, tracks, items, placement, auto-placement, minmax(), repeat(), fr units, named areas, and responsive layouts without media queries. Working examples for every concept.">
+    <meta name="keywords" content="css grid, css grid layout, css grid tutorial, responsive grid, minmax, fr units, grid template areas, css beginner">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/css-grid-layout.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn active">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-detail">
+            <header class="post-header">
+                <div class="post-tags">
+                    <span class="tag web">Web Dev</span>
+                </div>
+                <h1>CSS Grid Layout: Build Complex Responsive Layouts with Ease — Complete Beginner's Guide</h1>
+                <div class="post-meta">
+                    <span class="post-date">July 18, 2026</span>
+                    <span class="read-time">12 min read</span>
+                </div>
+            </header>
+
+            <div class="post-content">
+                <p>Flexbox is great for one-dimensional layouts, but when you need to control both rows and columns simultaneously, CSS Grid is the tool you need. CSS Grid gives you precise control over the two-dimensional layout of your entire page or any section within it. You can create complex magazine-style layouts, responsive card grids, and dashboard interfaces with just a few lines of CSS — no JavaScript, no hacky margin tricks, no media query sprawl.</p>
+
+                <p>Let's go from zero to production-ready grid layouts with working code for every concept.</p>
+
+                <h2>Grid Container and Grid Items</h2>
+                <p>Grid works with two roles: the <strong>grid container</strong> (the parent element) and <strong>grid items</strong> (the direct children). To create a grid, set <code>display: grid</code> on the parent:</p>
+
+<pre><code class="language-html">&lt;div class="grid-container"&gt;
+    &lt;div class="item"&gt;1&lt;/div&gt;
+    &lt;div class="item"&gt;2&lt;/div&gt;
+    &lt;div class="item"&gt;3&lt;/div&gt;
+    &lt;div class="item"&gt;4&lt;/div&gt;
+    &lt;div class="item"&gt;5&lt;/div&gt;
+    &lt;div class="item"&gt;6&lt;/div&gt;
+&lt;/div&gt;</code></pre>
+
+<pre><code class="language-css">.grid-container {
+    display: grid;
+    grid-template-columns: 200px 200px 200px;
+    grid-template-rows: 100px 100px;
+    gap: 10px;
+}</code></pre>
+
+                <p>Three columns, two rows, each item placed in order. The <code>gap</code> property adds spacing between tracks — it replaced the old <code>grid-column-gap</code> and <code>grid-row-gap</code>.</p>
+
+                <h2>The <code>fr</code> Unit: Fractional Space</h2>
+                <p>Fixed pixel widths are fragile. The <code>fr</code> unit represents a fraction of the available space. It's the single most useful feature in CSS Grid:</p>
+
+<pre><code class="language-css">/* Three equal columns */
+.grid-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+}
+
+/* Sidebar + main content (1:3 ratio) */
+.layout {
+    display: grid;
+    grid-template-columns: 1fr 3fr;
+    gap: 24px;
+}
+
+/* Sidebar, main, aside (1:4:1 ratio) */
+.full-layout {
+    display: grid;
+    grid-template-columns: 1fr 4fr 1fr;
+}</code></pre>
+
+                <p>The <code>fr</code> unit distributes space proportionally. <code>1fr 3fr</code> means the second column gets three times the space of the first. <code>1fr 1fr 1fr</code> gives equal width to all three columns.</p>
+
+                <h2><code>minmax()</code>: Flexible Minimums</h2>
+                <p>Sometimes you want columns that shrink to fit content but grow to fill space. <code>minmax()</code> sets a minimum and maximum size:</p>
+
+<pre><code class="language-css">/* Columns at least 200px, but grow equally */
+.responsive-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(200px, 1fr));
+    gap: 16px;
+}</code></pre>
+
+                <p>Each column is at least 200px wide. If the viewport is wider, the extra space is distributed evenly. If it's narrower, columns shrink to their minimum and wrap naturally.</p>
+
+                <h2><code>auto-fill</code> and <code>auto-fit</code>: Automatic Responsiveness</h2>
+                <p>This is the magic combination: <code>repeat()</code>, <code>auto-fill</code> (or <code>auto-fit</code>), and <code>minmax()</code>. Together they create a fully responsive grid with zero media queries:</p>
+
+<pre><code class="language-css">/* Fully responsive card grid */
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+/* The same with auto-fit (slightly different behavior) */
+.card-grid-fit {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+}</code></pre>
+
+                <p>How it works: the browser calculates how many columns of at least 280px fit in the available space. At 1200px wide, you get 4 columns. At 650px, you get 2. At 300px, you get 1. No media queries needed.</p>
+
+                <p>The difference: <code>auto-fill</code> creates empty grid tracks even if there's no content. <code>auto-fit</code> collapses empty tracks. For most layouts, <code>auto-fit</code> is the better choice.</p>
+
+                <h2>Placing Items Explicitly</h2>
+                <p>You can place items anywhere on the grid using line numbers. Grid lines are numbered from the outside in:</p>
+
+<pre><code class="language-css">.item-1 {
+    grid-column: 1 / 3;       /* Spans columns 1 to 3 */
+    grid-row: 1 / 2;           /* Row 1 only */
+}
+
+.item-2 {
+    grid-column: 3 / 4;       /* Column 3 only */
+    grid-row: 1 / 3;           /* Spans rows 1 and 2 */
+}
+
+/* Shorthand: grid-area: row-start / col-start / row-end / col-end */
+.item-3 {
+    grid-area: 2 / 1 / 3 / 3;
+}</code></pre>
+
+                <p>You can also use <code>span</code> to specify a size without counting end lines:</p>
+
+<pre><code class="language-css">.featured {
+    grid-column: span 2;       /* Spans 2 columns from the current position */
+    grid-row: span 2;          /* Spans 2 rows */
+}</code></pre>
+
+                <h2>Named Grid Areas: Visual Layout Design</h2>
+                <p>For complex page layouts, named areas make the CSS readable and visual. You define a template using a string diagram:</p>
+
+<pre><code class="language-css">.page-layout {
+    display: grid;
+    grid-template-areas:
+        "header  header  header"
+        "sidebar main    aside"
+        "footer  footer  footer";
+    grid-template-columns: 200px 1fr 200px;
+    grid-template-rows: auto 1fr auto;
+    min-height: 100vh;
+}
+
+.header  { grid-area: header;  }
+.sidebar { grid-area: sidebar; }
+.main    { grid-area: main;    }
+.aside   { grid-area: aside;   }
+.footer  { grid-area: footer;  }</code></pre>
+
+                <p>The string diagram looks like the actual layout. Each quoted string is a row, and space-separated words are columns. Dots represent empty cells:</p>
+
+<pre><code class="language-css">/* Header full-width, sidebar + main, no aside */
+.page-layout {
+    grid-template-areas:
+        "header header header"
+        "sidebar main  ."
+        "footer footer footer";
+}</code></pre>
+
+                <h2>Implicit vs Explicit Grid</h2>
+                <p>The <strong>explicit grid</strong> is defined by <code>grid-template-columns</code> and <code>grid-template-rows</code>. If you have more items than cells, the <strong>implicit grid</strong> kicks in and creates additional tracks:</p>
+
+<pre><code class="language-css">.grid-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    /* No rows defined — implicit grid creates them */
+    grid-auto-rows: minmax(100px, auto);
+    gap: 16px;
+}</code></pre>
+
+                <p><code>grid-auto-rows</code> and <code>grid-auto-columns</code> control the size of implicitly created tracks. Without them, the browser sizes them to fit content, which can cause uneven layouts.</p>
+
+                <p>You can also use <code>grid-auto-flow</code> to control how items fill the grid:</p>
+
+<pre><code class="language-css">/* Pack items row by row (default) */
+.grid-row-flow {
+    grid-auto-flow: row;
+}
+
+/* Pack items column by column */
+.grid-column-flow {
+    grid-auto-flow: column;
+}
+
+/* Let items overlap by default */
+.grid-dense {
+    grid-auto-flow: dense;
+}</code></pre>
+
+                <p>The <code>dense</code> keyword tries to fill earlier holes in the grid with later items, which can cause reordering. Use it when you have items of different sizes and want to avoid gaps.</p>
+
+                <h2>Aligning Items in Grid Cells</h2>
+                <p>Grid gives you alignment on both axes. The container-level properties affect all items:</p>
+
+<pre><code class="language-css">.grid-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: 200px;
+    gap: 16px;
+
+    /* Align all items to the center of their cells */
+    align-items: center;       /* Vertical (block) axis */
+    justify-items: center;     /* Horizontal (inline) axis */
+}
+
+/* Or use the shorthand */
+.grid-container {
+    place-items: center center; /* align-items justify-items */
+}</code></pre>
+
+                <p>For individual items, use <code>align-self</code> and <code>justify-self</code> (or <code>place-self</code>):</p>
+
+<pre><code class="language-css">.tall-item {
+    align-self: stretch;       /* Fill the entire row height */
+    justify-self: start;       /* Align to the left edge */
+}
+
+/* Center a single item in its cell */
+.centered-item {
+    place-self: center;
+}</code></pre>
+
+                <h2>Real-World: A Dashboard Layout</h2>
+                <p>Let's combine everything into a practical dashboard layout. No media queries, fully responsive:</p>
+
+<pre><code class="language-html">&lt;div class="dashboard"&gt;
+    &lt;header class="dash-header"&gt;My Dashboard&lt;/header&gt;
+    &lt;nav class="dash-nav"&gt;Navigation&lt;/nav&gt;
+    &lt;main class="dash-main"&gt;
+        &lt;div class="widget large"&gt;Chart&lt;/div&gt;
+        &lt;div class="widget"&gt;Stats&lt;/div&gt;
+        &lt;div class="widget"&gt;Recent&lt;/div&gt;
+        &lt;div class="widget wide"&gt;Activity&lt;/div&gt;
+    &lt;/main&gt;
+    &lt;aside class="dash-aside"&gt;Notifications&lt;/aside&gt;
+    &lt;footer class="dash-footer"&gt;Footer&lt;/footer&gt;
+&lt;/div&gt;</code></pre>
+
+<pre><code class="language-css">.dashboard {
+    display: grid;
+    grid-template-areas:
+        "header header header"
+        "nav    main   aside"
+        "footer footer footer";
+    grid-template-columns: 200px 1fr 200px;
+    grid-template-rows: auto 1fr auto;
+    min-height: 100vh;
+    gap: 8px;
+    padding: 8px;
+}
+
+.dash-header { grid-area: header; }
+.dash-nav    { grid-area: nav; }
+.dash-main   { grid-area: main; }
+.dash-aside  { grid-area: aside; }
+.dash-footer { grid-area: footer; }
+
+/* Widget grid inside main area */
+.dash-main {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 16px;
+}
+
+.widget.large { grid-column: span 2; }
+.widget.wide  { grid-column: 1 / -1; } /* Full width */</code></pre>
+
+                <p>The <code>1 / -1</code> syntax means "from the first line to the last line" — effectively spanning the entire row. Combined with <code>auto-fill</code> and <code>minmax()</code>, this dashboard adapts from mobile to desktop without a single media query.</p>
+
+                <h2>Grid vs Flexbox: When to Use Which</h2>
+                <p>Both are layout tools, but they solve different problems:</p>
+                <ul style="margin-left: 24px; margin-bottom: 16px;">
+                    <li><strong>Use Grid</strong> when you need 2D control (rows AND columns), fixed layouts, or content that should align across both axes.</li>
+                    <li><strong>Use Flexbox</strong> when you need 1D flow (either row OR column), content that should determine sizing, or when items need to wrap naturally.</li>
+                </ul>
+                <p>In practice, you'll use both. Grid for the overall page structure, Flexbox inside components for navigation bars, button groups, and card internals. They complement each other perfectly.</p>
+
+                <h2>Summary</h2>
+                <p>CSS Grid is the most powerful layout system in CSS. Start with <code>repeat(auto-fill, minmax(..., 1fr))</code> for responsive card grids — that one pattern covers 80% of use cases. Learn named areas for page-level layouts, and explicit placement for complex designs. Master <code>fr</code>, <code>minmax()</code>, and <code>span</code>, and you'll never need a layout library again. Build a simple dashboard or card gallery today, and you'll see why Grid changed web development forever.</p>
+            </div>
+        </article>
+    </main>
+
+    <footer class="container" style="text-align:center;padding:24px 0 48px;color:var(--text-quaternary);font-size:12px;">
+        <p>Built with ☕ by Hugo Wong · Hosted on Cloudflare Pages</p>
+    </footer>
+
+    <script>
+    window.addEventListener('scroll', () => {
+        const bar = document.getElementById('progressBar');
+        if (bar) {
+            const scrollTop = window.scrollY;
+            const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+            bar.style.width = (scrollTop / docHeight * 100) + '%';
+        }
+    });
+    </script>
+</body>
+</html>

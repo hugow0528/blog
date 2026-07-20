@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Scheduling and Time-based Automation: Automate the Boring Stuff — Complete Beginner's Guide</title>
+    <meta name="description" content="Master Python scheduling — the sched module, cron jobs, APScheduler, time.sleep patterns, retry with backoff, and building a complete job scheduler. Working code for every concept.">
+    <meta name="keywords" content="python scheduling, python cron, APScheduler, sched module, python automation, python timers, retry backoff, scheduled tasks">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-scheduling.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn active">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-detail">
+            <header class="post-header">
+                <div class="post-tags">
+                    <span class="tag python">Python</span>
+                </div>
+                <h1>Python Scheduling and Time-based Automation: Automate the Boring Stuff — Complete Beginner's Guide</h1>
+                <div class="post-meta">
+                    <span class="post-date">July 19, 2026</span>
+                    <span class="read-time">11 min read</span>
+                </div>
+            </header>
+
+            <div class="post-content">
+                <p>Some tasks need to happen on a schedule: send a daily report, sync data every hour, retry a failed request after 30 seconds, or run maintenance at 3 AM. Python gives you several tools for time-based automation, from simple built-in modules to production-ready schedulers. Let's explore the full spectrum — from <code>time.sleep()</code> to APScheduler — so you can pick the right tool for every job.</p>
+
+                <h2>Level 1: time.sleep() — The Simple Pause</h2>
+                <p>At its simplest, <code>time.sleep()</code> pauses your program for a number of seconds. It's blocking — your entire program stops during the sleep:</p>
+
+<pre><code class="language-python">import time
+
+print("Starting work...")
+time.sleep(5)  # Pause for 5 seconds
+print("Done waiting!")</code></pre>
+
+                <p>Use it for simple delays between actions:</p>
+
+<pre><code class="language-python">import time
+
+# Poll an API every 10 seconds
+while True:
+    response = fetch_status()
+    if response["status"] == "ready":
+        print("Service is ready!")
+        break
+    print(f"Waiting... (status: {response['status']})")
+    time.sleep(10)  # Don't spam the API</code></pre>
+
+                <h3>Why Not Just time.sleep() for Everything?</h3>
+                <p><code>time.sleep()</code> is great for simple scripts but has limitations:</p>
+
+<pre><code class="language-python"># ❌ Problem: drift accumulates
+# If your job takes 5 seconds to run and you sleep for 60,
+# it actually runs every 65 seconds, not every 60.
+# Over a day, that's 216 extra seconds of drift.
+
+import time
+
+while True:
+    do_work()
+    time.sleep(60)  # Runs every ~65s, not 60s
+
+# ✅ Better: calculate the exact next run time
+import time
+
+INTERVAL = 60  # seconds
+
+next_run = time.time()
+while True:
+    do_work()
+
+    # Sleep only until the next exact interval
+    now = time.time()
+    sleep_time = next_run - now
+    if sleep_time > 0:
+        time.sleep(sleep_time)
+    next_run += INTERVAL  # Always advance by INTERVAL</code></pre>
+
+                <h2>Level 2: The sched Module — Built-in Task Queue</h2>
+                <p>Python's <code>sched</code> module provides a simple event scheduler. You can schedule tasks to run after a delay or at an absolute time:</p>
+
+<pre><code class="language-python">import sched
+import time
+
+# Create a scheduler
+scheduler = sched.scheduler(time.time, time.sleep)
+
+# Define tasks
+def greet(name):
+    print(f"Hello, {name}! ({time.strftime('%H:%M:%S')})")
+
+def check_health():
+    print(f"Health check at {time.strftime('%H:%M:%S')}")
+
+# Schedule tasks
+scheduler.enter(2, 1, greet, ("Alice",))    # Run after 2 seconds
+scheduler.enter(5, 1, greet, ("Bob",))      # Run after 5 seconds
+scheduler.enter(8, 1, check_health)         # Run after 8 seconds
+
+print(f"Scheduled tasks. Starting at {time.strftime('%H:%M:%S')}")
+scheduler.run()  # Blocks until all tasks are done
+
+# Output:
+# Scheduled tasks. Starting at 14:30:00
+# Hello, Alice! (14:30:02)
+# Hello, Bob! (14:30:05)
+# Health check at 14:30:08</code></pre>
+
+                <h3>Repeat a Task with sched</h3>
+                <p><code>sched</code> doesn't natively repeat tasks, but you can make it repeat by scheduling the next run at the end of each task:</p>
+
+<pre><code class="language-python">import sched
+import time
+
+scheduler = sched.scheduler(time.time, time.sleep)
+MAX_RUNS = 5
+counter = [0]  # Use a list so we can modify it inside the function
+
+def periodic_task():
+    counter[0] += 1
+    print(f"Run #{counter[0]} at {time.strftime('%H:%M:%S')}")
+
+    if counter[0] < MAX_RUNS:
+        # Schedule the next run after 3 seconds
+        scheduler.enter(3, 1, periodic_task)
+
+scheduler.enter(0, 1, periodic_task)  # Start immediately
+scheduler.run()
+
+# Output:
+# Run #1 at 14:30:00
+# Run #2 at 14:30:03
+# Run #3 at 14:30:06
+# Run #4 at 14:30:09
+# Run #5 at 14:30:12</code></pre>
+
+                <h2>Level 3: Cron Jobs — The OS-Level Scheduler</h2>
+                <p>Cron is the most common way to schedule tasks on Linux/Unix. It's built into the OS and doesn't require your Python script to stay running. For production, this is often the best approach.</p>
+
+                <h3>Writing a Cron-able Python Script</h3>
+
+<pre><code class="language-python">#!/usr/bin/env python3
+"""daily_report.py — Run from cron at 8:00 AM every day"""
+import json
+from datetime import datetime
+
+def generate_report():
+    """Generate a daily summary report."""
+    data = fetch_daily_data()  # Your data logic here
+    report = {
+        "date": datetime.now().isoformat(),
+        "total_orders": data["count"],
+        "revenue": data["revenue"],
+        "errors": data.get("errors", 0)
+    }
+
+    # Save to file
+    filename = f"reports/{datetime.now().strftime('%Y-%m-%d')}.json"
+    with open(filename, "w") as f:
+        json.dump(report, f, indent=2)
+
+    print(f"Report saved: {filename}")
+    return report
+
+if __name__ == "__main__":
+    generate_report()</code></pre>
+
+                <h3>Crontab Syntax</h3>
+                <p>Edit your crontab with <code>crontab -e</code> and add schedules:</p>
+
+<pre><code class="language-bash"># Format: minute hour day-of-month month day-of-week command
+# Run daily report at 8:00 AM
+0 8 * * * /usr/bin/python3 /home/user/scripts/daily_report.py >> /var/log/report.log 2>&1
+
+# Sync data every 6 hours
+0 */6 * * * /usr/bin/python3 /home/user/scripts/sync_data.py
+
+# Weekly cleanup every Sunday at 3:00 AM
+0 3 * * 0 /usr/bin/python3 /home/user/scripts/cleanup.py
+
+# Every 15 minutes
+*/15 * * * * /usr/bin/python3 /home/user/scripts/health_check.py</code></pre>
+
+                <h3>Cron Best Practices</h3>
+
+<pre><code class="language-python">#!/usr/bin/env python3
+"""A production-ready cron script with safety features"""
+import sys
+import json
+import logging
+from datetime import datetime
+from pathlib import Path
+
+# Configure logging to file (stdout also captured by cron)
+logging.basicConfig(
+    filename="/var/log/my_script.log",
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(message)s"
+)
+
+def main():
+    lock_file = Path("/tmp/my_script.lock")
+
+    # Prevent overlapping runs
+    if lock_file.exists():
+        age = (datetime.now().timestamp() - lock_file.stat().st_mtime) / 3600
+        if age < 2:  # Lock less than 2 hours old — skip
+            logging.warning("Another instance is running. Skipping.")
+            return False
+
+    lock_file.touch()
+
+    try:
+        # Your actual work here
+        result = do_important_work()
+        logging.info(f"Work completed: {result}")
+        return True
+    except Exception as e:
+        logging.error(f"Work failed: {e}", exc_info=True)
+        return False
+    finally:
+        lock_file.unlink(missing_ok=True)  # Always clean up
+
+if __name__ == "__main__":
+    success = main()
+    sys.exit(0 if success else 1)</code></pre>
+
+                <p>Key cron practices:</p>
+                <ul>
+                    <li>Use <strong>absolute paths</strong> for everything (scripts, Python, env vars)</li>
+                    <li>Redirect output: <code>> logfile 2>&1</code> to capture logs</li>
+                    <li>Add <strong>lock files</strong> to prevent overlapping runs</li>
+                    <li>Return proper <strong>exit codes</strong> (0 = success, non-zero = failure)</li>
+                    <li>Set the Python path: <code>PYTHONPATH=/home/user/scripts</code> at the top of crontab</li>
+                </ul>
+
+                <h2>Level 4: APScheduler — Production-Ready Python Scheduler</h2>
+                <p>When cron isn't enough — you need multiple jobs running inside your app, dynamic scheduling, or job persistence — use <strong>APScheduler</strong> (Advanced Python Scheduler):</p>
+
+<pre><code class="language-bash">pip install apscheduler</code></pre>
+
+                <h3>Basic APScheduler Usage</h3>
+
+<pre><code class="language-python">from apscheduler.schedulers.blocking import BlockingScheduler
+from datetime import datetime
+
+scheduler = BlockingScheduler()
+
+def tick():
+    print(f"Tick! The time is: {datetime.now()}")
+
+# Run every 5 seconds
+scheduler.add_job(tick, "interval", seconds=5)
+
+# Run at 9:30 AM every day
+scheduler.add_job(tick, "cron", hour=9, minute=30)
+
+# Run once at a specific time
+scheduler.add_job(tick, "date", run_date=datetime.now().timestamp() + 60)
+
+print("Scheduler started. Press Ctrl+C to exit.")
+scheduler.start()</code></pre>
+
+                <h3>Job Types in APScheduler</h3>
+
+<pre><code class="language-python">from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.interval import IntervalTrigger
+from apscheduler.triggers.cron import CronTrigger
+
+scheduler = BackgroundScheduler()
+
+# Interval trigger — run every N time units
+scheduler.add_job(
+    sync_data,
+    IntervalTrigger(minutes=30),  # Every 30 minutes
+    id="data_sync",
+    max_instances=1  # Don't overlap
+)
+
+# Cron trigger — like a crontab schedule
+scheduler.add_job(
+    send_report,
+    CronTrigger(day_of_week="mon-fri", hour=17, minute=0),  # Weekdays at 5 PM
+    id="daily_report"
+)
+
+# Cron trigger — last day of every month
+scheduler.add_job(
+    monthly_cleanup,
+    CronTrigger(day="last", hour=3, minute=0),
+    id="monthly_cleanup"
+)
+
+scheduler.start()</code></pre>
+
+                <h3>Background Scheduler (Non-blocking)</h3>
+                <p>When you need the scheduler to run alongside your main application (e.g., a web server):</p>
+
+<pre><code class="language-python">from apscheduler.schedulers.background import BackgroundScheduler
+from flask import Flask
+
+app = Flask(__name__)
+scheduler = BackgroundScheduler()
+
+def periodic_task():
+    print("Running periodic task...")
+
+scheduler.add_job(periodic_task, "interval", seconds=60)
+scheduler.start()
+
+@app.route("/")
+def index():
+    return "Hello!"
+
+# Your app runs normally, scheduler works in the background
+if __name__ == "__main__":
+    app.run()</code></pre>
+
+                <h3>Persistent Job Storage</h3>
+                <p>By default, jobs are lost when the process restarts. Use a job store to persist them:</p>
+
+<pre><code class="language-python">from apscheduler.schedulers.blocking import BlockingScheduler
+from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
+
+# Store jobs in a SQLite database
+jobstores = {
+    "default": SQLAlchemyJobStore(url="sqlite:///jobs.sqlite")
+}
+
+scheduler = BlockingScheduler(jobstores=jobstores)
+
+def my_job():
+    print("Persistent job running!")
+
+scheduler.add_job(my_job, "interval", seconds=30, id="my_job")
+scheduler.start()
+
+# When the process restarts, the job is loaded from the database!</code></pre>
+
+                <h2>Level 5: Retry with Exponential Backoff</h2>
+                <p>Retrying failed operations with increasing delays (exponential backoff) is a critical scheduling pattern:</p>
+
+<pre><code class="language-python">import time
+import random
+
+def retry_with_backoff(func, max_retries=5, base_delay=1, max_delay=60):
+    """Retry a function with exponential backoff and jitter."""
+    for attempt in range(max_retries):
+        try:
+            return func()
+        except Exception as e:
+            if attempt == max_retries - 1:
+                raise  # Re-raise on last attempt
+
+            # Exponential backoff: 1s, 2s, 4s, 8s, 16s...
+            delay = min(base_delay * (2 ** attempt), max_delay)
+            # Add jitter (randomness) to avoid thundering herd
+            jitter = random.uniform(0, delay * 0.1)
+            wait = delay + jitter
+
+            print(f"Attempt {attempt + 1} failed: {e}")
+            print(f"Retrying in {wait:.1f} seconds...")
+            time.sleep(wait)
+
+# Usage
+def flaky_api_call():
+    import random
+    if random.random() < 0.3:  # 70% success rate
+        return {"status": "ok"}
+    raise ConnectionError("Server is busy")
+
+result = retry_with_backoff(flaky_api_call)
+print(f"Success: {result}")</code></pre>
+
+                <h2>Building a Complete Job Scheduler</h2>
+                <p>Let's combine everything into a practical scheduling system:</p>
+
+<pre><code class="language-python">#!/usr/bin/env python3
+"""job_runner.py — A simple job scheduler with logging and retry"""
+import json
+import logging
+import time
+import traceback
+from datetime import datetime, timedelta
+from pathlib import Path
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s"
+)
+logger = logging.getLogger(__name__)
+
+JOBS_FILE = Path("jobs.json")
+
+class JobScheduler:
+    def __init__(self):
+        self.jobs = self._load_jobs()
+
+    def _load_jobs(self):
+        """Load scheduled jobs from a JSON config file."""
+        if not JOBS_FILE.exists():
+            return self._default_jobs()
+
+        with open(JOBS_FILE) as f:
+            return json.load(f)
+
+    def _default_jobs(self):
+        """Default job configurations."""
+        return [
+            {
+                "name": "health_check",
+                "interval_seconds": 30,
+                "enabled": True,
+                "last_run": None,
+                "run_count": 0
+            },
+            {
+                "name": "daily_cleanup",
+                "cron_hour": 3,
+                "cron_minute": 0,
+                "enabled": True,
+                "last_run": None,
+                "run_count": 0
+            },
+            {
+                "name": "sync_data",
+                "interval_seconds": 300,  # Every 5 minutes
+                "enabled": True,
+                "last_run": None,
+                "run_count": 0
+            }
+        ]
+
+    def run(self):
+        """Main scheduling loop."""
+        logger.info("Job scheduler started")
+
+        while True:
+            now = datetime.now()
+
+            for job in self.jobs:
+                if not job.get("enabled", True):
+                    continue
+
+                should_run = False
+
+                # Check interval-based jobs
+                if "interval_seconds" in job:
+                    last_run = job.get("last_run")
+                    if last_run is None:
+                        should_run = True  # Run immediately on first start
+                    else:
+                        last = datetime.fromisoformat(last_run)
+                        if now - last >= timedelta(seconds=job["interval_seconds"]):
+                            should_run = True
+
+                # Check cron-based jobs
+                if "cron_hour" in job and "cron_minute" in job:
+                    if now.hour == job["cron_hour"] and now.minute == job["cron_minute"]:
+                        should_run = True
+
+                # Execute the job
+                if should_run:
+                    self._execute_job(job)
+
+            time.sleep(1)  # Check every second
+
+    def _execute_job(self, job):
+        """Execute a single job with retry and error handling."""
+        name = job["name"]
+        logger.info(f"Running job: {name}")
+
+        try:
+            # Dispatch to the appropriate handler
+            handler = getattr(self, f"job_{name}", None)
+            if handler:
+                handler()
+                job["run_count"] = job.get("run_count", 0) + 1
+                job["last_run"] = datetime.now().isoformat()
+                logger.info(f"Job '{name}' completed successfully (runs: {job['run_count']})")
+            else:
+                logger.warning(f"No handler found for job '{name}'")
+
+        except Exception as e:
+            logger.error(f"Job '{name}' failed: {e}")
+            logger.debug(traceback.format_exc())
+
+        # Persist updated state
+        self._save_state()
+
+    def _save_state(self):
+        """Save job state for persistence across restarts."""
+        with open(JOBS_FILE, "w") as f:
+            json.dump(self.jobs, f, indent=2)
+
+    # Job handlers
+    def job_health_check(self):
+        print(f"  [health_check] System OK at {datetime.now()}")
+
+    def job_daily_cleanup(self):
+        print(f"  [daily_cleanup] Running cleanup...")
+
+    def job_sync_data(self):
+        print(f"  [sync_data] Syncing data...")
+
+if __name__ == "__main__":
+    scheduler = JobScheduler()
+    scheduler.run()</code></pre>
+
+                <h2>Choosing the Right Tool</h2>
+                <p>Here's a quick decision guide:</p>
+
+<pre><code class="language-text">Scenario                        Best Tool
+─────────────────────────────────────────────────────
+Simple delay in a script        time.sleep()
+Single-file recurring task      sched module
+Server-wide scheduled tasks     Cron jobs
+Multiple jobs inside your app   APScheduler (Background)
+Jobs must survive restarts      APScheduler + SQLAlchemy
+Retry with backoff              retry_with_backoff pattern
+Microservices / distributed     Celery + Redis
+Cloud-native scheduling         AWS EventBridge, Cloud Run</code></pre>
+
+                <h2>Summary</h2>
+                <p>Python scheduling ranges from the simplest <code>time.sleep()</code> to production-grade APScheduler with persistent job stores. The key principles:</p>
+                <ul>
+                    <li><strong>time.sleep()</strong> — For simple pauses and polling loops</li>
+                    <li><strong>sched</strong> — For ordering tasks within a single script</li>
+                    <li><strong>Cron</strong> — For server-level scheduled tasks (most common production choice)</li>
+                    <li><strong>APScheduler</strong> — For in-process job scheduling with cron/interval/date triggers</li>
+                    <li><strong>Exponential backoff</strong> — Always retry with increasing delays and jitter</li>
+                    <li><strong>Lock files</strong> — Prevent overlapping runs in cron</li>
+                    <li><strong>Logging</strong> — Every scheduled task should log its execution</li>
+                </ul>
+                <p>Start with cron for simple jobs. Move to APScheduler when you need dynamic scheduling or in-process jobs. And always implement retries with backoff for any network-dependent task.</p>
+
+                <h2>What's Next?</h2>
+                <p>Combine scheduling with other Python skills: check out our guides on <a href="posts/python-functions-basics.html">Functions</a> for writing clean job handlers, <a href="posts/python-error-handling.html">Error Handling</a> for resilient task execution, and <a href="posts/python-threading-multiprocessing.html">Threading and Multiprocessing</a> for running jobs concurrently.</p>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Hugo's Dev Notes. Built with curiosity and too much caffeine.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('themeToggle').addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            document.getElementById('themeToggle').textContent = isLight ? '☀' : '◐';
+        });
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-mode');
+            document.getElementById('themeToggle').textContent = '☀';
+        }
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + "%";
+        });
+    </script>
+</body>
+</html>

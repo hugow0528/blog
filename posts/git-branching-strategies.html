@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Git Branching Strategies: GitFlow, Trunk-Based & Feature Branches — Complete Guide</title>
+    <meta name="description" content="Learn Git branching strategies from scratch — GitFlow, trunk-based development, feature branching, pull requests, merge vs rebase, and choosing the right strategy for your team.">
+    <link rel="stylesheet" href="../style.css">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/git-branching-strategies.html">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-full">
+            <header class="post-header">
+                <div class="post-tags">
+                    <span class="tag devops">DevOps</span>
+                </div>
+                <h1>Git Branching Strategies: GitFlow, Trunk-Based &amp; Feature Branches — Complete Guide</h1>
+                <div class="post-meta">
+                    <span class="post-date">July 12, 2026</span>
+                    <span class="read-time">10 min read</span>
+                </div>
+            </header>
+
+            <div class="post-content">
+                <p>If you've ever asked yourself, "Where should I make this change?" or "How do teams manage multiple features at once?", branching strategies are your answer. A branching strategy is the convention your team follows for creating, naming, and merging branches. It keeps collaboration organized, reduces conflicts, and makes code reviews manageable.</p>
+
+                <h2>What Is a Branch?</h2>
+                <p>A branch is an independent line of development. When you create a branch, you create a snapshot of the current state and start working from there. Changes on one branch don't affect other branches until you merge them.</p>
+
+                <div class="code-block">
+                    <pre><code># Create and switch to a new branch
+git checkout -b feature/user-auth
+
+# See all branches
+git branch
+
+# See all branches including remote
+git branch -a
+
+# Delete a branch
+git branch -d feature/user-auth</code></pre>
+                </div>
+
+                <h2>The Main Branches</h2>
+                <p>Most projects have at least two long-lived branches:</p>
+                <ul>
+                    <li><code>main</code> (or <code>master</code>) — the production-ready code. This branch is always deployable.</li>
+                    <li><code>develop</code> — the integration branch where feature branches merge before release. Some strategies use this; others don't.</li>
+                </ul>
+
+                <div class="code-block">
+                    <pre><code># Rename master to main (GitHub default now)
+git branch -m master main
+
+# Push the rename to remote
+git push origin -u main
+
+# Create a develop branch from main
+git checkout -b develop main
+git push -u origin develop</code></pre>
+                </div>
+
+                <h2>Strategy 1: Feature Branch Workflow</h2>
+                <p>The simplest branching strategy. Everyone works on a feature branch, reviews via pull request (PR), then merges to main. This is the default for most open-source projects and small-to-medium teams.</p>
+
+                <h3>How It Works</h3>
+                <ol>
+                    <li>Create a branch from <code>main</code> for each new feature or bug fix.</li>
+                    <li>Commit your changes to the feature branch.</li>
+                    <li>Open a pull request for review.</li>
+                    <li>After review and passing CI checks, merge to <code>main</code>.</li>
+                    <li>Delete the feature branch after merge.</li>
+                </ol>
+
+                <div class="code-block">
+                    <pre><code># Start a new feature
+git checkout main
+git pull origin main
+git checkout -b feature/dark-mode
+
+# Work, commit, push
+git add .
+git commit -m "Add dark mode toggle"
+git push -u origin feature/dark-mode
+
+# Open PR on GitHub, get review, merge
+# After merge:
+git branch -d feature/dark-mode</code></pre>
+                </div>
+
+                <h3>Branch Naming Conventions</h3>
+                <p>Consistent naming helps everyone understand what a branch does:</p>
+                <ul>
+                    <li><code>feature/what-you-do</code> — new features</li>
+                    <li><code>fix/what-you-fix</code> — bug fixes</li>
+                    <li><code>docs/update-readme</code> — documentation changes</li>
+                    <li><code>chore/update-deps</code> — maintenance tasks</li>
+                    <li><code>refactor/cleanup-utils</code> — code refactoring</li>
+                    <li><code>hotfix/critical-bug</code> — urgent production fixes</li>
+                </ul>
+
+                <h2>Strategy 2: GitFlow</h2>
+                <p>GitFlow is a more structured strategy designed for projects with scheduled releases. It defines specific branch types and their lifecycle. Popular in enterprise environments where releases happen on a fixed calendar.</p>
+
+                <h3>The GitFlow Branches</h3>
+                <ul>
+                    <li><code>main</code> — production code. Tagged with version numbers (v1.0.0, v1.1.0).</li>
+                    <li><code>develop</code> — integration branch. Feature branches merge here.</li>
+                    <li><code>feature/*</code> — branches from <code>develop</code>, merge back to <code>develop</code>.</li>
+                    <li><code>release/*</code> — branched from <code>develop</code> when you're preparing a release. Used for final testing and bug fixes.</li>
+                    <li><code>hotfix/*</code> — branched from <code>main</code> for critical production fixes.</li>
+                </ul>
+
+                <div class="code-block">
+                    <pre><code># Start developing a feature
+git checkout develop
+git checkout -b feature/payment-gateway
+
+# ... work on feature ...
+git add .
+git commit -m "Add Stripe payment integration"
+git push -u origin feature/payment-gateway
+
+# Merge to develop via PR
+git checkout develop
+git merge --no-ff feature/payment-gateway
+
+# Prepare for release v2.0.0
+git checkout -b release/v2.0.0 develop
+git tag -a v2.0.0-rc1 -m "Release candidate 1"
+
+# Finalize release
+git checkout main
+git merge release/v2.0.0
+git tag -a v2.0.0 -m "Release v2.0.0"
+
+git checkout develop
+git merge release/v2.0.0</code></pre>
+                </div>
+
+                <h3>When to Use GitFlow</h3>
+                <p>GitFlow shines when you have:</p>
+                <ul>
+                    <li>Scheduled, versioned releases (v1.0, v1.1, etc.)</li>
+                    <li>Multiple teams working on different features simultaneously</li>
+                    <li>Need for stable release candidates before production</li>
+                    <li>Desktop applications or libraries with formal release cycles</li>
+                </ul>
+
+                <p>Avoid GitFlow if you deploy continuously (multiple times per day). It adds overhead that CI/CD teams don't need.</p>
+
+                <h2>Strategy 3: Trunk-Based Development</h2>
+                <p>The most streamlined strategy. Developers merge small changes to the main branch (<code>main</code>) multiple times per day. Branches exist only briefly — often less than a day. This is used by Google, Facebook, Netflix, and most high-velocity engineering teams.</p>
+
+                <h3>How It Works</h3>
+                <ol>
+                    <li>Make small, incremental changes.</li>
+                    <li>Push to a short-lived branch (hours, not days).</li>
+                    <li>Automated CI runs tests on every commit.</li>
+                    <li>Merge to <code>main</code> as soon as CI passes.</li>
+                    <li>Use feature flags to hide incomplete features.</li>
+                </ol>
+
+                <div class="code-block">
+                    <pre><code># Trunk-based: small changes, fast merges
+git checkout main
+git pull origin main
+git checkout -b fix/typo-in-header
+
+# One small commit
+git add .
+git commit -m "Fix typo in page header"
+git push origin fix/typo-in-header
+
+# CI passes? Merge immediately (squash merge on GitHub)
+# Done. Branch deleted. Back to main in 5 minutes.</code></pre>
+                </div>
+
+                <h3>Feature Flags in Trunk-Based Development</h3>
+                <p>Feature flags let you merge incomplete code without exposing it to users. You merge the code, but behind a flag that's disabled by default.</p>
+
+                <div class="code-block">
+                    <pre><code># Example: feature flag in Python (using a simple dict)
+FEATURE_FLAGS = {
+    "dark_mode": True,
+    "new_dashboard": False,  # Code merged but not visible
+    "beta_search": False,    # Merged for testing only
+}
+
+def show_dashboard(user):
+    if FEATURE_FLAGS["new_dashboard"] or user.is_beta:
+        return render_new_dashboard(user)
+    return render_old_dashboard(user)</code></pre>
+                </div>
+
+                <h3>When to Use Trunk-Based</h3>
+                <p>Choose trunk-based when you:</p>
+                <ul>
+                    <li>Deploy multiple times per day (CI/CD)</li>
+                    <li>Have strong automated test coverage</li>
+                    <li>Want to minimize merge conflicts</li>
+                    <li>Build web services or SaaS products</li>
+                </ul>
+
+                <h2>Merge vs Rebase: Choosing Your Integration Style</h2>
+                <p>When combining branches, you have two main options:</p>
+
+                <h3>Merge (Default)</h3>
+                <div class="code-block">
+                    <pre><code># Merge feature branch into main
+git checkout main
+git merge feature/dark-mode
+
+# This creates a merge commit:
+# A---B---C  main
+#  \       /
+#   D---E  feature/dark-mode
+#        \
+#         M (merge commit)</code></pre>
+                </div>
+
+                <p>Merge preserves history exactly. You see when branches diverged and when they joined. Good for GitFlow and teams that value complete history.</p>
+
+                <h3>Rebase</h3>
+                <div class="code-block">
+                    <pre><code># Rebase feature branch onto main
+git checkout feature/dark-mode
+git rebase main
+
+# This creates a linear history:
+# A---B---C---D'---E'  feature/dark-mode
+#                (rewritten commits)</code></pre>
+                </div>
+
+                <p>Rebase produces a clean, linear history. No merge commits cluttering your log. Popular in trunk-based development.</p>
+
+                <div class="info-box">
+                    <strong>⚠️ Golden Rule of Rebase:</strong> Never rebase commits that you've already pushed to a shared branch. Only rebase your local, unshared commits.
+                </div>
+
+                <h2>Interactive Rebase: Rewriting History</h2>
+                <p>Before merging your feature branch, clean up your commit history with interactive rebase:</p>
+
+                <div class="code-block">
+                    <pre><code># Squash your last 3 commits into one clean commit
+git rebase -i HEAD~3
+
+# The editor opens with:
+# pick a1b2c3d Add dark mode CSS
+# pick e4f5g6h Fix typo in CSS class
+# pick i7j8k9l Update dark mode README
+
+# Change "pick" to "squash" for commits to combine:
+# pick a1b2c3d Add dark mode CSS
+# squash e4f5g6h Fix typo in CSS class
+# squash i7j8k9l Update dark mode README
+
+# Result: one clean commit with all changes
+git push --force-with-lease</code></pre>
+                </div>
+
+                <h2>Choosing the Right Strategy</h2>
+                <p>Here's a quick decision guide:</p>
+
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Team Size</th>
+                            <th>Release Cadence</th>
+                            <th>Recommended Strategy</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1-5</td>
+                            <td>Weekly+</td>
+                            <td>Feature Branch Workflow</td>
+                        </tr>
+                        <tr>
+                            <td>5-50</td>
+                            <td>Daily/Continuous</td>
+                            <td>Trunk-Based Development</td>
+                        </tr>
+                        <tr>
+                            <td>Any</td>
+                            <td>Scheduled (monthly, quarterly)</td>
+                            <td>GitFlow</td>
+                        </tr>
+                        <tr>
+                            <td>Open Source</td>
+                            <td>Community-driven</td>
+                            <td>Feature Branch + Fork PR</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h2>Practical Exercise: Setting Up Your Project</h2>
+                <p>Let's set up a new project with a solid branching strategy:</p>
+
+                <div class="code-block">
+                    <pre><code># 1. Initialize and connect to remote
+mkdir my-project && cd my-project
+git init
+git remote add origin git@github.com:username/my-project.git
+
+# 2. Create main branch with a basic README
+echo "# My Project" > README.md
+git add README.md
+git commit -m "Initial commit"
+git branch -M main
+git push -u origin main
+
+# 3. Set up branch protection (on GitHub)
+#    Repository → Settings → Branches → Branch protection rules
+#    - Require pull request reviews
+#    - Require status checks to pass
+#    - Require conversations to be resolved
+
+# 4. Start your first feature
+git checkout -b feature/user-signup
+# ... build, commit, push ...
+git push -u origin feature/user-signup
+# Open PR → Review → Merge</code></pre>
+                </div>
+
+                <h2>Summary</h2>
+                <p>Branching strategies are about finding the right balance between structure and speed. Start simple with the feature branch workflow, and adopt more complex strategies like GitFlow only when your release process demands it. If you're deploying continuously, trunk-based development with strong CI/CD is the way to go. The key is consistency — whatever strategy you choose, make sure the whole team follows it.</p>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Hugo's Dev Notes. Built with passion and Cloudflare.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Reading progress bar
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + '%';
+        });
+
+        // Theme toggle
+        const toggle = document.getElementById('themeToggle');
+        toggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-theme');
+        });
+    </script>
+</body>
+</html>

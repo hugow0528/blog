@@ -3,364 +3,386 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Python List Comprehensions & Generator Expressions: Write Cleaner, FASTER Code</title>
-    <meta name="description" content="Master Python list comprehensions and generator expressions — the Pythonic way to create lists, filter data, and transform collections with elegant one-liners.">
-    <meta name="keywords" content="python list comprehensions, generator expressions, pythonic code, list filtering, map filter reduce, python one-liners, python data transformation">
+    <title>Python List Comprehensions: Write Cleaner, Faster Loops — Complete Beginner's Guide</title>
+    <meta name="description" content="Master Python list comprehensions — transform loops into single lines, conditional filtering, nested comprehensions, dict/set comprehensions, and real-world data processing patterns. Step-by-step examples from basics to production code.">
+    <meta name="keywords" content="python list comprehension, python loops, python generator expression, dict comprehension, set comprehension, python tutorial, beginner python">
     <meta name="author" content="Hugo Wong">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://blog.hugow.dev/posts/python-list-comprehensions.html">
-    <meta property="og:title" content="Python List Comprehensions & Generator Expressions">
-    <meta property="og:description" content="Write elegant Python with list comprehensions and generators — filter, transform, and build collections in one line.">
-    <meta property="og:type" content="article">
-    <meta property="og:url" content="https://blog.hugow.dev/posts/python-list-comprehensions.html">
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "BlogPosting",
-      "headline": "Python List Comprehensions & Generator Expressions: Write Cleaner, FASTER Code",
-      "author": {"@type": "Person", "name": "Hugo Wong"},
-      "datePublished": "2026-06-25",
-      "dateModified": "2026-06-25",
-      "publisher": {"@type": "Organization", "name": "Hugo's Dev Notes"}
-    }
-    </script>
     <link rel="stylesheet" href="../style.css">
 </head>
 <body>
     <div class="progress-bar" id="progressBar"></div>
-    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
 
     <header>
         <div class="container">
             <div class="logo">
-                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
                 <p class="subtitle">Cloudflare · Python · AI Coding</p>
             </div>
             <nav>
-                <a href="../index.html" class="nav-btn">🏠 Home</a>
-                <a href="../python.html" class="nav-btn">🐍 Python</a>
-                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
-                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
-                <a href="../devops.html" class="nav-btn">🐳 DevOps</a>
-                <a href="../security.html" class="nav-btn">🔐 Security</a>
-                <a href="../webdev.html" class="nav-btn">💻 Web Dev</a>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
             </nav>
         </div>
     </header>
 
-    <main class="container">
-        <article class="post">
-            <div class="post-header">
-                <span class="tag python">Python</span>
-                <h1>Python List Comprehensions & Generator Expressions: Write Cleaner, FASTER Code</h1>
-            </div>
-            <div class="post-meta">
-                <time>2026-06-25</time>
-                <span class="read-time">10 min read</span>
-                <span class="post-status">New</span>
-            </div>
+    <article class="post-content container">
+        <span class="tag python">Python</span>
+        <h1>Python List Comprehensions: Write Cleaner, Faster Loops — Complete Beginner's Guide</h1>
+        <div class="post-meta">
+            <span class="post-date">July 20, 2026</span>
+            <span class="read-time">10 min read</span>
+        </div>
 
-            <div class="post-content">
-                <p>One of the first things that makes Python code look "Pythonic" is the use of <strong>list comprehensions</strong>. Instead of writing a four-line for loop to build a list, you can do it in a single readable expression. Combined with <strong>generator expressions</strong> and <strong>dictionary comprehensions</strong>, you'll write code that's shorter, faster, and easier to understand.</p>
+        <p>List comprehensions are one of Python's most powerful and Pythonic features. They let you <strong>create lists in a single, readable line</strong> instead of writing multi-line loops with <code>.append()</code>. Once you master them, you'll find yourself writing cleaner, faster code across every Python project.</p>
 
-                <p>If you've ever written a loop just to collect results into a list, stop — there's a better way. Let's dive in.</p>
+        <p>Let's go from zero to comprehensions ninja with working examples at every step.</p>
 
-                <h2>1. The Basics: List Comprehensions</h2>
+        <h2>Why Comprehensions?</h2>
+        <p>Here's the traditional way to build a list in Python:</p>
 
-                <p>A list comprehension creates a new list by applying an expression to each item in an iterable. The syntax follows a clear pattern: <code>[expression for item in iterable]</code>.</p>
-
-                <p>Here's the old way to square a list of numbers:</p>
-
-<pre><code># Old way — for loop
+<pre><code># Traditional approach — works, but verbose
 squares = []
-for n in [1, 2, 3, 4, 5]:
-    squares.append(n ** 2)
-print(squares)  # [1, 4, 9, 16, 25]
-</code></pre>
+for x in range(10):
+    squares.append(x ** 2)
 
-                <p>And here's the same thing with a list comprehension:</p>
+print(squares)  # [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]</code></pre>
 
-<pre><code># New way — list comprehension
-squares = [n ** 2 for n in [1, 2, 3, 4, 5]]
-print(squares)  # [1, 4, 9, 16, 25]
-</code></pre>
+        <p>The same thing with a list comprehension:</p>
 
-                <p>Three lines compressed into one. And it actually runs <strong>faster</strong> because list comprehensions are optimized in CPython's internal loop.</p>
+<pre><code># Comprehension — one line, crystal clear
+squares = [x ** 2 for x in range(10)]
 
-                <h2>2. Adding a Condition: Filtering with Comprehensions</h2>
+print(squares)  # [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]</code></pre>
 
-                <p>You can add an <code>if</code> clause to filter items. This replaces a whole class of "loop with condition" patterns:</p>
+        <p>Same result, less code, easier to read. That's the Pythonic way.</p>
 
-<pre><code># Old way
-evens = []
-for n in range(1, 11):
-    if n % 2 == 0:
-        evens.append(n)
+        <h2>The Anatomy of a List Comprehension</h2>
+        <p>Every list comprehension follows this pattern:</p>
+
+<pre><code>[expression for item in iterable if condition]</code></pre>
+
+        <p>Breaking it down:</p>
+        <ul>
+            <li><code>[ ]</code> — Square brackets create a list</li>
+            <li><code>expression</code> — What to compute/store for each item</li>
+            <li><code>for item in iterable</code> — Loop over a collection</li>
+            <li><code>if condition</code> — <strong>Optional</strong> filter (only include items matching)</li>
+        </ul>
+
+        <h2>Basic Examples</h2>
+        <p>Let's practice with real data:</p>
+
+<pre><code># Convert temperatures from Celsius to Fahrenheit
+celsius = [0, 10, 20, 30, 40]
+fahrenheit = [temp * 9/5 + 32 for temp in celsius]
+print(fahrenheit)  # [32.0, 50.0, 68.0, 86.0, 104.0]
+
+# Extract first letter from each word
+words = ["python", "comprehensions", "are", "awesome"]
+first_letters = [word[0] for word in words]
+print(first_letters)  # ['p', 'c', 'a', 'a']
+
+# Double numbers in a list
+numbers = [1, 2, 3, 4, 5]
+doubled = [n * 2 for n in numbers]
+print(doubled)  # [2, 4, 6, 8, 10]</code></pre>
+
+        <h2>Conditional Filtering (if clause)</h2>
+        <p>Add an <code>if</code> clause to filter items — like a sieve that only lets matching elements through:</p>
+
+<pre><code># Only even numbers
+numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+evens = [n for n in numbers if n % 2 == 0]
 print(evens)  # [2, 4, 6, 8, 10]
 
-# New way
-evens = [n for n in range(1, 11) if n % 2 == 0]
-print(evens)  # [2, 4, 6, 8, 10]
-</code></pre>
+# Only words longer than 3 characters
+words = ["hi", "hello", "hey", "goodbye", "yo", "welcome"]
+long_words = [w for w in words if len(w) > 3]
+print(long_words)  # ['hello', 'goodbye', 'welcome']
 
-                <p>Real-world example — filter a list of filenames to only get Python files:</p>
-
-<pre><code>files = ["app.py", "readme.md", "main.py", "style.css", "test.py"]
+# Only files with .py extension
+files = ["main.py", "README.md", "utils.py", "data.json", "test.py"]
 python_files = [f for f in files if f.endswith(".py")]
-print(python_files)  # ['app.py', 'main.py', 'test.py']
-</code></pre>
+print(python_files)  # ['main.py', 'utils.py', 'test.py']</code></pre>
 
-                <h2>3. if/else Expressions in Comprehensions</h2>
+        <h2>if-else in Comprehensions</h2>
+        <p>You can also use <code>if-else</code> to <strong>transform</strong> values (not just filter). Note the syntax difference — the <code>if-else</code> goes <em>before</em> the <code>for</code>:</p>
 
-                <p>You can also transform items conditionally. Note the <strong>different placement</strong> of the if/else:</p>
+<pre><code># Filter only: expression for x in iterable IF condition
+result = [x for x in range(10) if x > 5]
+print(result)  # [6, 7, 8, 9]
 
-<pre><code># Transform: if/else goes BEFORE the for
-labels = ["spam", "ham", "eggs"]
-categories = ["meat" if x in ("spam", "ham") else "other" for x in labels]
-print(categories)  # ['meat', 'meat', 'other']
+# Transform: EXPRESSION if condition ELSE expression for x in iterable
+result = [x if x % 2 == 0 else -x for x in range(6)]
+print(result)  # [0, -1, 2, -3, 4, -5]
 
-# Filter: if goes AFTER the for (no else allowed)
-meat_only = [x for x in labels if x in ("spam", "ham")]
-print(meat_only)  # ['spam', 'ham']
+# Real example: categorize numbers
+numbers = [5, 12, 3, 20, 7, 15]
+categorized = [n if n >= 10 else "small" for n in numbers]
+print(categorized)  # ['small', 12, 'small', 20, 'small', 15]</code></pre>
 
-# Both filter AND transform
-scores = [85, 42, 91, 55, 78]
-results = ["pass" if s >= 60 else "fail" for s in scores if s > 0]
-print(results)  # ['pass', 'fail', 'pass', 'pass', 'pass']
-</code></pre>
+        <h2>Nested Comprehensions</h2>
+        <p>Just like nested loops, you can nest comprehensions. This is great for working with lists of lists (matrices):</p>
 
-                <blockquote>
-                    <strong>Rule of thumb:</strong> If you have an <code>else</code>, it's a transformation (put if/else before <code>for</code>). If you don't have an <code>else</code>, it's a filter (put <code>if</code> after <code>for</code>).
-                </blockquote>
-
-                <h2>4. Nested Loops in Comprehensions</h2>
-
-                <p>You can nest loops. The order mirrors regular nested for-loops:</p>
-
-<pre><code># Flatten a matrix (list of lists)
+<pre><code># Flatten a 2D list (matrix)
 matrix = [
     [1, 2, 3],
     [4, 5, 6],
     [7, 8, 9]
 ]
 
-# Old way
-flat = []
-for row in matrix:
-    for item in row:
-        flat.append(item)
-print(flat)  # [1, 2, 3, 4, 5, 6, 7, 8, 9]
+flatten = [num for row in matrix for num in row]
+print(flatten)  # [1, 2, 3, 4, 5, 6, 7, 8, 9]
 
-# Comprehension way
-flat = [item for row in matrix for item in row]
-print(flat)  # [1, 2, 3, 4, 5, 6, 7, 8, 9]
-</code></pre>
+# Think of it as nested loops:
+# for row in matrix:
+#     for num in row:
+#         append num
 
-                <p>With a filter condition:</p>
+# Transpose a matrix (swap rows and columns)
+transposed = [[row[i] for row in matrix] for i in range(3)]
+print(transposed)
+# [[1, 4, 7], [2, 5, 8], [3, 6, 9]]</code></pre>
 
-<pre><code># Get only even numbers from the matrix
-flat_evens = [item for row in matrix for item in row if item % 2 == 0]
-print(flat_evens)  # [2, 4, 6, 8]
-</code></pre>
+        <h2>Dict Comprehensions</h2>
+        <p>Use <code>{ }</code> instead of <code>[ ]</code> to create dictionaries:</p>
 
-                <h2>5. Generator Expressions: Memory-Efficient Comprehensions</h2>
+<pre><code># Create a lookup table: name -> name length
+names = ["alice", "bob", "charlie"]
+name_lengths = {name: len(name) for name in names}
+print(name_lengths)  # {'alice': 5, 'bob': 3, 'charlie': 7}
 
-                <p>Change square brackets <code>[]</code> to parentheses <code>()</code> and you get a <strong>generator expression</strong>. Instead of building the entire list in memory, it yields items <strong>one at a time</strong>:</p>
+# Squared dictionary
+numbers = [1, 2, 3, 4, 5]
+squared = {n: n**2 for n in numbers}
+print(squared)  # {1: 1, 2: 4, 3: 9, 4: 16, 5: 25}
 
-<pre><code># List comprehension — builds entire list in memory
-big_list = [x ** 2 for x in range(1000000)]
+# Swap keys and values
+original = {"a": 1, "b": 2, "c": 3}
+swapped = {v: k for k, v in original.items()}
+print(swapped)  # {1: 'a', 2: 'b', 3: 'c'}</code></pre>
 
-# Generator expression — generates on demand, uses minimal memory
-big_gen = (x ** 2 for x in range(1000000))
+        <h2>Set Comprehensions</h2>
+        <p>Set comprehensions remove duplicates — perfect for unique values:</p>
 
-# Both work the same in many contexts
-print(sum(x for x in range(1000000)))  # Works great, no huge list in memory
-print(list(x for x in range(10) if x % 2 == 0))  # Convert to list when needed
-</code></pre>
+<pre><code># Get unique first letters
+words = ["apple", "avocado", "banana", "blueberry", "cherry"]
+unique_letters = {w[0] for w in words}
+print(unique_letters)  # {'a', 'b', 'c'}
 
-                <p>Generators are ideal when:</p>
+# Unique lengths from a list
+words = ["hi", "hello", "hey", "goodbye", "yo"]
+unique_lengths = {len(w) for w in words}
+print(unique_lengths)  # {2, 5, 7}</code></pre>
 
-                <ul>
-                    <li>You're processing very large datasets</li>
-                    <li>You only need to iterate once</li>
-                    <li>You're chaining operations (sum, any, all, next)</li>
-                </ul>
+        <h2>Generator Expressions (Memory Efficiency)</h2>
+        <p>Use <code>( )</code> instead of <code>[ ]</code> for a <strong>generator expression</strong> — it produces items one at a time instead of building the whole list in memory:</p>
 
-<pre><code># Practical example: find first matching log entry
-logs = ["ERROR: disk full", "INFO: startup", "ERROR: timeout", "INFO: request"]
+<pre><code># List comprehension: creates entire list in memory
+big_list = [x**2 for x in range(1000000)]  # Uses ~8 MB
 
-# Generator stops at first match — no need to process the rest
-first_error = next(msg for msg in logs if "ERROR" in msg)
-print(first_error)  # ERROR: disk full
+# Generator expression: produces one value at a time
+big_gen = (x**2 for x in range(1000000))   # Uses virtually no memory
 
-# Count errors without building a list
-error_count = sum(1 for msg in logs if "ERROR" in msg)
-print(error_count)  # 2
-</code></pre>
+# Works great with functions that consume iterables
+total = sum(x**2 for x in range(1000))  # No temporary list needed!
+print(total)  # 332833500</code></pre>
 
-                <h2>6. Dictionary and Set Comprehensions</h2>
+        <p>Rule of thumb: use generators with <code>sum()</code>, <code>max()</code>, <code>min()</code>, <code>any()</code>, <code>all()</code>, or any function that iterates once.</p>
 
-                <p>Python 3 supports the same comprehension syntax for dictionaries and sets:</p>
+        <h2>Real-World Project: Log File Analyzer</h2>
+        <p>Let's build a practical tool that analyzes log data using comprehensions:</p>
 
-<pre><code># Dictionary comprehension
-words = ["hello", "world", "python", "code"]
-word_lengths = {w: len(w) for w in words}
-print(word_lengths)
-# {'hello': 5, 'world': 5, 'python': 6, 'code': 4}
-
-# With a filter
-short_words = {w: len(w) for w in words if len(w) <= 4}
-print(short_words)  # {'code': 4}
-
-# Set comprehension (unique values only)
-fruits = ["apple", "banana", "apple", "cherry", "banana"]
-unique = {f for f in fruits}
-print(unique)  # {'apple', 'banana', 'cherry'}
-</code></pre>
-
-                <h2>7. Real-World Project: Data Cleaning Pipeline</h2>
-
-                <p>Let's put everything together in a practical example. Imagine you have raw user data and need to clean and transform it:</p>
-
-<pre><code>raw_users = [
-    {"name": "  Alice  ", "age": 28, "email": "alice@example.com"},
-    {"name": "bob", "age": -5, "email": "bob"},           # invalid age & email
-    {"name": "  Charlie  ", "age": 45, "email": "charlie@test.io"},
-    {"name": "diana", "age": 17, "email": "diana@web.com"},  # underage
-    {"name": "  Eve  ", "age": 33, "email": "eve@domain.org"},
+<pre><code># Sample log lines
+logs = [
+    "2024-01-15 10:23:01 ERROR Database connection failed",
+    "2024-01-15 10:23:05 INFO Server started on port 8080",
+    "2024-01-15 10:24:12 WARNING High memory usage: 85%",
+    "2024-01-15 10:25:01 ERROR Timeout waiting for response",
+    "2024-01-15 10:25:30 INFO Request processed in 200ms",
+    "2024-01-15 10:26:15 ERROR Authentication failed for user admin",
+    "2024-01-15 10:27:00 INFO Backup completed successfully",
+    "2024-01-15 10:28:45 WARNING Disk space low: 10% remaining",
 ]
 
-# Step 1: Clean names (strip whitespace, capitalize)
-cleaned = [
-    {**u, "name": u["name"].strip().title()} for u in raw_users
+# Extract all error messages
+errors = [line for line in logs if "ERROR" in line]
+for error in errors:
+    print(error)
+
+# Count log levels
+levels = [line.split()[2] for line in logs]
+from collections import Counter
+level_counts = dict(Counter(levels))
+print(level_counts)  # {'ERROR': 3, 'INFO': 3, 'WARNING': 2}
+
+# Get timestamps of errors only
+error_times = [line.split()[0:2] for line in logs if "ERROR" in line]
+for time_parts in error_times:
+    print(f"  Error at {time_parts[0]} {time_parts[1]}")
+
+# Create a summary dict: level -> count of unique error messages
+error_messages = {
+    line.split("ERROR", 1)[1].strip()
+    for line in logs if "ERROR" in line
+}
+print(f"Unique errors: {len(error_messages)}")
+for msg in error_messages:
+    print(f"  - {msg}")</code></pre>
+
+        <h2>Real-World Project: JSON Data Processing</h2>
+        <p>Comprehensions shine when working with API responses and JSON data:</p>
+
+<pre><code>import json
+
+# Simulated API response
+users_data = [
+    {"id": 1, "name": "Alice", "age": 30, "active": True},
+    {"id": 2, "name": "Bob", "age": 25, "active": False},
+    {"id": 3, "name": "Charlie", "age": 35, "active": True},
+    {"id": 4, "name": "Diana", "age": 28, "active": True},
+    {"id": 5, "name": "Eve", "age": 22, "active": False},
 ]
 
-# Step 2: Filter valid users (age 18+, has @ in email)
-valid = [
-    u for u in cleaned
-    if u["age"] >= 18 and "@" in u["email"]
-]
+# Get names of active users
+active_names = [u["name"] for u in users_data if u["active"]]
+print(active_names)  # ['Alice', 'Charlie', 'Diana']
 
-# Step 3: Create a lookup dict by email
-user_lookup = {u["email"]: u["name"] for u in valid}
+# Create a lookup: name -> age
+name_to_age = {u["name"]: u["age"] for u in users_data}
+print(name_to_age)  # {'Alice': 30, 'Bob': 25, ...}
 
-print(user_lookup)
-# {'alice@example.com': 'Alice', 'charlie@test.io': 'Charlie', 'eve@domain.org': 'Eve'}
+# Get users over 28, sorted by age
+senior_users = sorted(
+    [u for u in users_data if u["age"] > 28],
+    key=lambda u: u["age"],
+    reverse=True
+)
+print([u["name"] for u in senior_users])  # ['Charlie', 'Alice']
 
-# Step 4: Quick stats using generators
-avg_age = sum(u["age"] for u in valid) / len(valid)
-print(f"Average age: {avg_age:.1f}")  # Average age: 35.3
-</code></pre>
+# Group by active status
+groups = {
+    "active": [u["name"] for u in users_data if u["active"]],
+    "inactive": [u["name"] for u in users_data if not u["active"]],
+}
+print(json.dumps(groups, indent=2))</code></pre>
 
-                <h2>8. When NOT to Use Comprehensions</h2>
+        <h2>Common Mistakes to Avoid</h2>
+        <p>Here are pitfalls that trip up beginners:</p>
 
-                <p>List comprehensions are great, but don't force them everywhere. Avoid comprehensions when:</p>
+<pre><code># ❌ Mistake 1: Comprehension too complex — just use a loop instead
+# This is hard to read:
+result = [f(x, y) for x in range(10) for y in range(10) if x + y > 5 if x % 2 == 0]
 
-                <ul>
-                    <li><strong>The logic is complex</strong> — if you need more than 2 nested loops or multiple conditions, a regular loop is clearer</li>
-                    <li><strong>You have side effects</strong> — comprehensions should create lists, not modify state</li>
-                    <li><strong>Readability suffers</strong> — if you need to explain the comprehension, write a loop instead</li>
-                </ul>
-
-<pre><code># BAD: Complex logic in comprehension — don't do this
-result = [x * 2 if x > 0 and x % 3 == 0 else x + 1 for x in data if x is not None and isinstance(x, int)]
-
-# GOOD: Clear, step-by-step loop
+# ✅ Better: Use a regular loop when it gets complex
 result = []
-for x in data:
-    if x is None or not isinstance(x, int):
+for x in range(10):
+    if x % 2 != 0:
         continue
-    if x > 0 and x % 3 == 0:
-        result.append(x * 2)
-    else:
-        result.append(x + 1)
-</code></pre>
+    for y in range(10):
+        if x + y > 5:
+            result.append(f(x, y))
 
-                <h2>Summary</h2>
+# ❌ Mistake 2: Modifying the iterable you're iterating over
+items = [1, 2, 3, 4, 5]
+items = [x for x in items if x != 3]  # ✅ Create new list
 
-                <p>List comprehensions and generator expressions are among Python's most beloved features. Here's the cheat sheet:</p>
+# ❌ This causes bugs:
+for x in items:
+    if x == 3:
+        items.remove(x)  # ❌ Don't do this!
 
-                <ul>
-                    <li><code>[expr for x in iterable]</code> — basic list comprehension</li>
-                    <li><code>[expr for x in iterable if cond]</code> — with filter</li>
-                    <li><code>[a if cond else b for x in iterable]</code> — conditional transform</li>
-                    <li><code>(expr for x in iterable)</code> — memory-efficient generator</li>
-                    <li><code>{k: v for k, v in iterable}</code> — dictionary comprehension</li>
-                    <li><code>{expr for x in iterable}</code> — set comprehension</li>
-                </ul>
+# ❌ Mistake 3: Using comprehension for side effects
+# Don't do this:
+[print(x) for x in range(5)]  # Wrong use of comprehension
 
-                <p>Start by replacing simple "build a list" loops with comprehensions. Once you're comfortable, add filters, conditionals, and nested loops. Your code will be shorter, faster, and unmistakably Pythonic.</p>
+# ✅ Do this instead:
+for x in range(5):
+    print(x)  # Clear intent: loop for side effects</code></pre>
 
-                <p><strong>Next up:</strong> Check out our guide on <a href="python-decorators-generators.html">Python Decorators & Generators</a> for more advanced patterns.</p>
+        <h2>Performance: Comprehensions vs. Loops vs. map()/filter()</h2>
+        <p>Comprehensions are generally the fastest option in Python:</p>
 
-            </div>
-        </article>
+<pre><code>import timeit
 
-        <div style="text-align: center; margin: 2rem 0;">
-            <a href="../index.html" class="btn-primary">← Back to All Posts</a>
-        </div>
-    </main>
+n = 100_000
 
-    <footer>
-        <div class="container">
-            <p>© 2026 Hugo's Dev Notes | Built with ❤️ & AI</p>
-            <div class="footer-links">
-                <a href="https://github.com/hugow0528" target="_blank">GitHub</a>
-                <a href="https://blog.hugow.dev/sitemap.xml">Sitemap</a>
-                <a href="https://blog.hugow.dev/robots.txt">Robots</a>
-            </div>
-        </div>
-    </footer>
+# Method 1: Traditional loop
+def loop_method():
+    result = []
+    for i in range(n):
+        if i % 2 == 0:
+            result.append(i * 2)
+    return result
 
-    <button class="back-to-top" id="backToTop" title="Back to top">↑</button>
+# Method 2: List comprehension
+def comprehension_method():
+    return [i * 2 for i in range(n) if i % 2 == 0]
+
+# Method 3: filter() + map()
+def map_filter_method():
+    return list(map(lambda i: i * 2, filter(lambda i: i % 2 == 0, range(n))))
+
+print("Loop:",          timeit.timeit(loop_method, number=100))
+print("Comprehension:", timeit.timeit(comprehension_method, number=100))
+print("map/filter:",    timeit.timeit(map_filter_method, number=100))
+
+# Typical output:
+# Loop:          0.52s
+# Comprehension: 0.32s  ← Fastest!
+# map/filter:    0.48s</code></pre>
+
+        <h2>Summary: The Comprehension Cheat Sheet</h2>
+        <p>Quick reference for all comprehension types:</p>
+
+<pre><code># List comprehension   → [expr for x in iterable if cond]
+# Dict comprehension   → {k_expr: v_expr for x in iterable if cond}
+# Set comprehension    → {expr for x in iterable if cond}
+# Generator expression → (expr for x in iterable if cond)</code></pre>
+
+        <ul>
+            <li><strong>List <code>[ ]</code></strong> — Build a new list from an iterable</li>
+            <li><strong>Dict <code>{ }</code></strong> — Build a dictionary with key-value pairs</li>
+            <li><strong>Set <code>{ }</code></strong> — Build a set of unique values</li>
+            <li><strong>Generator <code>( )</code></strong> — Lazy evaluation, memory efficient</li>
+        </ul>
+
+        <h3>When to use each:</h3>
+        <ul>
+            <li>Use <strong>list comprehension</strong> when you need a new list (most common)</li>
+            <li>Use <strong>dict comprehension</strong> when building lookup tables or transforming key-value data</li>
+            <li>Use <strong>set comprehension</strong> when you need unique values</li>
+            <li>Use <strong>generator expression</strong> when memory matters or you're feeding <code>sum()</code>, <code>max()</code>, etc.</li>
+            <li>Use a <strong>regular loop</strong> when logic gets complex — readability always wins</li>
+        </ul>
+
+        <p>Comprehensions are the hallmark of Pythonic code. Start using them everywhere you'd normally write a <code>for</code> loop with <code>.append()</code>, and your code will be shorter, faster, and more elegant.</p>
+
+        <footer class="post-footer">
+            <a href="../index.html" class="back-home">← Back to Home</a>
+            <a href="../python.html" class="category-link">More Python Tutorials →</a>
+        </footer>
+    </article>
 
     <script>
-    const themeToggle = document.getElementById('themeToggle');
-    themeToggle.addEventListener('click', () => {
-        document.body.classList.toggle('dark-mode');
-        themeToggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
-        localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
-    });
-    if (localStorage.getItem('theme') === 'dark') {
-        document.body.classList.add('dark-mode');
-        themeToggle.textContent = '☀️';
-    }
-    const backToTop = document.getElementById('backToTop');
-    window.addEventListener('scroll', () => {
-        backToTop.style.display = window.pageYOffset > 300 ? 'block' : 'none';
-        const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
-        const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-        const scrolled = (winScroll / height) * 100;
-        document.getElementById('progressBar').style.width = scrolled + '%';
-    });
-    backToTop.addEventListener('click', () => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-    </script>
-    <script>
-        // Theme toggle
-        const themeToggle = document.getElementById('themeToggle');
-        if (themeToggle) {{
-            const savedTheme = localStorage.getItem('theme') || 'dark';
-            if (savedTheme === 'light') {{
-                document.body.classList.add('light-mode');
-                themeToggle.textContent = '☀';
-            }}
-            themeToggle.addEventListener('click', () => {{
-                document.body.classList.toggle('light-mode');
-                const isLight = document.body.classList.contains('light-mode');
-                localStorage.setItem('theme', isLight ? 'light' : 'dark');
-                themeToggle.textContent = isLight ? '☀' : '◐';
-            }});
-        }}
         // Progress bar
-        window.addEventListener('scroll', () => {{
+        window.onscroll = function() {
             const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
             const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
             const scrolled = (winScroll / height) * 100;
-            const bar = document.getElementById('progressBar');
-            if (bar) bar.style.width = scrolled + "%";
-        }});
+            document.getElementById("progressBar").style.width = scrolled + "%";
+        };
+        // Theme toggle
+        const toggle = document.getElementById("themeToggle");
+        if (toggle) {
+            toggle.addEventListener("click", () => {
+                document.body.classList.toggle("dark");
+            });
+        }
     </script>
 </body>
 </html>

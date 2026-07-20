@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Requests Library: HTTP APIs Made Easy — Complete Beginner's Guide | Hugo's Dev Notes</title>
+    <meta name="description" content="Master Python requests library for HTTP APIs — GET/POST/PUT/DELETE, headers, authentication, file uploads, sessions, timeouts, retry logic, and real-world patterns. Working code for every concept.">
+    <meta name="keywords" content="python requests, HTTP, REST API, GET POST PUT DELETE, Python API client, sessions, authentication">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-requests-http-apis.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-full">
+            <header class="post-header">
+                <div class="post-tags">
+                    <span class="tag python">Python</span>
+                    <span class="tag web">Web Dev</span>
+                </div>
+                <h1>Python Requests Library: HTTP APIs Made Easy — Complete Beginner's Guide</h1>
+                <div class="post-meta">
+                    <span class="post-date">July 19, 2026</span>
+                    <span class="read-time">12 min read</span>
+                </div>
+            </header>
+
+            <div class="post-content">
+                <p>HTTP is the language of the internet. Every API call, every web page, every data exchange happens over HTTP. The <code>requests</code> library is Python's most popular tool for making HTTP requests — it's clean, intuitive, and powerful enough for production use.</p>
+
+                <p>In this guide, you'll learn everything from your first <code>requests.get()</code> to building a robust API client with session management, authentication, retry logic, and file uploads. We'll cover GET, POST, PUT, DELETE methods, headers, query parameters, JSON payloads, timeouts, error handling, and real-world patterns.</p>
+
+                <h2>Installation</h2>
+                <p>Requests is not part of the standard library, so you'll need to install it:</p>
+                <pre><code>pip install requests</code></pre>
+
+                <h2>1. Your First GET Request</h2>
+                <p>The most common HTTP method is GET — used to retrieve data. Here's the simplest example:</p>
+                <pre><code>import requests
+
+response = requests.get("https://httpbin.org/get")
+
+print(response.status_code)   # 200
+print(response.headers)       # dict of response headers
+print(response.text)          # response body as string
+print(response.json())        # parse JSON response</code></pre>
+
+                <p>The <code>response</code> object contains everything about the server's reply:</p>
+                <pre><code># Key response attributes
+response.status_code    # HTTP status: 200, 404, 500, etc.
+response.ok             # True if status_code &lt; 400
+response.text           # Response body as unicode string
+response.content        # Response body as bytes
+response.json()         # Parse JSON response into Python dict/list
+response.headers        # Response headers (case-insensitive dict)
+response.url            # Final URL (after redirects)
+response.elapsed        # Time taken for the request (timedelta)</code></pre>
+
+                <h2>2. Query Parameters</h2>
+                <p>APIs often use query parameters for filtering, pagination, or search. Instead of manually building URLs, use the <code>params</code> argument:</p>
+                <pre><code># Manual URL building (error-prone)
+url = "https://api.example.com/search?q=python&lang=en&page=1"
+
+# Better: use the params argument
+response = requests.get(
+    "https://api.example.com/search",
+    params={"q": "python", "lang": "en", "page": 1}
+)
+
+print(response.url)  # https://api.example.com/search?q=python&lang=en&page=1
+
+# The requests library handles URL encoding automatically
+response = requests.get(
+    "https://api.example.com/search",
+    params={"q": "hello world &amp; more", "tags": ["python", "api"]}
+)
+# tags sent as: &tags=python&tags=api</code></pre>
+
+                <h2>3. Sending POST Requests with JSON</h2>
+                <p>POST requests send data to the server. For modern APIs, you typically send JSON:</p>
+                <pre><code>import requests
+
+# Sending JSON data
+payload = {
+    "title": "My Blog Post",
+    "content": "This is my first post.",
+    "published": True,
+    "tags": ["python", "tutorial"]
+}
+
+response = requests.post(
+    "https://api.example.com/posts",
+    json=payload  # Automatically sets Content-Type: application/json
+)
+
+print(response.status_code)  # 201 Created
+print(response.json())       # Server's response with the new post ID
+
+# For forms (not JSON), use the 'data' parameter instead
+form_data = {"username": "hugo", "password": "secret"}
+response = requests.post(
+    "https://example.com/login",
+    data=form_data  # Sends as form-encoded data
+)</code></pre>
+
+                <h2>4. PUT and DELETE Methods</h2>
+                <p>PUT replaces an existing resource. DELETE removes it:</p>
+                <pre><code># PUT: Update/replace an existing resource
+response = requests.put(
+    "https://api.example.com/posts/123",
+    json={"title": "Updated Title", "content": "New content."}
+)
+print(response.status_code)  # 200 OK
+
+# DELETE: Remove a resource
+response = requests.delete("https://api.example.com/posts/123")
+print(response.status_code)  # 204 No Content (success) or 404 Not Found</code></pre>
+
+                <h2>5. Custom Headers</h2>
+                <p>Some APIs require authentication tokens or specific headers:</p>
+                <pre><code>headers = {
+    "Authorization": "Bearer YOUR_API_TOKEN",
+    "Accept": "application/json",
+    "X-Custom-Header": "my-value",
+    "User-Agent": "MyPythonApp/1.0"
+}
+
+response = requests.get(
+    "https://api.github.com/user",
+    headers=headers
+)
+
+# Accessing response headers (case-insensitive)
+print(response.headers["Content-Type"])      # application/json
+print(response.headers.get("X-RateLimit-Remaining"))  # None if not present</code></pre>
+
+                <h2>6. Timeouts — Never Forget These</h2>
+                <p><strong>Always set timeouts.</strong> Without them, your code can hang forever if the server is slow or unresponsive:</p>
+                <pre><code># Bad: No timeout (can hang indefinitely)
+response = requests.get("https://slow-server.com")
+
+# Good: Set both connect and read timeouts
+response = requests.get(
+    "https://api.example.com/data",
+    timeout=5            # 5 seconds for connect + read (tuple: (connect, read))
+)
+
+# Better: Separate connect and read timeouts
+response = requests.get(
+    "https://api.example.com/data",
+    timeout=(3.05, 10)  # 3.05s connect timeout, 10s read timeout
+)
+
+# Best: Use a constant at the top of your file
+REQUEST_TIMEOUT = (3, 30)
+
+response = requests.get(url, timeout=REQUEST_TIMEOUT)</code></pre>
+
+                <h2>7. Error Handling with raise_for_status()</h2>
+                <p>HTTP status codes tell you whether a request succeeded. Use <code>raise_for_status()</code> to turn failures into exceptions:</p>
+                <pre><code>import requests
+
+try:
+    response = requests.get(
+        "https://api.example.com/nonexistent",
+        timeout=REQUEST_TIMEOUT
+    )
+    response.raise_for_status()  # Raises HTTPError if status >= 400
+    data = response.json()
+except requests.exceptions.HTTPError as e:
+    print(f"HTTP error: {e}")        # HTTP error: 404 Client Error
+except requests.exceptions.ConnectionError:
+    print("Could not connect to the server")
+except requests.exceptions.Timeout:
+    print("Request timed out")
+except requests.exceptions.RequestException as e:
+    print(f"Unexpected error: {e}")  # Catch-all for any requests error</code></pre>
+
+                <h2>8. Sessions — Reuse Connections and Cookies</h2>
+                <p>Sessions let you persist parameters like cookies, headers, and authentication across multiple requests. They also enable connection pooling for better performance:</p>
+                <pre><code>import requests
+
+# Create a session
+session = requests.Session()
+
+# Set default headers for all requests in this session
+session.headers.update({
+    "Authorization": "Bearer YOUR_TOKEN",
+    "User-Agent": "MyApp/1.0"
+})
+
+# All requests through this session share cookies and headers
+response1 = session.get("https://api.example.com/users")
+response2 = session.get("https://api.example.com/posts")
+response3 = session.post(
+    "https://api.example.com/posts",
+    json={"title": "New Post"}
+)
+
+# Sessions also support the same timeout and params arguments
+response = session.get(
+    "https://api.example.com/search",
+    params={"q": "python"},
+    timeout=REQUEST_TIMEOUT
+)
+
+# Don't forget to close the session when done
+session.close()
+
+# Or use a context manager (preferred)
+with requests.Session() as session:
+    session.headers["Authorization"] = "Bearer YOUR_TOKEN"
+    response = session.get("https://api.example.com/data", timeout=REQUEST_TIMEOUT)
+    response.raise_for_status()</code></pre>
+
+                <h2>9. File Uploads</h2>
+                <p>Upload files with the <code>files</code> parameter:</p>
+                <pre><code># Upload a single file
+with open("report.pdf", "rb") as f:
+    response = requests.post(
+        "https://api.example.com/upload",
+        files={"document": ("report.pdf", f, "application/pdf")},
+        data={"description": "Monthly report"}
+    )
+
+# Upload multiple files
+files = {
+    "avatar": ("photo.jpg", open("photo.jpg", "rb"), "image/jpeg"),
+    "banner": ("banner.png", open("banner.png", "rb"), "image/png")
+}
+
+response = requests.post(
+    "https://api.example.com/profile",
+    files=files,
+    data={"username": "hugo"}
+)</code></pre>
+
+                <h2>10. Downloading Files</h2>
+                <p>For large files, use <code>iter_content()</code> to stream the download without loading everything into memory:</p>
+                <pre><code>response = requests.get(
+    "https://example.com/large-file.zip",
+    stream=True,           # Important: don't download all at once
+    timeout=(10, 300)      # Longer read timeout for large files
+)
+response.raise_for_status()
+
+# Stream and save in chunks
+total_size = int(response.headers.get("content-length", 0))
+downloaded = 0
+
+with open("large-file.zip", "wb") as f:
+    for chunk in response.iter_content(chunk_size=8192):
+        f.write(chunk)
+        downloaded += len(chunk)
+        # Progress bar
+        pct = (downloaded / total_size) * 100 if total_size else 0
+        print(f"\rDownloaded {downloaded}/{total_size} bytes ({pct:.1f}%)", end="")
+
+print("\nDownload complete!")</code></pre>
+
+                <h2>11. API Client with Retry Logic</h2>
+                <p>Build a robust API client with automatic retries for transient failures:</p>
+                <pre><code>import requests
+import time
+
+class APIClient:
+    """A simple API client with retry logic and sessions."""
+
+    def __init__(self, base_url, api_key=None):
+        self.base_url = base_url.rstrip("/")
+        self.session = requests.Session()
+        self.timeout = (3, 30)
+
+        if api_key:
+            self.session.headers["Authorization"] = f"Bearer {api_key}"
+        self.session.headers.update({
+            "Accept": "application/json",
+            "User-Agent": "MyAPIClient/1.0"
+        })
+
+    def request(self, method, endpoint, **kwargs):
+        """Make a request with exponential backoff retry."""
+        max_retries = 3
+        backoff = 1  # seconds
+
+        for attempt in range(max_retries):
+            try:
+                url = f"{self.base_url}/{endpoint.lstrip('/')}"
+                response = self.session.request(
+                    method, url, timeout=self.timeout, **kwargs
+                )
+
+                # Retry on server errors (5xx) or rate limits (429)
+                if response.status_code in (429, 500, 502, 503, 504):
+                    wait = backoff * (attempt + 1)
+                    print(f"  Retry {attempt+1}/{max_retries} in {wait}s (status={response.status_code})")
+                    time.sleep(wait)
+                    continue
+
+                response.raise_for_status()
+                return response
+
+            except (requests.exceptions.ConnectionError,
+                    requests.exceptions.Timeout):
+                wait = backoff * (attempt + 1)
+                print(f"  Retry {attempt+1}/{max_retries} in {wait}s (network error)")
+                time.sleep(wait)
+
+        raise Exception(f"Failed after {max_retries} retries: {endpoint}")
+
+    def get(self, endpoint, params=None):
+        return self.request("GET", endpoint, params=params)
+
+    def post(self, endpoint, json=None, data=None):
+        return self.request("POST", endpoint, json=json, data=data)
+
+    def close(self):
+        self.session.close()
+
+# Usage
+client = APIClient("https://api.example.com", api_key="my-secret-key")
+
+# Simple usage with automatic retries
+response = client.get("/users", params={"page": 1, "limit": 10})
+users = response.json()
+print(f"Got {len(users)} users")
+
+# Post data
+response = client.post("/posts", json={"title": "Hello World"})
+print(f"Created post: {response.json()}")
+
+client.close()
+# Or: with APIClient(...) as client: ...</code></pre>
+
+                <h2>12. Real-World Example: GitHub API Client</h2>
+                <p>Let's put it all together with a working GitHub API client:</p>
+                <pre><code>import requests
+
+class GitHubClient:
+    """Simple GitHub API client with pagination."""
+
+    def __init__(self, token=None):
+        self.session = requests.Session()
+        self.session.headers["Accept"] = "application/vnd.github+json"
+        if token:
+            self.session.headers["Authorization"] = f"token {token}"
+
+    def get_repos(self, user, limit=100):
+        """Get all public repos for a user with pagination."""
+        all_repos = []
+        page = 1
+
+        while True:
+            response = self.session.get(
+                f"https://api.github.com/users/{user}/repos",
+                params={"per_page": 100, "page": page},
+                timeout=10
+            )
+            response.raise_for_status()
+
+            repos = response.json()
+            if not repos:
+                break
+
+            all_repos.extend(repos)
+
+            if len(repos) &lt; 100 or len(all_repos) >= limit:
+                break
+            page += 1
+
+        return all_repos[:limit]
+
+    def get_repo_info(self, owner, repo):
+        """Get repository details."""
+        response = self.session.get(
+            f"https://api.github.com/repos/{owner}/{repo}",
+            timeout=10
+        )
+        response.raise_for_status()
+        return response.json()
+
+# Usage
+gh = GitHubClient()  # No token needed for public data
+
+repos = gh.get_repos("psf", limit=10)  # Python Software Foundation
+for repo in repos:
+    print(f"- {repo['name']}: {repo['description'][:50]}...")
+
+info = gh.get_repo_info("psf", "requests")
+print(f"\nrequests library: {info['stargazers_count']} stars")
+print(f"Language: {info['language']}")
+print(f"Created: {info['created_at']}")</code></pre>
+
+                <h2>Summary</h2>
+                <p>The <code>requests</code> library is Python's go-to tool for HTTP. Key takeaways:</p>
+                <ul>
+                    <li><strong>GET, POST, PUT, DELETE</strong> — Use the right HTTP method for each action</li>
+                    <li><strong>json= vs data=</strong> — Use <code>json=</code> for JSON payloads, <code>data=</code> for forms</li>
+                    <li><strong>Always set timeouts</strong> — Use <code>timeout=(connect, read)</code> to prevent hanging</li>
+                    <li><strong>Use raise_for_status()</strong> — Convert HTTP errors into Python exceptions</li>
+                    <li><strong>Use Sessions</strong> — Share cookies, headers, and connection pools across requests</li>
+                    <li><strong>Stream large downloads</strong> — Use <code>stream=True</code> and <code>iter_content()</code></li>
+                    <li><strong>Add retry logic</strong> — Handle transient failures with exponential backoff</li>
+                </ul>
+
+                <p>The <code>requests</code> library handles the complex parts of HTTP so you can focus on your application logic. Master these patterns, and you'll be ready to build clients for any REST API.</p>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Hugo's Dev Notes. Built with Python and curiosity.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Reading progress bar
+        window.addEventListener('scroll', () => {
+            const winScroll = document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + '%';
+        });
+
+        // Theme toggle
+        const toggle = document.getElementById('themeToggle');
+        toggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark');
+            localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+        });
+        if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark');
+    </script>
+</body>
+</html>

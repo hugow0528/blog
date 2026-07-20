@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloudflare Zero Trust: Protect Internal Apps Without a VPN — Complete Beginner's Guide | Hugo's Dev Notes</title>
+    
+    <meta name="description" content="Learn how to set up Cloudflare Zero Trust to protect internal tools, admin panels, and dashboards. Replace your VPN with application-level access, device postures, DLP policies, and WARP client configuration.">
+    <meta name="keywords" content="cloudflare zero trust, cloudflare access, internal apps, VPN alternative, device posture, DLP, WARP client, cloudflare tunnel">
+    <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/cloudflare-zero-trust-guide.html">
+    
+    <meta property="og:title" content="Cloudflare Zero Trust: Protect Internal Apps Without a VPN — Complete Beginner's Guide">
+    <meta property="og:description" content="Replace your VPN with Cloudflare Zero Trust — application-level access, device postures, data loss prevention, and WARP client. Working examples for every concept.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.hugow.dev/posts/cloudflare-zero-trust-guide.html">
+    
+    <link rel="stylesheet" href="../style.css">
+    <link rel="sitemap" type="application/xml" href="/sitemap.xml">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn active">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <article class="post-content container">
+        <span class="tag cloudflare">Cloudflare</span>
+        <span class="tag security">Security</span>
+        <h1>Cloudflare Zero Trust: Protect Internal Apps Without a VPN — Complete Beginner's Guide</h1>
+        <div class="post-meta">
+            <span class="post-date">July 15, 2026</span>
+            <span class="read-time">12 min read</span>
+        </div>
+
+        <p>Your company has an internal dashboard, a database admin panel, and a staging environment. To access them remotely, you currently tell employees to connect to a VPN. The VPN is slow, breaks on cellular networks, gives access to everything or nothing, and nobody remembers to disconnect. Sound familiar?</p>
+
+        <p><strong>Cloudflare Zero Trust</strong> replaces this model. Instead of giving users access to your entire network, Zero Trust authenticates users at the application level. Connect to Grafana? You get Grafana. Connect to your staging server? You get the staging server. No network-level access, no bloated VPN tunnels, and built-in multi-factor authentication.</p>
+
+        <p>This guide walks through the complete Zero Trust stack: Cloudflare Tunnel, Access policies, identity providers, device postures, Data Loss Prevention (DLP), and the WARP client. Every section includes working configuration examples.</p>
+
+        <h2 id="what-is-zero-trust">What Is Zero Trust?</h2>
+
+        <p>Traditional security operates on the castle-and-moat model: everything inside the network perimeter is trusted. If an attacker crosses the wall (your firewall), they have access to everything. Zero Trust flips this: <strong>nothing is trusted by default</strong>, not even traffic from inside your network. Every request is authenticated and authorized before reaching the application.</p>
+
+        <p>Cloudflare implements Zero Trust through three layers:</p>
+
+        <ol>
+            <li><strong>Cloudflare Access:</strong> Application-level authentication. Users log in to each app individually, not to a network.</li>
+            <li><strong>Cloudflare Tunnel:</strong> Exposes internal services through Cloudflare's edge without opening inbound firewall ports. Replaces port forwarding and VPN tunnels.</li>
+            <li><strong>DNSData / Gateway:</strong> DNS filtering, firewall rules, and the WARP client for securing corporate device traffic.</li>
+        </ol>
+
+        <h2 id="step-1-tunnel">Step 1: Expose Your App with Cloudflare Tunnel</h2>
+
+        <p>Before you can apply Access policies, your internal app needs to be reachable through Cloudflare. <strong>Cloudflare Tunnel</strong> (powered by the <code>cloudflared</code> daemon) creates a secure, outbound-only connection from your server to Cloudflare's edge. No inbound firewall rules needed.</p>
+
+        <h3>Install cloudflared</h3>
+
+<pre><code class="language-shell"># Install on Ubuntu/Debian
+sudo apt install -y cloudflared
+
+# Or download directly
+wget https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64
+sudo install cloudflared-linux-amd64 /usr/local/bin/cloudflared
+</code></pre>
+
+        <h3>Create a tunnel</h3>
+
+<pre><code class="language-shell"># Authenticate with Cloudflare
+cloudflared tunnel login
+
+# Create a named tunnel
+cloudflared tunnel create my-internal-app
+
+# Note the tunnel ID from the output
+TUNNEL_ID=$(cloudflared tunnel list | grep my-internal-app | awk '{print $1}')
+
+# Create a config file
+mkdir -p ~/.cloudflared
+cat &gt; ~/.cloudflared/config.yml &lt;&lt;EOF
+tunnel: $TUNNEL_ID
+credentials-file: /root/.cloudflared/${TUNNEL_ID}.json
+
+ingress:
+  - hostname: admin.mycompany.com
+    service: http://localhost:8080
+
+  - hostname: db.mycompany.com
+    service: http://localhost:5432
+
+  - service: http_status:404
+EOF
+
+# Start the tunnel
+cloudflared tunnel run my-internal-app
+</code></pre>
+
+        <p>The <code>ingress</code> section maps hostnames to local services. When someone visits <code>admin.mycompany.com</code>, Cloudflare routes the request through the tunnel to <code>localhost:8080</code> on your server. The <code>http_status:404</code> catch-all blocks any request to an unrecognized hostname.</p>
+
+        <h3>Register DNS</h3>
+
+        <p>Create CNAME records pointing to your tunnel:</p>
+
+<pre><code class="language-shell"># This creates DNS records automatically
+cloudflared tunnel route dns my-internal-app admin.mycompany.com
+cloudflared tunnel route dns my-internal-app db.mycompany.com
+</code></pre>
+
+        <p>Now your internal services are reachable on the public internet — but <strong>only through Cloudflare</strong>. Anyone visiting without going through Cloudflare gets a 404. You haven't opened any firewall ports.</p>
+
+        <h2 id="step-2-access">Step 2: Protect with Cloudflare Access</h2>
+
+        <p>Now that your apps are exposed, it's time to add authentication. Cloudflare Access sits between the user and your app, presenting a login page before any request reaches your server.</p>
+
+        <h3>Configure an Identity Provider</h3>
+
+        <p>Access needs to know <strong>who</strong> to trust. You can connect Google, GitHub, Okta, Microsoft Entra ID, OneLogin, or use email-based one-time pins (OTP) for small teams.</p>
+
+        <p><strong>For small teams (quick start):</strong> Use Email OTP.</p>
+
+        <ol>
+            <li>Go to Zero Trust Dashboard → Access → Applications → Settings.</li>
+            <li>Add Identity Provider → Email.</li>
+            <li>Users will receive a 6-digit code via email when they try to log in.</li>
+        </ol>
+
+        <p><strong>For teams with Google Workspace:</strong> Connect Google SAML or Google OIDC for single sign-on. Users log in with their company Google account, and Access verifies they belong to your domain.</p>
+
+        <h3>Create an Application Policy</h3>
+
+<pre><code class="language-yaml"># Access Policy: Only team members can access admin panel
+Application: admin.mycompany.com
+
+Policy: Allow team
+  Include rule:
+    - email ends with @mycompany.com
+  Action: Allow
+
+Policy: Block everyone else
+  Include rule:
+    - all users
+  Action: Deny
+</code></pre>
+
+        <p>Cloudflare evaluates policies in order. The first matching policy wins. So put your Allow rules before the Block rule. This means only <code>@mycompany.com</code> addresses can reach the admin dashboard. Anyone else sees the Access login page and gets denied after authenticating.</p>
+
+        <h3>Add Multi-Factor Authentication</h3>
+
+        <p>Require MFA by adding a condition to your Allow policy:</p>
+
+<pre><code class="language-yaml"># Policy with MFA requirement
+Policy: Allow team with MFA
+  Include rule:
+    - email ends with @mycompany.com
+    AND
+    - MFA is satisfied
+  Action: Allow
+</code></pre>
+
+        <p>Users must complete a second factor (Google Authenticator, TOTP, Duo, or WebAuthn) before being granted access. This prevents account compromise from stolen passwords.</p>
+
+        <h2 id="step-3-policies">Step 3: Advanced Access Policies</h2>
+
+        <p>Basic email matching gets you far, but Zero Trust shines with contextual access decisions:</p>
+
+        <h3>Group-Based Access</h3>
+
+<pre><code class="language-yaml"># Only the DevOps team can access the database
+Policy: DevOps database access
+  Include rule:
+    - group is "devops-team" (from your identity provider)
+  Action: Allow
+</code></pre>
+
+        <p>Instead of listing individual emails, reference groups from your identity provider. When someone leaves the DevOps team, they lose database access automatically when removed from the group.</p>
+
+        <h3>Time-Based Access</h3>
+
+<pre><code class="language-yaml"># Access only during business hours (UTC)
+Policy: Business hours access
+  Include rule:
+    - email ends with @mycompany.com
+    AND
+    - day of week is [Monday, Tuesday, Wednesday, Thursday, Friday]
+    AND
+    - hour is between 8 and 18
+  Action: Allow
+</code></pre>
+
+        <h3>IP-Based Restrictions</h3>
+
+<pre><code class="language-yaml"># Only from specific countries
+Policy: Geographic restriction
+  Include rule:
+    - email ends with @mycompany.com
+    AND
+    - IP country is [US, CA, GB, DE, AU]
+  Action: Allow
+</code></pre>
+
+        <h3>Custom Claims from Identity Providers</h3>
+
+        <p>Most identity providers can send custom attributes (SAML claims or OIDC claims). Use them for fine-grained control:</p>
+
+<pre><code class="language-yaml"># Require a specific role from Okta/SAML
+Policy: Admin role required
+  Include rule:
+    - claim "role" equals "admin"
+  Action: Allow
+</code></pre>
+
+        <h2 id="step-4-device-posture">Step 4: Device Posture Checks</h2>
+
+        <p>A password and MFA prove <em>who</em> you are. Device posture checks prove <em>what device</em> you're using is safe. This is the difference between "authenticated" and "trusted."</p>
+
+        <p>Zero Trust can check your device before granting access:</p>
+
+        <ul>
+            <li><strong>OS version:</strong> Reject devices running outdated operating systems.</li>
+            <li><strong>Disk encryption:</strong> Require FileVault (macOS), BitLocker (Windows), or LUKS (Linux).</li>
+            <li><strong>WARP client:</strong> Require the Cloudflare WARP client to be installed and connected.</li>
+            <li><strong>MDM enrollment:</strong> Require the device to be managed by your Mobile Device Management solution.</li>
+            <li><strong>Geolocation:</strong> Only allow access from approved countries.</li>
+        </ul>
+
+        <p>Example policy combining authentication with device posture:</p>
+
+<pre><code class="language-yaml"># Require company email + WARP client + disk encryption
+Policy: Trusted device access
+  Include rule:
+    - email ends with @mycompany.com
+    AND
+    - MFA is satisfied
+    AND
+    - WARP client is connected (any mode)
+    AND
+    - disk encryption is active
+  Action: Allow
+</code></pre>
+
+        <p>How does Cloudflare know your disk is encrypted? The WARP client reports device attributes to Cloudflare. Install it on corporate devices, and Zero Trust automatically collects posture information.</p>
+
+        <h2 id="step-5-warp">Step 5: The WARP Client</h2>
+
+        <p>The WARP client turns any device into a secure endpoint. Instead of a VPN that tunnels all traffic, WARP routes DNS queries and optionally all traffic through Cloudflare's network. This enables:</p>
+
+        <ul>
+            <li><strong>Device identity:</strong> Cloudflare knows the device's IP, location, and posture regardless of where the user connects.</li>
+            <li><strong>DNS filtering:</strong> Block malware domains, category filters (no social media at work), and custom allowlists.</li>
+            <li><strong>Team profiles:</strong> Enroll devices with zero-touch provisioning and configure them via policy.</li>
+        </ul>
+
+        <h3>Install WARP Client</h3>
+
+<pre><code class="language-shell"># Linux
+curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg | sudo tee /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
+echo "deb [signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/cloudflare-client.list
+sudo apt update && sudo apt install cloudflare-warp
+
+# macOS
+brew install --cask cloudflare-warp
+
+# Windows
+# Download from https://developers.cloudflare.com/warp-client/
+</code></pre>
+
+        <h3>Connect and Register</h3>
+
+<pre><code class="language-shell"># Register with your Zero Trust organization
+warp-cli --accept-tos register
+
+# Authenticate with SSO
+warp-cli --accept-tos sso-login
+
+# Connect (mode: 1=Gateway DNS only, 2=Gateway + WARP)
+warp-cli --accept-tos connect 1
+
+# Verify connection
+warp-cli status
+
+# Check device posture being reported
+warp-cli device-posture
+</code></pre>
+
+        <h2 id="step-6-dlp">Step 6: Data Loss Prevention (DLP)</h2>
+
+        <p>DLP prevents sensitive data from leaving your organization through internal apps. Configure rules in the Zero Trust Dashboard to scan HTTP responses for patterns and block uploads containing sensitive information.</p>
+
+        <h3>Create a DLP Profile</h3>
+
+<pre><code class="language-yaml"># Example DLP rules
+Profile: Prevent data exfiltration
+
+Rule: Block credit card numbers
+  Match: Credit card number pattern
+  Action: Block and alert
+  Log: Yes
+
+Rule: Block Social Security Numbers
+  Match: SSN pattern (XXX-XX-XXXX)
+  Action: Block and alert
+  Log: Yes
+
+Rule: Alert on PII in downloads
+  Match: Email addresses + IP addresses
+  Action: Log only
+  Log: Yes
+</code></pre>
+
+        <p>DLP rules can use built-in patterns (credit cards, SSNs, API keys) or custom regex. They apply at the Cloudflare edge before the response reaches the user's browser or request reaches your server.</p>
+
+        <h2 id="step-7-gateway">Step 7: Cloudflare Gateway (DNS Firewall)</h2>
+
+        <p>For complete device security, configure Cloudflare Gateway to filter DNS traffic from your WARP-enabled devices:</p>
+
+        <ul>
+            <li><strong>DNS Firewall:</strong> Block known malicious domains (phishing, C2 servers, malware).</li>
+            <li><strong>Category filtering:</strong> Block categories like gambling, adult content, or file sharing.</li>
+            <li><strong>Custom domains:</strong> Block specific domains on your team list.</li>
+            <li><strong>Observability:</strong> See all DNS queries from your devices in the Zero Trust dashboard.</li>
+        </ul>
+
+        <p>Create a Gateway list for each team or department, attach category filters, and assign devices through WARP team profiles. A developer's device might allow GitHub but block torrenting. A marketing team's device might allow social media but block competitor sites.</p>
+
+        <h2 id="architecture-diagram">Architecture Overview</h2>
+
+        <p>Here's how all the pieces fit together:</p>
+
+<pre><code>┌─────────────┐     ┌──────────────────┐     ┌──────────────┐
+│   User      │─────▶│  Cloudflare Edge │─────▶│  Your Server │
+│   (Browser) │     │  ┌─────────────┐ │     │              │
+└─────────────┘     │  │  Access      │ │     │  :8080      │
+                     │  │  (Auth +     │ │     │              │
+┌─────────────┐     │  │   MFA +      │ │     │  :5432      │
+│   WARP      │─────▶│  │   Posture)   │ │     │              │
+│   Client    │     │  └─────────────┘ │     │              │
+└─────────────┘     │                 │     │              │
+                     │  ┌─────────────┐ │     │              │
+                     │  │  Tunnel     │ │     │              │
+                     │  │  (cloudflared)││     │              │
+                     │  └─────────────┘ │     │              │
+                     └──────────────────┘     └──────────────┘
+</code></pre>
+
+        <p>No firewall ports open. No VPN. No network-level trust. Every request passes through Cloudflare's authentication, device verification, and policy engine before reaching your server.</p>
+
+        <h2 id="pricing">Free Tier vs Paid</h2>
+
+        <p>Cloudflare Zero Trust has a generous free tier:</p>
+
+        <ul>
+            <li><strong>Free:</strong> 50 monthly active users, unlimited tunnels, basic Access, up to 10 tunnel protocols.</li>
+            <li><strong>Business ($50/user/month):</strong> Device posture, DLP, Gateway, audit logs, team profiles.</li>
+            <li><strong>Enterprise (custom):</strong> Advanced rules, dedicated support, custom integrations.</li>
+        </ul>
+
+        <p>For small teams, the free tier is enough to protect internal apps with email authentication and basic policies. Scale to paid plans when you need device posture, DLP, or advanced observability.</p>
+
+        <h2 id="summary">Summary</h2>
+
+        <p>Cloudflare Zero Trust replaces the VPN with a modern, application-centric security model. The setup flow is:</p>
+
+        <ol>
+            <li><strong>Tunnel</strong> — expose internal apps through <code>cloudflared</code> without opening firewall ports.</li>
+            <li><strong>Access</strong> — authenticate users with email, SSO, or MFA before they reach any app.</li>
+            <li><strong>Policies</strong> — control who can access what based on groups, time, location, and device posture.</li>
+            <li><strong>WARP</strong> — enroll devices to enable posture checks and DNS filtering.</li>
+            <li><strong>DLP & Gateway</strong> — prevent data leaks and block malicious DNS queries.</li>
+        </ol>
+
+        <p>The result: employees access only what they need, from any device, without the pain of a VPN. Your server has no open ports. And every access decision is logged, auditable, and reversible.</p>
+
+    </article>
+
+    <footer>
+        <div class="container">
+            <p>Written by Hugo Wong · <a href="../index.html">All Posts</a></p>
+        </div>
+    </footer>
+
+    <script>
+        // Progress bar
+        window.onscroll = function() {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById("progressBar").style.width = scrolled + "%";
+        };
+
+        // Theme toggle
+        const toggle = document.getElementById('themeToggle');
+        toggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark');
+        });
+    </script>
+</body>
+</html>

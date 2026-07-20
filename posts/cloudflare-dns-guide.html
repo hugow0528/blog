@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloudflare DNS: Record Types, TTL, Propagation &amp; Automation — Complete Beginner's Guide</title>
+    <meta name="description" content="Learn Cloudflare DNS from scratch — A, AAAA, CNAME, MX, TXT, SRV records, TTL settings, propagation, zone transfers, and Python automation. Step-by-step with working code. From your first A record to automated DNS management.">
+    <meta name="keywords" content="cloudflare dns, dns records, A record, CNAME, MX, TXT, DNS propagation, TTL, cloudflare api, python dns automation">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/cloudflare-dns-guide.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn active">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-detail">
+            <header class="post-header">
+                <div class="post-tags">
+                    <span class="tag cloudflare">Cloudflare</span><span class="tag devops">DevOps</span>
+                </div>
+                <h1>Cloudflare DNS: Record Types, TTL, Propagation &amp; Automation — Complete Beginner's Guide</h1>
+                <div class="post-meta">
+                    <span class="post-date">July 17, 2026</span>
+                    <span class="read-time">11 min read</span>
+                </div>
+            </header>
+
+            <div class="post-content">
+                <p>DNS (Domain Name System) is the phonebook of the internet. It translates human-readable domain names like <code>example.com</code> into machine-readable IP addresses like <code>93.184.216.34</code>. Cloudflare manages DNS for over 40 million websites, and their free tier gives you enterprise-grade DNS that's blazing fast and highly available. Let's learn everything from the basics to automating DNS changes with Python.</p>
+
+                <h2>How DNS Works: The Quick Tour</h2>
+                <p>When you type <code>hugow.dev</code> into your browser, here's what happens:</p>
+                <ol>
+                    <li>Your computer asks the <strong>recursive resolver</strong> (usually your ISP or Google's 8.8.8.8)</li>
+                    <li>The resolver checks its cache — if found, done. If not, it asks the <strong>root servers</strong></li>
+                    <li>Root servers point to the <strong>TLD servers</strong> (the .com, .dev, .org servers)</li>
+                    <li>TLD servers point to <strong>your nameservers</strong> (Cloudflare in our case)</li>
+                    <li>Cloudflare returns the <strong>IP address</strong> from your DNS records</li>
+                    <li>Your browser connects to that IP</li>
+                </ol>
+
+                <p>Cloudflare sits at step 5. You configure DNS records in their dashboard, and they answer queries from resolvers worldwide from their anycast network of 300+ data centers.</p>
+
+                <h2>Essential DNS Record Types</h2>
+                <p>Every domain uses a combination of these record types. Let's learn each one with real-world examples.</p>
+
+                <h3>A Record — IPv4 Address</h3>
+                <p>The most common record. Maps a name to an IPv4 address.</p>
+
+<pre><code class="language-dns">Name     Type   Value               Proxied
+@        A      203.0.113.10        Orange cloud ☁️
+www      A      203.0.113.10        Orange cloud ☁️
+api      A      203.0.113.20        Grey cloud ⚪</code></pre>
+
+                <p>The <code>@</code> symbol means the root domain (<code>hugow.dev</code>). The <code>www</code> entry points <code>www.hugow.dev</code> to the same server. The orange cloud means traffic goes through Cloudflare's proxy (SSL, CDN, DDoS protection). Grey means DNS-only — the IP is exposed directly.</p>
+
+                <h3>AAAA Record — IPv6 Address</h3>
+                <p>Same as A record, but for IPv6:</p>
+
+<pre><code class="language-dns">Name   Type   Value
+@      AAAA   2001:db8::1
+www    AAAA   2001:db8::1</code></pre>
+
+                <p>Always set both A and AAAA records. Modern browsers and phones prefer IPv6 when available, and it's faster.</p>
+
+                <h3>CNAME Record — Alias / Canonical Name</h3>
+                <p>Points one name to another name (not an IP). Use when your actual IP might change:</p>
+
+<pre><code class="language-dns">Name     Type    Value
+blog     CNAME   hugo.pages.dev
+docs     CNAME   hugo.gitbook.io
+shop     CNAME   hugow.myshopify.com</code></pre>
+
+                <p>When <code>pages.dev</code> changes their IP, you don't touch your DNS — Cloudflare follows the chain. The only restriction: you cannot CNAME the root <code>@</code> record to another name (DNS standard limitation). Cloudflare solves this with <strong>CNAME Flattening</strong> — if your CNAME points to an A record, Cloudflare automatically resolves it.</p>
+
+                <h3>MX Record — Mail Exchange</h3>
+                <p>Tells the world where to deliver email for your domain:</p>
+
+<pre><code class="language-dns">Name    Type   Priority   Value
+@       MX     10         mail.hugow.dev
+@       MX     20         backup.mail.hugow.dev</code></pre>
+
+                <p>Priority is lower = more preferred. Mail servers try priority 10 first, then 20 as backup. The <code>mail.hugow.dev</code> needs its own A record pointing to your mail server.</p>
+
+                <h3>TXT Record — Text Metadata</h3>
+                <p>Stores arbitrary text. Used for:</p>
+
+<pre><code class="language-dns"># SPF — who can send email as you
+Name    Type   Value
+@       TXT    "v=spf1 include:_spf.google.com ~all"
+
+# Domain verification (Google, GitHub, etc.)
+Name      Type   Value
+@         TXT    "google-site-verification=abc123..."
+_csha     TXT    "verify=github-xyz789"
+
+# DKIM — email signing
+Name        Type   Value
+default._domainkey  TXT   "v=DKIM1; k=rsa; p=MIGfMA0GCS..."</code></pre>
+
+                <p>SPF is critical — without it, your emails land in spam. The <code>~all</code> means "soft fail" (flag suspicious emails but still deliver). Use <code>-all</code> for "hard fail" once you're confident.</p>
+
+                <h3>SRV Record — Service Location</h3>
+                <p>Points to a specific service on a specific port:</p>
+
+<pre><code class="language-dns">_sip._tcp    SRV    Priority=10 Weight=5 Port=5060 Target=sip.hugow.dev
+_xmpp._tcp   SRV    Priority=20 Weight=5 Port=5222 Target=xmpp.hugow.dev</code></pre>
+
+                <p>Most common for VoIP (SIP), gaming servers, or XMPP chat. Rare for typical web projects.</p>
+
+                <h3>CAA Record — Certificate Authority Authorization</h3>
+                <p>Restricts which CAs can issue SSL certificates for your domain:</p>
+
+<pre><code class="language-dns">@    CAA   0 issue "letsencrypt.org"
+@    CAA   0 issuewild ";"</code></pre>
+
+                <p>This blocks anyone except Let's Encrypt from issuing certs for your domain, preventing accidental or malicious certificate issuance.</p>
+
+                <h2>TTL: Time-to-Live Explained</h2>
+                <p>TTL controls how long resolvers cache your DNS record before rechecking:</p>
+
+<pre><code class="language-dns">TTL of 60s    = resolvers recheck every 1 minute
+TTL of 300s   = 5 minutes (Cloudflare default)
+TTL of 86400s = 24 hours</code></pre>
+
+                <p><strong>Low TTL strategy:</strong> Before migrating servers, lower TTL to 60 seconds 24 hours before the change. After the migration, raise it back to 300s. This ensures the switchover is felt by users within 1 minute instead of 24 hours.</p>
+
+                <h2>DNS Propagation: Why Changes "Take Time"</h2>
+                <p>Cloudflare DNS changes propagate globally in under 60 seconds — that's their infrastructure. But you might see different results for hours. Why? Because <strong>resolvers outside Cloudflare</strong> cache your old records according to the TTL.</p>
+
+                <p>Check propagation yourself:</p>
+
+<pre><code class="language-bash"># Check from Google's DNS (8.8.8.8)
+dig @8.8.8.8 hugow.dev A
+
+# Check from Cloudflare's DNS (1.1.1.1)
+dig @1.1.1.1 hugow.dev A
+
+# Check from your ISP
+dig hugow.dev A</code></pre>
+
+                <p>If all three show the new IP, propagation is complete. If yours differs, wait for the old TTL to expire or flush your DNS cache (<code>sudo resolvectl flush-caches</code> on Linux, <code>ipconfig /flushdns</code> on Windows).</p>
+
+                <h2>Managing DNS with the Cloudflare API</h2>
+                <p>The Cloudflare dashboard is great for manual changes, but what if you need to manage 50 records across 5 domains? Automation saves hours. Here's how to use Python with the Cloudflare API:</p>
+
+<pre><code class="language-python">import requests
+import json
+
+# Get your API token from: https://dash.cloudflare.com/profile/api-tokens
+# Create a token with: Zone.DNS (Edit), Zone.Read (Read), Account.Read (Read)
+API_TOKEN = "your-api-token-here"
+EMAIL = "you@example.com"
+
+headers = {
+    "Authorization": f"Bearer {API_TOKEN}",
+    "Content-Type": "application/json"
+}
+
+# Step 1: List your zones (domains)
+zones_resp = requests.get(
+    "https://api.cloudflare.com/client/v4/zones",
+    headers=headers,
+    params={"per_page": 100}
+)
+zones = zones_resp.json()["result"]
+print(f"Found {len(zones)} zones")
+
+# Find the zone ID for your domain
+zone_id = None
+for zone in zones:
+    if zone["name"] == "hugow.dev":
+        zone_id = zone["id"]
+        break
+
+if not zone_id:
+    print("❌ Zone not found!")
+    exit(1)
+
+print(f"✅ Zone ID: {zone_id}")</code></pre>
+
+                <p>Now let's read all existing DNS records:</p>
+
+<pre><code class="language-python">def get_all_records(zone_id):
+    """Fetch all DNS records for a zone."""
+    all_records = []
+    page = 1
+    while True:
+        resp = requests.get(
+            f"https://api.cloudflare.com/client/v4/zones/{zone_id}/dns_records",
+            headers=headers,
+            params={"page": page, "per_page": 100}
+        )
+        data = resp.json()
+        all_records.extend(data["result"])
+        if page >= data["result_info"]["total_pages"]:
+            break
+        page += 1
+    return all_records
+
+records = get_all_records(zone_id)
+for r in records:
+    print(f"  {r['type']:6s} {r['name']:25s} -> {r['content']}")
+# A      hugow.dev                -> 203.0.113.10
+# CNAME  www.hugow.dev            -> hugo.pages.dev
+# TXT    hugow.dev                -> v=spf1 ...</code></pre>
+
+                <h2>Creating and Updating Records with Python</h2>
+                <p>Let's build a practical script that can create, update, and delete DNS records:</p>
+
+<pre><code class="language-python">def create_record(zone_id, record_type, name, content, ttl=300, proxied=True):
+    """Create a new DNS record."""
+    data = {
+        "type": record_type,
+        "name": name,
+        "content": content,
+        "ttl": ttl,
+        "proxied": proxied
+    }
+    resp = requests.post(
+        f"https://api.cloudflare.com/client/v4/zones/{zone_id}/dns_records",
+        headers=headers,
+        json=data
+    )
+    if resp.status_code == 200:
+        result = resp.json()["result"]
+        print(f"✅ Created: {record_type} {name} -> {content} (ID: {result['id']})")
+        return result
+    else:
+        print(f"❌ Failed: {resp.json()['errors']}")
+        return None
+
+def update_record(zone_id, record_id, **kwargs):
+    """Update an existing DNS record."""
+    # First get current record
+    resp = requests.get(
+        f"https://api.cloudflare.com/client/v4/zones/{zone_id}/dns_records/{record_id}",
+        headers=headers
+    )
+    current = resp.json()["result"]
+    # Merge updates
+    updated = {**current, **kwargs}
+    resp = requests.put(
+        f"https://api.cloudflare.com/client/v4/zones/{zone_id}/dns_records/{record_id}",
+        headers=headers,
+        json=updated
+    )
+    if resp.status_code == 200:
+        print(f"✅ Updated record {record_id}")
+        return resp.json()["result"]
+    return None
+
+def delete_record(zone_id, record_id):
+    """Delete a DNS record."""
+    resp = requests.delete(
+        f"https://api.cloudflare.com/client/v4/zones/{zone_id}/dns_records/{record_id}",
+        headers=headers
+    )
+    if resp.status_code == 200:
+        print(f"✅ Deleted record {record_id}")
+        return True
+    return False
+
+# Create a new A record
+create_record(zone_id, "A", "staging.hugow.dev", "203.0.113.50", proxied=False)
+
+# Create a TXT record for verification
+create_record(zone_id, "TXT", "@", "google-site-verification=abc123xyz")
+
+# Create a CNAME for a subdomain
+create_record(zone_id, "CNAME", "app.hugow.dev", "hugo.vercel.app", proxied=True)</code></pre>
+
+                <h2>Real-World Script: DNS Health Checker</h2>
+                <p>Here's a production-ready script that audits your DNS records and flags issues:</p>
+
+<pre><code class="language-python">import requests
+import subprocess
+import sys
+
+API_TOKEN = "your-token"
+headers = {"Authorization": f"Bearer {API_TOKEN}"}
+
+def check_dns_resolution(domain, record_type="A"):
+    """Verify a domain resolves using dig."""
+    result = subprocess.run(
+        ["dig", "+short", domain, record_type],
+        capture_output=True, text=True, timeout=10
+    )
+    return result.stdout.strip()
+
+def audit_dns(zone_id):
+    """Audit DNS records for common issues."""
+    records = get_all_records(zone_id)
+    issues = []
+
+    # Check for records with no proxy (grey cloud)
+    for r in records:
+        if r["type"] == "A" and not r["proxied"]:
+            issues.append(f"⚠️  Unproxied A record: {r['name']} -> {r['content']}")
+
+    # Check SPF exists
+    has_spf = any(
+        r["type"] == "TXT" and "v=spf1" in r["content"]
+        for r in records
+    )
+    if not has_spf:
+        issues.append("⚠️  No SPF record found — emails may go to spam!")
+
+    # Check root has both A and AAAA
+    has_a = any(r["type"] == "A" for r in records)
+    has_aaaa = any(r["type"] == "AAAA" for r in records)
+    if has_a and not has_aaaa:
+        issues.append("ℹ️  No AAAA record — consider adding IPv6")
+
+    return issues
+
+# Run audit
+issues = audit_dns(zone_id)
+if issues:
+    print("DNS Audit Report:")
+    for issue in issues:
+        print(f"  {issue}")
+else:
+    print("✅ DNS looks healthy!")</code></pre>
+
+                <h2>Best Practices Checklist</h2>
+                <ul>
+                    <li><strong>Proxy everything you can</strong> — Orange cloud gives free DDoS protection, CDN, and SSL</li>
+                    <li><strong>Always add AAAA records</strong> — IPv6 is the future and often faster</li>
+                    <li><strong>Set SPF, DKIM, and DMARC</strong> — Without these, your email reputation suffers</li>
+                    <li><strong>Lower TTL before changes</strong> — Set to 60s at least 1 hour before migrating</li>
+                    <li><strong>Use API for bulk changes</strong> — Dashboard is fine for 1-2 records, API wins at scale</li>
+                    <li><strong>Enable DDoS protection</strong> — It's on by default with the orange cloud, verify in Security settings</li>
+                    <li><strong>Don't point @ to a CNAME</strong> — Use CNAME Flattening or A records for the root domain</li>
+                    <li><strong>Monitor with external tools</strong> — Use <a href="https://dnscheck.pingdom.com">Pingdom DNS Check</a> or <code>dig</code> from multiple locations</li>
+                </ul>
+
+                <h2>What's Next</h2>
+                <p>DNS is the foundation — everything else (SSL, CDN, Workers, Tunnels) sits on top of it. Once you're comfortable managing records, check out the <a href="posts/cloudflare-tunnel-guide.html">Cloudflare Tunnels guide</a> to securely expose internal services, or the <a href="posts/cloudflare-dns.html">Cloudflare DNS deep dive</a> for advanced topics like split-horizon DNS and DNSSEC.</p>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes · Built with Cloudflare · <a href="https://github.com/hugow0528/blog">Source</a></p>
+        </div>
+    </footer>
+
+    <script>
+        // Theme toggle
+        const toggle = document.getElementById('themeToggle');
+        toggle?.addEventListener('click', () => {
+            document.body.classList.toggle('light-theme');
+            localStorage.setItem('theme', document.body.classList.contains('light-theme') ? 'light' : 'dark');
+        });
+        if (localStorage.getItem('theme') === 'light') document.body.classList.add('light-theme');
+
+        // Progress bar
+        window.addEventListener('scroll', () => {
+            const bar = document.getElementById('progressBar');
+            if (bar) {
+                const scrolled = window.scrollY / (document.body.scrollHeight - window.innerHeight) * 100;
+                bar.style.width = scrolled + '%';
+            }
+        });
+    </script>
+</body>
+</html>

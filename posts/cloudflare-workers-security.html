@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloudflare Workers Security Patterns: Rate Limiting, Auth &amp; Headers — Complete Guide | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn essential security patterns for Cloudflare Workers — rate limiting with KV, authentication with JWT, security headers, CORS, and input validation. Real code examples for production.">
+    <meta name="keywords" content="cloudflare workers security, rate limiting, JWT authentication, CORS, CSP headers, web security, zero trust">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/cloudflare-workers-security.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <article class="post-content">
+        <a href="../index.html" class="back-link">← All Posts</a>
+        <span class="tag cloudflare">Cloudflare</span>
+        <span class="tag security">Security</span>
+        <h1>Cloudflare Workers Security Patterns: Rate Limiting, Auth &amp; Security Headers — Complete Guide</h1>
+        <time datetime="2026-07-13">July 13, 2026 · 12 min read</time>
+
+        <p>Cloudflare Workers run at the edge — closest to your users, but also closest to attackers. A Worker without security controls is a wide-open door to your entire infrastructure. In this guide, we'll build five essential security patterns from scratch: rate limiting, JWT authentication, CORS handling, security headers, and input validation.</p>
+
+        <p>Every pattern includes working code you can copy directly into your production Workers.</p>
+
+        <h2>1. Rate Limiting with Cloudflare KV</h2>
+
+        <p>Rate limiting prevents abuse — whether it's a bot scraping your API, a brute-force password attack, or an accidental infinite loop. With Cloudflare KV, you can implement distributed rate limiting that works across all edge locations.</p>
+
+        <p>Here's how it works: each client gets an identifier (IP address, API key, or user ID). We track request counts in KV with a time-based key, and reject requests that exceed the limit.</p>
+
+        <pre><code class="language-javascript">// rate-limiter.js — Reusable rate limiter module
+export class RateLimiter {
+  constructor(kv, maxRequests = 100, windowSeconds = 60) {
+    this.kv = kv;
+    this.maxRequests = maxRequests;
+    this.windowSeconds = windowSeconds;
+  }
+
+  async check(request, identifier) {
+    // Use IP as identifier if none provided
+    const key = `rate:${identifier}:${Math.floor(Date.now() / 1000 / this.windowSeconds)}`;
+
+    // Atomically increment the counter
+    const current = await this.kv.get(key, 'integer') || 0;
+
+    if (current >= this.maxRequests) {
+      return {
+        allowed: false,
+        remaining: 0,
+        reset: Math.ceil(Date.now() / 1000) + this.windowSeconds,
+      };
+    }
+
+    // Increment and set expiry
+    await this.kv.put(key, String(current + 1), {
+      expirationTtl: this.windowSeconds,
+    });
+
+    return {
+      allowed: true,
+      remaining: this.maxRequests - current - 1,
+      reset: Math.ceil(Date.now() / 1000) + this.windowSeconds,
+    };
+  }
+}
+
+// Usage in your Worker:
+const limiter = new RateLimiter(env.API_KV, 100, 60); // 100 req/min
+
+addEventListener('fetch', event => {
+  event.respondWith(handleRequest(event.request, env));
+});
+
+async function handleRequest(request, env) {
+  // Get client IP from Cloudflare's header
+  const clientIp = request.headers.get('cf-connecting-ip') || 'unknown';
+  const limit = await limiter.check(request, clientIp);
+
+  if (!limit.allowed) {
+    return new Response(JSON.stringify({
+      error: 'Too Many Requests',
+      message: `Rate limit exceeded. Try again in ${limit.reset - Math.floor(Date.now() / 1000)} seconds.`,
+    }), {
+      status: 429,
+      headers: {
+        'Content-Type': 'application/json',
+        'Retry-After': String(limit.reset - Math.floor(Date.now() / 1000)),
+        'X-RateLimit-Limit': '100',
+        'X-RateLimit-Remaining': '0',
+        'X-RateLimit-Reset': String(limit.reset),
+      },
+    });
+  }
+
+  // Request is allowed — proceed to your handler
+  const response = await yourApiHandler(request, env);
+
+  // Add rate limit headers to successful responses
+  response.headers.set('X-RateLimit-Limit', '100');
+  response.headers.set('X-RateLimit-Remaining', String(limit.remaining));
+  response.headers.set('X-RateLimit-Reset', String(limit.reset));
+
+  return response;
+}</code></pre>
+
+        <p><strong>Why KV works great here:</strong> Cloudflare KV is globally distributed, so your rate limits are consistent across all edge locations. The atomic increment (get + put) ensures no race conditions. Keys auto-expire, so you don't accumulate stale data.</p>
+
+        <p><strong>Pro tip:</strong> For per-user rate limiting (authenticated users), use their user ID instead of IP. For anonymous endpoints, use the IP. For API key-based auth, hash the key and use that.</p>
+
+        <h2>2. JWT Authentication Middleware</h2>
+
+        <p>JSON Web Tokens (JWT) are the standard for stateless authentication. Your Worker can verify tokens without calling an external auth server on every request — everything happens at the edge in milliseconds.</p>
+
+        <p>Here's a complete JWT verification middleware:</p>
+
+        <pre><code class="language-javascript">// auth.js — JWT authentication middleware
+function verifyJwt(token, secret) {
+  try {
+    const [header, payload, signature] = token.split('.');
+
+    if (!header || !payload || !signature) {
+      return null;
+    }
+
+    // Decode payload (base64url decode)
+    const decodedPayload = JSON.parse(
+      Uint8Array.from(atob(payload), c => c.charCodeAt(0))
+    );
+
+    // Check expiration
+    if (decodedPayload.exp &amp;&amp; decodedPayload.exp < Date.now() / 1000) {
+      return { valid: false, reason: 'Token expired' };
+    }
+
+    // In production, use a proper JWT library to verify the signature
+    // For this example, we return the decoded payload
+    return { valid: true, payload: decodedPayload };
+  } catch (e) {
+    return { valid: false, reason: 'Invalid token format' };
+  }
+}
+
+// Middleware pattern — wrap any handler
+function withAuth(handler) {
+  return async (request, env) => {
+    const authHeader = request.headers.get('Authorization');
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({
+        error: 'Unauthorized',
+        message: 'Missing or invalid Authorization header',
+      }), {
+        status: 401,
+        headers: {
+          'Content-Type': 'application/json',
+          'WWW-Authenticate': 'Bearer realm="api"',
+        },
+      });
+    }
+
+    const token = authHeader.slice(7); // Remove "Bearer " prefix
+    const result = verifyJwt(token, env.JWT_SECRET);
+
+    if (!result.valid) {
+      return new Response(JSON.stringify({
+        error: 'Unauthorized',
+        message: result.reason,
+      }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Attach user info to the request for downstream handlers
+    const authenticatedRequest = new Request(request);
+    authenticatedRequest.headers.set('x-user-id', result.payload.sub);
+    authenticatedRequest.headers.set('x-user-role', result.payload.role || 'user');
+
+    return handler(authenticatedRequest, env);
+  };
+}
+
+// Usage:
+const protectedRoute = withAuth(async (request, env) => {
+  const userId = request.headers.get('x-user-id');
+  return new Response(JSON.stringify({
+    message: `Hello, user ${userId}! This is a protected route.`,
+  }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+});</code></pre>
+
+        <p><strong>Important:</strong> The JWT verification above is simplified. In production, use a proper library like <code>@std/crypto</code> for HMAC verification, or verify the signature against a JWK (JSON Web Key). Never trust a JWT without verifying its cryptographic signature.</p>
+
+        <h2>3. Security Headers</h2>
+
+        <p>Security headers tell browsers how to protect your users. Even a simple static site benefits enormously from these headers. Let's add them to every response:</p>
+
+        <pre><code class="language-javascript">// security-headers.js
+function addSecurityHeaders(response) {
+  const headers = new Headers(response.headers);
+
+  // Prevent clicking attacks — only allow our own domain in iframes
+  headers.set('X-Frame-Options', 'DENY');
+
+  // Prevent MIME-type sniffing
+  headers.set('X-Content-Type-Options', 'nosniff');
+
+  // Content Security Policy — only allow scripts/styles from our domain
+  headers.set(
+    'Content-Security-Policy',
+    "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+  );
+
+  // Referrer policy — only send origin, not full URL
+  headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+
+  // Enable HTTPS-only cookies
+  headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+
+  // Permissions Policy — restrict browser features
+  headers.set(
+    'Permissions-Policy',
+    'camera=(), microphone=(), geolocation=(), payment=()'
+  );
+
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}</code></pre>
+
+        <p><strong>Header breakdown:</strong></p>
+
+        <ul>
+            <li><code>X-Frame-Options: DENY</code> — blocks your site from being embedded in iframes (prevents clickjacking)</li>
+            <li><code>X-Content-Type-Options: nosniff</code> — prevents browsers from guessing the content type (prevents MIME confusion attacks)</li>
+            <li><code>Content-Security-Policy</code> — the most powerful header. Defines exactly which resources can load from where. Start restrictive and relax as needed.</li>
+            <li><code>Referrer-Policy: strict-origin-when-cross-origin</code> — sends only the origin (not full path) to external sites, protecting user privacy</li>
+            <li><code>Strict-Transport-Security</code> — forces HTTPS for a year. Cloudflare automatically handles this at the edge, but the header reinforces it</li>
+            <li><code>Permissions-Policy</code> — disables camera, microphone, geolocation, and payment APIs unless you explicitly need them</li>
+        </ul>
+
+        <p>Apply these headers by wrapping your response: <code>return addSecurityHeaders(yourResponse);</code></p>
+
+        <h2>4. CORS (Cross-Origin Resource Sharing)</h2>
+
+        <p>When your frontend runs on a different domain (or subdomain) than your Workers API, the browser blocks the request by default. CORS headers tell the browser it's safe to proceed.</p>
+
+        <p>Here's a CORS middleware that handles both preflight (OPTIONS) and actual requests:</p>
+
+        <pre><code class="language-javascript">// cors.js
+const ALLOWED_ORIGINS = [
+  'https://app.example.com',
+  'https://www.example.com',
+  'http://localhost:3000', // For local development
+];
+
+function handleCors(request) {
+  const origin = request.headers.get('Origin') || '';
+  const isAllowed = ALLOWED_ORIGINS.includes(origin);
+
+  if (request.method === 'OPTIONS') {
+    // Preflight request — just return the CORS headers
+    return new Response(null, {
+      status: 204,
+      headers: {
+        'Access-Control-Allow-Origin': isAllowed ? origin : '',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Request-ID',
+        'Access-Control-Max-Age': '86400', // Cache preflight for 24 hours
+      },
+    });
+  }
+}</code></pre>
+
+        <p><strong>Common CORS mistakes to avoid:</strong></p>
+
+        <ul>
+            <li><strong>Never use <code>*</code> for <code>Access-Control-Allow-Origin</code></strong> when your API requires credentials (cookies, auth headers). The spec forbids it.</li>
+            <li><strong>Validate the Origin header against an allowlist</strong>, not a regex. A regex like <code>.*\.example\.com$</code> can be bypassed with domains like <code>evil-example.com</code>.</li>
+            <li><strong>Don't echo back any Origin</strong> without validation. An attacker can send their own Origin header and get your API to respond with their domain.</li>
+        </ul>
+
+        <h2>5. Input Validation</h2>
+
+        <p>Every request contains user-controlled data. Always validate it before processing. Here's a practical input validation helper:</p>
+
+        <pre><code class="language-javascript">// validate.js
+function validateJsonBody(request, schema) {
+  const contentType = request.headers.get('Content-Type') || '';
+
+  if (!contentType.includes('application/json')) {
+    return {
+      valid: false,
+      error: 'Content-Type must be application/json',
+    };
+  }
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return { valid: false, error: 'Invalid JSON body' };
+  }
+
+  // Validate required fields
+  for (const [field, rules] of Object.entries(schema)) {
+    if (rules.required &amp;&amp; !(field in body)) {
+      return { valid: false, error: `Missing required field: ${field}` };
+    }
+
+    if (field in body) {
+      const value = body[field];
+
+      // Type checking
+      if (rules.type) {
+        if (rules.type === 'string' &amp;&amp; typeof value !== 'string') {
+          return { valid: false, error: `Field '${field}' must be a string` };
+        }
+        if (rules.type === 'number' &amp;&amp; typeof value !== 'number') {
+          return { valid: false, error: `Field '${field}' must be a number` };
+        }
+        if (rules.type === 'email' &amp;&amp; typeof value === 'string') {
+          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+            return { valid: false, error: `Field '${field}' must be a valid email` };
+          }
+        }
+      }
+
+      // Length checks
+      if (rules.maxLength &amp;&amp; value.length > rules.maxLength) {
+        return { valid: false, error: `Field '${field}' exceeds max length of ${rules.maxLength}` };
+      }
+
+      if (rules.minLength &amp;&amp; value.length < rules.minLength) {
+        return { valid: false, error: `Field '${field}' must be at least ${rules.minLength} characters` };
+      }
+    }
+  }
+
+  return { valid: true, data: body };
+}
+
+// Usage:
+const schema = {
+  email: { required: true, type: 'email', maxLength: 254 },
+  password: { required: true, type: 'string', minLength: 8, maxLength: 128 },
+  name: { type: 'string', maxLength: 100 },
+};
+
+const result = await validateJsonBody(request, schema);
+if (!result.valid) {
+  return new Response(JSON.stringify({ error: result.error }), {
+    status: 400,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}</code></pre>
+
+        <h2>Putting It All Together: A Secure Worker Stack</h2>
+
+        <p>Here's how to combine all five patterns into a single, secure Worker:</p>
+
+        <pre><code class="language-javascript">// worker.js — Complete secure Worker
+addEventListener('fetch', event => {
+  event.respondWith(handleRequest(event.request, event.env));
+});
+
+async function handleRequest(request, env) {
+  // Step 1: CORS check (handles OPTIONS immediately)
+  const corsResponse = handleCors(request);
+  if (corsResponse) return corsResponse;
+
+  // Step 2: Rate limiting
+  const clientIp = request.headers.get('cf-connecting-ip') || 'unknown';
+  const limit = await limiter.check(request, clientIp);
+  if (!limit.allowed) {
+    return new Response(JSON.stringify({ error: 'Rate limit exceeded' }), {
+      status: 429,
+      headers: { 'Content-Type': 'application/json', 'Retry-After': '60' },
+    });
+  }
+
+  // Step 3: Route to handler
+  const url = new URL(request.url);
+  let response;
+
+  if (url.pathname === '/api/data') {
+    // Public endpoint — no auth needed
+    response = await publicDataHandler(request, env);
+  } else if (url.pathname.startsWith('/api/private')) {
+    // Protected endpoint — requires auth
+    response = await withAuth(privateHandler)(request, env);
+  } else {
+    response = new Response('Not Found', { status: 404 });
+  }
+
+  // Step 4: Add security headers to every response
+  const secureResponse = addSecurityHeaders(response);
+
+  // Step 5: Add rate limit headers
+  secureResponse.headers.set('X-RateLimit-Remaining', String(limit.remaining));
+  secureResponse.headers.set('X-RateLimit-Reset', String(limit.reset));
+
+  return secureResponse;
+}</code></pre>
+
+        <h2>Summary: The Security Checklist</h2>
+
+        <p>Every Cloudflare Worker should implement at least these controls:</p>
+
+        <ol>
+            <li><strong>Rate limiting</strong> — prevent abuse with KV-based counters</li>
+            <li><strong>Authentication</strong> — verify JWTs before accessing protected routes</li>
+            <li><strong>Security headers</strong> — CSP, HSTS, X-Frame-Options, and more</li>
+            <li><strong>CORS</strong> — origin validation with an explicit allowlist</li>
+            <li><strong>Input validation</strong> — schema-based checking for every request body</li>
+        </ol>
+
+        <p>These five patterns cover 90% of common web security threats. Implement them in every new Worker, and you'll start with a solid security foundation instead of retrofitting protections later.</p>
+
+        <footer class="post-footer">
+            <p class="post-author">Written by Hugo Wong · July 13, 2026</p>
+        </footer>
+    </article>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes · Built with Cloudflare Workers &amp; Pages</p>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Classes & OOP: Objects, Methods, Inheritance — Complete Beginner's Guide | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn Python classes and object-oriented programming from scratch — classes, objects, __init__, methods, class attributes, inheritance, and polymorphism. Working examples for every concept.">
+    <meta name="keywords" content="python classes, OOP, object oriented programming, inheritance, polymorphism, python beginner tutorial">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-classes-oop.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <article class="post-content">
+        <a href="../index.html" class="back-link">← All Posts</a>
+        <span class="tag python">Python</span>
+        <h1>Python Classes & OOP: Objects, Methods, Inheritance — Complete Beginner's Guide</h1>
+        <time datetime="2026-07-13">July 13, 2026 · 12 min read</time>
+
+        <p>You've written functions, loops, and scripts in Python. Now it's time to level up with <strong>object-oriented programming (OOP)</strong> — the paradigm that lets you organize code into reusable blueprints called <strong>classes</strong>. OOP is everywhere in Python: from the <code>list</code> you type daily to the <code>open()</code> function that returns file objects.</p>
+
+        <p>This guide walks you through classes, objects, <code>__init__</code>, methods, inheritance, and polymorphism with practical, beginner-friendly examples. By the end, you'll build a complete contact manager application.</p>
+
+        <h2>What Is a Class?</h2>
+
+        <p>A <strong>class</strong> is a blueprint for creating objects. Think of it like an architect's plan for a house — the plan itself isn't a house, but you can build many houses from it. In Python, you define a class with the <code>class</code> keyword:</p>
+
+        <pre><code>class Dog:
+    pass
+
+# Create objects (instances) from the class
+buddy = Dog()
+max = Dog()
+
+# Each object is independent
+print(buddy)  # &lt;__main__.Dog object at 0x...&gt;
+print(max)    # &lt;__main__.Dog object at 0x...&gt;</code></pre>
+
+        <p>Here, <code>Dog</code> is the class and <code>buddy</code> / <code>max</code> are <strong>objects</strong> (or instances). The <code>pass</code> keyword means "do nothing for now" — our class is empty but valid.</p>
+
+        <h2>The <code>__init__</code> Method: Setting Up Objects</h2>
+
+        <p>The <code>__init__</code> method (called a <strong>constructor</strong>) runs automatically when you create a new object. It's where you set initial properties:</p>
+
+        <pre><code>class Dog:
+    def __init__(self, name, breed):
+        self.name = name
+        self.breed = breed
+
+# Create dogs with properties
+buddy = Dog("Buddy", "Golden Retriever")
+max = Dog("Max", "German Shepherd")
+
+print(buddy.name)   # Buddy
+print(buddy.breed)  # Golden Retriever
+print(max.name)     # Max</code></pre>
+
+        <p>Key concepts:</p>
+        <ul>
+            <li><strong><code>self</code></strong> refers to the current object. It's always the first parameter in instance methods.</li>
+            <li><strong><code>self.name</code></strong> is an <strong>instance attribute</strong> — each object has its own copy.</li>
+            <li>The constructor runs <strong>automatically</strong> when you write <code>Dog("Buddy", "Golden Retriever")</code>.</li>
+        </ul>
+
+        <h2>Methods: What Objects Can Do</h2>
+
+        <p>Attributes describe what an object <em>is</em>. Methods describe what an object <em>does</em>. Define methods like functions, but inside a class with <code>self</code> as the first parameter:</p>
+
+        <pre><code>class Dog:
+    def __init__(self, name, energy=100):
+        self.name = name
+        self.energy = energy
+
+    def bark(self):
+        print(f"{self.name} says: Woof!")
+
+    def walk(self, distance):
+        self.energy -= distance * 2
+        print(f"{self.name} walked {distance} blocks. Energy: {self.energy}")
+
+    def rest(self):
+        self.energy = 100
+        print(f"{self.name} is fully rested!")
+
+    def __str__(self):
+        return f"Dog({self.name}, energy={self.energy})"
+
+# Use methods
+buddy = Dog("Buddy")
+buddy.bark()     # Buddy says: Woof!
+buddy.walk(5)    # Buddy walked 5 blocks. Energy: 90
+buddy.rest()     # Buddy is fully rested!
+print(buddy)     # Dog(Buddy, energy=100)</code></pre>
+
+        <p>The <code>__str__</code> method is special — it defines how the object looks when you <code>print()</code> it. Python has several such <strong>dunder methods</strong> (double-underscore methods) that change built-in behavior:</p>
+
+        <ul>
+            <li><code>__str__</code> — string representation for users</li>
+            <li><code>__repr__</code> — string representation for developers</li>
+            <li><code>__len__</code> — what <code>len(obj)</code> returns</li>
+            <li><code>__eq__</code> — what <code>obj1 == obj2</code> checks</li>
+        </ul>
+
+        <h2>Class Attributes vs Instance Attributes</h2>
+
+        <p><strong>Instance attributes</strong> belong to individual objects. <strong>Class attributes</strong> are shared across all instances:</p>
+
+        <pre><code>class Dog:
+    # Class attribute — shared by all dogs
+    species = "Canis familiaris"
+    total_dogs = 0
+
+    def __init__(self, name):
+        self.name = name           # Instance attribute
+        Dog.total_dogs += 1       # Update class attribute
+
+buddy = Dog("Buddy")
+max = Dog("Max")
+
+print(Dog.species)      # Canis familiaris
+print(buddy.species)    # Canis familiaris (inherited)
+print(Dog.total_dogs)   # 2
+
+# Changing class attribute affects all instances
+Dog.species = "Dog"
+print(buddy.species)    # Dog</code></pre>
+
+        <h2>Inheritance: Build on Existing Classes</h2>
+
+        <p><strong>Inheritance</strong> lets a class inherit attributes and methods from another class. The inheriting class is a <strong>subclass</strong> (child), and the original is a <strong>parent class</strong>:</p>
+
+        <pre><code>class Animal:
+    def __init__(self, name, sound):
+        self.name = name
+        self.sound = sound
+
+    def speak(self):
+        return f"{self.name} says {self.sound}!"
+
+    def __str__(self):
+        return f"Animal({self.name})"
+
+# Subclass inherits from Animal
+class Dog(Animal):
+    def __init__(self, name, breed):
+        super().__init__(name, "Woof")  # Call parent constructor
+        self.breed = breed               # Add new attribute
+
+    def __str__(self):
+        return f"Dog({self.name}, {self.breed})"
+
+class Cat(Animal):
+    def __init__(self, name, indoor=True):
+        super().__init__(name, "Meow")
+        self.indoor = indoor
+
+    def scratch(self):
+        return f"{self.name} scratches the furniture!"
+
+# Use inherited and new methods
+dog = Dog("Buddy", "Golden Retriever")
+cat = Cat("Whiskers")
+
+print(dog.speak())       # Buddy says Woof! (inherited)
+print(dog)               # Dog(Buddy, Golden Retriever)
+print(cat.speak())       # Whiskers says Meow! (inherited)
+print(cat.scratch())     # Whiskers scratches the furniture! (new)</code></pre>
+
+        <p>The <code>super()</code> function calls the parent class's method. This avoids code duplication — <code>Dog</code> and <code>Cat</code> reuse <code>speak()</code> from <code>Animal</code>.</p>
+
+        <h2>Polymorphism: Same Name, Different Behavior</h2>
+
+        <p><strong>Polymorphism</strong> means "many forms." When different classes share a method name but behave differently, Python calls the right version automatically:</p>
+
+        <pre><code>class Shape:
+    def area(self):
+        pass  # Abstract — to be overridden
+
+class Rectangle(Shape):
+    def __init__(self, width, height):
+        self.width = width
+        self.height = height
+
+    def area(self):
+        return self.width * self.height
+
+class Circle(Shape):
+    def __init__(self, radius):
+        self.radius = radius
+
+    def area(self):
+        import math
+        return math.pi * self.radius ** 2
+
+# Polymorphism in action
+shapes = [Rectangle(5, 10), Circle(7), Rectangle(3, 8)]
+for shape in shapes:
+    print(f"Area: {shape.area():.2f}")
+
+# Output:
+# Area: 50.00
+# Area: 153.94
+# Area: 24.00</code></pre>
+
+        <p>Notice we call <code>shape.area()</code> without checking the type. Each class defines its own version — Python figures it out.</p>
+
+        <h2>Encapsulation: Protecting Your Data</h2>
+
+        <p><strong>Encapsulation</strong> hides internal details and provides controlled access. Python uses naming conventions:</p>
+
+        <ul>
+            <li><code>public_name</code> — accessible from anywhere</li>
+            <li><code>_protected_name</code> — "don't touch this" (convention only)</li>
+            <li><code>__private_name</code> — name-mangled, harder to access accidentally</li>
+        </ul>
+
+        <pre><code>class BankAccount:
+    def __init__(self, owner, balance=0):
+        self.owner = owner
+        self.__balance = balance  # Private attribute
+
+    def deposit(self, amount):
+        if amount > 0:
+            self.__balance += amount
+            return True
+        return False
+
+    def withdraw(self, amount):
+        if 0 < amount <= self.__balance:
+            self.__balance -= amount
+            return True
+        return False
+
+    def get_balance(self):
+        return self.__balance
+
+account = BankAccount("Hugo", 1000)
+account.deposit(500)
+account.withdraw(200)
+print(account.get_balance())  # 1300
+
+# Can't directly access private attribute
+# print(account.__balance)  # AttributeError!
+
+# Workaround (not recommended)
+print(account._BankAccount__balance)  # 1300</code></pre>
+
+        <p>Using <code>@property</code> gives a cleaner interface:</p>
+
+        <pre><code>class BankAccount:
+    def __init__(self, owner, balance=0):
+        self.owner = owner
+        self._balance = balance
+
+    @property
+    def balance(self):
+        """Read-only property"""
+        return self._balance
+
+    @balance.setter
+    def balance(self, value):
+        """Controlled write access"""
+        if value >= 0:
+            self._balance = value
+        else:
+            raise ValueError("Balance cannot be negative")
+
+account = BankAccount("Hugo", 1000)
+print(account.balance)      # 1000 (calls getter)
+account.balance = 1500      # calls setter
+# account.balance = -100    # ValueError!</code></pre>
+
+        <h2>Complete Project: Contact Manager</h2>
+
+        <p>Let's put everything together into a practical application:</p>
+
+        <pre><code>class Contact:
+    """A simple contact with name, email, and phone."""
+
+    def __init__(self, name, email="", phone=""):
+        self.name = name
+        self.email = email
+        self.phone = phone
+        self.tags = []
+
+    def add_tag(self, tag):
+        if tag not in self.tags:
+            self.tags.append(tag)
+
+    def __str__(self):
+        info = f"{self.name}"
+        if self.email:
+            info += f" &lt;{self.email}&gt;"
+        if self.phone:
+            info += f" ({self.phone})"
+        if self.tags:
+            info += f" [{', '.join(self.tags)}]"
+        return info
+
+    def __eq__(self, other):
+        if isinstance(other, Contact):
+            return self.name.lower() == other.name.lower()
+        return False
+
+
+class ContactManager:
+    """Manages a collection of contacts with CRUD operations."""
+
+    def __init__(self):
+        self.contacts = []
+
+    def add(self, contact):
+        if contact not in self.contacts:
+            self.contacts.append(contact)
+            print(f"✅ Added: {contact}")
+        else:
+            print(f"⚠️  {contact.name} already exists")
+
+    def find(self, name):
+        """Find contacts by partial name match."""
+        results = [c for c in self.contacts
+                   if name.lower() in c.name.lower()]
+        return results
+
+    def find_by_tag(self, tag):
+        return [c for c in self.contacts if tag in c.tags]
+
+    def delete(self, name):
+        original_len = len(self.contacts)
+        self.contacts = [c for c in self.contacts
+                         if name.lower() not in c.name.lower()]
+        if len(self.contacts) < original_len:
+            print(f"🗑️  Deleted '{name}'")
+        else:
+            print(f"❌ Not found: '{name}'")
+
+    def list_all(self):
+        if not self.contacts:
+            print("📭 No contacts yet.")
+            return
+        print(f"\n📇 Contacts ({len(self.contacts)}):")
+        for i, c in enumerate(self.contacts, 1):
+            print(f"  {i}. {c}")
+        print()
+
+    def count(self):
+        return len(self.contacts)
+
+
+# --- Demo ---
+manager = ContactManager()
+
+# Add contacts
+hugo = Contact("Hugo Wong", "hugo@example.com", "555-0101")
+hugo.add_tag("friend")
+hugo.add_tag("developer")
+
+alice = Contact("Alice Chen", "alice@example.com")
+alice.add_tag("colleague")
+
+bob = Contact("Bob Smith", phone="555-0103")
+bob.add_tag("friend")
+
+manager.add(hugo)
+manager.add(alice)
+manager.add(bob)
+
+# Find by name
+results = manager.find("hu")
+print(f"Found {len(results)} match(es) for 'hu':")
+for r in results:
+    print(f"  → {r}")
+
+# Find by tag
+devs = manager.find_by_tag("developer")
+print(f"\nDevelopers: {[str(d) for d in devs]}")
+
+# List all
+manager.list_all()
+print(f"Total: {manager.count()} contacts")</code></pre>
+
+        <p>This project demonstrates <strong>classes</strong>, <strong>instance attributes</strong>, <strong>methods</strong>, <strong>dunder methods</strong> (<code>__str__</code>, <code>__eq__</code>), <strong>encapsulation</strong> (tags managed through methods), and building a <strong>real application</strong> from OOP building blocks.</p>
+
+        <h2>When to Use OOP (and When Not To)</h2>
+
+        <p>OOP isn't always the right tool. Here's a quick guide:</p>
+
+        <table>
+            <tr>
+                <th>Use OOP when...</th>
+                <th>Use functions instead when...</th>
+            </tr>
+            <tr>
+                <td>You have state + behavior that belong together</td>
+                <td>You're transforming data (input → output)</td>
+            </tr>
+            <tr>
+                <td>You need reusable, extensible types</td>
+                <td>You're writing a quick script</td>
+            </tr>
+            <tr>
+                <td>You're modeling real-world entities</td>
+                <td>Functions compose better than classes</td>
+            </tr>
+            <tr>
+                <td>You use libraries that expect objects</td>
+                <td>Data flows in one direction (pipeline)</td>
+            </tr>
+        </table>
+
+        <p>Python is a multi-paradigm language — you can mix OOP, functional, and procedural styles freely. The best code uses the right tool for each job.</p>
+
+        <h2>Key Takeaways</h2>
+
+        <ul>
+            <li><strong>Classes</strong> are blueprints; <strong>objects</strong> are instances created from them.</li>
+            <li><strong><code>__init__</code></strong> sets up new objects with initial state.</li>
+            <li><strong>Methods</strong> define what objects can do. <code>self</code> refers to the current object.</li>
+            <li><strong>Inheritance</strong> reuses code from parent classes with <code>super()</code>.</li>
+            <li><strong>Polymorphism</strong> lets different classes share method names with different implementations.</li>
+            <li><strong>Encapsulation</strong> protects data using naming conventions and <code>@property</code>.</li>
+            <li>Use OOP for complex, stateful systems — simple scripts can stay procedural.</li>
+        </ul>
+
+        <blockquote>
+            <p>"Classes are like recipes. You write the recipe once, then bake many cakes. Each cake is different, but they all follow the same recipe."</p>
+        </blockquote>
+
+        <p>Now you have the full OOP toolkit in Python. Start by wrapping related data and behavior into classes, then explore inheritance when you spot repetition between classes. Happy coding!</p>
+    </article>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo Wong · Built with curiosity and Coffee</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528">GitHub</a>
+                <a href="https://hugow.dev">hugow.dev</a>
+                <a href="/sitemap.xml">Sitemap</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-mode');
+            themeToggle.textContent = '☀';
+        }
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            themeToggle.textContent = isLight ? '☀' : '◐';
+        });
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + "%";
+        });
+    </script>
+</body>
+</html>

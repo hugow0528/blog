@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON Schema: Validate Your Data Like a Pro — Complete Beginner's Guide | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn JSON Schema from scratch — defining types, validation rules, required fields, custom formats, and real-world examples. Python and JavaScript code for every concept.">
+    <meta name="keywords" content="json schema, data validation, json schema validator, python jsonschema, ajv, openapi, data modeling">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/json-schema-validation.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../python.html" class="nav-btn active">Python</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post">
+            <header class="post-header">
+                <div class="post-tags">
+                    <span class="tag python">Python</span>
+                    <span class="tag web">Web Dev</span>
+                </div>
+                <h1>JSON Schema: Validate Your Data Like a Pro — Complete Beginner's Guide</h1>
+                <div class="post-meta">
+                    <span class="post-date">July 16, 2026</span>
+                    <span class="read-time">10 min read</span>
+                    <span class="post-badge">New</span>
+                </div>
+            </header>
+
+            <div class="post-content">
+                <p>Every application receives data from somewhere — user input, APIs, configuration files, webhooks, message queues. Without validation, that data can crash your program, corrupt your database, or introduce security vulnerabilities. JSON Schema is a vocabulary for describing the structure, constraints, and types of JSON data. It's used everywhere: OpenAPI specs, Terraform modules, CI/CD configs, and as a validation layer in applications.</p>
+
+                <p>In this guide, you'll learn to write JSON schemas from scratch, validate data in Python and JavaScript, and apply schemas to real-world scenarios like API contracts, configuration validation, and webhook processing.</p>
+
+                <h2>What Is JSON Schema?</h2>
+                <p>JSON Schema is itself a JSON document. You describe what valid data looks like, and validators check if a piece of data matches. Think of it like a type system for JSON — but with rich constraints like minimum/maximum values, regex patterns, and required fields.</p>
+
+                <p>Here's the simplest schema: <em>"this data must be a string"</em></p>
+
+<pre><code>{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "string"
+}</code></pre>
+
+                <p>Valid data: <code>"hello"</code>. Invalid data: <code>42</code>, <code>true</code>, <code>null</code>.</p>
+
+                <h2>Step 1: Basic Types and Constraints</h2>
+                <p>JSON Schema supports these types: <code>string</code>, <code>number</code>, <code>integer</code>, <code>boolean</code>, <code>object</code>, <code>array</code>, and <code>null</code>. Each has constraints:</p>
+
+<pre><code>{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "UserProfile",
+  "type": "object",
+  "properties": {
+    "username": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 30,
+      "pattern": "^[a-zA-Z0-9_]+$",
+      "description": "Alphanumeric username, 3-30 characters"
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "description": "User's email address"
+    },
+    "age": {
+      "type": "integer",
+      "minimum": 13,
+      "maximum": 120,
+      "description": "User's age in years"
+    },
+    "score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "multipleOf": 0.5,
+      "description": "Game score (0-100, in half-point increments)"
+    },
+    "is_active": {
+      "type": "boolean",
+      "description": "Whether the account is active"
+    }
+  },
+  "required": ["username", "email"],
+  "additionalProperties": false
+}</code></pre>
+
+                <p>Key concepts:</p>
+                <ul>
+                    <li><code>properties</code> — defines each field and its rules</li>
+                    <li><code>required</code> — lists fields that must be present</li>
+                    <li><code>additionalProperties: false</code> — rejects any fields not defined in the schema</li>
+                    <li><code>pattern</code> — regex validation (Perl-compatible)</li>
+                    <li><code>format</code> — built-in checks like "email", "uri", "date-time", "uuid"</li>
+                </ul>
+
+                <h2>Step 2: Validate with Python</h2>
+                <p>The <code>jsonschema</code> package is the standard Python validator:</p>
+
+<pre><code>pip install jsonschema
+
+import json
+import jsonschema
+from jsonschema import validate, ValidationError, Draft202012Validator
+
+# Your schema (as a Python dict)
+schema = {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+        "username": {"type": "string", "minLength": 3, "maxLength": 30},
+        "email": {"type": "string", "format": "email"},
+        "age": {"type": "integer", "minimum": 13, "maximum": 120},
+    },
+    "required": ["username", "email"],
+}
+
+# Load schema from a JSON file instead (recommended for larger schemas)
+# with open("schema.json") as f:
+#     schema = json.load(f)
+
+# Valid data — passes silently
+data = {"username": "hugo_dev", "email": "hugo@example.com", "age": 28}
+validate(instance=data, schema=schema)
+print("✅ Valid!")
+
+# Invalid data — raises ValidationError
+bad_data = {"username": "hi", "email": "not-an-email"}
+try:
+    validate(instance=bad_data, schema=schema)
+except ValidationError as e:
+    print(f"❌ {e.message}")
+    # Output: ❌ 'hi' is too short (3 characters minimum)
+
+# Get ALL errors at once (not just the first one)
+validator = Draft202012Validator(schema)
+errors = list(validator.iter_errors(bad_data))
+for error in errors:
+    print(f"  Field: {'.'.join(str(p) for p in error.path)}")
+    print(f"  Error: {error.message}")</code></pre>
+
+                <h2>Step 3: Validate with JavaScript (Node.js)</h2>
+                <p>Use <code>ajv</code> (Another JSON Schema Validator) — the most popular JS validator:</p>
+
+<pre><code>npm install ajv
+
+const Ajv = require('ajv');
+const ajv = new Ajv({ allErrors: true });
+
+const schema = {
+  type: "object",
+  properties: {
+    username: { type: "string", minLength: 3, maxLength: 30 },
+    email: { type: "string", format: "email" },
+    age: { type: "integer", minimum: 13, maximum: 120 },
+  },
+  required: ["username", "email"],
+};
+
+const validate = ajv.compile(schema);
+
+// Valid data
+const validData = { username: "hugo_dev", email: "hugo@example.com", age: 28 };
+if (validate(validData)) {
+    console.log("✅ Valid!");
+} else {
+    console.log("Errors:", validate.errors);
+}
+
+// Invalid data
+const badData = { username: "hi", email: "not-email" };
+const valid = validate(badData);
+if (!valid) {
+    console.log("❌ Validation failed:");
+    validate.errors.forEach(e => {
+        console.log(`  ${e.instancePath || '/'}: ${e.message}`);
+    });
+}
+// Output:
+//   /username: should be longer than or equal to 3 characters
+//   /email: should match format "email"</code></pre>
+
+                <h2>Step 4: Arrays and Nested Objects</h2>
+                <p>Real-world data is rarely flat. Schemas handle nested structures naturally:</p>
+
+<pre><code>{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "order_id": {
+      "type": "string",
+      "pattern": "^ORD-[0-9]{8}$"
+    },
+    "customer": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "email": { "type": "string", "format": "email" },
+        "address": {
+          "type": "object",
+          "properties": {
+            "street": { "type": "string" },
+            "city": { "type": "string" },
+            "zip": { "type": "string", "pattern": "^[0-9]{5}(-[0-9]{4})?$" },
+            "country": { "type": "string", "minLength": 2, "maxLength": 2, "pattern": "^[A-Z]{2}$" }
+          },
+          "required": ["street", "city", "zip", "country"]
+        }
+      },
+      "required": ["name", "email", "address"]
+    },
+    "items": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "properties": {
+          "product_id": { "type": "string" },
+          "name": { "type": "string", "minLength": 1 },
+          "quantity": { "type": "integer", "minimum": 1 },
+          "price": { "type": "number", "minimum": 0 }
+        },
+        "required": ["product_id", "name", "quantity", "price"]
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pending", "processing", "shipped", "delivered", "cancelled"]
+    }
+  },
+  "required": ["order_id", "customer", "items", "status"]
+}</code></pre>
+
+                <h2>Step 5: Advanced Patterns</h2>
+                <p>JSON Schema has powerful keywords for complex validation:</p>
+
+                <h3>OneOf — Exactly One Schema Must Match</h3>
+<pre><code>{
+  "oneOf": [
+    { "type": "object", "properties": { "type": { "const": "circle" }, "radius": { "type": "number" } }, "required": ["type", "radius"] },
+    { "type": "object", "properties": { "type": { "const": "rectangle" }, "width": { "type": "number" }, "height": { "type": "number" } }, "required": ["type", "width", "height"] }
+  ]
+}</code></pre>
+
+                <h3>Dependencies — Fields That Require Other Fields</h3>
+<pre><code>{
+  "properties": {
+    "payment_type": { "type": "string", "enum": ["credit_card", "paypal"] },
+    "credit_card_number": { "type": "string" },
+    "paypal_email": { "type": "string", "format": "email" }
+  },
+  "dependentRequired": {
+    "credit_card_number": ["payment_type"],
+    "paypal_email": ["payment_type"]
+  }
+}</code></pre>
+
+                <h3>PrefixItems — Typed Tuples</h3>
+<pre><code>{
+  "type": "array",
+  "prefixItems": [
+    { "type": "string" },  // First element: string
+    { "type": "integer" }, // Second element: integer
+    { "type": "boolean" }  // Third element: boolean
+  ],
+  "items": { "type": "string" } // Any additional elements must be strings
+}
+
+// Valid: ["hello", 42, true, "extra"]
+// Invalid: [42, "hello", true]  ← first element must be string</code></pre>
+
+                <h2>Step 6: Real-World Example — Webhook Validator</h2>
+                <p>Here's a practical Python script that validates incoming webhook payloads:</p>
+
+<pre><code>import json
+import jsonschema
+from jsonschema import validate, ValidationError
+from fastapi import FastAPI, Request, HTTPException
+
+app = FastAPI()
+
+# GitHub webhook schema (simplified)
+GITHUB_WEBHOOK_SCHEMA = {
+    "type": "object",
+    "required": ["action", "repository", "sender"],
+    "properties": {
+        "action": { "type": "string", "enum": ["opened", "closed", "synchronized"] },
+        "repository": {
+            "type": "object",
+            "required": ["name", "full_name", "html_url"],
+            "properties": {
+                "name": { "type": "string" },
+                "full_name": { "type": "string" },
+                "html_url": { "type": "string", "format": "uri" },
+            }
+        },
+        "sender": {
+            "type": "object",
+            "required": ["login", "id"],
+            "properties": {
+                "login": { "type": "string" },
+                "id": { "type": "integer", "minimum": 1 },
+            }
+        },
+        "pull_request": {
+            "type": "object",
+            "properties": {
+                "number": { "type": "integer" },
+                "title": { "type": "string" },
+                "state": { "type": "string", "enum": ["open", "closed"] },
+            }
+        }
+    }
+}
+
+@app.post("/webhooks/github")
+async def github_webhook(request: Request):
+    """Validate and process GitHub webhook payloads."""
+    payload = await request.json()
+    
+    try:
+        validate(instance=payload, schema=GITHUB_WEBHOOK_SCHEMA)
+    except ValidationError as e:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "message": "Invalid webhook payload",
+                "field": ".".join(str(p) for p in e.path),
+                "error": e.message,
+            }
+        )
+    
+    # Process the valid webhook
+    action = payload["action"]
+    repo = payload["repository"]["full_name"]
+    print(f"✅ Webhook: {action} on {repo}")
+    
+    return {"status": "received"}</code></pre>
+
+                <h2>Step 7: Schema Best Practices</h2>
+                <ol>
+                    <li><strong>Store schemas as JSON files</strong> — not inline in code. This lets non-developers update validation rules, and tools can consume them directly.</li>
+                    <li><strong>Use <code>$id</code> for schema naming</strong> — gives each schema a unique URI for <code>$ref</code> references across files.</li>
+                    <li><strong>Keep schemas focused</strong> — one schema per data type. Compose complex schemas with <code>$ref</code>.</li>
+                    <li><strong>Set <code>additionalProperties: false</code></strong> — catch typos in field names early.</li>
+                    <li><strong>Test your schemas</strong> — write test cases for valid and invalid data. Edge cases trip up even experienced schema writers.</li>
+                    <li><strong>Use <code>$defs</code> for reusable definitions</strong> — define a <code>Address</code> schema once, reference it everywhere.</li>
+                </ol>
+
+                <h2>Schema with Definitions ($defs and $ref)</h2>
+                <p>Reuse common patterns instead of repeating them:</p>
+
+<pre><code>{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "Address": {
+      "type": "object",
+      "properties": {
+        "street": { "type": "string" },
+        "city": { "type": "string" },
+        "state": { "type": "string", "pattern": "^[A-Z]{2}$" },
+        "zip": { "type": "string" }
+      },
+      "required": ["street", "city", "state", "zip"]
+    },
+    "User": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "integer", "minimum": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "email": { "type": "string", "format": "email" }
+      },
+      "required": ["id", "name", "email"]
+    }
+  },
+  "type": "object",
+  "properties": {
+    "author": { "$ref": "#/$defs/User" },
+    "billing_address": { "$ref": "#/$defs/Address" },
+    "shipping_address": { "$ref": "#/$defs/Address" }
+  },
+  "required": ["author", "billing_address"]
+}</code></pre>
+
+                <h2>Tools and Resources</h2>
+                <ul>
+                    <li><strong>json-schema.org</strong> — official specification and validator playground</li>
+                    <li><strong>python-jsonschema</strong> — the standard Python library (<code>pip install jsonschema</code>)</li>
+                    <li><strong>ajv</strong> — fastest JavaScript validator (<code>npm install ajv</code>)</li>
+                    <li><strong>Spectrum</strong> — interactive JSON Schema editor</li>
+                    <li><strong>OpenAPI 3.0</strong> — uses JSON Schema for request/response validation</li>
+                </ul>
+
+                <p>JSON Schema bridges the gap between humans designing data formats and machines validating them. Once you learn the vocabulary, you'll find yourself using it everywhere — API docs, configuration files, CI checks, and database schemas. It's one of those tools that feels like a superpower once you start using it.</p>
+            </div>
+        </article>
+    </main>
+
+    <footer class="container">
+        <p>© 2026 Hugo's Dev Notes · Built with curiosity and caffeine</p>
+    </footer>
+
+    <script src="../script.js"></script>
+</body>
+</html>

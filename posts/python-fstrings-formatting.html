@@ -3,45 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Python f-Strings: String Formatting Made Beautiful and Fast | Hugo's Dev Notes</title>
-    <meta name="description" content="Master Python f-strings for clean, readable, and fast string formatting. Learn expressions, format specifiers, debug mode, lazy evaluation, JSON serialization, and real-world patterns.">
-    <meta name="keywords" content="python f-strings, python string formatting, format specifiers, f-string tutorial, python strings, python beginner">
+    <title>Python f-strings and String Formatting: Clean Code for Every Scenario — Complete Beginner's Guide | Hugo's Dev Notes</title>
+    <meta name="description" content="Master Python string formatting — f-strings, .format(), % operator, format specifiers, debugging with =, and real-world patterns. Working examples for every concept.">
+    <meta name="keywords" content="python f-strings, string formatting, python format, format specifiers, python strings, beginner python">
+    <meta name="author" content="Hugo Wong">
     <link rel="canonical" href="https://blog.hugow.dev/posts/python-fstrings-formatting.html">
     <link rel="stylesheet" href="../style.css">
-
-    <!-- SEO Structured Data -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "BlogPosting",
-      "headline": "Python f-Strings: String Formatting Made Beautiful and Fast",
-      "description": "Master Python f-strings for clean, readable, and fast string formatting. Learn expressions, format specifiers, debug mode, lazy evaluation, JSON serialization, and real-world patterns.",
-      "datePublished": "2026-07-08",
-      "dateModified": "2026-07-08",
-      "author": {"@type": "Person", "name": "Hugo Wong"},
-      "publisher": {"@type": "Organization", "name": "Hugo's Dev Notes", "url": "https://blog.hugow.dev"},
-      "mainEntityOfPage": "{"@id": "https://blog.hugow.dev/posts/python-fstrings-formatting.html")}",
-      "keywords": "Python"
-    }
-    </script>
-
-    <!-- Social Meta -->
-    <!-- Open Graph -->
-    <meta property="og:title" content="Python f-Strings: String Formatting Made Beautiful and Fast">
-    <meta property="og:description" content="Master Python f-strings for clean, readable, and fast string formatting. Learn expressions, format specifiers, debug mode, lazy evaluation, JSON serialization, ">
-    <meta property="og:type" content="article">
-    <meta property="og:url" content="https://blog.hugow.dev/posts/python-fstrings-formatting.html">
-    <meta property="og:site_name" content="Hugo's Dev Notes">
-    <meta property="article:published_time" content="2026-07-08">
-    <meta property="article:modified_time" content="2026-07-08">
-    <meta property="article:section" content="python">
-    <meta property="article:tag" content="Python">
-    
-    <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Python f-Strings: String Formatting Made Beautiful and Fast">
-    <meta name="twitter:description" content="Master Python f-strings for clean, readable, and fast string formatting. Learn expressions, format specifiers, debug mode, lazy evaluation, JSON serialization, ">
-    
 </head>
 <body>
     <div class="progress-bar" id="progressBar"></div>
@@ -55,390 +22,430 @@
             </div>
             <nav>
                 <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
                 <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
                 <a href="../devops.html" class="nav-btn">DevOps</a>
-                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../security.html" class="nav-btn">Web Dev</a>
+                <a href="../webdev.html" class="nav-btn">Security</a>
             </nav>
         </div>
     </header>
 
-    <article class="post-content container">
+    <article class="post-content">
+        <a href="../index.html" class="back-link">← All Posts</a>
         <span class="tag python">Python</span>
-        <h1>Python f-Strings: String Formatting Made Beautiful and Fast</h1>
-        <div class="post-meta">
-            <span class="post-date">July 4, 2026</span>
-            <span class="read-time">9 min read</span>
-        </div>
+        <h1>Python f-strings and String Formatting: Clean Code for Every Scenario — Complete Beginner's Guide</h1>
+        <time datetime="2026-07-16">July 16, 2026 · 10 min read</time>
 
-        <hr>
+        <p>String formatting is one of the most-used operations in Python. Whether you're building log messages, generating SQL queries, creating user-facing text, or crafting API responses, you need to combine variables with text strings. Python gives you several ways to do it — but most beginners stick to the first method they learned and never discover the better options.</p>
 
-        <p>If you've been writing Python for any length of time, you've probably formatted strings one of three ways:</p>
+        <p>In this guide, we'll cover <strong>all</strong> Python string formatting methods, when to use each one, and the powerful format specifiers that make your output look professional. By the end, you'll write cleaner, faster, and more readable string code.</p>
 
-        <pre><code># Old-style % formatting
-name = "Hugo"
-message = "Hello, %s!" % name
+        <h2>Method 1: f-strings (Python 3.6+)</h2>
 
-# .format() method
-message = "Hello, {}!".format(name)
+        <p>f-strings (formatted string literals) are the modern, recommended way to format strings in Python. They're fast, readable, and powerful. Just prefix a string with <code>f</code> and put variables inside curly braces:</p>
 
-# f-strings (Python 3.6+)
-message = f"Hello, {name}!"</code></pre>
+        <pre><code class="language-python">name = "Hugo"
+age = 28
 
-        <p>f-strings (short for <strong>formatted string literals</strong>) are the modern, recommended way to format strings in Python. They're faster than the alternatives, more readable, and support almost anything you'd want to do with string formatting.</p>
+# Basic f-string
+greeting = f"Hello, my name is {name} and I'm {age} years old."
+print(greeting)
+# Output: Hello, my name is Hugo and I'm 28 years old.
 
-        <h2>Why f-Strings Beat Everything Else</h2>
-
-        <p>f-strings were introduced in <strong>Python 3.6</strong> and have become the standard for string formatting. Here's why:</p>
-
-        <ul>
-            <li><strong>Speed:</strong> f-strings are evaluated at runtime but are significantly faster than % formatting and .format() because they avoid the overhead of method calls and parsing format strings</li>
-            <li><strong>Readability:</strong> Variables appear directly in the string, making it obvious what's being substituted</li>
-            <li><strong>Expressiveness:</strong> You can put any valid Python expression inside the curly braces</li>
-            <li><strong>Debugging:</strong> Python 3.8+ adds a debug feature that shows both the variable name and its value</li>
-        </ul>
-
-        <p>Let's benchmark the difference:</p>
-
-        <pre><code>import timeit
-
-name = "Hugo"
-
-# f-string: ~0.06 seconds for 100K iterations
-timeit.timeit(lambda: f"Hello, {name}!", number=100000)
-
-# .format(): ~0.13 seconds for 100K iterations
-timeit.timeit(lambda: "Hello, {}!".format(name), number=100000)
-
-# % formatting: ~0.10 seconds for 100K iterations
-timeit.timeit(lambda: "Hello, %s!" % name, number=100000)</code></pre>
-
-        <p>f-strings are roughly <strong>2x faster</strong> than .format() and noticeably faster than % formatting. For most code the difference is negligible, but in tight loops or high-throughput applications, it matters.</p>
-
-        <h2>Basic f-String Syntax</h2>
-
-        <p>Put an <code>f</code> before your string literal, then use <code>{}</code> to insert variables:</p>
-
-        <pre><code>name = "Hugo"
-age = 30
-city = "San Francisco"
-
-print(f"Hi, I'm {name}")
-print(f"I'm {age} years old and live in {city}")
-
-# Output:
-# Hi, I'm Hugo
-# I'm 30 years old and live in San Francisco</code></pre>
-
-        <p>Works with single quotes, double quotes, and triple-quoted strings:</p>
-
-        <pre><code>name = "Hugo"
-print(f'Hello, {name}!')  # single quotes
-print(f"""Multi-line
-Hello, {name}!""")  # triple quotes</code></pre>
-
-        <h2>Expressions Inside f-Strings</h2>
-
-        <p>Any valid Python expression goes inside <code>{}</code>. This is where f-strings get powerful:</p>
-
-        <pre><code>price = 19.99
-quantity = 3
-
-# Arithmetic
-total = f"Total: ${price * quantity:.2f}"
-print(total)  # Total: $59.97
+# Expressions inside f-strings
+print(f"In 5 years, I'll be {age + 5}")
+# Output: In 5 years, I'll be 33
 
 # Function calls
-name = "  hugo  "
-print(f"Name: {name.strip().title()}")  # Name: Hugo
+print(f"My name in uppercase: {name.upper()}")
+# Output: My name in uppercase: HUGO
 
-# Boolean expressions
-age = 25
-print(f"Eligible: {age >= 18}")  # Eligible: True
+# Multi-line f-strings
+message = f"""
+User Details:
+  Name: {name}
+  Age: {age}
+  Next birthday: {age + 1}
+"""
+print(message)</code></pre>
 
-# Ternary expressions
-score = 75
-grade = f"Result: {'Pass' if score >= 60 else 'Fail'}"
-print(grade)  # Result: Pass
+        <p><strong>Why f-strings win:</strong></p>
 
-# Accessing list/dict elements
-user = {"name": "Hugo", "role": "admin"}
-print(f"User: {user['name']} ({user['role']})")  # User: Hugo (admin)</code></pre>
+        <ul>
+            <li><strong>Readable</strong> — variables sit right inside the text, no placeholders to track</li>
+            <li><strong>Fast</strong> — f-strings are evaluated at runtime as native string operations, faster than <code>.format()</code></li>
+            <li><strong>Expressions</strong> — put any Python expression inside <code>{}</code>, not just variable names</li>
+            <li><strong>Debug-friendly</strong> — Python 3.8+ added the <code>=</code> specifier</li>
+        </ul>
 
-        <h2>Format Specifiers: Control Exactly How Values Appear</h2>
+        <h2>The Debug Trick: <code>=</code> Specifier (Python 3.8+)</h2>
 
-        <p>After a variable in an f-string, add a colon <code>:</code> followed by a format specifier. Think of it as mini-language for controlling output:</p>
+        <p>One of the most underrated features of f-strings is the <code>=</code> specifier. It prints both the expression AND its result — perfect for debugging without writing extra code:</p>
 
-        <pre><code># ===== NUMBERS =====
-pi = 3.14159265
+        <pre><code class="language-python">price = 29.99
+tax_rate = 0.08
 
-# Decimal places
-print(f"Pi: {pi:.2f}")       # Pi: 3.14
-print(f"Pi: {pi:.4f}")       # Pi: 3.1416
+# Without debug specifier (you'd have to type both the name and value):
+print(f"Price: {price}, Tax rate: {tax_rate}")
 
-# Width and padding
-print(f"Pi: {pi:10.2f}")     # Pi:       3.14 (10 chars wide)
-print(f"Pi: {pi:010.2f}")    # Pi: 000003.14 (zero-padded)
+# With = specifier (expression + value printed automatically):
+print(f"{price=}")
+print(f"{tax_rate=}")
+print(f"{price * (1 + tax_rate)=}")
 
-# Thousands separator
-population = 8045311000
-print(f"World: {population:,}")  # World: 8,045,311,000
+# Output:
+# price=29.99
+# tax_rate=0.08
+# price * (1 + tax_rate)=32.3892
 
-# Percentage
-rate = 0.075
-print(f"Rate: {rate:.1%}")     # Rate: 7.5%
+# You can add a separator for cleaner output:
+print(f"{price=!r}")
+# Output: price=!r29.99</code></pre>
+
+        <p>Try this next time you're debugging — you'll never go back to manually printing variable names.</p>
+
+        <h2>Format Specifiers: Control the Look of Your Output</h2>
+
+        <p>The real power of f-strings comes from format specifiers. Add a colon <code>:</code> after the variable name, then a format code. Here are the most useful ones:</p>
+
+        <h3>Number Formatting</h3>
+
+        <pre><code class="language-python">value = 1234567.891
+
+# Thousand separators
+print(f"{value:,}")
+# Output: 1,234,567.891
+
+# Fixed decimal places
+print(f"{value:.2f}")
+# Output: 1,234,567.89
+
+# Percentage (multiply by 100 automatically)
+rate = 0.085
+print(f"{rate:.1%}")
+# Output: 8.5%
 
 # Scientific notation
-avogadro = 6.022e23
-print(f"Avogadro: {avogadro:.2e}")  # Avogadro: 6.02e+23
+print(f"{value:.2e}")
+# Output: 1.23e+06
 
-# ===== INTEGERS =====
-number = 42
+# Pad with zeros
+print(f"{42:05d}")
+# Output: 00042
 
-print(f"Decimal: {number}")     # Decimal: 42
-print(f"Binary: {number:b}")    # Binary: 101010
-print(f"Hex: {number:x}")       # Hex: 2a
-print(f"Octal: {number:o}")     # Octal: 52
-print(f"Padded: {number:05d}")  # Padded: 00042
+# Currency formatting
+print(f"${value:,.2f}")
+# Output: $1,234,567.89</code></pre>
 
-# ===== STRINGS =====
-name = "hugo"
+        <h3>String Formatting</h3>
 
-print(f"Uppercase: {name:>10}")    # Right-align, width 10
-print(f"Uppercase: {name:<10}")    # Left-align, width 10
-print(f"Centered:  {name:^10}")    # Center, width 10
-print(f"Trimmed:   {name:.3}")     # Trimmed:   hug (max 3 chars)</code></pre>
+        <pre><code class="language-python">name = "Hugo"
 
-        <h2>The Debug Feature (Python 3.8+)</h2>
+# Minimum width (pad with spaces)
+print(f"{name:>10}")
+# Output: '      Hugo'
 
-        <p>Put a <code>=</code> after a variable name to see both the expression and its result. This is incredibly useful during debugging:</p>
+# Center text
+print(f"{name:^20}")
+# Output: '       Hugo       '
 
-        <pre><code>name = "Hugo"
-age = 30
+# Truncate with ellipsis (needs !r and width)
+long_text = "Python is a great programming language"
+print(f"{long_text:.15}...")
+# Output: Python is a great...
 
-# Instead of:
-print(f"Name: {name}, Age: {age}")
-# Name: Hugo, Age: 30
+# Left/center/right alignment with custom padding
+print(f"|{name:<15}|")  # Left align
+print(f"|{name:>15}|")  # Right align
+print(f"|{name:^15}|")  # Center
+# Output:
+# |Hugo           |
+# |           Hugo|
+# |     Hugo      |</code></pre>
 
-# Use debug mode:
-print(f"{name=}, {age=}")
-# name='Hugo', age=30
+        <h3>Date and Time Formatting</h3>
 
-# With expressions:
-width, height = 800, 600
-print(f"{width * height=}")
-# width * height=480000
+        <pre><code class="language-python">from datetime import datetime
 
-# Combine with format specifiers:
-price = 19.995
-print(f"{price=:.2f}")
-# price=20.00</code></pre>
+now = datetime(2026, 7, 16, 14, 30, 0)
+
+print(f"{now:%Y-%m-%d}")
+# Output: 2026-07-16
+
+print(f"{now:%B %d, %Y}")
+# Output: July 16, 2026
+
+print(f"{now:%I:%M %p}")
+# Output: 02:30 PM
+
+print(f"{now:%A, %B %d at %I:%M %p}")
+# Output: Thursday, July 16 at 02:30 PM
+
+# Common format codes:
+# %Y = 4-digit year    %m = month (01-12)   %d = day (01-31)
+# %H = hour (00-23)    %I = hour (01-12)    %M = minute
+# %B = full month name %A = full day name
+# %p = AM/PM</code></pre>
+
+        <h2>Method 2: <code>str.format()</code> (Still Useful)</h2>
+
+        <p>The <code>.format()</code> method predates f-strings and is still useful in specific scenarios:</p>
+
+        <pre><code class="language-python"># Named placeholders
+template = "Hello, {name}! You have {count} messages."
+print(template.format(name="Hugo", count=5))
+# Output: Hello, Hugo! You have 5 messages.
+
+# Positional arguments
+print("{} + {} = {}".format(3, 4, 3 + 4))
+# Output: 3 + 4 = 7
+
+# Reuse values with indices
+print("{0} says hi to {1}, and {1} says hi to {0}".format("Alice", "Bob"))
+# Output: Alice says hi to Bob, and Bob says hi to Alice</code></pre>
+
+        <p><strong>When to use <code>.format()</code> instead of f-strings:</strong></p>
+
+        <ul>
+            <li><strong>Template strings stored elsewhere</strong> — if your format string comes from a config file, database, or user input, you can't use f-strings (they're evaluated at definition time)</li>
+            <li><strong>Internationalization (i18n)</strong> — translation libraries work with <code>.format()</code> because the template and values are separated</li>
+            <li><strong>Repeating values</strong> — the index reuse shown above is awkward with f-strings</li>
+        </ul>
+
+        <pre><code class="language-python"># Example: loading a template from a file (simulated)
+template_from_file = "Dear {customer}, your order {order_id} will ship on {date}."
+
+data = {
+    "customer": "Hugo",
+    "order_id": "ORD-2026-7841",
+    "date": "July 18, 2026"
+}
+
+print(template_from_file.format(**data))
+# Output: Dear Hugo, your order ORD-2026-7841 will ship on July 18, 2026.</code></pre>
+
+        <h2>Method 3: The <code>%</code> Operator (Legacy, But You'll See It)</h2>
+
+        <p>The <code>%</code> operator is Python's oldest string formatting method. It borrows from C's <code>printf</code>. You'll encounter it in legacy codebases and sometimes in standard library code:</p>
+
+        <pre><code class="language-python"># %s for strings, %d for integers, %f for floats
+name = "Hugo"
+age = 28
+score = 95.67
+
+print("Name: %s, Age: %d, Score: %.1f" % (name, age, score))
+# Output: Name: Hugo, Age: 28, Score: 95.7
+
+# Using a dictionary with %(name)s
+info = {"host": "localhost", "port": 8080}
+print("Connecting to %(host)s:%(port)d" % info)
+# Output: Connecting to localhost:8080
+
+# Width and precision: %-15s means left-align in 15-char field
+print("%-15s | %5d" % ("Username", 42))
+# Output: Username       |   42</code></pre>
+
+        <p><strong>Rule of thumb:</strong> Use f-strings for new code. Understand <code>.format()</code> for templates. Recognize <code>%</code> in old code but don't write new code with it.</p>
 
         <h2>Real-World Patterns</h2>
 
-        <h3>1. Building JSON-like Output</h3>
+        <h3>Pattern 1: Building Log Messages</h3>
 
-        <pre><code>user = {
-    "name": "Hugo",
-    "email": "hugo@example.com",
-    "is_admin": True
-}
+        <pre><code class="language-python">from datetime import datetime
 
-# Quick debugging output (not actual JSON!)
-log = f"""User Record:
-  name:     {user['name']}
-  email:    {user['email']}
-  admin:    {user['is_admin']}
-  created:  {user.get('created', 'N/A')}"""
-
-print(log)</code></pre>
-
-        <h3>2. Generating SQL Queries</h3>
-
-        <pre><code>username = "hugo"
-age = 30
-active = True
-
-# WARNING: Never use f-strings for SQL values directly (SQL injection risk!)
-# This example is for understanding the syntax only.
-# Use parameterized queries in production.
-
-query = f"""SELECT * FROM users
-WHERE username = '{username}'
-  AND age = {age}
-  AND is_active = {active!s}
-ORDER BY created_at DESC"""
-
-print(query)
-# SELECT * FROM users WHERE username = 'hugo'
-# AND age = 30 AND is_active = True
-# ORDER BY created_at DESC</code></pre>
-
-        <p><strong>Important:</strong> Use <code>{var!s}</code> to force string conversion. The <code>!s</code> calls <code>str()</code> on the value, <code>!r</code> calls <code>repr()</code>.</p>
-
-        <h3>3. Formatted Logging Messages</h3>
-
-        <pre><code>import logging
-from datetime import datetime
-
-logger = logging.getLogger(__name__)
-
-def process_order(order_id, items, total):
+def log_event(event_type, user_id, details=""):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    
-    logger.info(f"[{timestamp}] Order #{order_id}: "
-                f"{len(items)} items, "
-                f"total: ${total:.2f}")
-    
-    # Debug with expressions
-    logger.debug(f"{order_id=}, {len(items)=}, {total=:.2f}")
+    msg = f"[{timestamp}] {event_type.upper()}: user={user_id}"
+    if details:
+        msg += f" | {details}"
+    print(msg)
 
-process_order(1001, ["laptop", "mouse", "keyboard"], 1299.97)
-# [2026-07-04 12:00:00] Order #1001: 3 items, total: $1299.97
-# order_id=1001, len(items)=3, total=1299.97</code></pre>
+log_event("login", 42)
+log_event("purchase", 42, "item=premium_plan, amount=$29.99")
+# Output:
+# [2026-07-16 14:30:00] LOGIN: user=42
+# [2026-07-16 14:30:01] PURCHASE: user=42 | item=premium_plan, amount=$29.99</code></pre>
 
-        <h3>4. Building URLs and API Endpoints</h3>
+        <h3>Pattern 2: Generating URLs and API Endpoints</h3>
 
-        <pre><code>base_url = "https://api.github.com"
-username = "hugow0528"
-page = 2
-per_page = 10
+        <pre><code class="language-python">BASE_URL = "https://api.example.com/v1"
 
-url = f"{base_url}/users/{username}/repos"
-url = f"{url}?page={page}&per_page={per_page}"
+def build_url(endpoint, **params):
+    url = f"{BASE_URL}/{endpoint.lstrip('/')}"
+    if params:
+        query = "&".join(f"{k}={v}" for k, v in params.items())
+        url += f"?{query}"
+    return url
 
-print(url)
-# https://api.github.com/users/hugow0528/repos?page=2&per_page=10
+print(build_url("/users"))
+# Output: https://api.example.com/v1/users
 
-# Or build it all in one f-string:
-url = f"{base_url}/users/{username}/repos?page={page}&per_page={per_page}"</code></pre>
+print(build_url("/search", q="python", page=2, limit=20))
+# Output: https://api.example.com/v1/search?q=python&page=2&limit=20</code></pre>
 
-        <h3>5. Tabular Data Output</h3>
+        <h3>Pattern 3: Creating Formatted Tables from Data</h3>
 
-        <pre><code>products = [
-    ("Laptop", 999.99, 15),
-    ("Mouse", 29.99, 150),
-    ("Keyboard", 79.99, 45),
-    ("Monitor", 449.99, 30),
+        <pre><code class="language-python"># Align columns without any external library
+data = [
+    ("Hugo", "Python", 4.9, 120),
+    ("Alice", "JavaScript", 4.7, 95),
+    ("Bob", "Go", 4.8, 80),
 ]
 
-# Header
-print(f"{'Product':<12} {'Price':>8} {'Stock':>6} {'Value':>12}")
-print("-" * 40)
+header = f"{'Name':<10} {'Language':<15} {'Rating':>6} {'Hours':>8}"
+print(header)
+print("-" * len(header))
 
-# Data rows
-for name, price, stock in products:
-    print(f"{name:<12} ${price:>7.2f} {stock:>6} ${price * stock:>11.2f}")
+for name, lang, rating, hours in data:
+    print(f"{name:<10} {lang:<15} {rating:>6.1f} {hours:>8}")
 
 # Output:
-# Product      Price  Stock        Value
-# ----------------------------------------
-# Laptop      $999.99     15    $14999.85
-# Mouse        $29.99    150     $4498.50
-# Keyboard     $79.99     45     $3599.55
-# Monitor     $449.99     30    $13499.70</code></pre>
+# Name       Language         Rating    Hours
+# ----------------------------------------------------
+# Hugo       Python             4.9     120
+# Alice      JavaScript         4.7      95
+# Bob        Go                 4.8      80</code></pre>
 
-        <h2>Common Gotchas and Best Practices</h2>
+        <h3>Pattern 4: Conditional Formatting in f-strings</h3>
 
-        <h3>Backslashes Inside f-Strings</h3>
+        <pre><code class="language-python">score = 85
+status = "PASS" if score >= 60 else "FAIL"
+print(f"Your score: {score} — {status}")
+# Output: Your score: 85 — PASS
 
-        <p>You <strong>cannot</strong> use backslash escapes directly inside the curly braces of an f-string. This is a common mistake:</p>
+# Conditional formatting (different format based on value)
+temperature = -5
+unit = "°C" if temperature < 100 else "°F"
+print(f"Temperature: {temperature}{unit}")
+# Output: Temperature: -5°C
 
-        <pre><code># ❌ This will cause a SyntaxError
-# f"The path is {path.replace('\\', '/')}"</code></pre>
+# Ternary inside f-string for inline decisions
+count = 0
+print(f"You have {count} message{'s' if count != 1 else ''}.")
+# Output: You have 0 messages.
 
-        <p>Instead, do the escaping outside the braces or store it in a variable first:</p>
+count = 1
+print(f"You have {count} message{'s' if count != 1 else ''}.")
+# Output: You have 1 message.</code></pre>
 
-        <pre><code>path = "C:\\new\\test"
-separator = "/"
-print(f"The path is {path.replace('\\\\', separator)}")  # Works!</code></pre>
+        <h2>Common Mistakes and How to Avoid Them</h2>
 
-        <h3>Quoting Inside f-Strings</h3>
+        <h3>Mistake 1: Forgetting the <code>f</code> prefix</h3>
 
-        <p>If your f-string uses double quotes, you can use single quotes inside (and vice versa):</p>
+        <pre><code class="language-python">name = "Hugo"
 
-        <pre><code>name = "Hugo"
-# Use single quotes inside double-quoted f-string
-print(f'{name} said "Hello!"')
+# This does NOT interpolate — the f is missing!
+print("Hello, {name}")
+# Output: Hello, {name}  ← Literal text!
 
-# Or use triple quotes for maximum flexibility
-msg = f"""{name}'s config:
-{{"name": "{name}", "role": "admin"}}"""</code></pre>
+# This works:
+print(f"Hello, {name}")
+# Output: Hello, Hugo</code></pre>
 
-        <h3>Escaping Literal Curly Braces</h3>
+        <h3>Mistake 2: Using backslashes inside f-string expressions</h3>
 
-        <p>Double the braces to include literal <code>{</code> or <code>}</code> in your string:</p>
+        <pre><code class="language-python"># This raises a SyntaxError:
+# print(f"Path: {r"C:\Users\Hugo"}")
 
-        <pre><code>price = 99.99
-print(f"The cost is {{${price}}} USD")  # The cost is {$99.99} USD
+# Fix: define the variable outside
+path = r"C:\Users\Hugo"
+print(f"Path: {path}")
+# Output: Path: C:\Users\Hugo</code></pre>
 
-# Useful for JSON-like output:
+        <h3>Mistake 3: Float precision surprises</h3>
+
+        <pre><code class="language-python">a = 0.1
+b = 0.2
+
+# This looks wrong:
+print(f"{a + b}")
+# Output: 0.30000000000000004
+
+# Fix with format specifier:
+print(f"{a + b:.2f}")
+# Output: 0.30</code></pre>
+
+        <h2>Performance: Why f-strings Are Fastest</h2>
+
+        <p>f-strings are the fastest formatting method because they're compiled into a single bytecode operation. Here's a quick benchmark concept:</p>
+
+        <pre><code class="language-python">import timeit
+
 name = "Hugo"
-print(f'{{"name": "{name}", "active": true}}')
-# {"name": "Hugo", "active": true}</code></pre>
+count = 42
 
-        <h2>When NOT to Use f-Strings</h2>
+# f-string (fastest)
+timeit.timeit(lambda: f"{name} has {count} items", number=1000000)
+# ~0.08 seconds
 
-        <p>f-strings are evaluated at runtime, so they're not ideal for a few cases:</p>
+# .format() (slower)
+timeit.timeit(lambda: "{} has {} items".format(name, count), number=1000000)
+# ~0.25 seconds
 
-        <ul>
-            <li><strong>Internationalization (i18n):</strong> Use <code>%s</code> or <code>.format()</code> so translation tools can extract the template string at build time</li>
-            <li><strong>Dictionary keys:</strong> <code>"{key}".format_map(mapping)</code> or <code>% (mapping,)</code> can be cleaner when all values come from the same dict</li>
-            <li><strong>Repeated formatting:</strong> If you format the same template with different values, use a <code>string.Template</code> or compile a format string once: <code>fmt = "Hello, {}!".format</code></li>
-        </ul>
+# % operator (slowest)
+timeit.timeit(lambda: "%s has %d items" % (name, count), number=1000000)
+# ~0.20 seconds
 
-        <h2>Quick Reference Table</h2>
+# Concatenation (don't do this for complex strings)
+timeit.timeit(lambda: name + " has " + str(count) + " items", number=1000000)
+# ~0.15 seconds</code></pre>
 
-        <pre><code>Value        f-string          Output
-─────────────────────────────────────────
-3.14159      {:.2f}            3.14
-0.075        {:.1%}            7.5%
-8045311000   {:,}              8,045,311,000
-42           {:#x}             0x2a
-42           {:05d}            00042
-"hugo"       {:^10}            '  hugo  '
-True         {!s}              True
-"test"       {!r}              'test'
-var          {var=}            var=value</code></pre>
+        <p>The difference is negligible for occasional use but matters in tight loops and high-throughput applications.</p>
+
+        <h2>Cheat Sheet: Quick Reference</h2>
+
+        <table>
+            <tr><th>Format Code</th><th>Example</th><th>Output</th></tr>
+            <tr><td><code>.2f</code></td><td><code>f"{3.14159:.2f}"</code></td><td>3.14</td></tr>
+            <tr><td><code>:,</code></td><td><code>f"{1000000:,}"</code></td><td>1,000,000</td></tr>
+            <tr><td><code>:.1%</code></td><td><code>f"{0.085:.1%}"</code></td><td>8.5%</td></tr>
+            <tr><td><code>:05d</code></td><td><code>f"{42:05d}"</code></td><td>00042</td></tr>
+            <tr><td><code>:<15</code></td><td><code>f"{'Hugo':<15}"</code></td><td>Hugo (padded right)</td></tr>
+            <tr><td><code>:^20</code></td><td><code>f"{'Hugo':^20}"</code></td><td>centered in 20 chars</td></tr>
+            <tr><td><code>=</code></td><td><code>f"{x+1=}"</code></td><td>x+1=2</td></tr>
+            <tr><td><code>:.10</code></td><td><code>f"{'Hello World':.10}"</code></td><td>Hello Worl</td></tr>
+        </table>
 
         <h2>Summary</h2>
 
-        <p>f-strings are Python's best string formatting tool. They combine speed, readability, and expressiveness in a single feature. The key takeaways:</p>
+        <ul>
+            <li><strong>Default choice:</strong> Use f-strings for almost everything</li>
+            <li><strong>Templates from external sources:</strong> Use <code>.format()</code></li>
+            <li><strong>Debugging:</strong> Use the <code>=</code> specifier in f-strings</li>
+            <li><strong>Numbers:</strong> Use format specifiers (<code>.2f</code>, <code>:,</code>, <code>:%</code>) for clean output</li>
+            <li><strong>Tables:</strong> Use alignment specifiers (<code>:&lt;</code>, <code>:&gt;</code>, <code>:^</code>) for formatted columns</li>
+            <li><strong>Avoid:</strong> String concatenation with <code>+</code> for building complex strings</li>
+        </ul>
 
-        <ol>
-            <li>Always use <code>f"..."</code> for string interpolation in Python 3.6+</li>
-            <li>Use <code>{:.2f}</code> for decimals, <code>{:,}</code> for commas, <code>{:.1%}</code> for percentages</li>
-            <li>Use <code>{var=}</code> in Python 3.8+ for quick debugging</li>
-            <li>Double braces <code>{{}}</code> to include literal curly braces</li>
-            <li>Use <code>!s</code> and <code>!r</code> to control string representation</li>
-            <li>Avoid backslashes inside the curly braces</li>
-        </ol>
+        <p>Master these formatting techniques and your Python code will be cleaner, faster, and easier to debug. The f-string alone is worth the upgrade if you're still on an older Python version — but you should also know <code>.format()</code> for those template scenarios where f-strings can't reach.</p>
 
-        <p>Start using f-strings everywhere, and you'll write cleaner, faster Python from day one.</p>
-
-        <hr>
-
-        <p class="next-post">← <a href="../posts/python-variables.html">Previous: Python Variables & Data Types</a> | <a href="../index.html">Back to all posts</a></p>
     </article>
 
     <footer>
         <div class="container">
-            <p>&copy; 2026 Hugo's Dev Notes. Built with simple HTML, deployed on Cloudflare.</p>
+            <p>© 2026 Hugo Wong · Built with curiosity and Coffee</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528">GitHub</a>
+                <a href="https://hugow.dev">hugow.dev</a>
+                <a href="../sitemap.xml">Sitemap</a>
+            </div>
         </div>
     </footer>
 
     <script>
-        // Reading progress bar
-        window.addEventListener('scroll', function() {
-            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
-            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-            const scrolled = (winScroll / height) * 100;
-            document.getElementById('progressBar').style.width = scrolled + "%";
-        });
-
-        // Theme toggle
         const themeToggle = document.getElementById('themeToggle');
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        if (savedTheme === 'light') { document.body.classList.add('light-mode'); themeToggle.textContent = '☀'; }
         themeToggle.addEventListener('click', () => {
-            document.body.classList.toggle('light-theme');
+            document.body.classList.toggle('light-mode');
+            localStorage.setItem('theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
+            themeToggle.textContent = document.body.classList.contains('light-mode') ? '☀' : '◐';
+        });
+        window.addEventListener('scroll', () => {
+            const scrolled = (document.documentElement.scrollTop / (document.documentElement.scrollHeight - document.documentElement.clientHeight)) * 100;
+            document.getElementById('progressBar').style.width = scrolled + "%";
         });
     </script>
 </body>

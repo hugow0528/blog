@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docker Compose for Multi-Container Development: Local Environments Made Easy — Complete Beginner's Guide | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn Docker Compose for local development — multi-container setups, networking, volumes, environment variables, health checks, and building production-like environments. Working docker-compose.yml examples for every concept.">
+    <meta name="keywords" content="docker compose, multi-container docker, docker compose networking, docker volumes, docker development environment, docker compose tutorial">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/docker-compose-dev-environment.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="post-content">
+            <a href="../index.html" class="back-link">← Back to all posts</a>
+            <span class="tag devops">DevOps</span>
+            <h1>Docker Compose for Multi-Container Development: Local Environments Made Easy — Complete Beginner's Guide</h1>
+            <time datetime="2026-07-14">July 14, 2026</time>
+
+            <p>Running a single container with <code>docker run</code> is fine for a quick experiment. But real applications need databases, caches, message queues, and more. Typing long <code>docker run</code> commands for each service gets unwieldy fast — and recreating your local environment for a new team member becomes a nightmare of copy-pasted commands.</p>
+
+            <p>Docker Compose solves all of this. You describe your entire stack in a single <code>docker-compose.yml</code> file, then start everything with one command: <code>docker compose up</code>. Your web app, database, Redis cache, and monitoring tools spin up together, properly networked and configured.</p>
+
+            <p>In this guide, you'll learn Docker Compose from scratch — the YAML syntax, service dependencies, networking, volumes, environment variables, health checks, and building a complete multi-service development environment. Every example includes working configuration you can adapt for your own projects.</p>
+
+            <h2>What Is Docker Compose?</h2>
+
+            <p>Docker Compose is a tool for defining and running multi-container Docker applications. Instead of manually running each container, you write a <code>docker-compose.yml</code> file that describes:</p>
+
+            <ul>
+                <li><strong>Services</strong> — each container in your application (web, database, cache, etc.)</li>
+                <li><strong>Networks</strong> — how containers communicate with each other</li>
+                <li><strong>Volumes</strong> — persistent data storage that survives container restarts</li>
+            </ul>
+
+            <p>It's part of Docker Desktop by default, so you probably already have it. Check with:</p>
+
+            <pre><code>docker compose version
+# Docker Compose version v2.29.1</code></pre>
+
+            <p>Note: the old syntax <code>docker-compose</code> (with hyphen) still works but Docker recommends <code>docker compose</code> (V2 plugin) going forward. We'll use the V2 syntax throughout.</p>
+
+            <h2>Your First docker-compose.yml</h2>
+
+            <p>Let's start with the simplest possible example: a Python web app paired with a PostgreSQL database. Create a file called <code>docker-compose.yml</code> in a new directory:</p>
+
+            <pre><code># docker-compose.yml
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://appuser:secret@db:5432/appdb
+    depends_on:
+      - db
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: appuser
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: appdb
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:</code></pre>
+
+            <p>That's your entire application stack. Break it down:</p>
+
+            <ul>
+                <li><strong><code>services.web</code></strong> — builds a container from the current directory (<code>build: .</code>) and maps port 8000</li>
+                <li><strong><code>services.db</code></strong> — runs a PostgreSQL 16 container with environment variables for setup</li>
+                <li><strong><code>depends_on</code></strong> — ensures the database starts before the web service</li>
+                <li><strong><code>volumes</code></strong> — persists database data on disk so it survives container restarts</li>
+            </ul>
+
+            <p>Start everything:</p>
+
+            <pre><code># Build and start in the foreground (you see logs)
+docker compose up
+
+# Start in the background (detached mode)
+docker compose up -d
+
+# Stop everything
+docker compose down
+
+# Stop and remove volumes (destroy all data!)
+docker compose down -v</code></pre>
+
+            <h2>Understanding the Compose File Structure</h2>
+
+            <p>A <code>docker-compose.yml</code> file has three top-level sections:</p>
+
+            <pre><code>services:       # Your application containers
+  web:
+    ...
+  db:
+    ...
+
+networks:       # Optional — custom network configuration
+  ...
+
+volumes:         # Optional — named volumes for persistent data
+  ...</code></pre>
+
+            <h3>Essential Service Options</h3>
+
+            <p>Each service accepts many configuration options. Here are the most important ones:</p>
+
+            <pre><code>services:
+  myservice:
+    # How to get the container image
+    image: nginx:latest              # Use an existing image
+    # OR
+    build:                           # Build from a Dockerfile
+      context: .                     # Build context directory
+      dockerfile: Dockerfile.dev     # Optional: non-default Dockerfile
+
+    # Container identification
+    container_name: my-web-app       # Fixed name (default: random)
+    hostname: web                    # Container hostname
+
+    # Port mapping: host_port:container_port
+    ports:
+      - "8000:8000"                 # Localhost only
+      - "0.0.0.0:8000:8000"         # Bind to all interfaces
+      - "8080:80/tcp"               # Specify protocol
+
+    # Environment variables (multiple syntaxes)
+    environment:
+      - KEY=value                   # List syntax
+      DEBUG: "true"                  # Dict syntax
+    env_file:
+      - .env                        # Load from file
+
+    # Volume mounts: host_path:container_path[:ro]
+    volumes:
+      - ./src:/app/src               # Bind mount (live code changes)
+      - data:/var/lib/data           # Named volume
+      - ./config.yml:/app/config.yml:ro  # Read-only mount
+
+    # Dependencies
+    depends_on:
+      - db                           # Simple: wait for container to start
+      db:                            # Extended: wait for condition
+        condition: service_healthy   # Wait until health check passes
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 128M
+
+    # Restart behavior
+    restart: unless-stopped         # Options: no, always, on-failure, unless-stopped
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s</code></pre>
+
+            <h2>Networking Between Containers</h2>
+
+            <p>By default, Docker Compose creates a network for your project. All services on this network can reach each other by <strong>service name</strong>. In our first example, the web service connects to the database using the hostname <code>db</code> — that's Docker's built-in DNS resolving the service name to its container IP.</p>
+
+            <pre><code># In your Python app, connect to the database by service name:
+import os
+
+DATABASE_URL = os.environ["DATABASE_URL"]
+# "postgresql://appuser:secret@db:5432/appdb"
+#                                    ^^
+#                             This resolves via Docker DNS</code></pre>
+
+            <p>You can also define custom networks for more complex setups:</p>
+
+            <pre><code>services:
+  web:
+    image: nginx
+    networks:
+      - frontend
+      - backend
+
+  api:
+    image: my-api:latest
+    networks:
+      - backend
+
+  db:
+    image: postgres:16
+    networks:
+      - backend
+
+networks:
+  frontend:
+  backend:</code></pre>
+
+            <p>In this setup, the web service can reach both the API and database, but the API and database can <strong>only</strong> reach each other — the frontend network is isolated from the backend. This is useful for separating public-facing services from internal infrastructure.</p>
+
+            <h2>Volume Strategies for Development</h2>
+
+            <p>Understanding volumes is critical for a good development experience. Here are the three main approaches:</p>
+
+            <h3>1. Bind Mounts for Live Code Editing</h3>
+
+            <p>Bind mounts sync your local filesystem into the container. Edit a file on your machine, and it's immediately available inside the container. Essential for development:</p>
+
+            <pre><code>services:
+  web:
+    build: .
+    volumes:
+      - ./src:/app/src    # Your code is live-mounted
+    # Edit files in ./src → changes appear in /app/src instantly</code></pre>
+
+            <h3>2. Named Volumes for Database Persistence</h3>
+
+            <p>Named volumes are managed by Docker and stored in its managed directory (<code>/var/lib/docker/volumes/</code> on Linux). Use these for databases and anything that needs to survive <code>docker compose down</code>:</p>
+
+            <pre><code>services:
+  db:
+    image: postgres:16
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:  # Docker manages this volume lifecycle</code></pre>
+
+            <h3>3. Shared Volumes for Data Exchange</h3>
+
+            <p>Multiple containers can mount the same named volume, allowing data sharing:</p>
+
+            <pre><code>services:
+  uploader:
+    image: python:3.12
+    volumes:
+      - uploads:/data/uploads
+
+  processor:
+    image: python:3.12
+    volumes:
+      - uploads:/data/uploads   # Same volume, same data
+
+volumes:
+  uploads:</code></pre>
+
+            <h2>Complete Development Stack Example</h2>
+
+            <p>Let's build a realistic development environment with a Python FastAPI backend, PostgreSQL, Redis, and an admin dashboard:</p>
+
+            <pre><code># docker-compose.yml
+services:
+  # === API Service ===
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app:/app          # Live mount your code
+    environment:
+      - DATABASE_URL=postgresql://admin:secret@db:5432/devdb
+      - REDIS_URL=redis://cache:6379
+    depends_on:
+      db:
+        condition: service_healthy
+      cache:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # === Database ===
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: devdb
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    ports:
+      - "5432:5432"
+
+  # === Redis Cache ===
+  cache:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    ports:
+      - "6379:6379"
+
+  # === Admin Dashboard ===
+  adminer:
+    image: adminer:latest
+    ports:
+      - "8081:8080"
+    depends_on:
+      - db
+
+volumes:
+  pgdata:</code></pre>
+
+            <p>This single file gives you:</p>
+
+            <ul>
+                <li>A live-reloading API at <code>http://localhost:8000</code></li>
+                <li>PostgreSQL with persistent data at <code>localhost:5432</code></li>
+                <li>Redis cache at <code>localhost:6379</code></li>
+                <li>An admin dashboard at <code>http://localhost:8081</code> to manage the database</li>
+                <li>Automatic health checks so the API waits for the database and cache to be ready</li>
+            </ul>
+
+            <p>New team member? Just <code>git pull &amp;&amp; docker compose up -d</code>. Everything works identically.</p>
+
+            <h2>Environment File Management</h2>
+
+            <p>Instead of hardcoding environment variables, use <code>.env</code> files. Docker Compose automatically loads <code>.env</code> from the project root and substitutes values using <code>${VARIABLE}</code> syntax:</p>
+
+            <pre><code># .env
+DATABASE_USER=admin
+DATABASE_PASSWORD=supers3cret
+DATABASE_NAME=devdb
+DEBUG=true</code></pre>
+
+            <pre><code># docker-compose.yml
+services:
+  api:
+    environment:
+      - DATABASE_URL=postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@db:5432/${DATABASE_NAME}
+      - DEBUG=${DEBUG}
+    env_file:
+      - .env</code></pre>
+
+            <p>For different environments, use separate files:</p>
+
+            <pre><code># Start with development config
+docker compose --env-file .env.dev up
+
+# Start with staging config
+docker compose --env-file .env.staging up</code></pre>
+
+            <p><strong>Important:</strong> Always add <code>.env</code> files to <code>.gitignore</code>. They often contain secrets:</p>
+
+            <pre><code># .gitignore
+.env
+.env.local
+.env.*.local
+.env.dev
+.env.staging</code></pre>
+
+            <h2>Multi-Compose File: Overriding Configuration</h2>
+
+            <p>You can split your compose configuration across multiple files and override settings. This is great for maintaining a base configuration that gets extended:</p>
+
+            <pre><code># docker-compose.yml (base config)
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=false
+
+  db:
+    image: postgres:16
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
+
+---
+
+# docker-compose.override.yml (dev overrides — automatically loaded)
+services:
+  api:
+    volumes:
+      - ./src:/app/src        # Add live code mounting
+    environment:
+      - DEBUG=true             # Override to enable debug
+    ports:
+      - "8000:8000"
+      - "5678:5678"           # Add debugger port
+
+  db:
+    ports:
+      - "5432:5432"           # Expose DB port for local tools</code></pre>
+
+            <p>Docker Compose automatically loads <code>docker-compose.override.yml</code> when present. You can also merge files explicitly:</p>
+
+            <pre><code># Merge two specific files
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+# Merge three files (later files override earlier ones)
+docker compose -f base.yml -f network.yml -f volumes.yml up</code></pre>
+
+            <h2>Useful Docker Compose Commands</h2>
+
+            <p>Master these commands and you'll handle 95% of your workflow:</p>
+
+            <pre><code># Start services
+docker compose up -d                # Detached (background)
+docker compose up                   # Foreground (see all logs)
+docker compose up -d --build        # Rebuild before starting
+docker compose up -d api            # Start only the 'api' service
+
+# Stop services
+docker compose stop                 # Stop without removing containers
+docker compose down                 # Stop and remove containers
+docker compose down -v              # Stop and remove volumes (data loss!)
+
+# View logs
+docker compose logs                 # All services
+docker compose logs -f              # Follow (like tail -f)
+docker compose logs -f api          # Follow one service
+docker compose logs --tail=100 api  # Last 100 lines
+
+# Execute commands in running containers
+docker compose exec api python manage.py migrate
+docker compose exec db psql -U admin -d devdb
+docker compose exec api bash        # Interactive shell
+
+# Manage builds
+docker compose build                # Build all services
+docker compose build api            # Build one service
+docker compose build --no-cache     # Force full rebuild
+
+# Resource inspection
+docker compose ps                   # Running containers
+docker compose top                  # Container processes
+docker compose stats                # CPU, memory, network usage
+
+# Scale services
+docker compose up -d --scale api=3  # Run 3 API instances</code></pre>
+
+            <h2>Profiling and Debugging Your Compose Setup</h2>
+
+            <p>When things go wrong (and they will), here's how to diagnose:</p>
+
+            <pre><code># Check if containers are healthy
+docker compose ps
+
+# Inspect network connectivity
+docker compose exec api ping db
+docker compose exec api curl http://db:5432
+
+# Check environment variables inside container
+docker compose exec api env
+
+# Validate your compose file syntax
+docker compose config
+
+# Check volume mounts
+docker compose exec api ls -la /app/src</code></pre>
+
+            <h2>Production Considerations</h2>
+
+            <p>Docker Compose excels at local development, but be cautious about using it in production. Here are key differences:</p>
+
+            <ul>
+                <li><strong>No auto-scaling</strong> — use Kubernetes or a platform like ECS</li>
+                <li><strong>No service discovery</strong> — use a load balancer or proxy</li>
+                <li><strong>Limited logging</strong> — integrate with a logging platform</li>
+                <li><strong>No rolling updates</strong> — use CI/CD pipelines with zero-downtime strategies</li>
+            </ul>
+
+            <p>That said, Docker Compose <em>can</em> run in production for simple, single-server deployments. Just ensure you're using health checks, proper restart policies, resource limits, and external secrets management.</p>
+
+            <h2>Summary</h2>
+
+            <p>Docker Compose turns a multi-service application from a jumble of <code>docker run</code> commands into a single declarative configuration file. You learned:</p>
+
+            <ol>
+                <li>How to write your first <code>docker-compose.yml</code> with services, volumes, and dependencies</li>
+                <li>The essential service configuration options (ports, environment, volumes, health checks)</li>
+                <li>How containers communicate over Docker's built-in DNS network</li>
+                <li>Volume strategies for live code editing vs persistent data</li>
+                <li>How to build a complete development stack with FastAPI, PostgreSQL, and Redis</li>
+                <li>Environment file management for different deployment stages</li>
+                <li>Multi-file compose for overriding configurations</li>
+                <li>Essential commands for daily workflow</li>
+            </ol>
+
+            <p>Start with a simple two-service compose file, add health checks and proper dependencies, and gradually build out your stack. Once you have a working local environment, sharing it with a teammate is literally <code>git pull &amp;&amp; docker compose up</code>.</p>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes. Built with passion and too much coffee.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Progress bar
+        window.addEventListener('scroll', () => {
+            const winScroll = document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + '%';
+        });
+
+        // Theme toggle
+        const toggle = document.getElementById('themeToggle');
+        if (toggle) {
+            toggle.addEventListener('click', () => {
+                document.body.classList.toggle('dark');
+                localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+            });
+            if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python datetime Module: Dates, Times, Timezones &amp; Formatting — Complete Guide | Hugo's Dev Notes</title>
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-datetime-module.html">
+    <link rel="stylesheet" href="../style.css">
+
+    <!-- SEO Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "headline": "Python datetime Module: Dates, Times, Timezones & Formatting — Complete Guide",
+      "description": "Master Python datetime — create dates, parse strings, calculate differences, format output, handle timezones, and build a deadline tracker. Real code examples for every concept.",
+      "datePublished": "2026-07-12",
+      "dateModified": "2026-07-12",
+      "author": {"@type": "Person", "name": "Hugo Wong"},
+      "publisher": {"@type": "Organization", "name": "Hugo's Dev Notes", "url": "https://blog.hugow.dev"},
+      "mainEntityOfPage": "https://blog.hugow.dev/posts/python-datetime-module.html",
+      "keywords": "python, datetime, date, time, timezone, formatting, beginner"
+    }
+    </script>
+
+    <!-- Social Meta -->
+    <meta property="og:title" content="Python datetime Module: Dates, Times, Timezones & Formatting — Complete Guide">
+    <meta property="og:description" content="Master Python datetime — create dates, parse strings, calculate differences, format output, handle timezones, and build a deadline tracker.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.hugow.dev/posts/python-datetime-module.html">
+    <meta property="og:site_name" content="Hugo's Dev Notes">
+    <meta property="article:published_time" content="2026-07-12">
+    <meta property="article:modified_time" content="2026-07-12">
+    <meta property="article:section" content="python">
+    <meta property="article:tag" content="Python, datetime, date">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Python datetime Module: Dates, Times, Timezones & Formatting — Complete Guide">
+    <meta name="twitter:description" content="Master Python datetime — create dates, parse strings, calculate differences, format output, handle timezones.">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+
+        <article class="post-content">
+            <span class="tag python">Python</span>
+            <h1>Python datetime Module: Dates, Times, Timezones &amp; Formatting — Complete Guide</h1>
+            <time>July 12, 2026 · 11 min read</time>
+
+            <p>Working with dates and times is one of the most common tasks in programming — scheduling tasks, calculating durations, formatting timestamps, comparing deadlines, and handling user input. Python's built-in <code>datetime</code> module handles all of this, but it has a learning curve. This guide covers everything from creating your first date object to handling timezones like a pro.</p>
+
+            <h2>The datetime Module: Four Key Classes</h2>
+
+            <p>The <code>datetime</code> module provides four main classes you'll use constantly:</p>
+
+            <table>
+                <tr><th>Class</th><th>What It Represents</th><th>Example</th></tr>
+                <tr><td><code>date</code></td><td>A calendar date (no time)</td><td>2026-07-12</td></tr>
+                <tr><td><code>time</code></td><td>A time of day (no date)</td><td>14:30:00</td></tr>
+                <tr><td><code>datetime</code></td><td>Both date and time</td><td>2026-07-12 14:30:00</td></tr>
+                <tr><td><code>timedelta</code></td><td>A duration / difference</td><td>3 days, 5 hours</td></tr>
+            </table>
+
+            <h2>Creating Dates and Times</h2>
+
+            <pre><code>from datetime import date, time, datetime, timedelta
+
+# Get current date, time, and datetime
+today = date.today()
+now = datetime.now()
+print(today)   # 2026-07-12
+print(now)     # 2026-07-12 14:30:45.123456
+
+# Create specific dates
+birthday = date(1995, 3, 15)
+print(birthday)  # 1995-03-15
+
+# Create specific datetime
+meeting = datetime(2026, 7, 15, 10, 30, 0)
+print(meeting)   # 2026-07-15 10:30:00
+
+# Create just a time
+alarm = time(7, 0, 0)
+print(alarm)     # 07:00:00</code></pre>
+
+            <h2>Accessing Date Components</h2>
+
+            <p>Every datetime object gives you easy access to individual components:</p>
+
+            <pre><code>dt = datetime(2026, 7, 12, 14, 30, 45, 123456)
+
+print(dt.year)        # 2026
+print(dt.month)       # 7
+print(dt.day)         # 12
+print(dt.hour)        # 14
+print(dt.minute)      # 30
+print(dt.second)      # 45
+print(dt.microsecond) # 123456
+
+# Day of the week (Monday = 0, Sunday = 6)
+print(dt.weekday())        # 6 (Sunday)
+print(dt.isoweekday())     # 7 (Sunday)
+print(dt.strftime("%A"))   # "Sunday"
+
+# Check if it's a leap year
+from calendar import isleap
+print(isleap(2026))  # False
+print(isleap(2024))  # True</code></pre>
+
+            <h2>Formatting Dates with strftime()</h2>
+
+            <p>The <code>strftime()</code> method converts a datetime object to a formatted string. The format codes are the most important thing to memorize:</p>
+
+            <pre><code>dt = datetime(2026, 7, 12, 14, 30, 45)
+
+# Common format codes
+print(dt.strftime("%Y-%m-%d"))       # 2026-07-12
+print(dt.strftime("%d/%m/%Y"))       # 12/07/2026
+print(dt.strftime("%B %d, %Y"))      # July 12, 2026
+print(dt.strftime("%a, %d %b %Y"))   # Sun, 12 Jul 2026
+print(dt.strftime("%I:%M %p"))       # 02:30 PM
+print(dt.strftime("%H:%M:%S"))       # 14:30:45
+
+# ISO 8601 format (recommended for APIs)
+print(dt.isoformat())                # 2026-07-12T14:30:45
+
+# Custom human-readable format
+print(dt.strftime("%A, %B %d at %I:%M %p"))
+# Sunday, July 12 at 02:30 PM</code></pre>
+
+            <p><strong>Cheatsheet of format codes:</strong></p>
+
+            <table>
+                <tr><th>Code</th><th>Meaning</th><th>Example</th></tr>
+                <tr><td>%Y</td><td>4-digit year</td><td>2026</td></tr>
+                <tr><td>%m</td><td>Month (zero-padded)</td><td>07</td></tr>
+                <tr><td>%d</td><td>Day (zero-padded)</td><td>12</td></tr>
+                <tr><td>%B</td><td>Full month name</td><td>July</td></tr>
+                <tr><td>%b</td><td>Abr month name</td><td>Jul</td></tr>
+                <tr><td>%A</td><td>Full weekday name</td><td>Sunday</td></tr>
+                <tr><td>%a</td><td>Abr weekday name</td><td>Sun</td></tr>
+                <tr><td>%H</td><td>Hour (24h)</td><td>14</td></tr>
+                <tr><td>%I</td><td>Hour (12h)</td><td>02</td></tr>
+                <tr><td>%M</td><td>Minute</td><td>30</td></tr>
+                <tr><td>%S</td><td>Second</td><td>45</td></tr>
+                <tr><td>%p</td><td>AM/PM</td><td>PM</td></tr>
+                <tr><td>%f</td><td>Microseconds</td><td>123456</td></tr>
+                <tr><td>%z</td><td>Timezone offset</td><td>+0000</td></tr>
+            </table>
+
+            <h2>Parsing Dates with strptime()</h2>
+
+            <p>The <code>strptime()</code> method does the reverse — parse a formatted string into a datetime object. Use the <em>same format codes</em> as <code>strftime()</code>:</p>
+
+            <pre><code>from datetime import datetime
+
+# Parse different date formats
+dt1 = datetime.strptime("2026-07-12", "%Y-%m-%d")
+dt2 = datetime.strptime("12/07/2026", "%d/%m/%Y")
+dt3 = datetime.strptime("July 12, 2026", "%B %d, %Y")
+dt4 = datetime.strptime("2026-07-12T14:30:45", "%Y-%m-%dT%H:%M:%S")
+
+print(dt1)  # 2026-07-12 00:00:00
+print(dt2)  # 2026-07-12 00:00:00
+
+# Parse with time
+dt5 = datetime.strptime("12-Jul-2026 02:30 PM", "%d-%b-%Y %I:%M %p")
+print(dt5)  # 2026-07-12 14:30:00</code></pre>
+
+            <h3>Automatic Parsing with dateutil</h3>
+
+            <p>When you don't know the date format ahead of time, use the <code>dateutil</code> library:</p>
+
+            <pre><code>pip install python-dateutil</code></pre>
+
+            <pre><code>from dateutil import parser
+
+# Automatically detects the format
+dates = [
+    "2026-07-12",
+    "July 12, 2026",
+    "12/07/2026",
+    "2026-07-12 14:30:45",
+    "Jul 12 '26"
+]
+
+for d in dates:
+    dt = parser.parse(d)
+    print(f"{d:25s} → {dt}")
+
+# Output:
+# 2026-07-12              → 2026-07-12 00:00:00
+# July 12, 2026           → 2026-07-12 00:00:00
+# 12/07/2026              → 2026-07-12 00:00:00
+# 2026-07-12 14:30:45     → 2026-07-12 14:30:45
+# Jul 12 '26              → 2026-07-12 00:00:00</code></pre>
+
+            <h2>Date Arithmetic with timedelta</h2>
+
+            <p>The <code>timedelta</code> class represents a duration. Add or subtract it from datetime objects:</p>
+
+            <pre><code>from datetime import datetime, timedelta
+
+now = datetime(2026, 7, 12, 10, 0, 0)
+
+# Create timedeltas
+one_day = timedelta(days=1)
+one_hour = timedelta(hours=1)
+three_days_2_hours = timedelta(days=3, hours=2)
+one_week = timedelta(weeks=1)
+
+# Add/subtract durations
+tomorrow = now + one_day
+yesterday = now - one_day
+later = now + three_days_2_hours
+next_week = now + one_week
+
+print(tomorrow)   # 2026-07-13 10:00:00
+print(yesterday)  # 2026-07-11 10:00:00
+print(later)      # 2026-07-15 12:00:00
+
+# timedelta supports all units: days, seconds, microseconds,
+# milliseconds, minutes, hours, weeks</code></pre>
+
+            <h2>Calculating Differences Between Dates</h2>
+
+            <p>Subtracting two datetime objects returns a <code>timedelta</code> — use it to find durations:</p>
+
+            <pre><code>from datetime import datetime
+
+start = datetime(2026, 1, 1, 9, 0)
+end = datetime(2026, 7, 12, 17, 30)
+
+diff = end - start
+print(diff)              # 192 days, 8:30:00
+print(diff.days)         # 192
+print(diff.seconds)      # 30600 (8:30 in seconds)
+print(diff.total_seconds())  # 16638600.0
+
+# Human-readable difference
+def readable_duration(td):
+    days = td.days
+    hours, remainder = divmod(td.seconds, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    parts = []
+    if days: parts.append(f"{days} day(s)")
+    if hours: parts.append(f"{hours} hour(s)")
+    if minutes: parts.append(f"{minutes} minute(s)")
+    if seconds: parts.append(f"{seconds} second(s)")
+    return " ".join(parts)
+
+print(readable_duration(diff))
+# 192 day(s) 8 hour(s) 30 minute(s)</code></pre>
+
+            <h2>Comparing Dates</h2>
+
+            <p>Python datetime objects support direct comparison using <code>&lt;</code>, <code>&gt;</code>, <code>&lt;=</code>, <code>&gt;=</code>, <code>==</code>:</p>
+
+            <pre><code>from datetime import datetime
+
+deadline = datetime(2026, 7, 15, 23, 59, 59)
+now = datetime(2026, 7, 12, 14, 30)
+
+if now < deadline:
+    remaining = deadline - now
+    print(f"⏰ {remaining.days} days until deadline")
+    # ⏰ 3 days until deadline
+elif now > deadline:
+    late = now - deadline
+    print(f"⚠️ {late.days} days past deadline")
+else:
+    print("🎯 Exactly at deadline!")
+
+# Check if date is in the past
+past_date = datetime(2025, 1, 1)
+print(past_date < datetime.now())  # True
+
+# Check if within a range
+start = datetime(2026, 7, 1)
+end = datetime(2026, 7, 31)
+test = datetime(2026, 7, 15)
+print(start <= test <= end)  # True</code></pre>
+
+            <h2>Working with Timezones</h2>
+
+            <p>Python 3.9+ includes the <code>zoneinfo</code> module for timezone handling. Older versions can use <code>pytz</code>:</p>
+
+            <pre><code>from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
+
+# UTC time
+utc_now = datetime.now(timezone.utc)
+print(utc_now)  # 2026-07-12 14:30:45.123456+00:00
+
+# Specific timezones
+ny_time = datetime.now(ZoneInfo("America/New_York"))
+tokyo_time = datetime.now(ZoneInfo("Asia/Tokyo"))
+london_time = datetime.now(ZoneInfo("Europe/London"))
+
+print(ny_time)    # 2026-07-12 10:30:45-04:00 (EDT)
+print(tokyo_time) # 2026-07-13 02:30:45+09:00 (JST)
+print(london_time)# 2026-07-12 19:30:45+01:00 (BST)
+
+# Convert between timezones
+naive = datetime(2026, 7, 12, 15, 0)  # No timezone
+aware = naive.replace(tzinfo=ZoneInfo("America/New_York"))
+tokyo = aware.astimezone(ZoneInfo("Asia/Tokyo"))
+
+print(aware)  # 2026-07-12 15:00:00-04:00
+print(tokyo)  # 2026-07-13 04:00:00+09:00</code></pre>
+
+            <p><strong>Golden rule:</strong> Always store and compare datetime objects in UTC. Only convert to local timezones for display to users.</p>
+
+            <h3>Common Timezone Pitfalls</h3>
+
+            <pre><code># ❌ BAD: Mixing naive and aware datetimes
+naive = datetime(2026, 7, 12, 12, 0)
+aware = datetime(2026, 7, 12, 12, 0, tzinfo=timezone.utc)
+# naive < aware  → TypeError!
+
+# ✅ GOOD: Always use aware datetimes
+utc_dt = datetime(2026, 7, 12, 12, 0, tzinfo=timezone.utc)
+local_dt = utc_dt.astimezone(ZoneInfo("Asia/Tokyo"))
+
+# ✅ GOOD: Replace deprecated pytz.localize()
+# Old (pytz):  tz.localize(naive)
+# New (zoneinfo): naive.replace(tzinfo=ZoneInfo("Region/City"))</code></pre>
+
+            <h2>Complete Project: Deadline Tracker</h2>
+
+            <p>Let's combine everything into a practical project:</p>
+
+            <pre><code>from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
+import json
+
+class DeadlineTracker:
+    """Track deadlines with timezone support and notifications"""
+
+    def __init__(self):
+        self.deadlines = []
+
+    def add_deadline(self, name, due_date, timezone_str="UTC"):
+        """Add a deadline with timezone awareness"""
+        dt = datetime.strptime(due_date, "%Y-%m-%d %H:%M")
+        dt = dt.replace(tzinfo=ZoneInfo(timezone_str))
+
+        self.deadlines.append({
+            "name": name,
+            "due": dt,
+            "timezone": timezone_str,
+            "created": datetime.now(timezone.utc)
+        })
+        print(f"  ✅ Added: '{name}' due {dt.strftime('%B %d, %Y at %I:%M %p')}")
+
+    def get_status(self, deadline):
+        """Return human-readable status for a deadline"""
+        now = datetime.now(timezone.utc)
+        due = deadline["due"].astimezone(timezone.utc)
+        diff = due - now
+
+        if diff.total_seconds() <= 0:
+            late = abs(diff)
+            days = late.days
+            hours = late.seconds // 3600
+            if days > 0:
+                return f"🚨 OVERDUE by {days} day(s) and {hours} hour(s)"
+            return f"🚨 OVERDUE by {hours} hour(s)"
+        elif diff.days == 0:
+            hours = diff.seconds // 3600
+            return f"🔴 TODAY — {hours} hour(s) remaining"
+        elif diff.days <= 7:
+            return f"🟡 {diff.days} day(s) remaining"
+        else:
+            return f"🟢 {diff.days} day(s) remaining"
+
+    def list_upcoming(self, limit=5):
+        """List upcoming deadlines sorted by date"""
+        now = datetime.now(timezone.utc)
+        upcoming = [d for d in self.deadlines
+                    if d["due"].astimezone(timezone.utc) >= now]
+        upcoming.sort(key=lambda d: d["due"])
+
+        for dl in upcoming[:limit]:
+            status = self.get_status(dl)
+            print(f"  {status}  → {dl['name']}")
+            print(f"     Due: {dl['due'].strftime('%B %d, %Y at %I:%M %p (%Z)')}")
+
+    def save(self, filename="deadlines.json"):
+        """Serialize deadlines to JSON file"""
+        data = []
+        for dl in self.deadlines:
+            data.append({
+                "name": dl["name"],
+                "due": dl["due"].isoformat(),
+                "timezone": dl["timezone"],
+                "created": dl["created"].isoformat()
+            })
+        with open(filename, "w") as f:
+            json.dump(data, f, indent=2)
+        print(f"  💾 Saved {len(data)} deadlines to {filename}")
+
+    def load(self, filename="deadlines.json"):
+        """Load deadlines from JSON file"""
+        with open(filename, "r") as f:
+            data = json.load(f)
+        self.deadlines = []
+        for item in data:
+            dt = datetime.fromisoformat(item["due"])
+            self.deadlines.append({
+                "name": item["name"],
+                "due": dt,
+                "timezone": item["timezone"],
+                "created": datetime.fromisoformat(item["created"])
+            })
+        print(f"  📂 Loaded {len(self.deadlines)} deadlines from {filename}")
+
+
+# Usage
+tracker = DeadlineTracker()
+tracker.add_deadline("Deploy v2.0", "2026-07-15 18:00", "UTC")
+tracker.add_deadline("Team meeting", "2026-07-13 09:00", "America/New_York")
+tracker.add_deadline("Server maintenance", "2026-07-20 02:00", "Asia/Tokyo")
+
+print("\n📋 Upcoming Deadlines:")
+tracker.list_upcoming()
+
+tracker.save()  # Persist to file</code></pre>
+
+            <h2>Best Practices Summary</h2>
+
+            <ul>
+                <li><strong>Always use timezone-aware datetimes</strong> — avoid naive datetimes in production</li>
+                <li><strong>Store everything in UTC</strong> — convert to local timezone only for display</li>
+                <li><strong>Use ISO 8601 format</strong> (<code>.isoformat()</code>) for serialization and APIs</li>
+                <li><strong>Use <code>timedelta</code> for date math</strong> — don't manually add days/hours</li>
+                <li><strong>Use <code>zoneinfo</code> over <code>pytz</code></strong> — it's built-in (Python 3.9+)</li>
+                <li><strong>Always set <code>tzinfo</code></strong> when creating datetimes, not after</li>
+                <li><strong>Use <code>.total_seconds()</code></strong> for duration calculations, not <code>.seconds</code></li>
+                <li><strong>Parse dates defensively</strong> — use try/except around <code>strptime()</code></li>
+            </ul>
+
+            <h2>Next Steps</h2>
+
+            <ul>
+                <li><a href="python-json-and-apis.html">Python JSON and APIs</a> — format dates as ISO strings for API responses</li>
+                <li><a href="python-scheduling-cron.html">Python scheduling</a> — use datetime for cron-like task scheduling</li>
+                <li><a href="python-flask-rest-api.html">Building REST APIs</a> — handle date input/output in your endpoints</li>
+            </ul>
+
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes · Built with Cloudflare</p>
+        </div>
+    </footer>
+
+    <script>
+    // Progress bar
+    window.addEventListener('scroll', () => {
+        const bar = document.getElementById('progressBar');
+        if (bar) {
+            const scrollTop = window.scrollY;
+            const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+            bar.style.width = (scrollTop / docHeight * 100) + '%';
+        }
+    });
+
+    // Theme toggle
+    const toggle = document.getElementById('themeToggle');
+    if (toggle) {
+        const saved = localStorage.getItem('theme');
+        if (saved === 'light') document.body.classList.add('light-mode');
+        toggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            localStorage.setItem('theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
+        });
+    }
+    </script>
+</body>
+</html>

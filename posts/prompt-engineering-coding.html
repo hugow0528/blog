@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prompt Engineering for AI Coding: Write Prompts That Get Better Code | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn prompt engineering for AI coding tools — structured prompts, context, constraints, examples, iteration techniques, and workflows that produce production-ready code.">
+    <meta name="keywords" content="prompt engineering, AI coding, Claude Code, Cursor, Copilot, vibe coding, prompt tips">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/prompt-engineering-coding.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <article class="post-content">
+        <a href="../index.html" class="back-link">← All Posts</a>
+        <span class="tag vibe">AI Coding</span>
+        <span class="tag devops">DevOps</span>
+        <h1>Prompt Engineering for AI Coding: Write Prompts That Get Better Code</h1>
+        <time datetime="2026-07-13">July 13, 2026 · 11 min read</time>
+
+        <p>You've probably noticed that some AI coding prompts produce polished, production-ready code, while others give you generic boilerplate or hallucinated imports. The difference isn't luck — it's <strong>prompt engineering</strong>. This skill is the single biggest multiplier for your productivity with tools like Cursor, Claude Code, and GitHub Copilot.</p>
+
+        <p>Let's break down exactly how to write prompts that consistently produce high-quality code.</p>
+
+        <h2>Why Prompt Engineering Matters for Coding</h2>
+
+        <p>AI coding tools work by predicting the next token based on patterns in their training data. Your prompt shapes that prediction. A vague prompt activates the "most common" patterns — which means generic, often wrong code. A specific prompt activates the "exact match" patterns — giving you usable code.</p>
+
+        <p>Think of it like giving directions:</p>
+
+        <ul>
+            <li><strong>Bad:</strong> "Go to the store." (Which store? Which way? Walking or driving?)</li>
+            <li><strong>Good:</strong> "Walk to Trader Joe's on 5th Avenue — take Main Street, turn right at the library, it's on the left. Walk there." (Precise, actionable)</li>
+        </ul>
+
+        <h2>The Anatomy of a Great Coding Prompt</h2>
+
+        <p>Every high-quality coding prompt has four parts:</p>
+
+        <ol>
+            <li><strong>Role</strong> — Who is the AI?</li>
+            <li><strong>Context</strong> — What's the situation?</li>
+            <li><strong>Task</strong> — What exactly should it do?</li>
+            <li><strong>Constraints</strong> — What rules must it follow?</li>
+        </ol>
+
+        <h3>1. Role: Set the AI's Expertise</h3>
+
+        <p>Telling the AI what role to play activates the right knowledge patterns:</p>
+
+        <pre><code># Weak
+"Write a Python function to sort a list"
+
+# Strong
+"You are a senior Python developer with 10+ years experience.
+Write a production-ready sorting function that handles edge cases."</code></pre>
+
+        <p>The second prompt gets better error handling, type hints, and documentation because the AI simulates a senior developer's approach.</p>
+
+        <h3>2. Context: Provide Relevant Background</h3>
+
+        <p>The more the AI knows about your project, the more relevant its code:</p>
+
+        <pre><code># Weak
+"Add authentication to my API"
+
+# Strong
+"I'm building a Flask REST API for a task manager. The app
+currently has /tasks endpoints (CRUD) but no auth. I want
+JWT-based authentication using the PyJWT library. The API
+stores tasks in SQLite. Here's my current app structure:
+
+app/
+  __init__.py
+  routes.py
+  models.py
+  config.py"</code></pre>
+
+        <h3>3. Task: Be Specific About the Output</h3>
+
+        <p>Vague tasks get vague results. Break complex tasks into specific sub-tasks:</p>
+
+        <pre><code># Weak
+"Make it faster"
+
+# Strong
+"Optimize this Python function that processes 10,000 records.
+Requirements:
+1. Use list comprehensions instead of for loops where possible
+2. Replace repeated string concatenation with f-strings
+3. Add caching for repeated lookups using functools.lru_cache
+4. Keep the function interface the same (same parameters, same return type)
+5. Include a benchmark showing before/after timing"</code></pre>
+
+        <h3>4. Constraints: Define What to Avoid</h3>
+
+        <p>Telling the AI what <em>not</em> to do is as important as telling it what to do:</p>
+
+        <pre><code>"Write a Python script to download a CSV from a URL and
+save it locally.
+
+Constraints:
+- Use only standard library (no pip install)
+- Handle network errors with try/except
+- Validate the response is actually CSV (check Content-Type)
+- Write to /tmp/data.csv with proper file handling (with statement)
+- Do NOT use pandas
+- Include comments explaining each step"</code></pre>
+
+        <h2>Advanced Prompt Patterns</h2>
+
+        <h3>Pattern 1: Chain-of-Thought for Complex Tasks</h3>
+
+        <p>Ask the AI to think before it codes:</p>
+
+        <pre><code>"Before writing the code, explain your approach step by step:
+1. What libraries would you use and why?
+2. What's the data flow from input to output?
+3. What edge cases should be handled?
+4. Then write the implementation."</code></pre>
+
+        <p>This pattern dramatically reduces bugs because the AI commits to a plan before generating code.</p>
+
+        <h3>Pattern 2: Few-Shot Examples</h3>
+
+        <p>Give the AI examples of the style you want. This is called "few-shot prompting":</p>
+
+        <pre><code>"Write Python API endpoints following this style:
+
+Example 1 (GET):
+    @app.get('/users')
+    def get_users() -&gt; list[dict]:
+        '''Return all active users'''
+        return [u.to_dict() for u in User.query.filter_by(active=True)]
+
+Example 2 (POST):
+    @app.post('/users')
+    def create_user(data: dict) -&gt; dict:
+        '''Create a new user with validation'''
+        if not data.get('email'):
+            raise ValidationError('Email required')
+        user = User(email=data['email'])
+        db.session.add(user)
+        db.session.commit()
+        return user.to_dict()
+
+Now write DELETE and PATCH endpoints for the same User model."</code></pre>
+
+        <p>The AI matches your exact coding style — type hints, docstrings, error handling, and structure.</p>
+
+        <h3>Pattern 3: Iterative Refinement</h3>
+
+        <p>Don't expect perfect code on the first try. Use iterative prompts:</p>
+
+        <pre><code># Round 1: Get a working version
+"Write a Python function that reads a log file and counts
+errors per hour. Return a dictionary {hour: count}."
+
+# Round 2: Improve it
+"Great start. Now:
+1. Add type hints to the function signature
+2. Handle the case where the log file is empty
+3. Support custom date formats with a 'format' parameter
+4. Add a docstring with a usage example"
+
+# Round 3: Productionize
+"Make this production-ready:
+1. Add unit tests using pytest
+2. Add logging instead of print statements
+3. Handle file permission errors gracefully
+4. Add a CLI interface with argparse"</code></pre>
+
+        <h3>Pattern 4: The "Critique and Improve" Pattern</h3>
+
+        <p>Have the AI review its own code:</p>
+
+        <pre><code>"Here's my Python function for parsing CSV data:
+
+[ paste your code ]
+
+Critique this code from a senior developer's perspective:
+1. What bugs or edge cases are missing?
+2. What performance issues exist?
+3. How would you improve the code quality?
+
+Then rewrite it with all improvements applied."</code></pre>
+
+        <h2>Context Management: The Secret Weapon</h2>
+
+        <p>The most underrated prompt engineering skill is <strong>context management</strong> — giving the AI the right files and code so it understands your project:</p>
+
+        <h3>In Cursor / Claude Code:</h3>
+
+        <pre><code># Reference specific files
+"@app.py @models.py @config.py - Add rate limiting to the
+/api/data endpoint using the existing config.RATE_LIMIT setting"</code></pre>
+
+        <h3>In GitHub Copilot Chat:</h3>
+
+        <pre><code># Use @ symbols to reference files
+"@server.js @auth.js - Add middleware that checks JWT tokens
+before every request to /api/* routes, following the same
+pattern as the existing auth middleware in @auth.js"</code></pre>
+
+        <h3>Best Practices for Context:</h3>
+
+        <ul>
+            <li><strong>Reference relevant files</strong> — not everything, but the files the AI needs to read</li>
+            <li><strong>Paste key code snippets</strong> when the AI can't access the file</li>
+            <li><strong>Mention project conventions</strong> — naming style, error handling approach, testing framework</li>
+            <li><strong>Include error messages</strong> when debugging — the AI needs to see the exact traceback</li>
+        </ul>
+
+        <h2>Prompt Templates You Can Use Today</h2>
+
+        <h3>Template 1: Code Review</h3>
+
+        <pre><code>"Review this [LANGUAGE] code for:
+- Bugs and logical errors
+- Security vulnerabilities
+- Performance bottlenecks
+- Readability and naming
+- Missing edge cases
+
+Code:
+[paste code]
+
+Respond with:
+1. Critical issues (must fix)
+2. Suggested improvements
+3. Refactored version of the code"</code></pre>
+
+        <h3>Template 2: Debug from Error</h3>
+
+        <pre><code>"I'm getting this error in my Python application:
+
+[paste full traceback]
+
+My code is:
+[paste relevant code]
+
+My project uses: [list key libraries and versions]
+
+Please:
+1. Explain the root cause
+2. Show the minimal fix
+3. Explain how to prevent this in the future"</code></pre>
+
+        <h3>Template 3: Architecture Decision</h3>
+
+        <pre><code>"I'm building a [describe app]. I need to decide between
+[Option A] and [Option B].
+
+Context:
+- Team size: [X]
+- Expected traffic: [X requests/day]
+- Deadline: [X weeks]
+- Must support: [list requirements]
+
+Compare both options on:
+1. Development speed
+2. Scalability
+3. Maintainability
+4. Learning curve
+
+Then recommend one with a migration path from my current setup."</code></pre>
+
+        <h3>Template 4: Documentation Generation</h3>
+
+        <pre><code>"Generate comprehensive documentation for this Python module:
+
+[paste module code]
+
+Include:
+1. Module-level docstring with purpose and usage
+2. Per-function docstrings (Google style) with params, returns, raises
+3. Type hints for all public functions
+4. Example usage in a code block
+5. Common error scenarios and how to handle them"</code></pre>
+
+        <h2>Common Mistakes to Avoid</h2>
+
+        <table>
+            <tr>
+                <th>Mistake</th>
+                <th>Why It's Bad</th>
+                <th>Fix</th>
+            </tr>
+            <tr>
+                <td>Vague task description</td>
+                <td>AI guesses your intent, often wrong</td>
+                <td>Specify input, output, and format</td>
+            </tr>
+            <tr>
+                <td>Too much code at once</td>
+                <td>AI loses track of what to change</td>
+                <td>Break into focused, single-purpose prompts</td>
+            </tr>
+            <tr>
+                <td>No constraints</td>
+                <td>AI uses whatever library it wants</td>
+                <td>List allowed/disallowed libraries explicitly</td>
+            </tr>
+            <tr>
+                <td>Ignoring the output</td>
+                <td>Bad code becomes part of the codebase</td>
+                <td>Always review, test, and iterate</td>
+            </tr>
+            <tr>
+                <td>One-shot expectation</td>
+                <td>First pass is rarely perfect</td>
+                <td>Use iterative refinement (3 rounds minimum)</td>
+            </tr>
+        </table>
+
+        <h2>Building Your Prompt Library</h2>
+
+        <p>Save your best prompts in a file like <code>.prompts.md</code> at the root of your project:</p>
+
+        <pre><code># .prompts.md
+
+## Write a Python function
+Role: Senior Python developer
+Constraints: type hints, docstrings, error handling, standard library only unless specified
+Template:
+  "Write a [function] that [does what].
+   Input: [describe params and types]
+   Output: [describe return type]
+   Edge cases: [list 2-3 edge cases]
+   Example: [show input → output]"
+
+## Add tests
+Template:
+  "Write pytest tests for [function/module].
+   Cover: normal cases, edge cases, error cases.
+   Use fixtures for setup. Follow AAA pattern (Arrange, Act, Assert)."</code></pre>
+
+        <p>This turns prompt engineering from ad-hoc to systematic. Over time, your library becomes a valuable team asset.</p>
+
+        <h2>Key Takeaways</h2>
+
+        <ul>
+            <li><strong>Structure your prompts</strong> with Role, Context, Task, and Constraints.</li>
+            <li><strong>Provide examples</strong> (few-shot) to guide the AI's output style.</li>
+            <li><strong>Iterate</strong> — first pass is a draft, not final code.</li>
+            <li><strong>Manage context</strong> — reference the right files and paste relevant code.</li>
+            <li><strong>Use patterns</strong> — chain-of-thought, critique, and refinement consistently improve results.</li>
+            <li><strong>Build a prompt library</strong> — save what works so you don't reinvent prompts.</li>
+        </ul>
+
+        <blockquote>
+            <p>"The quality of your AI coding output is directly proportional to the quality of your input. Spend 2 minutes on the prompt to save 20 minutes of editing."</p>
+        </blockquote>
+
+        <p>Prompt engineering is a learnable skill. Start with the four-part structure (Role, Context, Task, Constraints) for every prompt, and iterate from there. The more you practice, the faster you'll produce production-ready code with AI tools.</p>
+    </article>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo Wong · Built with curiosity and Coffee</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528">GitHub</a>
+                <a href="https://hugow.dev">hugow.dev</a>
+                <a href="/sitemap.xml">Sitemap</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-mode');
+            themeToggle.textContent = '☀';
+        }
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            themeToggle.textContent = isLight ? '☀' : '◐';
+        });
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + "%";
+        });
+    </script>
+</body>
+</html>

@@ -3,200 +3,200 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CSS Animations & Transitions: Bring Your Websites to Life</title>
-    <meta name="description" content="Master CSS animations and transitions — @keyframes, transform, transition properties, hover effects, scroll animations, and performance tips. Beginner-friendly with live examples.">
-    <meta name="keywords" content="css animations, css transitions, keyframes, transform, hover effects, web design, front-end">
-        <link rel="canonical" href="https://blog.hugow.dev/posts/css-animations-transitions.html">
+    <title>CSS Animations and Transitions: Smooth Motion on the Web — Complete Beginner's Guide | Hugo's Dev Notes</title>
+    <link rel="canonical" href="https://blog.hugow.dev/posts/css-animations-transitions.html">
     <link rel="stylesheet" href="../style.css">
 
-    <!-- SEO Structured Data -->
+    <meta name="description" content="Master CSS animations and transitions — @keyframes, transition properties, transform, animation properties, performance tips, and building interactive UI effects. Working examples for every concept.">
+    <meta name="keywords" content="css animations, css transitions, @keyframes, css transform, animation properties, smooth ui, css motion">
+    <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="CSS Animations and Transitions: Smooth Motion on the Web">
+    <meta property="og:description" content="Master CSS animations and transitions with working examples for every concept.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.hugow.dev/posts/css-animations-transitions.html">
+    <meta property="og:site_name" content="Hugo's Dev Notes">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="CSS Animations and Transitions: Smooth Motion on the Web">
+    <meta name="twitter:description" content="Master CSS animations and transitions with working examples.">
+
+    <!-- Structured Data -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "BlogPosting",
-      "headline": "CSS Animations & Transitions: Bring Your Websites to Life",
-      "description": "Master CSS animations and transitions — @keyframes, transform, transition properties, hover effects, scroll animations, and performance tips. Beginner-friendly with live examples.",
-      "datePublished": "2026-07-08",
-      "dateModified": "2026-07-08",
+      "headline": "CSS Animations and Transitions: Smooth Motion on the Web — Complete Beginner's Guide",
+      "description": "Master CSS animations and transitions — @keyframes, transform, animation properties, performance tips, and building interactive UI effects.",
+      "datePublished": "2026-07-16",
+      "dateModified": "2026-07-16",
       "author": {"@type": "Person", "name": "Hugo Wong"},
       "publisher": {"@type": "Organization", "name": "Hugo's Dev Notes", "url": "https://blog.hugow.dev"},
-      "mainEntityOfPage": "{"@id": "https://blog.hugow.dev/posts/css-animations-transitions.html")}",
-      "keywords": "Web Dev"
+      "mainEntityOfPage": "https://blog.hugow.dev/posts/css-animations-transitions.html"
     }
     </script>
-
-    <!-- Social Meta -->
-    <!-- Open Graph -->
-    <meta property="og:title" content="CSS Animations & Transitions: Bring Your Websites to Life">
-    <meta property="og:description" content="Master CSS animations and transitions — @keyframes, transform, transition properties, hover effects, scroll animations, and performance tips. Beginner-friendly ">
-    <meta property="og:type" content="article">
-    <meta property="og:url" content="https://blog.hugow.dev/posts/css-animations-transitions.html">
-    <meta property="og:site_name" content="Hugo's Dev Notes">
-    <meta property="article:published_time" content="2026-07-08">
-    <meta property="article:modified_time" content="2026-07-08">
-    <meta property="article:section" content="devops">
-    <meta property="article:tag" content="Web Dev">
-    
-    <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="CSS Animations & Transitions: Bring Your Websites to Life">
-    <meta name="twitter:description" content="Master CSS animations and transitions — @keyframes, transform, transition properties, hover effects, scroll animations, and performance tips. Beginner-friendly ">
-    
 </head>
 <body>
     <div class="progress-bar" id="progressBar"></div>
-    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
 
     <header>
         <div class="container">
             <div class="logo">
-                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
                 <p class="subtitle">Cloudflare · Python · AI Coding</p>
             </div>
             <nav>
-                <a href="../index.html" class="nav-btn">🏠 Home</a>
-                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
-                <a href="../python.html" class="nav-btn">🐍 Python</a>
-                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
-                <a href="../devops.html" class="nav-btn">🐳 DevOps</a>
-                <a href="../security.html" class="nav-btn">🔐 Security</a>
-                <a href="../webdev.html" class="nav-btn">💻 Web Dev</a>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
             </nav>
         </div>
     </header>
 
     <main class="container">
-        <article class="post">
+        <article class="post-full">
             <div class="post-header">
-                <span class="tag web">Web Dev</span>
-                <h1>CSS Animations & Transitions: Bring Your Websites to Life</h1>
-            </div>
-
-            <div class="post-meta">
-                <time>2026-06-26</time>
-                <span class="read-time">12 min read</span>
-                <span class="post-status">New</span>
+                <div class="post-tags">
+                    <span class="tag web">Web Dev</span>
+                </div>
+                <h1>CSS Animations and Transitions: Smooth Motion on the Web — Complete Beginner's Guide</h1>
+                <div class="post-meta">
+                    <span class="post-date">July 16, 2026</span>
+                    <span class="read-time">12 min read</span>
+                </div>
             </div>
 
             <div class="post-content">
-                <p>Ever visit a website where buttons smoothly change color when you hover, cards lift up elegantly, or a loading spinner spins perfectly? That's the power of CSS animations and transitions. In this guide, you'll learn everything from basic hover effects to full @keyframe animations — no JavaScript required.</p>
+                <p>Motion makes interfaces feel alive. CSS animations and transitions let you create smooth, hardware-accelerated effects without a single line of JavaScript — from subtle hover states to full-screen entrance animations. This guide walks through every concept from basic transitions to complex multi-step animations.</p>
 
-                <h2>Transitions vs Animations: What's the Difference?</h2>
+                <h2 id="transitions-basics">1. CSS Transitions: Smooth Property Changes</h2>
 
-                <p><strong>Transitions</strong> are simple state changes. They animate a property when it changes — like a button color shifting on hover. You define the property, duration, and easing. Think of them as the "from A to B" approach.</p>
+                <p>Transitions animate the change of a CSS property over a specified duration. They trigger when a property value changes — typically on hover, focus, or active states.</p>
 
-                <p><strong>Animations</strong> are more powerful. With <code>@keyframes</code>, you define multiple stages of an animation — start, middle points, and end. You can loop them, reverse them, and control timing precisely. These are for when you need a "movie," not just a fade.</p>
+                <h3>The transition Shorthand</h3>
 
-                <h2>Part 1: CSS Transitions</h2>
-
-                <h3>The Transition Shorthand</h3>
-
-                <p>The <code>transition</code> property has four sub-properties. You usually use the shorthand:</p>
-
-                <pre><code>/* Shorthand: property duration timing-function delay */
-.btn {
-    transition: background-color 0.3s ease-in-out;
-}</code></pre>
-
-                <h3>Hover Button Example</h3>
-
-                <p>Let's build a button that smoothly transitions color, lifts up, and casts a deeper shadow when hovered:</p>
-
-                <pre><code>.btn {
-    background: #2563eb;
+                <pre><code>/* Basic transition on hover */
+.button {
+    background-color: #6366f1;
     color: white;
     padding: 12px 24px;
     border: none;
     border-radius: 8px;
     cursor: pointer;
-    font-size: 16px;
-
-    /* The magic: smooth transition on all properties */
-    transition: background-color 0.3s ease,
-                transform 0.2s ease,
-                box-shadow 0.3s ease;
+    transition: background-color 0.3s ease;
 }
 
-.btn:hover {
-    background-color: #1d4ed8;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(37, 99, 235, 0.4);
-}
-
-.btn:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 10px rgba(37, 99, 235, 0.3);
+.button:hover {
+    background-color: #4f46e5;
 }</code></pre>
 
-                <p>Notice we transition three properties in one declaration, separated by commas. Each can have its own duration and easing. The <code>transform: translateY(-2px)</code> lifts the button by 2 pixels — a subtle but satisfying effect.</p>
+                <p>The <code>transition</code> shorthand accepts four values in order:</p>
 
-                <h3>Timing Functions (Easing)</h3>
+                <pre><code>transition: &lt;property&gt; &lt;duration&gt; &lt;timing-function&gt; &lt;delay&gt;;
 
-                <p>The <strong>timing function</strong> controls the speed curve of an animation. Common values:</p>
-
-                <ul>
-                    <li><code>ease</code> — starts slow, speeds up, slows down (default)</li>
-                    <li><code>linear</code> — constant speed throughout</li>
-                    <li><code>ease-in</code> — starts slow, speeds up</li>
-                    <li><code>ease-out</code> — starts fast, slows down (great for sliding in)</li>
-                    <li><code>ease-in-out</code> — slow start AND slow finish</li>
-                    <li><code>cubic-bezier(x1, y1, x2, y2)</code> — custom curve</li>
-                </ul>
-
-                <p>A <code>cubic-bezier(0.68, -0.55, 0.27, 1.55)</code> creates a "bouncy" effect where the element overshoots its target slightly before settling. It's a great trick for playful UI.</p>
-
-                <h3>Common Transition Properties</h3>
-
-                <p>Not all CSS properties can be transitioned, but most visual ones can. The most useful:</p>
-
-                <ul>
-                    <li><code>opacity</code> — fade in/out (very performant!)</li>
-                    <li><code>transform</code> — translate, rotate, scale (GPU-accelerated)</li>
-                    <li><code>color</code>, <code>background-color</code> — smooth color changes</li>
-                    <li><code>box-shadow</code> — shadow growth/shrink</li>
-                    <li><code>border-radius</code> — shape morphing</li>
-                    <li><code>width</code>, <code>height</code> — size changes (use carefully — not performant)</li>
-                </ul>
-
-                <p><strong>Pro tip:</strong> Always prefer <code>transform</code> and <code>opacity</code> for animations. They're handled by the GPU and won't cause layout recalculations. Avoid animating <code>width</code>, <code>height</code>, <code>margin</code>, or <code>padding</code> — they trigger expensive reflows.</p>
-
-                <h3>Expanding Card Example</h3>
-
-                <pre><code>.card {
-    background: white;
-    border-radius: 12px;
-    padding: 24px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    overflow: hidden;
-    transition: transform 0.3s ease-out, box-shadow 0.3s ease-out;
-    cursor: pointer;
+/* All four values */
+.card {
+    transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0s;
 }
 
-.card:hover {
+/* Duration only — transitions all properties */
+.card {
+    transition: 0.3s ease;
+}
+
+/* Multiple transitions */
+.box {
+    transition: opacity 0.2s ease, transform 0.4s ease-in-out;
+}</code></pre>
+
+                <h3>Timing Functions</h3>
+
+                <p>Timing functions control the speed curve of the animation:</p>
+
+                <pre><code>/* Easing keywords */
+.ease       /* ease curve, starts slow, fast middle, slow end */
+.linear     /* constant speed throughout */
+.ease-in    /* starts slow, speeds up */
+.ease-out   /* starts fast, slows down */
+.ease-in-out /* starts slow, fast middle, slow end */
+
+/* Custom cubic-bezier for fine control */
+.smooth {
+    transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    /* The value > 1 creates a slight "overshoot" bounce effect */
+}</code></pre>
+
+                <h2 id="transform-property">2. The transform Property</h2>
+
+                <p>The <code>transform</code> property enables 2D and 3D manipulation of elements. Unlike layout properties, transforms don't trigger reflow — making them the most performant way to animate position and size changes.</p>
+
+                <h3>2D Transforms</h3>
+
+                <pre><code>/* Translate — move without affecting layout */
+.slide-in {
+    transform: translateX(-100%);
+    transition: transform 0.5s ease-out;
+}
+.slide-in.visible {
+    transform: translateX(0);
+}
+
+/* Scale — resize from center */
+.zoom {
+    transition: transform 0.3s ease;
+}
+.zoom:hover {
+    transform: scale(1.1);
+}
+
+/* Rotate */
+.spin:hover {
+    transform: rotate(360deg);
+    transition: transform 0.6s ease;
+}
+
+/* Combine transforms */
+.combined:hover {
     transform: translateY(-4px) scale(1.02);
-    box-shadow: 0 12px 30px rgba(0,0,0,0.15);
-}
-
-/* Hidden detail section that reveals on hover */
-.card-detail {
-    max-height: 0;
-    opacity: 0;
-    overflow: hidden;
-    transition: max-height 0.4s ease, opacity 0.3s ease;
-}
-
-.card:hover .card-detail {
-    max-height: 200px;
-    opacity: 1;
+    transition: transform 0.3s ease-out;
 }</code></pre>
 
-                <h2>Part 2: CSS Animations with @keyframes</h2>
+                <h3>3D Transforms</h3>
 
-                <h3>Basic Syntax</h3>
+                <pre><code>/* 3D card flip */
+.card-container {
+    perspective: 1000px;
+}
 
-                <p>An animation has two parts: a <code>@keyframes</code> rule defining the stages, and an <code>animation</code> property applying it:</p>
+.card {
+    transform-style: preserve-3d;
+    transition: transform 0.6s ease;
+}
 
-                <pre><code>/* Step 1: Define the animation */
+.card-container:hover .card {
+    transform: rotateY(180deg);
+}
+
+/* 3D rotate with perspective */
+.flip-x:hover {
+    transform: perspective(600px) rotateX(15deg);
+}</code></pre>
+
+                <h2 id="keyframes">3. CSS @keyframes Animations</h2>
+
+                <p>Unlike transitions that react to state changes, <code>@keyframes</code> define a multi-step animation that runs on its own timeline. You control every frame.</p>
+
+                <h3>Basic Keyframe Animation</h3>
+
+                <pre><code>/* Define the animation */
 @keyframes fadeIn {
     from {
         opacity: 0;
@@ -208,360 +208,429 @@
     }
 }
 
-/* Step 2: Apply it */
-.element {
-    animation: fadeIn 0.5s ease-out forwards;
-}</code></pre>
+/* Apply the animation */
+.hero-title {
+    animation: fadeIn 0.8s ease-out forwards;
+}
 
-                <p>The <code>forwards</code> keyword is crucial — without it, the element reverts to its original state after the animation ends. <code>forwards</code> tells it to stay at the final keyframe.</p>
-
-                <h3>Multiple Keyframe Steps</h3>
-
-                <p>Use percentage values for multi-step animations:</p>
-
-                <pre><code>@keyframes slideBounce {
+/* Multi-step animation */
+@keyframes slideUpFade {
     0% {
-        transform: translateX(-100%);
         opacity: 0;
+        transform: translateY(40px);
     }
     60% {
-        transform: translateX(10px);
         opacity: 1;
-    }
-    80% {
-        transform: translateX(-5px);
+        transform: translateY(-4px);
     }
     100% {
-        transform: translateX(0);
+        opacity: 1;
+        transform: translateY(0);
     }
+}
+
+.card {
+    animation: slideUpFade 0.6s ease-out forwards;
 }</code></pre>
 
-                <p>This animation slides an element in from the left, overshoots to the right by 10px, bounces back to -5px, then settles at 0. The overshoot at 60% creates a natural bounce effect.</p>
+                <h3>Animation Properties</h3>
 
-                <h3>Loading Spinner</h3>
+                <pre><code>/* Full animation shorthand */
+animation: name duration timing-function delay iteration-count direction fill-mode play-state;
 
-                <p>A classic use case — a loading spinner that loops continuously:</p>
+.spinner {
+    animation: spin 1s linear infinite;
+    /* name: spin, duration: 1s, timing: linear, repeat: infinite */
+}
 
-                <pre><code>.spinner {
+/* Each property individually */
+.notification {
+    animation-name: slideInRight;
+    animation-duration: 0.4s;
+    animation-timing-function: ease-out;
+    animation-delay: 0.1s;
+    animation-iteration-count: 1;
+    animation-fill-mode: forwards;
+    animation-play-state: running;
+}
+
+/* fill-mode values */
+.forwards   /* stays at final keyframe after animation ends */
+.backwards  /* applies initial keyframe during delay period */
+.both       /* combines forwards and backwards */
+.none       /* default — resets to original state */</code></pre>
+
+                <h3>Practical Animation Examples</h3>
+
+                <pre><code>/* Loading spinner */
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+.spinner {
     width: 40px;
     height: 40px;
-    border: 4px solid #e2e8f0;
-    border-top-color: #2563eb;
+    border: 3px solid #e5e7eb;
+    border-top-color: #6366f1;
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
 }
 
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
+/* Pulsing dot */
+@keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.5); opacity: 0.5; }
+}
+.live-dot {
+    width: 8px;
+    height: 8px;
+    background: #10b981;
+    border-radius: 50%;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+/* Staggered entrance animation */
+.list-item {
+    opacity: 0;
+    animation: fadeInUp 0.5s ease forwards;
+}
+.list-item:nth-child(1) { animation-delay: 0.0s; }
+.list-item:nth-child(2) { animation-delay: 0.1s; }
+.list-item:nth-child(3) { animation-delay: 0.2s; }
+.list-item:nth-child(4) { animation-delay: 0.3s; }
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Skeleton loading placeholder */
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+.skeleton {
+    height: 20px;
+    background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+    border-radius: 4px;
 }</code></pre>
 
-                <p>The key properties here:</p>
+                <h2 id="animation-events">4. Animating with JavaScript (When You Need It)</h2>
 
-                <ul>
-                    <li><code>infinite</code> — loops forever</li>
-                    <li><code>linear</code> — constant rotation speed</li>
-                    <li>Only the <code>to</code> keyframe is needed for continuous rotation since <code>from</code> defaults to the element's current state</li>
-                </ul>
+                <p>CSS animations handle most cases, but sometimes you need JavaScript for dynamic control:</p>
 
-                <h3>Pulsing Notification Badge</h3>
+                <pre><code>// Trigger animation by adding a class
+const button = document.querySelector('.magic-btn');
+button.addEventListener('click', () => {
+    button.classList.add('animate');
+});
 
-                <pre><code>.notification-badge {
-    background: #ef4444;
-    color: white;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
+/* CSS */
+@keyframes confetti {
+    0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(-200px) rotate(720deg); opacity: 0; }
+}
+
+.animate::after {
+    content: '🎉';
+    position: absolute;
+    animation: confetti 0.8s ease-out forwards;
+}
+
+// Listen for animation events
+element.addEventListener('animationend', (e) => {
+    console.log('Animation completed:', e.animationName);
+    element.classList.remove('animate');
+});
+
+// Dynamic animation with Web Animations API
+element.animate([
+    { transform: 'scale(1)', opacity: 1 },
+    { transform: 'scale(1.2)', opacity: 0.8 },
+    { transform: 'scale(1)', opacity: 1 }
+], {
+    duration: 400,
+    easing: 'ease-in-out',
+    iterations: 1
+});</code></pre>
+
+                <h2 id="performance">5. Performance: Animating Without Jank</h2>
+
+                <p>Not all CSS properties are equal when it comes to animation performance. Understanding what triggers expensive browser operations is the difference between smooth 60fps and stuttering 15fps.</p>
+
+                <h3>The Performance Hierarchy</h3>
+
+                <pre><code>/* 🟢 BEST — GPU composited (no layout, no paint) */
+.fast {
+    transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+/* 🟡 GOOD — Triggers paint but not layout */
+.okay {
+    transition: color 0.3s, background-color 0.3s, box-shadow 0.3s;
+}
+
+/* 🔴 AVOID — Triggers full layout recalculation */
+.slow {
+    transition: width 0.3s, height 0.3s, margin 0.3s, top 0.3s, left 0.3s;
+}</code></pre>
+
+                <h3>Performance Best Practices</h3>
+
+                <pre><code>/* ❌ BAD: Animating width */
+.bad-expand:hover {
+    width: 300px;  /* triggers layout every frame */
+    transition: width 0.3s;
+}
+
+/* ✅ GOOD: Animating transform:scale instead */
+.good-expand {
+    transform-origin: left center;
+}
+.good-expand:hover {
+    transform: scaleX(1.5);  /* GPU composited */
+    transition: transform 0.3s;
+}
+
+/* Use will-change for elements you know will animate */
+.hero-image {
+    will-change: transform;
+    /* Apply early, remove after animation starts */
+}
+
+/* Prefer translate over top/left for movement */
+/* ❌ BAD */
+.moving-bad {
+    top: 100px;
+    left: 50px;
+    transition: top 0.3s, left 0.3s;
+}
+
+/* ✅ GOOD */
+.moving-good {
+    transform: translate(50px, 100px);
+    transition: transform 0.3s;
+}
+
+/* Limit concurrent animations */
+.card-grid {
+    /* Only animate cards that enter viewport */
+    animation-timeline: view();
+}</code></pre>
+
+                <h2 id="complete-project">6. Complete Project: Animated Navigation Menu</h2>
+
+                <p>Let's combine everything into a real example — a responsive navigation with smooth hamburger menu animation:</p>
+
+                <pre><code>&lt;nav class="navbar"&gt;
+    &lt;a href="/" class="logo"&gt;My Site&lt;/a&gt;
+    &lt;button class="menu-toggle" aria-label="Toggle menu"&gt;
+        &lt;span class="hamburger-line"&gt;&lt;/span&gt;
+        &lt;span class="hamburger-line"&gt;&lt;/span&gt;
+        &lt;span class="hamburger-line"&gt;&lt;/span&gt;
+    &lt;/button&gt;
+    &lt;ul class="nav-links"&gt;
+        &lt;li&gt;&lt;a href="/"&gt;Home&lt;/a&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;a href="/about"&gt;About&lt;/a&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;a href="/blog"&gt;Blog&lt;/a&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;a href="/contact"&gt;Contact&lt;/a&gt;&lt;/li&gt;
+    &lt;/ul&gt;
+&lt;/nav&gt;
+
+/* CSS */
+.navbar {
     display: flex;
     align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    animation: pulse 1.5s ease-in-out infinite;
+    justify-content: space-between;
+    padding: 1rem 2rem;
+    background: var(--bg-surface);
 }
 
-@keyframes pulse {
-    0%, 100% {
-        transform: scale(1);
-        opacity: 1;
-    }
-    50% {
-        transform: scale(1.2);
-        opacity: 0.8;
-    }
-}</code></pre>
-
-                <h2>Part 3: Animation Properties Reference</h2>
-
-                <p>The <code>animation</code> shorthand packs seven sub-properties:</p>
-
-                <pre><code>/* Shorthand: name duration timing-function delay iteration-count direction fill-mode play-state */
-animation: slideIn 0.5s ease-out 0.2s 1 normal forwards paused;</code></pre>
-
-                <table class="code-table">
-                    <thead>
-                        <tr>
-                            <th>Property</th>
-                            <th>Common Values</th>
-                            <th>Default</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><code>animation-name</code></td>
-                            <td>Your @keyframes name</td>
-                            <td>none</td>
-                        </tr>
-                        <tr>
-                            <td><code>animation-duration</code></td>
-                            <td>1s, 500ms, 2s</td>
-                            <td>0s</td>
-                        </tr>
-                        <tr>
-                            <td><code>animation-timing-function</code></td>
-                            <td>ease, linear, ease-in-out</td>
-                            <td>ease</td>
-                        </tr>
-                        <tr>
-                            <td><code>animation-delay</code></td>
-                            <td>0.5s, 200ms</td>
-                            <td>0s</td>
-                        </tr>
-                        <tr>
-                            <td><code>animation-iteration-count</code></td>
-                            <td>1, 3, infinite</td>
-                            <td>1</td>
-                        </tr>
-                        <tr>
-                            <td><code>animation-direction</code></td>
-                            <td>normal, reverse, alternate</td>
-                            <td>normal</td>
-                        </tr>
-                        <tr>
-                            <td><code>animation-fill-mode</code></td>
-                            <td>none, forwards, backwards, both</td>
-                            <td>none</td>
-                        </tr>
-                        <tr>
-                            <td><code>animation-play-state</code></td>
-                            <td>running, paused</td>
-                            <td>running</td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                <h2>Part 4: Scroll-Triggered Animations</h2>
-
-                <p>Modern browsers support the <code>Intersection Observer API</code> — perfect for triggering CSS animations when elements enter the viewport. Add just a few lines of JavaScript:</p>
-
-                <pre><code>/* CSS: Elements start invisible and slide up */
-.reveal {
-    opacity: 0;
-    transform: translateY(30px);
-    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+.nav-links {
+    display: flex;
+    list-style: none;
+    gap: 2rem;
 }
 
-.reveal.visible {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-/* JavaScript: Add .visible when scrolled into view */
-<script>
-const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-        if (entry.isIntersecting) {
-            entry.target.classList.add('visible');
-            observer.unobserve(entry.target); // Only animate once
-        }
-    });
-}, { threshold: 0.1 });
-
-document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
-</script></code></pre>
-
-                <p>Apply <code>class="reveal"</code> to any element (headings, cards, images) and it will smoothly fade and slide up when the user scrolls to it. The <code>threshold: 0.1</code> means the animation triggers when 10% of the element is visible.</p>
-
-                <h2>Part 5: Performance Best Practices</h2>
-
-                <p>Smooth animations at 60fps (one frame every 16ms) require care. Follow these rules:</p>
-
-                <h3>✅ Always Animate These (GPU-accelerated)</h3>
-                <ul>
-                    <li><code>transform</code> — translate, rotate, scale, skew</li>
-                    <li><code>opacity</code> — fade effects</li>
-                </ul>
-
-                <h3>⚠️ Sometimes Okay</h3>
-                <ul>
-                    <li><code>color</code>, <code>background-color</code>, <code>box-shadow</code></li>
-                    <li><code>filter</code>, <code>backdrop-filter</code></li>
-                </ul>
-
-                <h3>❌ Avoid Animating These (triggers layout)</h3>
-                <ul>
-                    <li><code>width</code>, <code>height</code> — use <code>transform: scale()</code> instead</li>
-                    <li><code>margin</code>, <code>padding</code>, <code>top</code>, <code>left</code> — use <code>transform: translate()</code></li>
-                    <li><code>font-size</code>, <code>line-height</code></li>
-                </ul>
-
-                <h3>Use will-change Sparingly</h3>
-
-                <pre><code>.animated-element {
-    will-change: transform, opacity;
-}</code></pre>
-
-                <p><code>will-change</code> hints to the browser to optimize rendering. Use it only for elements you know will animate — overusing it wastes memory. Remove it when the animation ends.</p>
-
-                <h3>Add Reduced Motion Support</h3>
-
-                <p>Always respect users who prefer reduced motion (a common accessibility setting):</p>
-
-                <pre><code>@media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
-        animation-duration: 0.01ms !important;
-        transition-duration: 0.01ms !important;
-    }
-}</code></pre>
-
-                <h2>Complete Example: Animated Dashboard Card</h2>
-
-                <p>Let's combine everything into one polished component:</p>
-
-                <pre><code>.dashboard-card {
-    background: white;
-    border-radius: 16px;
-    padding: 32px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+.nav-links a {
+    color: var(--text-secondary);
     position: relative;
-    overflow: hidden;
-    transition: transform 0.3s ease-out, box-shadow 0.3s ease-out;
-
-    /* Entrance animation */
-    opacity: 0;
-    animation: cardEntrance 0.6s ease-out forwards;
+    padding: 0.5rem 0;
+    transition: color 0.2s ease;
 }
 
-/* Stagger entrance: each card appears 0.1s after the last */
-.dashboard-card:nth-child(1) { animation-delay: 0s; }
-.dashboard-card:nth-child(2) { animation-delay: 0.1s; }
-.dashboard-card:nth-child(3) { animation-delay: 0.2s; }
-.dashboard-card:nth-child(4) { animation-delay: 0.3s; }
-
-@keyframes cardEntrance {
-    from {
-        opacity: 0;
-        transform: translateY(20px) scale(0.95);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-}
-
-.dashboard-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 40px rgba(0,0,0,0.12);
-}
-
-/* Gradient accent bar */
-.dashboard-card::before {
+.nav-links a::after {
     content: '';
     position: absolute;
-    top: 0;
+    bottom: 0;
     left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, #2563eb, #7c3aed);
-    transform: scaleX(0);
-    transform-origin: left;
-    transition: transform 0.3s ease;
+    width: 0;
+    height: 2px;
+    background: var(--brand);
+    transition: width 0.3s ease;
 }
 
-.dashboard-card:hover::before {
-    transform: scaleX(1);
-}</code></pre>
+.nav-links a:hover {
+    color: var(--text-primary);
+}
 
-                <h2>Summary</h2>
+.nav-links a:hover::after {
+    width: 100%;
+}
 
-                <p>CSS animations and transitions give your website professional polish with zero JavaScript overhead. Remember the key principles:</p>
+/* Staggered menu open animation */
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
 
-                <ol>
-                    <li>Use <strong>transitions</strong> for simple state changes (hover, focus, toggle)</li>
-                    <li>Use <strong>@keyframes animations</strong> for multi-step effects, loops, and entrance sequences</li>
-                    <li>Always animate <code>transform</code> and <code>opacity</code> for best performance</li>
-                    <li>Add <code>animation-fill-mode: forwards</code> so animations persist after ending</li>
-                    <li>Respect <code>prefers-reduced-motion</code> for accessibility</li>
-                    <li>Use <code>IntersectionObserver</code> for scroll-triggered effects</li>
-                </ol>
+.nav-open .nav-links li {
+    opacity: 0;
+    animation: slideDown 0.3s ease forwards;
+}
+.nav-open .nav-links li:nth-child(1) { animation-delay: 0.05s; }
+.nav-open .nav-links li:nth-child(2) { animation-delay: 0.1s; }
+.nav-open .nav-links li:nth-child(3) { animation-delay: 0.15s; }
+.nav-open .nav-links li:nth-child(4) { animation-delay: 0.2s; }
 
-                <p>Practice by building small components — a hover button, a loading spinner, an entrance animation. Each takes 10 minutes but the visual impact is huge. Your users will notice the difference.</p>
+/* Hamburger to X animation */
+.menu-toggle {
+    display: none;
+    flex-direction: column;
+    gap: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+}
+
+.hamburger-line {
+    width: 24px;
+    height: 2px;
+    background: var(--text-primary);
+    border-radius: 2px;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.nav-active .hamburger-line:nth-child(1) {
+    transform: translateY(7px) rotate(45deg);
+}
+.nav-active .hamburger-line:nth-child(2) {
+    opacity: 0;
+}
+.nav-active .hamburger-line:nth-child(3) {
+    transform: translateY(-7px) rotate(-45deg);
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .menu-toggle { display: flex; }
+
+    .nav-links {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        flex-direction: column;
+        background: var(--bg-surface);
+        padding: 1rem 2rem;
+        gap: 0;
+        transform: translateY(-10px);
+        opacity: 0;
+        pointer-events: none;
+        transition: transform 0.3s ease, opacity 0.3s ease;
+        border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .nav-open .nav-links {
+        transform: translateY(0);
+        opacity: 1;
+        pointer-events: auto;
+    }
+}
+
+/* JavaScript toggle */
+document.querySelector('.menu-toggle').addEventListener('click', () => {
+    document.querySelector('.navbar').classList.toggle('nav-open');
+    document.querySelector('.menu-toggle').classList.toggle('nav-active');
+});</code></pre>
+
+                <h2 id="accessibility">7. Accessibility Considerations</h2>
+
+                <p>Animations can cause discomfort or even trigger seizures in some users. Always respect user preferences:</p>
+
+                <pre><code>/* Respect the user's motion preference */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* Alternative: disable specific animations */
+@media (prefers-reduced-motion: reduce) {
+    .parallax {
+        transform: none;
+    }
+    .fade-in {
+        opacity: 1;
+    }
+}
+
+/* Never animate on pages that could be read for a long time
+   — avoid parallax, scroll-triggered animations */
+/* It's fine to animate on load, hover, or interaction */</code></pre>
+
+                <h2 id="summary">Summary</h2>
+
+                <table class="summary-table">
+                    <tr><th>Technique</th><th>Best For</th><th>Performance</th></tr>
+                    <tr><td><code>transition</code></td><td>Hover states, toggles</td><td>High (with transform/opacity)</td></tr>
+                    <tr><td><code>@keyframes</code></td><td>Multi-step, timed animations</td><td>High (with transform/opacity)</td></tr>
+                    <tr><td><code>transform</code></td><td>Move, scale, rotate</td><td>GPU composited — fastest</td></tr>
+                    <tr><td><code>opacity</code></td><td>Fade in/out effects</td><td>GPU composited — fast</td></tr>
+                    <tr><td><code>animation-timeline</code></td><td>Scroll-driven effects</td><td>High — native scroll sync</td></tr>
+                </table>
+
+                <p>The golden rule: animate <code>transform</code> and <code>opacity</code> whenever possible, use <code>transition</code> for interaction feedback, reserve <code>@keyframes</code> for multi-step effects, and always respect <code>prefers-reduced-motion</code>. With these tools, you can create beautiful, smooth animations that enhance every interface.</p>
             </div>
         </article>
-
-        <nav class="post-nav">
-            <a href="python-conditional-logic.html" class="post-nav-link prev">← Python Conditional Logic: if/elif/else</a>
-            <a href="terraform-modules-reusability.html" class="post-nav-link next">Terraform Modules →</a>
-        </nav>
     </main>
 
     <footer>
         <div class="container">
-            <p>© 2026 Hugo's Dev Notes | Built with ❤️ & AI</p>
-            <div class="footer-links">
-                <a href="https://github.com/hugow0528" target="_blank">GitHub</a>
-                <a href="https://blog.hugow.dev/sitemap.xml">Sitemap</a>
-            </div>
+            <p>&copy; 2026 Hugo's Dev Notes. Built with curiosity.</p>
         </div>
     </footer>
 
-    <button class="back-to-top" id="backToTop" title="Back to top">↑</button>
-
     <script>
-    const themeToggle = document.getElementById('themeToggle');
-    themeToggle.addEventListener('click', () => {
-        document.body.classList.toggle('dark-mode');
-        themeToggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
-        localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
-    });
-    if (localStorage.getItem('theme') === 'dark') {
-        document.body.classList.add('dark-mode');
-        themeToggle.textContent = '☀️';
-    }
-    const backToTop = document.getElementById('backToTop');
-    window.addEventListener('scroll', () => {
-        backToTop.style.display = window.pageYOffset > 300 ? 'block' : 'none';
-        const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
-        const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-        const scrolled = (winScroll / height) * 100;
-        document.getElementById('progressBar').style.width = scrolled + '%';
-    });
-    backToTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
-    </script>
-    <script>
-        // Theme toggle
-        const themeToggle = document.getElementById('themeToggle');
-        if (themeToggle) {{
-            const savedTheme = localStorage.getItem('theme') || 'dark';
-            if (savedTheme === 'light') {{
-                document.body.classList.add('light-mode');
-                themeToggle.textContent = '☀';
-            }}
-            themeToggle.addEventListener('click', () => {{
-                document.body.classList.toggle('light-mode');
-                const isLight = document.body.classList.contains('light-mode');
-                localStorage.setItem('theme', isLight ? 'light' : 'dark');
-                themeToggle.textContent = isLight ? '☀' : '◐';
-            }});
-        }}
-        // Progress bar
-        window.addEventListener('scroll', () => {{
-            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+        // Reading progress bar
+        window.addEventListener('scroll', () => {
+            const winScroll = document.documentElement.scrollTop;
             const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
             const scrolled = (winScroll / height) * 100;
-            const bar = document.getElementById('progressBar');
-            if (bar) bar.style.width = scrolled + "%";
-        }});
+            document.getElementById('progressBar').style.width = scrolled + '%';
+        });
+
+        // Theme toggle
+        const toggle = document.getElementById('themeToggle');
+        toggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-theme');
+        });
+
+        // Copy code on click
+        document.querySelectorAll('pre code').forEach(code => {
+            const pre = code.parentElement;
+            pre.style.position = 'relative';
+            pre.addEventListener('click', () => {
+                navigator.clipboard.writeText(code.textContent);
+            });
+            pre.title = 'Click to copy';
+            pre.style.cursor = 'pointer';
+        });
     </script>
 </body>
 </html>

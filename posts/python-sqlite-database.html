@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python SQLite Database: Store and Query Data Like a Pro — Complete Beginner's Guide | Hugo's Dev Notes</title>
+    <meta name="description" content="Master Python SQLite database operations — create tables, CRUD operations, parameterized queries, transactions, indexes, and building a complete data layer. Working code for every concept.">
+    <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-sqlite-database.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn active">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <article class="post-content">
+        <span class="tag python">Python</span>
+        <h1>Python SQLite Database: Store and Query Data Like a Pro — Complete Beginner's Guide</h1>
+        <div class="post-meta">
+            <span class="post-date">July 20, 2026</span>
+            <span class="read-time">10 min read</span>
+        </div>
+
+        <p>SQLite is the most deployed database engine in the world, and Python includes built-in support through the <code>sqlite3</code> module. No installation needed, no server to configure — just import and go. This guide covers everything from creating your first table to building a complete data layer with parameterized queries, transactions, indexes, and a reusable database class.</p>
+
+        <h2>Why SQLite for Python Projects?</h2>
+        <p>SQLite is a file-based database — your entire database lives in a single <code>.db</code> file. This makes it perfect for local applications, prototypes, mobile apps, embedded systems, and small-to-medium projects where a full database server (PostgreSQL, MySQL) would be overkill. It supports almost all standard SQL features: transactions, indexes, joins, views, and triggers.</p>
+
+        <h2>Connecting to a Database</h2>
+        <p>Import the built-in <code>sqlite3</code> module and create a connection. If the file doesn't exist, SQLite creates it automatically:</p>
+
+        <pre><code>import sqlite3
+
+# Connect to a database (creates file if it doesn't exist)
+conn = sqlite3.connect("app.db")
+
+# Use an in-memory database for testing (faster, ephemeral)
+test_conn = sqlite3.connect(":memory:")
+
+# Create a cursor to execute SQL
+cursor = conn.cursor()</code></pre>
+
+        <p>The <code>cursor</code> object is your interface to the database. You use it to execute SQL statements and fetch results. The connection manages transactions, so always remember to <code>commit()</code> your changes and <code>close()</code> the connection when done.</p>
+
+        <h2>Creating Tables</h2>
+        <p>Let's create a table for storing user accounts. SQLite supports <code>INTEGER</code>, <code>TEXT</code>, <code>REAL</code>, <code>BLOB</code>, and <code>NUMERIC</code> types, plus the special <code>INTEGER PRIMARY KEY</code> for auto-incrementing IDs:</p>
+
+        <pre><code>cursor.execute("""
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL UNIQUE,
+        email TEXT NOT NULL UNIQUE,
+        age INTEGER,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+""")
+conn.commit()</code></pre>
+
+        <p>The <code>IF NOT EXISTS</code> clause prevents errors if the table already exists. The <code>UNIQUE</code> constraint ensures no duplicate usernames or emails. The <code>DEFAULT CURRENT_TIMESTAMP</code> automatically records when each row was inserted.</p>
+
+        <h2>INSERT — Adding Data with Parameterized Queries</h2>
+        <p>Never concatenate user input into SQL strings — that's how SQL injection attacks happen. Instead, use <code>?</code> placeholders (parameterized queries), which safely escape all values:</p>
+
+        <pre><code># ✅ Safe — parameterized query
+cursor.execute(
+    "INSERT INTO users (username, email, age) VALUES (?, ?, ?)",
+    ("alice", "alice@example.com", 28)
+)
+
+# Insert multiple rows at once
+new_users = [
+    ("bob", "bob@example.com", 34),
+    ("carol", "carol@example.com", 22),
+    ("dave", "dave@example.com", 41),
+]
+cursor.executemany(
+    "INSERT INTO users (username, email, age) VALUES (?, ?, ?)",
+    new_users
+)
+conn.commit()
+
+# Get the ID of the last inserted row
+last_id = cursor.lastrowid
+print(f"Inserted user ID: {last_id}")</code></pre>
+
+        <p>The <code>executemany()</code> method is much faster than calling <code>execute()</code> in a loop because it batches the inserts into a single transaction.</p>
+
+        <h2>SELECT — Reading Data</h2>
+        <p>Use <code>execute()</code> to run a SELECT query, then fetch results with <code>fetchone()</code>, <code>fetchall()</code>, or by iterating the cursor directly:</p>
+
+        <pre><code># Fetch all rows
+cursor.execute("SELECT * FROM users")
+all_users = cursor.fetchall()
+for user in all_users:
+    print(user)  # (1, 'alice', 'alice@example.com', 28, '2026-07-20 10:00:00')
+
+# Fetch one row
+cursor.execute("SELECT username, email FROM users WHERE age > 30")
+senior_user = cursor.fetchone()
+print(senior_user)  # ('bob', 'bob@example.com')
+
+# Iterate results directly (memory efficient)
+cursor.execute("SELECT username FROM users ORDER BY username")
+for row in cursor:
+    print(row[0])
+
+# Filter with parameters
+cursor.execute("SELECT * FROM users WHERE age > ?", (25,))
+adults = cursor.fetchall()</code></pre>
+
+        <h2>Row Factory: Access Columns by Name</h2>
+        <p>By default, rows are tuples indexed by position. Use the <code>Row</code> factory to access columns by name instead:</p>
+
+        <pre><code>conn.row_factory = sqlite3.Row
+
+cursor.execute("SELECT * FROM users WHERE id = 1")
+user = cursor.fetchone()
+
+# Access by column name (like a dictionary)
+print(user["username"])   # alice
+print(user["email"])      # alice@example.com
+print(user.keys())        # ['id', 'username', 'email', 'age', 'created_at']</code></pre>
+
+        <h2>UPDATE and DELETE — Modifying Data</h2>
+        <p>UPDATE and DELETE also use parameterized queries to prevent injection:</p>
+
+        <pre><code># Update a row
+cursor.execute(
+    "UPDATE users SET email = ? WHERE username = ?",
+    ("alice.new@example.com", "alice")
+)
+print(f"Rows changed: {cursor.rowcount}")  # Rows changed: 1
+
+# Delete a row
+cursor.execute("DELETE FROM users WHERE username = ?", ("dave",))
+print(f"Rows deleted: {cursor.rowcount}")  # Rows deleted: 1
+
+conn.commit()</code></pre>
+
+        <p>The <code>rowcount</code> attribute tells you how many rows were affected. Always include a <code>WHERE</code> clause on UPDATE and DELETE — otherwise you'll modify or delete every row in the table.</p>
+
+        <h2>Transactions and Rollbacks</h2>
+        <p>SQLite wraps operations in transactions. Call <code>conn.commit()</code> to save changes, or <code>conn.rollback()</code> to discard them:</p>
+
+        <pre><code>try:
+    # Start a transaction (automatic)
+    cursor.execute("INSERT INTO users (username, email) VALUES (?, ?)",
+                   ("eve", "eve@example.com"))
+    cursor.execute("INSERT INTO users (username, email) VALUES (?, ?)",
+                   ("frank", "frank@example.com"))
+    conn.commit()  # Save both inserts
+except sqlite3.IntegrityError:
+    conn.rollback()  # Undo everything if something failed
+    print("Insert failed — rolled back")</code></pre>
+
+        <p>You can also use the connection as a context manager for automatic transaction handling:</p>
+
+        <pre><code>with conn:  # Auto-commits on success, auto-rolls-back on exception
+    cursor.execute("INSERT INTO users (username, email) VALUES (?, ?)",
+                   ("grace", "grace@example.com"))</code></pre>
+
+        <h2>Indexes for Performance</h2>
+        <p>As your table grows, queries slow down. Indexes speed up lookups on specific columns. Create them when you frequently filter or sort by a column:</p>
+
+        <pre><code># Speed up queries filtering by age
+cursor.execute("CREATE INDEX idx_users_age ON users(age)")
+
+# Speed up lookups by email (also helps UNIQUE enforcement)
+cursor.execute("CREATE INDEX idx_users_email ON users(email)")
+
+# Composite index for multi-column queries
+cursor.execute("CREATE INDEX idx_users_age_email ON users(age, email)")
+
+conn.commit()</code></pre>
+
+        <p>Don't over-index — every index slows down INSERT, UPDATE, and DELETE operations. Only index columns you query frequently.</p>
+
+        <h2>JOINs — Combining Multiple Tables</h2>
+        <p>Relational databases shine when you split data across related tables. Here's a user-posts example:</p>
+
+        <pre><code># Create a related table
+cursor.execute("""
+    CREATE TABLE IF NOT EXISTS posts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        title TEXT NOT NULL,
+        body TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+""")
+
+# Insert posts
+cursor.executemany(
+    "INSERT INTO posts (user_id, title, body) VALUES (?, ?, ?)",
+    [
+        (1, "Hello World", "My first post"),
+        (1, "SQLite Tips", "Using Python with databases"),
+        (2, "Bob's Post", "Learning databases"),
+    ]
+)
+
+# JOIN users with their posts
+cursor.execute("""
+    SELECT u.username, p.title, p.created_at
+    FROM posts p
+    JOIN users u ON p.user_id = u.id
+    ORDER BY p.created_at DESC
+""")
+
+for row in cursor.fetchall():
+    print(f"{row[0]}: {row[1]}")
+# alice: SQLite Tips
+# alice: Hello World
+# bob: Bob's Post</code></pre>
+
+        <h2>Building a Reusable Database Class</h2>
+        <p>Wrap everything in a class for clean, reusable code:</p>
+
+        <pre><code>import sqlite3
+from pathlib import Path
+
+class Database:
+    def __init__(self, db_path: str = "app.db"):
+        self.path = Path(db_path)
+        self.conn = sqlite3.connect(self.path)
+        self.conn.row_factory = sqlite3.Row
+        self.conn.execute("PRAGMA foreign_keys = ON")
+
+    def init_tables(self):
+        with self.conn:
+            self.conn.execute("""
+                CREATE TABLE IF NOT EXISTS users (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    username TEXT NOT NULL UNIQUE,
+                    email TEXT NOT NULL UNIQUE,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
+    def add_user(self, username: str, email: str) -> int:
+        with self.conn:
+            cursor = self.conn.execute(
+                "INSERT INTO users (username, email) VALUES (?, ?)",
+                (username, email)
+            )
+            return cursor.lastrowid
+
+    def get_user(self, user_id: int) -> dict | None:
+        cursor = self.conn.execute(
+            "SELECT * FROM users WHERE id = ?", (user_id,)
+        )
+        row = cursor.fetchone()
+        return dict(row) if row else None
+
+    def get_all_users(self) -> list[dict]:
+        cursor = self.conn.execute("SELECT * FROM users ORDER BY created_at DESC")
+        return [dict(row) for row in cursor.fetchall()]
+
+    def close(self):
+        self.conn.close()
+
+# Usage
+db = Database("myapp.db")
+db.init_tables()
+user_id = db.add_user("alice", "alice@example.com")
+print(db.get_user(user_id))
+# {'id': 1, 'username': 'alice', 'email': 'alice@example.com', ...}
+print(db.get_all_users())
+db.close()</code></pre>
+
+        <h2>Common Pitfalls to Avoid</h2>
+        <p><strong>SQL Injection:</strong> Always use <code>?</code> placeholders — never f-strings or <code>.format()</code> for SQL values. <strong>Forgetting <code>commit()</code>:</strong> Without it, your INSERT/UPDATE/DELETE changes are lost when the connection closes. <strong>Not closing connections:</strong> Always <code>conn.close()</code> or use a context manager. <strong>Blocking on long queries:</strong> SQLite doesn't handle concurrent writes well — use a single connection per thread and <code>PRAGMA journal_mode=WAL</code> for better concurrency.</p>
+
+        <h2>Summary</h2>
+        <p>SQLite gives you a full relational database with zero setup. The <code>sqlite3</code> module in Python's standard library lets you create tables, run parameterized queries, manage transactions, and build clean data layers — all without installing anything. For local apps, prototypes, and small projects, it's the perfect starting point before graduating to PostgreSQL or MySQL.</p>
+
+    </article>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes. Built with care.</p>
+        </div>
+    </footer>
+
+    <script>
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + '%';
+        });
+        const toggle = document.getElementById('themeToggle');
+        if (toggle) {
+            toggle.addEventListener('click', () => {
+                document.body.classList.toggle('light');
+            });
+        }
+    </script>
+</body>
+</html>

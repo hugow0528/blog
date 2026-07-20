@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kubernetes for Beginners: Deploy Your First App — Complete Guide | Hugo's Dev Notes</title>
+    
+    <meta name="description" content="Learn Kubernetes from scratch — pods, deployments, services, minikube, kubectl, and deploying a Python app step by step. Working examples for every concept.">
+    <meta name="keywords" content="kubernetes, k8s, minikube, kubectl, container orchestration, docker, devops, tutorial">
+    <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/kubernetes-beginner-guide.html">
+    
+    <meta property="og:title" content="Kubernetes for Beginners: Deploy Your First App — Complete Guide">
+    <meta property="og:description" content="Master Kubernetes fundamentals with working kubectl commands and deployment YAML examples.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.hugow.dev/posts/kubernetes-beginner-guide.html">
+    
+    <link rel="stylesheet" href="../style.css">
+    <link rel="sitemap" type="application/xml" href="/sitemap.xml">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn active">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <article class="post-content container">
+        <span class="tag devops">DevOps</span>
+        <h1>Kubernetes for Beginners: Deploy Your First App — Complete Guide</h1>
+        <div class="post-meta">
+            <span class="post-date">July 15, 2026</span>
+            <span class="read-time">11 min read</span>
+        </div>
+
+        <p>Docker lets you run a single container. But in production you need <strong>multiple</strong> containers — web servers, databases, caches — that talk to each other, restart when they crash, scale when traffic spikes, and receive zero-downtime updates. That's what <strong>Kubernetes</strong> (often shortened to <strong>K8s</strong>) does: it's the operating system for containers. This guide takes you from zero to deploying a live Python app, one concept at a time.</p>
+
+        <h2 id="what-is-kubernetes">What Is Kubernetes, Really?</h2>
+
+        <p>Kubernetes is an <strong>orchestration platform</strong>. Instead of manually starting, monitoring, and restarting Docker containers, you <strong>declare</strong> the desired state in YAML files, and Kubernetes makes it happen. If you say "I want 3 copies of my app running," and one crashes, Kubernetes starts a replacement automatically.</p>
+
+        <p>It was created by Google from 15 years of running containers at scale, and donated to the Cloud Native Computing Foundation in 2014. Today it runs on every major cloud (AWS EKS, Google GKE, Azure AKS) and locally with tools like <strong>Minikube</strong> and <strong>k3s</strong>.</p>
+
+        <h2 id="core-concepts">Core Concepts: The Kubernetes Vocabulary</h2>
+
+        <h3 id="concept-pods">Pods: The Smallest Unit</h3>
+
+        <p>A <strong>Pod</strong> is the smallest deployable unit in Kubernetes. It wraps one or more containers that share networking (same IP), storage, and lifecycle. In most cases, one Pod = one container. Think of a Pod as the "lifecycle wrapper" around your container.</p>
+
+        <h3 id="concept-deployments">Deployments: Managing Pod Lifecycles</h3>
+
+        <p>You rarely create Pods directly. Instead, you create a <strong>Deployment</strong>, which manages a set of identical Pods (called <strong>replicas</strong>). Deployments handle rolling updates, rollbacks, and self-healing automatically.</p>
+
+        <h3 id="concept-services">Services: Stable Networking</h3>
+
+        <p>Pods are ephemeral — they get new IP addresses when recreated. A <strong>Service</strong> provides a stable network endpoint that routes traffic to your Pods. Think of it as a DNS name + load balancer combined.</p>
+
+        <h2 id="setup">Setting Up a Local Cluster with Minikube</h2>
+
+        <p>You don't need a cloud provider to learn Kubernetes. <strong>Minikube</strong> runs a single-node cluster on your machine. Install it with:</p>
+
+<pre><code class="language-bash"># macOS with Homebrew
+brew install minikube kubectl
+
+# Or using the official script (Linux/macOS)
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+
+# Start a local cluster
+minikube start --driver=docker</code></pre>
+
+        <p>Verify it's running:</p>
+
+<pre><code class="language-bash"># Check cluster health
+kubectl cluster-info
+
+# Verify nodes
+kubectl get nodes
+# NAME       STATUS   ROLES           AGE   VERSION
+# minikube   Ready    control-plane   2m    v1.31.0</code></pre>
+
+        <h2 id="first-app">Deploying Your First Python App</h2>
+
+        <p>Let's create a simple Flask app and deploy it. First, the application code:</p>
+
+<pre><code class="language-python"># app.py
+from flask import Flask, jsonify
+from datetime import datetime
+
+app = Flask(__name__)
+
+@app.route("/")
+def home():
+    return jsonify({
+        "message": "Hello from Kubernetes!",
+        "time": datetime.utcnow().isoformat()
+    })
+
+@app.route("/health")
+def health():
+    return jsonify({"status": "healthy"}), 200
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)</code></pre>
+
+        <p>And the Dockerfile:</p>
+
+<pre><code class="language-dockerfile"># Dockerfile
+FROM python:3.12-slim
+WORKDIR /app
+COPY app.py .
+RUN pip install --no-cache-dir flask
+EXPOSE 5000
+CMD ["python", "app.py"]</code></pre>
+
+        <p>Build and load the image into Minikube:</p>
+
+<pre><code class="language-bash"># Build using Minikube's Docker daemon
+minikube docker-env
+# Run the output eval command, then:
+docker build -t myapp:v1 .</code></pre>
+
+        <h2 id="deployment-yaml">Writing the Deployment YAML</h2>
+
+        <p>Kubernetes uses YAML files to define resources. Create <code>deployment.yaml</code>:</p>
+
+<pre><code class="language-yaml"># deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp
+  labels:
+    app: myapp
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: myapp
+  template:
+    metadata:
+      labels:
+        app: myapp
+    spec:
+      containers:
+      - name: myapp
+        image: myapp:v1
+        ports:
+        - containerPort: 5000
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 5
+          periodSeconds: 10</code></pre>
+
+        <p>Key sections explained:</p>
+        <ul>
+            <li><code>replicas: 3</code> — run 3 copies of the app for redundancy</li>
+            <li><code>selector.matchLabels</code> — how the Deployment finds its Pods</li>
+            <li><code>resources</code> — CPU/memory limits prevent one container from starving others</li>
+            <li><code>livenessProbe</code> — Kubernetes checks /health every 10 seconds and restarts unhealthy Pods</li>
+        </ul>
+
+        <p>Apply it:</p>
+
+<pre><code class="language-bash">kubectl apply -f deployment.yaml
+deployment.apps/myapp created
+
+# Watch pods start up
+kubectl get pods -l app=myapp -w
+# NAME                    READY   STATUS    RESTARTS   AGE
+# myapp-5d4f7b8c9-abc12  1/1     Running   0          10s
+# myapp-5d4f7b8c9-def34  1/1     Running   0          10s
+# myapp-5d4f7b8c9-ghi56  1/1     Running   0          10s</code></pre>
+
+        <h2 id="service-yaml">Exposing the App with a Service</h2>
+
+        <p>Your Pods are running but not accessible. Create <code>service.yaml</code>:</p>
+
+<pre><code class="language-yaml"># service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: myapp-service
+spec:
+  type: ClusterIP
+  selector:
+    app: myapp
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 5000</code></pre>
+
+        <p><code>ClusterIP</code> creates an internal IP accessible within the cluster. To access it from your browser, use <code>minikube service</code>:</p>
+
+<pre><code class="language-bash">kubectl apply -f service.yaml
+minikube service myapp-service
+# Opening service default/myapp-service in default browser...
+# 🎉  http://192.168.49.2:30080
+
+# Or use kubectl port-forward for direct access:
+kubectl port-forward service/myapp-service 8080:80
+# Now visit http://localhost:8080</code></pre>
+
+        <h2 id="scaling">Scaling and Rolling Updates</h2>
+
+        <p>Need more capacity? Scale with a single command:</p>
+
+<pre><code class="language-bash"># Scale to 5 replicas
+kubectl scale deployment myapp --replicas=5
+
+# Check the result
+kubectl get pods -l app=myapp
+# 5 pods running</code></pre>
+
+        <p>To update the app, build a new image tagged <code>myapp:v2</code> and run:</p>
+
+<pre><code class="language-bash"># Update the image in the deployment
+kubectl set image deployment/myapp myapp=myapp:v2
+
+# Watch the rolling update in real time
+kubectl rollout status deployment/myapp
+# Waiting for deployment "myapp" rollout to finish: 2 out of 3 new replicas have been updated...
+# Waiting for deployment "myapp" rollout to finish: 2 out of 3 new replicas have been updated...
+# deployment "myapp" successfully rolled out</code></pre>
+
+        <p>Rolling updates replace old Pods one at a time, so your app stays available throughout. If something goes wrong, rollback instantly:</p>
+
+<pre><code class="language-bash"># Undo the last update
+kubectl rollout undo deployment/myapp
+
+# Check rollout history
+kubectl rollout history deployment/myapp</code></pre>
+
+        <h2 id="namespaces">Namespaces: Organizing Your Resources</h2>
+
+        <p>Namespaces let you partition your cluster. Create one and deploy into it:</p>
+
+<pre><code class="language-bash"># Create a namespace
+kubectl create namespace staging
+
+# Deploy into it
+kubectl apply -f deployment.yaml -n staging
+kubectl apply -f service.yaml -n staging
+
+# Check resources in a specific namespace
+kubectl get all -n staging</code></pre>
+
+        <h2 id="essential-commands">Essential kubectl Commands</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Command</th>
+                    <th>What It Does</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>kubectl get pods</code></td>
+                    <td>List all running pods</td>
+                </tr>
+                <tr>
+                    <td><code>kubectl describe pod &lt;name&gt;</code></td>
+                    <td>Detailed info about a pod</td>
+                </tr>
+                <tr>
+                    <td><code>kubectl logs &lt;pod-name&gt;</code></td>
+                    <td>View pod container logs</td>
+                </tr>
+                <tr>
+                    <td><code>kubectl exec -it &lt;pod&gt; -- /bin/sh</code></td>
+                    <td>Open a shell inside a pod</td>
+                </tr>
+                <tr>
+                    <td><code>kubectl apply -f &lt;file&gt;</code></td>
+                    <td>Create or update resources</td>
+                </tr>
+                <tr>
+                    <td><code>kubectl delete -f &lt;file&gt;</code></td>
+                    <td>Remove resources</td>
+                </tr>
+                <tr>
+                    <td><code>kubectl cluster-info</code></td>
+                    <td>View cluster details</td>
+                </tr>
+                <tr>
+                    <td><code>minikube dashboard</code></td>
+                    <td>Open the web UI</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2 id="debugging">Debugging Common Issues</h2>
+
+        <h3>ImagePullBackOff</h3>
+        <p>Kubernetes can't find your image. Make sure you built it with <code>minikube docker-env</code> loaded, or pushed it to a registry.</p>
+
+        <h3>CrashLoopBackOff</h3>
+        <p>Your container keeps crashing. Check the logs:</p>
+
+<pre><code class="language-bash">kubectl logs myapp-5d4f7b8c9-abc12
+# or, if there are multiple containers in the pod:
+kubectl logs myapp-5d4f7b8c9-abc12 -c myapp</code></pre>
+
+        <h3>Pending Pods</h3>
+        <p>Not enough resources on the node. Check with <code>kubectl describe pod &lt;name&gt;</code> — it usually says "Insufficient cpu" or "Insufficient memory". Reduce your resource requests or add nodes.</p>
+
+        <h2 id="next-steps">Where to Go From Here</h2>
+
+        <ul>
+            <li><strong>ConfigMaps and Secrets</strong> — externalize configuration and sensitive data from your images</li>
+            <li><strong>Ingress</strong> — route external HTTP traffic to your services with path-based routing</li>
+            <li><strong>Persistent Volumes</strong> — attach storage that survives Pod restarts</li>
+            <li><strong>Helm</strong> — package and manage complex Kubernetes applications as reusable charts</li>
+            <li><strong>k3s</strong> — lightweight Kubernetes for production on low-resource servers</li>
+        </ul>
+
+        <h2 id="summary">Summary</h2>
+
+        <ul>
+            <li><strong>Pods</strong> are the smallest unit; <strong>Deployments</strong> manage groups of Pods</li>
+            <li><strong>Services</strong> provide stable networking to ephemeral Pods</li>
+            <li>Use <code>kubectl apply</code> with YAML manifests for declarative, version-controlled infrastructure</li>
+            <li><strong>Minikube</strong> gives you a local cluster for learning and testing</li>
+            <li><strong>Rolling updates</strong> keep your app available during deployments</li>
+            <li><strong>Resource limits</strong> and <strong>health probes</strong> are essential for production stability</li>
+        </ul>
+
+        <p>Kubernetes has a steep learning curve, but the mental model is simple: <strong>declare what you want, Kubernetes makes it happen</strong>. Start with local deployments using Minikube, master the core resource types (Pod, Deployment, Service), and gradually explore ConfigMaps, Ingress, and persistent storage as your applications grow.</p>
+
+        <div class="back-link">
+            <a href="../devops.html">← Back to DevOps tutorials</a>
+        </div>
+    </article>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes · Built with HTML, CSS &amp; Cloudflare Pages</p>
+        </div>
+    </footer>
+
+    <script>
+        window.addEventListener('scroll', () => {
+            const winScroll = document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + '%';
+        });
+        const toggle = document.getElementById('themeToggle');
+        toggle.addEventListener('click', () => document.body.classList.toggle('light-theme'));
+    </script>
+</body>
+</html>

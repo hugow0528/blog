@@ -3,12 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Python Generators and Iterators: Memory-Efficient Data Processing — Hugo's Dev Notes</title>
-    <meta name="description" content="Master Python generators and iterators for memory-efficient data processing. Learn yield, generator expressions, itertools patterns, and real-world examples for large datasets.">
-    <meta name="keywords" content="python generators, iterators, yield, generator expressions, memory efficient, python tutorial, data processing">
+    <title>Python Generators and Iterators: Lazy Evaluation Made Simple — Complete Beginner's Guide | Hugo's Dev Notes</title>
+    
+    <meta name="description" content="Learn Python generators and iterators — yield, yield from, lazy evaluation, custom iterables, infinite sequences, and building memory-efficient data pipelines. Working examples for every concept.">
+    <meta name="keywords" content="python generators, python iterators, yield, lazy evaluation, python tutorial, memory efficient">
     <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://blog.hugow.dev/posts/python-generators-iterators.html">
+    
+    <meta property="og:title" content="Python Generators and Iterators: Lazy Evaluation Made Simple — Complete Beginner's Guide">
+    <meta property="og:description" content="Master Python generators, iterators, yield, and lazy evaluation with working code examples.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.hugow.dev/posts/python-generators-iterators.html">
+    
     <link rel="stylesheet" href="../style.css">
+    <link rel="sitemap" type="application/xml" href="/sitemap.xml">
 </head>
 <body>
     <div class="progress-bar" id="progressBar"></div>
@@ -23,7 +32,7 @@
             <nav>
                 <a href="../index.html" class="nav-btn">Home</a>
                 <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
-                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../python.html" class="nav-btn active">Python</a>
                 <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
                 <a href="../devops.html" class="nav-btn">DevOps</a>
                 <a href="../security.html" class="nav-btn">Security</a>
@@ -32,326 +41,276 @@
         </div>
     </header>
 
-    <main class="container">
-        <article class="post">
-            <header class="post-header">
-                <div class="post-tags">
-                    <span class="tag python">Python</span>
-                </div>
-                <h1>Python Generators and Iterators: Memory-Efficient Data Processing</h1>
-                <div class="post-meta">
-                    <span class="post-date">July 8, 2026</span>
-                    <span class="read-time">10 min read</span>
-                </div>
-            </header>
+    <article class="post-content container">
+        <span class="tag python">Python</span>
+        <h1>Python Generators and Iterators: Lazy Evaluation Made Simple — Complete Beginner's Guide</h1>
+        <div class="post-meta">
+            <span class="post-date">July 15, 2026</span>
+            <span class="read-time">10 min read</span>
+        </div>
 
-            <div class="post-content">
-                <p>If you've ever written a Python program that crashes with a <code>MemoryError</code> while processing a large file, you've hit the wall that generators were built to solve. This guide will take you from "What's an iterator?" to writing production-grade memory-efficient data pipelines.</p>
+        <p>Imagine you need to process a file with 10 million lines. The naive approach — reading everything into a list — would consume gigabytes of RAM. But Python gives you a better way: <strong>generators</strong>. They let you produce values one at a time, on demand, using almost no memory. This guide walks you through everything from the iterator protocol to building real-world data pipelines.</p>
 
-                <h2>What Is an Iterator?</h2>
-                <p>In Python, an <strong>iterator</strong> is any object that implements two methods: <code>__iter__()</code> and <code>__next__()</code>. You've been using iterators all along — lists, strings, and dictionaries are all <em>iterable</em>, meaning you can create an iterator from them:</p>
+        <h2 id="iterable-vs-iterator">Iterable vs Iterator: Know the Difference</h2>
 
-                <pre><code># Everything with __iter__() is iterable
-my_list = [1, 2, 3, 4, 5]
-iterator = iter(my_list)  # Create an iterator
+        <p>Before generators, you need to understand two protocols. An <strong>iterable</strong> is any object you can loop over — lists, strings, dictionaries, files. It has a <code>__iter__()</code> method. An <strong>iterator</strong> is the thing that actually produces items one by one. It has a <code>__next__()</code> method and raises <code>StopIteration</code> when exhausted.</p>
 
-print(next(iterator))  # 1
-print(next(iterator))  # 2
-print(next(iterator))  # 3
+        <p>Every iterator is an iterable, but not every iterable is an iterator. A <code>list</code> is iterable but calling <code>next()</code> on it raises a <code>TypeError</code>:</p>
 
-# When exhausted, raises StopIteration
-# print(next(iterator))  # StopIteration!</code></pre>
+<pre><code class="language-python">my_list = [1, 2, 3]
+# iterable? Yes
+iterable = iter(my_list)  # creates an iterator from the list
+# iterator? Yes — it has __next__()
+print(next(iterable))  # 1
+print(next(iterable))  # 2
+print(next(iterable))  # 3
+print(next(iterable))  # StopIteration!</code></pre>
 
-                <p>The key insight: iterators produce values <strong>one at a time</strong>. They don't load everything into memory upfront. This is the foundation of memory-efficient Python.</p>
+        <p>The <code>iter()</code> built-in calls the iterable's <code>__iter__()</code> method. The <code>next()</code> built-in calls the iterator's <code>__next__()</code> method. A <code>for</code> loop does both under the hood automatically.</p>
 
-                <h2>Building Your Own Iterator Class</h2>
-                <p>Let's create a custom iterator that generates Fibonacci numbers. Without iterators, you'd need to precompute and store every number in a list:</p>
+        <h2 id="custom-iterator">Building a Custom Iterator</h2>
 
-                <pre><code>class Fibonacci:
-    """An iterator that generates Fibonacci numbers up to a limit."""
+        <p>You can create your own iterator class by implementing <code>__iter__()</code> and <code>__next__()</code>. Here's a countdown iterator:</p>
 
-    def __init__(self, limit):
-        self.limit = limit
-        self.a, self.b = 0, 1
+<pre><code class="language-python">class Countdown:
+    def __init__(self, start):
+        self.current = start
 
     def __iter__(self):
         return self
 
     def __next__(self):
-        if self.a > self.limit:
+        if self.current <= 0:
             raise StopIteration
-        current = self.a
-        self.a, self.b = self.b, self.a + self.b
-        return current
+        value = self.current
+        self.current -= 1
+        return value
 
-# Use it in a for loop
-for num in Fibonacci(100):
-    print(num, end=" ")
-# Output: 0 1 1 2 3 5 8 13 21 34 55 89</code></pre>
+# Use it
+for num in Countdown(5):
+    print(num)  # 5, 4, 3, 2, 1</code></pre>
 
-                <p>This works, but it's verbose. Python gives us a much simpler way: <strong>generators</strong>.</p>
+        <p>This works, but it's verbose. You need a class, state tracking, and manual <code>StopIteration</code> handling. Generators solve all of this in one line.</p>
 
-                <h2>Generators: The Easy Way to Create Iterators</h2>
-                <p>A <strong>generator</strong> is a function that uses <code>yield</code> instead of <code>return</code>. When you call a generator function, it doesn't execute — it returns a generator object. Each <code>next()</code> call resumes execution from where it left off:</p>
+        <h2 id="generator-function">Generator Functions: The yield Keyword</h2>
 
-                <pre><code>def fibonacci(limit):
-    """Generate Fibonacci numbers up to a limit."""
-    a, b = 0, 1
-    while a <= limit:
-        yield a
-        a, b = b, a + b
+        <p>A <strong>generator function</strong> is any function that uses the <code>yield</code> keyword. When you call it, it doesn't execute the body — it returns a <strong>generator object</strong>. Each time you call <code>next()</code> on that object, it runs until the next <code>yield</code>, pauses, and remembers its state.</p>
 
-# Same result, half the code
-for num in fibonacci(100):
-    print(num, end=" ")
-# Output: 0 1 1 2 3 5 8 13 21 34 55 89</code></pre>
+<pre><code class="language-python">def countdown(start):
+    """A generator version — no class needed."""
+    while start > 0:
+        yield start
+        start -= 1
 
-                <p>See what happened? <code>yield</code> <strong>pauses</strong> the function, returns a value, and saves all local variables. The next call picks up right after the <code>yield</code>. This is called <strong>lazy evaluation</strong> — values are computed only when needed.</p>
+# Same result, less code
+for num in countdown(5):
+    print(num)  # 5, 4, 3, 2, 1</code></pre>
 
-                <h2>Why Generators Save Memory</h2>
-                <p>Let's compare memory usage with a real example — reading a large log file:</p>
+        <p>Notice what's happening: the function <strong>pauses</strong> at each <code>yield</code>, saves all local variables, and resumes exactly where it left off. No class, no <code>__next__</code>, no <code>StopIteration</code> — Python handles all of it.</p>
 
-                <pre><code># ❌ BAD: Loads entire file into memory
-def read_logs_bad(filepath):
-    with open(filepath) as f:
-        return f.readlines()  # Loads ALL lines into a list
+        <h2 id="generator-expression">Generator Expressions: List Comprehensions, But Lazy</h2>
 
-logs = read_logs_bad("server.log")  # 10GB file? MemoryError!
+        <p>Just as <code>[x**2 for x in range(1000000)]</code> creates a list, <code>(x**2 for x in range(1000000))</code> creates a generator. The parentheses instead of brackets make all the difference:</p>
 
-# ✅ GOOD: Reads one line at a time
-def read_logs_good(filepath):
-    with open(filepath) as f:
+<pre><code class="language-python"># List comprehension — creates ALL 1 million integers in memory
+squares_list = [x**2 for x in range(1_000_000)]
+
+# Generator expression — creates zero integers until you iterate
+squares_gen = (x**2 for x in range(1_000_000))
+
+import sys
+print(sys.getsizeof(squares_list))  # ~8,800,000 bytes
+print(sys.getsizeof(squares_gen))   # ~128 bytes</code></pre>
+
+        <p>That's a <strong>70,000x</strong> memory difference. When you only need to iterate once, always prefer generator expressions.</p>
+
+        <h2 id="lazy-pipeline">Building a Lazy Data Pipeline</h2>
+
+        <p>The real power of generators emerges when you chain them. Each step processes one item at a time, so the entire pipeline uses minimal memory:</p>
+
+<pre><code class="language-python">def read_lines(filename):
+    """Read a file line by line — one line in memory at a time."""
+    with open(filename) as f:
         for line in f:
             yield line.strip()
 
-# Process 10GB file with minimal memory
-for log in read_logs_good("server.log"):
-    if "ERROR" in log:
-        print(log)</code></pre>
+def filter_non_empty(lines):
+    """Remove blank lines."""
+    for line in lines:
+        if line:
+            yield line
 
-                <p>The generator version uses <strong>constant memory</strong> regardless of file size. The list version needs memory proportional to the file size. For a 10GB log file, that's the difference between "works fine" and "crashes immediately."</p>
+def to_uppercase(lines):
+    """Convert each line to uppercase."""
+    for line in lines:
+        yield line.upper()
 
-                <h2>Generator Expressions</h2>
-                <p>Just like list comprehensions <code>[x*2 for x in range(10)]</code>, Python has <strong>generator expressions</strong> using parentheses instead of brackets:</p>
+def count_words(lines):
+    """Count words per line and yield the count."""
+    for line in lines:
+        yield len(line.split())
 
-                <pre><code># List comprehension — creates entire list in memory
-squares_list = [x**2 for x in range(1000000)]  # ~8MB in memory
-
-# Generator expression — produces values one at a time
-squares_gen = (x**2 for x in range(1000000))  # ~280 bytes in memory
-
-# You can still iterate over both the same way
-total = sum(squares_gen)  # Works! sum() consumes the generator
-
-# Chaining generator expressions
-even_squares = (x for x in (n**2 for n in range(1000)) if x % 2 == 0)</code></pre>
-
-                <p>Use generator expressions whenever you don't need to store all values at once. Common patterns:</p>
-
-                <pre><code># Replace filter + map with a generator expression
-names = ["alice", "BOB", "charlie", "DAVID", "eve"]
-upper_names = (name.upper() for name in names if len(name) > 3)
-
-# Replace intermediate lists
-total = sum(float(line) for line in open("prices.txt") if line.strip())
-
-# Use with any function that accepts iterables
-sorted_names = sorted((name for name in names if name.startswith("a")))
-unique_items = set((x for x in big_data if x is not None))
-any_match = any(user.is_admin for user in users)</code></pre>
-
-                <h2>Real-World Pattern: Data Pipeline with Generators</h2>
-                <p>Generators shine when you chain them together into a <strong>data processing pipeline</strong>. Each stage processes one item at a time:</p>
-
-                <pre><code>import csv
-
-def read_csv(filepath):
-    """Stage 1: Read rows from CSV file."""
-    with open(filepath, newline="") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            yield row
-
-def filter_errors(rows):
-    """Stage 2: Filter only error entries."""
-    for row in rows:
-        if row.get("level") == "ERROR":
-            yield row
-
-def extract_messages(rows):
-    """Stage 3: Extract just the message field."""
-    for row in rows:
-        yield row["message"].strip()
-
-def format_output(messages):
-    """Stage 4: Format for output."""
-    for i, msg in enumerate(messages, 1):
-        yield f"[{i}] {msg}"
-
-# Chain the pipeline — memory efficient!
-errors = (
-    read_csv("server.log.csv")
-    | filter_errors
-    | extract_messages
-    | format_output
-)
-
-# Actually, Python doesn't support | for functions,
-# so we compose them manually:
-
-pipeline = format_output(
-    extract_messages(
-        filter_errors(
-            read_csv("server.log.csv")
+# Chain them — no intermediate lists, just one value flowing through
+total = sum(
+    count_words(
+        to_uppercase(
+            filter_non_empty(
+                read_lines("big_file.txt")
+            )
         )
     )
 )
+print(f"Total words: {total}")</code></pre>
 
-for formatted_error in pipeline:
-    print(formatted_error)</code></pre>
+        <p>Even if <code>big_file.txt</code> is 10 GB, this pipeline uses only a few kilobytes of RAM. The <code>sum()</code> pulls values one at a time through each generator layer.</p>
 
-                <p>Notice: <strong>no intermediate lists</strong> are created. Each value flows through the pipeline one at a time. A 1GB CSV file is processed with less than 1MB of memory.</p>
+        <h2 id="yield-from">The yield from Syntax</h2>
 
-                <h2>Generator Tricks You Should Know</h2>
+        <p>Python 3.3 introduced <code>yield from</code> to delegate to another generator. Instead of looping and yielding each item manually:</p>
 
-                <h3>1. Sending Values Into Generators</h3>
-                <pre><code>def echo():
-    """A generator that echoes received values."""
+<pre><code class="language-python"># Without yield from — manual delegation
+def flatten_explicit(nested):
+    for sublist in nested:
+        for item in sublist:
+            yield item
+
+# With yield from — automatic delegation
+def flatten(nested):
+    for sublist in nested:
+        yield from sublist
+
+data = [[1, 2], [3, 4, 5], [6]]
+print(list(flatten(data)))  # [1, 2, 3, 4, 5, 6]</code></pre>
+
+        <p><code>yield from</code> is cleaner and also enables two-way communication with subgenerators (sending values back via <code>.send()</code>), which is useful for advanced coroutine patterns.</p>
+
+        <h2 id="infinite-generators">Infinite Generators</h2>
+
+        <p>Since generators produce values on demand, they can run forever. This enables infinite sequences that would be impossible with lists:</p>
+
+<pre><code class="language-python">def fibonacci():
+    """Generate the Fibonacci sequence forever."""
+    a, b = 0, 1
     while True:
-        received = yield "ready"
-        print(f"Echo: {received}")
+        yield a
+        a, b = b, a + b
 
-gen = echo()
-print(next(gen))        # ready
-gen.send("hello")       # Echo: hello
-gen.send("world")       # Echo: world</code></pre>
+# Take the first 10 Fibonacci numbers
+fib = fibonacci()
+for _ in range(10):
+    print(next(fib), end=" ")
+# 0 1 1 2 3 5 8 13 21 34</code></pre>
 
-                <h3>2. Generator Delegation with yield from</h3>
-                <pre><code>def sub_generator():
-    yield "A"
-    yield "B"
-    yield "C"
+        <p>Pair infinite generators with <code>itertools.islice</code> to take a specific number of values without building a list:</p>
 
-def main_generator():
-    yield "Start"
-    yield from sub_generator()  # Delegate to sub-generator
-    yield "End"
+<pre><code class="language-python">from itertools import islice
 
-for value in main_generator():
-    print(value)
-# Start, A, B, C, End</code></pre>
+# Get Fibonacci numbers between 10 and 1000
+fib = fibonacci()
+results = [x for x in islice(fib, 100) if 10 <= x <= 1000]
+print(results)  # [13, 21, 34, 55, 89, 144, 233, 377, 610]</code></pre>
 
-                <h3>3. Using itertools with Generators</h3>
-                <pre><code>from itertools import islice, tee, chain
+        <h2 id="practical-patterns">Practical Patterns</h2>
 
-# Take first N items from an infinite generator
-def infinite_count():
-    n = 1
+        <h3 id="pattern-chunking">Chunking: Batch Processing</h3>
+
+<pre><code class="language-python">def chunk(iterable, size):
+    """Yield batches of `size` items from an iterable."""
+    from itertools import islice
+    it = iter(iterable)
     while True:
-        yield n
-        n += 1
+        batch = list(islice(it, size))
+        if not batch:
+            break
+        yield batch
 
-first_10 = list(islice(infinite_count(), 10))
-# [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+for batch in chunk(range(20), 5):
+    print(batch)
+# [0, 1, 2, 3, 4]
+# [5, 6, 7, 8, 9]
+# [10, 11, 12, 13, 14]
+# [15, 16, 17, 18, 19]</code></pre>
 
-# Split a generator into multiple copies
-gen = (x**2 for x in range(5))
-gen1, gen2 = tee(gen)
-print(list(gen1))  # [0, 1, 4, 9, 16]
-print(list(gen2))  # [0, 1, 4, 9, 16]
+        <p>Useful for processing API rate limits, writing batch inserts to databases, or parallel processing with <code>multiprocessing.Pool.imap()</code>.</p>
 
-# Chain multiple generators together
-names = chain(["alice", "bob"], ["charlie", "david"])
-# Produces: alice, bob, charlie, david</code></pre>
+        <h3 id="pattern-cache">Memoization with a Generator</h3>
 
-                <h2>Common Pitfalls</h2>
+<pre><code class="language-python">def cached_expensive(n):
+    """Compute values lazily and cache them."""
+    cache = {}
+    def compute(i):
+        if i not in cache:
+            # Simulate expensive computation
+            cache[i] = i ** 2 + i ** 3
+        return cache[i]
+    
+    i = 0
+    while True:
+        yield compute(i)
+        i += 1
 
-                <h3>1. Consumed Generators Can't Be Reused</h3>
-                <pre><code>gen = (x**2 for x in range(5))
-print(list(gen))  # [0, 1, 4, 9, 16]
-print(list(gen))  # [] — generator is exhausted!
+gen = cached_expensive(100)
+print(next(gen))  # 0 (computed)
+print(next(gen))  # 2 (computed)
+print(next(gen))  # 12 (computed)</code></pre>
 
-# Fix: recreate the generator or convert to list if you need reuse
-gen = (x**2 for x in range(5))
-squares = list(gen)  # Convert if you need to iterate multiple times</code></pre>
+        <h3 id="pattern-reader">Reading Streaming Data</h3>
 
-                <h3>2. Don't Overuse Generators</h3>
-                <pre><code># Use a list when you need: indexing, len(), multiple iterations, slicing
-data = [x**2 for x in range(100)]  # Small data? Just use a list
-print(data[5])   # Indexing works
-print(len(data)) # Length works
-print(data[-1])  # Slicing works
+<pre><code class="language-python">import json
 
-# Use a generator when: processing large data, piping to another function,
-# or you only iterate once</code></pre>
+def parse_json_lines(filepath):
+    """Read a JSON Lines file one record at a time."""
+    with open(filepath) as f:
+        for line in f:
+            yield json.loads(line)
 
-                <h2>When to Use Generators: Quick Decision Guide</h2>
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Use Generator When...</th>
-                            <th>Use List When...</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>Processing large files (>100MB)</td>
-                            <td>Data fits easily in memory</td>
-                        </tr>
-                        <tr>
-                            <td>You only iterate once</td>
-                            <td>You need random access (indexing)</td>
-                        </tr>
-                        <tr>
-                            <td>Streaming data (APIs, networks)</td>
-                            <td>You need len() or slicing</td>
-                        </tr>
-                        <tr>
-                            <td>Chaining processing stages</td>
-                            <td>You iterate multiple times</td>
-                        </tr>
-                        <tr>
-                            <td>Memory is a concern</td>
-                            <td>Simplicity matters more</td>
-                        </tr>
-                    </tbody>
-                </table>
+# Process each record without loading the entire file
+for record in parse_json_lines("events.jsonl"):
+    if record["type"] == "purchase":
+        print(f"Purchase: ${record['amount']}")</code></pre>
 
-                <h2>Summary</h2>
-                <ul>
-                    <li><strong>Iterators</strong> implement <code>__iter__()</code> and <code>__next__()</code> to produce values one at a time</li>
-                    <li><strong>Generators</strong> use <code>yield</code> to create iterators with minimal code</li>
-                    <li><strong>Generator expressions</strong> are the lazy equivalent of list comprehensions</li>
-                    <li>Chain generators into <strong>pipelines</strong> for memory-efficient data processing</li>
-                    <li>Generators are <strong>exhaustible</strong> — once consumed, they're done</li>
-                    <li>Use generators for <strong>large data</strong>, lists for <strong>small data</strong> you need to revisit</li>
-                </ul>
+        <h2 id="when-to-use">When to Use Generators vs Lists</h2>
 
-                <p>Generators are one of Python's most powerful features for writing efficient code. Next time you reach for a list comprehension to process something large, pause and ask: "Do I really need all these values in memory at once?" Chances are, a generator will do the job with a fraction of the memory.</p>
-            </div>
-        </article>
-    </main>
+        <ul>
+            <li><strong>Use generators</strong> when processing large data, streaming, or chaining transformations</li>
+            <li><strong>Use lists</strong> when you need random access, multiple iterations, or need the length</li>
+            <li><strong>Prefer built-ins</strong> like <code>map()</code>, <code>filter()</code>, <code>sum()</code>, <code>any()</code>, <code>all()</code> — they consume generators efficiently</li>
+            <li><strong>Remember</strong> a generator is single-use. Calling <code>list(gen)</code> exhausts it. Create a new one if you need to iterate again</li>
+        </ul>
+
+        <h2 id="summary">Summary</h2>
+
+        <ul>
+            <li>An <strong>iterable</strong> has <code>__iter__()</code>; an <strong>iterator</strong> has <code>__next__()</code></li>
+            <li><code>yield</code> turns a function into a generator — it pauses, saves state, and resumes later</li>
+            <li>Generator expressions <code>(...)</code> are the lazy equivalent of list comprehensions <code>[...]</code></li>
+            <li>Chain generators for memory-efficient data pipelines</li>
+            <li><code>yield from</code> delegates to subgenerators cleanly</li>
+            <li>Infinite generators + <code>itertools</code> enable powerful streaming patterns</li>
+        </ul>
+
+        <p>Generators are one of Python's most underrated features. They transform problems that would require massive memory into elegant, streaming solutions. Once you start seeing data flow as a pipeline rather than a list, you'll find yourself using <code>yield</code> everywhere.</p>
+
+        <div class="back-link">
+            <a href="../python.html">← Back to Python tutorials</a>
+        </div>
+    </article>
 
     <footer>
         <div class="container">
-            <p>© 2026 Hugo's Dev Notes. Built with ☕ and code.</p>
+            <p>© 2026 Hugo's Dev Notes · Built with HTML, CSS &amp; Cloudflare Pages</p>
         </div>
     </footer>
 
     <script>
-        // Reading progress bar
         window.addEventListener('scroll', () => {
-            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const winScroll = document.documentElement.scrollTop;
             const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
             const scrolled = (winScroll / height) * 100;
-            document.getElementById('progressBar').style.width = scrolled + "%";
+            document.getElementById('progressBar').style.width = scrolled + '%';
         });
-
-        // Theme toggle
         const toggle = document.getElementById('themeToggle');
-        toggle.addEventListener('click', () => {
-            document.body.classList.toggle('dark');
-        });
+        toggle.addEventListener('click', () => document.body.classList.toggle('light-theme'));
     </script>
 </body>
 </html>

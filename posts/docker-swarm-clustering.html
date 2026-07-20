@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docker Swarm: Cluster Containers with Ease — Complete Beginner's Guide | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn Docker Swarm clustering — manager/worker nodes, service deployment, scaling, rolling updates, secrets, overlay networks, and high availability. Working examples for every concept.">
+    <meta name="keywords" content="docker swarm, container orchestration, docker services, scaling, rolling updates, docker secrets, overlay network">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/docker-swarm-clustering.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-full">
+            <header class="post-header">
+                <div class="post-tags">
+                    <span class="tag devops">DevOps</span>
+                </div>
+                <h1>Docker Swarm: Cluster Containers with Ease — Complete Beginner's Guide</h1>
+                <div class="post-meta">
+                    <span class="post-date">July 19, 2026</span>
+                    <span class="read-time">12 min read</span>
+                </div>
+            </header>
+
+            <div class="post-content">
+                <p>Docker Compose is great for local development with a single machine. But what happens when you need to run your app across multiple servers? That's where <strong>Docker Swarm</strong> comes in — Docker's built-in orchestration engine for clustering, scaling, and managing containers across a fleet of machines.</p>
+
+                <p>Swarm mode requires no extra software installation — it's built directly into Docker Engine. In this guide, you'll learn how to initialize a swarm, deploy services, scale them, configure rolling updates, manage secrets, create overlay networks, and build a high-availability setup. Everything with working commands and a Python automation script.</p>
+
+                <h2>What is Docker Swarm?</h2>
+                <p>Docker Swarm turns multiple Docker hosts into a single virtual cluster. Key concepts:</p>
+                <ul>
+                    <li><strong>Manager nodes</strong> — Handle cluster state, scheduling, and orchestration</li>
+                    <li><strong>Worker nodes</strong> — Run your actual containerized workloads</li>
+                    <li><strong>Services</strong> — The desired state definition (image, replicas, ports, networks)</li>
+                    <li><strong>Tasks</strong> — Individual containers running as part of a service</li>
+                    <li><strong>Overlay networks</strong> — Connect containers across different nodes</li>
+                </ul>
+
+                <p>Compared to Kubernetes, Swarm is simpler to set up and manage. It's ideal for small-to-medium deployments where you want clustering without operational complexity.</p>
+
+                <h2>1. Initialize a Swarm Cluster</h2>
+                <p>Start by initializing a swarm on your manager node:</p>
+                <pre><code># Initialize swarm on the manager node
+docker swarm init
+
+# Example output:
+# Swarm initialized: current node (abc123) is now a manager.
+#
+# To add a worker to this swarm, run:
+#   docker swarm join --token SWMTKN-1-xxxxxx manager-ip:2377
+#
+# To add a manager to this swarm, run:
+#   docker swarm join --token SWMTKN-1-yyyyyy manager-ip:2377</code></pre>
+
+                <p>Join worker nodes using the join token:</p>
+                <pre><code># On each worker node
+docker swarm join --token SWMTKN-1-xxxxxx 192.168.1.100:2377
+
+# Verify the cluster
+docker node ls
+
+# Example output:
+# ID            HOSTNAME    STATUS  AVAILABILITY  MANAGER STATUS
+# abc123 *      manager1    Ready   Active        Leader
+# def456        worker1     Ready   Active
+# ghi789        worker2     Ready   Active</code></pre>
+
+                <h2>2. Deploy Your First Service</h2>
+                <p>In Swarm, you don't run containers — you deploy <strong>services</strong>. A service defines the desired state:</p>
+                <pre><code># Deploy a simple Nginx service
+docker service create \
+    --name web \
+    --replicas 3 \
+    --publish published=80,target=80 \
+    nginx:alpine
+
+# Check service status
+docker service ls
+# ID        NAME   MODE      REPLICAS  IMAGE         PORTS
+# abc123    web    replicated 3/3       nginx:alpine  *:80-&gt;80/tcp
+
+# Check individual tasks (containers)
+docker service ps web
+# ID        NAME   IMAGE         NODE     DESIRED STATE  CURRENT STATE
+# abc123    web.1  nginx:alpine  worker1  Running        Running 2 minutes ago
+# def456    web.2  nginx:alpine  worker2  Running        Running 2 minutes ago
+# ghi789    web.3  nginx:alpine  worker1  Running        Running 2 minutes ago</code></pre>
+
+                <p>Notice how Docker automatically distributes the 3 replicas across worker nodes. If a worker goes down, Docker reschedules those tasks to healthy nodes.</p>
+
+                <h2>3. Scaling Services</h2>
+                <p>Scale up or down with a single command:</p>
+                <pre><code># Scale to 10 replicas
+docker service scale web=10
+
+# Scale to 2 replicas
+docker service scale web=2
+
+# Check the distribution
+docker service ps web
+
+# Services auto-balance across available workers
+# No manual intervention needed</code></pre>
+
+                <h2>4. Rolling Updates — Zero Downtime Deploys</h2>
+                <p>Rolling updates let you update images without downtime. Docker replaces tasks one at a time:</p>
+                <pre><code># Create a service with update config
+docker service create \
+    --name app \
+    --replicas 3 \
+    --update-parallelism 1 \
+    --update-delay 10s \
+    --update-order start-first \
+    --publish published=8080,target=8080 \
+    nginx:1.25
+
+# Update to a new version (rolling)
+docker service update \
+    --image nginx:1.27 \
+    --update-parallelism 1 \
+    --update-delay 15s \
+    app
+
+# Monitor the update progress
+docker service ps app --no-trunc
+
+# Rollback to the previous version if something goes wrong
+docker service rollback app</code></pre>
+
+                <p>Key update options:</p>
+                <ul>
+                    <li><code>--update-parallelism 1</code> — Update one task at a time (safe) or more for speed</li>
+                    <li><code>--update-delay 15s</code> — Wait between each task update</li>
+                    <li><code>--update-order start-first</code> — Start new task before removing old (zero downtime)</li>
+                    <li><code>--update-failure-action pause</code> — Pause update if a task fails (default)</li>
+                </ul>
+
+                <h2>5. Overlay Networks for Cross-Node Communication</h2>
+                <p>Services on different nodes need a network to communicate. Docker overlay networks handle this automatically:</p>
+                <pre><code># Create an overlay network
+docker network create --driver overlay my-net
+
+# Deploy services on the same overlay network
+docker service create \
+    --name web \
+    --network my-net \
+    --replicas 2 \
+    nginx:alpine
+
+docker service create \
+    --name api \
+    --network my-net \
+    --replicas 2 \
+    python:3.12-slim \
+    python -c "import http.server; http.server.HTTPServer(('', 8000), http.server.SimpleHTTPRequestHandler).serve_forever()"
+
+# Services can reach each other by name (DNS-based service discovery)
+# From the 'web' container: curl http://api:8000
+# DNS resolves 'api' to whichever task is running</code></pre>
+
+                <p>Docker automatically handles DNS resolution within the overlay network. You reference services by name — no need to know IP addresses or node locations.</p>
+
+                <h2>6. Docker Secrets — Secure Sensitive Data</h2>
+                <p>Never store passwords or API keys as environment variables. Use Docker secrets instead:</p>
+                <pre><code># Create a secret from a file
+echo "my-super-secret-db-password" | docker secret create db_password -
+
+# Create a secret from stdin
+echo '{"api_key": "sk-12345", "endpoint": "https://api.example.com"}' | \
+    docker secret create api_config -
+
+# Deploy a service with secrets (mounted as files in /run/secrets/)
+docker service create \
+    --name myapp \
+    --secret db_password \
+    --secret api_config \
+    --replicas 2 \
+    myapp:latest
+
+# Inside the container, secrets are readable files
+# cat /run/secrets/db_password
+# cat /run/secrets/api_config
+
+# Remove secrets when no longer needed
+docker secret rm db_password api_config</code></pre>
+
+                <p>Secrets are encrypted in transit and at rest. They're stored in the swarm's encrypted Raft log and distributed to worker nodes only as needed.</p>
+
+                <h2>7. Docker Stacks — Deploy Multiple Services at Once</h2>
+                <p>Instead of creating services one by one, use a <code>docker-compose.yml</code> file with <code>docker stack deploy</code>:</p>
+                <pre><code># docker-compose.yml
+version: "3.8"
+
+services:
+  web:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    networks:
+      - frontend
+    deploy:
+      replicas: 3
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+
+  api:
+    image: python:3.12-slim
+    command: python app.py
+    networks:
+      - frontend
+      - backend
+    secrets:
+      - db_password
+      - api_config
+    deploy:
+      replicas: 2
+      update_config:
+        parallelism: 1
+        delay: 5s
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+
+  redis:
+    image: redis:7-alpine
+    networks:
+      - backend
+    volumes:
+      - redis-data:/data
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+
+networks:
+  frontend:
+    driver: overlay
+  backend:
+    driver: overlay
+
+volumes:
+  redis-data:
+
+secrets:
+  db_password:
+    external: true
+  api_config:
+    external: true</code></pre>
+
+                <pre><code># Deploy the entire stack
+docker stack deploy -c docker-compose.yml myapp
+
+# View all services in the stack
+docker stack services myapp
+
+# View tasks
+docker stack ps myapp
+
+# Update the stack (rolling updates for all services)
+docker stack deploy -c docker-compose.yml myapp
+
+# Remove the entire stack
+docker stack rm myapp</code></pre>
+
+                <h2>8. High Availability with Multiple Managers</h2>
+                <p>A single manager is a single point of failure. Add more managers for HA:</p>
+                <pre><code># On a new manager node
+docker swarm join \
+    --token SWMTKN-1-yyyyyy \
+    --availability active \
+    manager1-ip:2377
+
+# Verify manager status
+docker node ls
+# abc123 *  manager1  Ready   Active   Leader
+# def456    manager2  Ready   Active   Reachable
+# ghi789    manager3  Ready   Active   Reachable
+
+# Check cluster health
+docker info | grep -A5 "Swarm:"
+# Swarm: active
+#  NodeID: abc123...
+#  Is Manager: true
+#  ClusterID: xyz789...
+#  Managers: 3
+#  Nodes: 5
+#  Default Address Pool: 10.0.0.0/8</code></pre>
+
+                <p>Swarm uses Raft consensus across managers. The cluster survives the loss of (N-1)/2 managers. With 3 managers, you can lose 1. With 5, you can lose 2.</p>
+
+                <h2>9. Monitoring and Debugging</h2>
+                <p>Essential commands for managing your swarm:</p>
+                <pre><code># View logs from a specific task
+docker service logs web
+
+# Follow logs in real time
+docker service logs -f web
+
+# View resource usage
+docker service inspect web --pretty
+
+# Check why a task is failing
+docker service ps web --no-trunc
+
+# Execute into a running container
+docker service exec web bash
+
+# Prune unused resources (images, containers, volumes)
+docker system prune -a --volumes
+
+# View all events in the cluster
+docker events --filter 'type=service'</code></pre>
+
+                <h2>10. Python Swarm Automation Script</h2>
+                <p>Automate common Swarm operations with Python and the Docker SDK:</p>
+                <pre><code>import docker
+import json
+
+# Connect to Docker daemon
+client = docker.from_env()
+
+def deploy_stack(stack_name, compose_file):
+    """Deploy a Docker stack from a compose file."""
+    with open(compose_file, 'r') as f:
+        config = f.read()
+
+    # Use the Docker CLI via subprocess for stack deployment
+    import subprocess
+    result = subprocess.run(
+        ['docker', 'stack', 'deploy', '-c', compose_file, stack_name],
+        capture_output=True, text=True
+    )
+    print(f"Deployed stack '{stack_name}': {result.stdout.strip()}")
+    return result.returncode == 0
+
+def get_service_status(service_name):
+    """Get the current status of a service."""
+    services = [
+        s for s in client.services.list(filters={'name': service_name})
+    ]
+    if not services:
+        return None
+
+    service = services[0]
+    tasks = client.services.tasks(service_name)
+
+    running = sum(1 for t in tasks if t['DesiredState'] == 'running')
+    total = len(tasks)
+
+    return {
+        'name': service_name,
+        'replicas': service.attrs['Spec']['Mode']['Replicated']['Replicas'],
+        'running': running,
+        'total': total,
+        'healthy': running == service.attrs['Spec']['Mode']['Replicated']['Replicas']
+    }
+
+def scale_service(service_name, replicas):
+    """Scale a service to the desired number of replicas."""
+    service = client.services.get(service_name)
+    service.update(replicas=replicas)
+    print(f"Scaled '{service_name}' to {replicas} replicas")
+    return True
+
+def check_swarm_health():
+    """Check overall swarm health."""
+    nodes = client.nodes.list()
+    managers = [n for n in nodes if any(
+        role in n.attrs['ManagerStatus']['LocalNodeState']
+        for role in ['leader', 'reachable']
+    )]
+
+    print(f"Swarm Status:")
+    print(f"  Total nodes: {len(nodes)}")
+    print(f"  Managers: {len(managers)}")
+    print(f"  Workers: {len(nodes) - len(managers)}")
+
+    for node in nodes:
+        status = node.attrs['Status']['State']
+        role = 'manager' if node.attrs.get('ManagerStatus') else 'worker'
+        print(f"  - {node.attrs['Description']['Hostname']}: {status} ({role})")
+
+# Usage
+check_swarm_health()
+
+# Deploy a stack
+deploy_stack("myapp", "docker-compose.yml")
+
+# Check service status
+status = get_service_status("myapp_web")
+print(json.dumps(status, indent=2))
+
+# Scale up
+scale_service("myapp_web", 5)</code></pre>
+
+                <h2>Swarm vs Compose vs Kubernetes — When to Use What</h2>
+                <p>Quick comparison to help you choose:</p>
+                <ul>
+                    <li><strong>Docker Compose</strong> — Local development, single machine, simple apps. Zero learning curve.</li>
+                    <li><strong>Docker Swarm</strong> — Small-to-medium production, 2-20 servers, team knows Docker. Built-in to Docker.</li>
+                    <li><strong>Kubernetes</strong> — Large production, complex microservices, enterprise needs. Steeper learning curve but more powerful.</li>
+                </ul>
+
+                <h2>Summary</h2>
+                <p>Docker Swarm gives you production-ready container orchestration with minimal complexity. Key takeaways:</p>
+                <ul>
+                    <li><strong>Swarm is built into Docker</strong> — No extra software to install</li>
+                    <li><strong>Services, not containers</strong> — Define desired state, let Swarm handle the rest</li>
+                    <li><strong>Auto-healing</strong> — Failed tasks are automatically replaced on healthy nodes</li>
+                    <li><strong>Rolling updates</strong> — Update images with zero downtime</li>
+                    <li><strong>Overlay networks</strong> — Cross-node communication with DNS-based discovery</li>
+                    <li><strong>Secrets</strong> — Secure, encrypted sensitive data distribution</li>
+                    <li><strong>Stacks</strong> — Deploy multi-service apps from a single compose file</li>
+                </ul>
+
+                <p>Docker Swarm might not have the ecosystem of Kubernetes, but it delivers on its promise: simple, reliable container orchestration that works out of the box. For many teams, it's the sweet spot between Compose and K8s.</p>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Hugo's Dev Notes. Built with Python and curiosity.</p>
+        </div>
+    </footer>
+
+    <script>
+        window.addEventListener('scroll', () => {
+            const winScroll = document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + '%';
+        });
+        const toggle = document.getElementById('themeToggle');
+        toggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark');
+            localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+        });
+        if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark');
+    </script>
+</body>
+</html>

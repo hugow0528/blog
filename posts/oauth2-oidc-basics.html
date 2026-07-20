@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OAuth 2.0 and OpenID Connect: Authentication Explained — Complete Beginner's Guide | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn OAuth 2.0 and OpenID Connect from scratch — authorization flows, tokens, scopes, PKCE, and practical Python examples. From your first authorization code grant to a complete login system.">
+    <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/oauth2-oidc-basics.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn active">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <article class="post-content">
+        <span class="tag security">Security</span>
+        <h1>OAuth 2.0 and OpenID Connect: Authentication Explained — Complete Beginner's Guide</h1>
+        <div class="post-meta">
+            <span class="post-date">July 20, 2026</span>
+            <span class="read-time">12 min read</span>
+        </div>
+
+        <p>OAuth 2.0 powers "Sign in with Google," "Log in with GitHub," and thousands of other login buttons you click daily. OpenID Connect (OIDC) extends OAuth 2.0 to handle user identity — who you are, not just what you can access. This guide walks through every concept with working Python code, from understanding authorization flows to building a complete login system.</p>
+
+        <h2>Authentication vs Authorization: The Core Distinction</h2>
+        <p>Before diving into OAuth 2.0, understand the fundamental difference:</p>
+        <ul style="margin: 12px 0 12px 24px; color: var(--text-secondary);">
+            <li><strong>Authentication</strong> (AuthN) — <em>Who are you?</em> Verifying identity via password, fingerprint, or a login provider like Google.</li>
+            <li><strong>Authorization</strong> (AuthZ) — <em>What can you do?</em> Granting access to specific resources or actions.</li>
+        </ul>
+        <p>OAuth 2.0 is an <strong>authorization</strong> framework — it lets you grant an app access to your data without sharing your password. OpenID Connect layers on <strong>authentication</strong> — proving who you are.</p>
+
+        <h2>The OAuth 2.0 Players</h2>
+        <p>OAuth 2.0 involves four key roles:</p>
+        <ul style="margin: 12px 0 12px 24px; color: var(--text-secondary);">
+            <li><strong>Resource Owner</strong> — The user (you). You own the data (your GitHub repos, Google Drive files).</li>
+            <li><strong>Client</strong> — The application requesting access (a third-party app, your own service).</li>
+            <li><strong>Authorization Server</strong> — The service that handles login and issues tokens (Google, GitHub, Auth0).</li>
+            <li><strong>Resource Server</strong> — The service that hosts the data (GitHub API, Google Drive API).</li>
+        </ul>
+        <p>In many setups, the authorization server and resource server are the same (e.g., Google does both).</p>
+
+        <h2>The Authorization Code Flow: How "Sign in with Google" Works</h2>
+        <p>The most common OAuth 2.0 flow for web and mobile apps is the <strong>Authorization Code flow</strong>. Here's the step-by-step process:</p>
+
+        <ol style="margin: 12px 0 12px 24px; color: var(--text-secondary);">
+            <li><strong>User clicks "Sign in with Google"</strong> on your app.</li>
+            <li><strong>Your app redirects the user</strong> to Google's authorization URL with your client ID, redirect URI, requested scopes, and a state parameter.</li>
+            <li><strong>Google shows a consent screen</strong> — the user logs in and approves the requested permissions.</li>
+            <li><strong>Google redirects back</strong> to your redirect URI with an <code>authorization_code</code> in the URL.</li>
+            <li><strong>Your server exchanges the code</strong> for an <code>access_token</code> (and optionally a <code>refresh_token</code>) by sending a POST request to Google's token endpoint.</li>
+            <li><strong>Your server uses the access token</strong> to call Google's API on behalf of the user.</li>
+        </ol>
+
+        <h2>Building an OAuth 2.0 Client in Python</h2>
+        <p>Let's implement the authorization code flow using Python's <code>requests</code> library. We'll use GitHub as our OAuth provider since it's free and easy to test:</p>
+
+        <pre><code>import os
+import secrets
+import http.server
+import urllib.parse
+import requests
+
+# Configuration
+CLIENT_ID = "your_github_client_id"
+CLIENT_SECRET = "your_github_client_secret"
+REDIRECT_URI = "http://localhost:8000/callback"
+SCOPES = ["user:email", "repo"]
+
+def get_authorization_url():
+    """Step 1: Build the URL to redirect the user to GitHub."""
+    params = {
+        "client_id": CLIENT_ID,
+        "redirect_uri": REDIRECT_URI,
+        "scope": " ".join(SCOPES),
+        "state": secrets.token_urlsafe(16),  # CSRF protection
+    }
+    return "https://github.com/login/oauth/authorize?" + urllib.parse.urlencode(params)
+
+def exchange_code_for_token(code, state):
+    """Step 5: Exchange authorization code for access token."""
+    response = requests.post(
+        "https://github.com/login/oauth/access_token",
+        data={
+            "client_id": CLIENT_ID,
+            "client_secret": CLIENT_SECRET,
+            "code": code,
+            "state": state,
+        },
+        headers={"Accept": "application/json"},
+    )
+    if response.status_code == 200:
+        return response.json()["access_token"]
+    raise Exception(f"Token exchange failed: {response.text}")
+
+def get_user_info(access_token):
+    """Step 6: Call the API with the access token."""
+    response = requests.get(
+        "https://api.github.com/user",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    return response.json()
+
+# Step 1: User clicks login → redirect to GitHub
+auth_url = get_authorization_url()
+print(f"Visit: {auth_url}")</code></pre>
+
+        <p>Now handle the callback when GitHub redirects back:</p>
+
+        <pre><code># Step 2-4: User logs in on GitHub, gets redirected back
+# Your callback handler receives: ?code=xxx&state=yyy
+parsed = urllib.parse.urlparse("http://localhost:8000/callback?code=CODE&state=STATE")
+params = urllib.parse.parse_qs(parsed.query)
+
+code = params["code"][0]
+state = params["state"][0]
+
+# Verify state matches (CSRF protection)
+# In production, store the state in a session and compare
+
+# Step 5: Exchange code for token
+access_token = exchange_code_for_token(code, state)
+print(f"Token received (first 10 chars): {access_token[:10]}...")
+
+# Step 6: Get user info
+user = get_user_info(access_token)
+print(f"Logged in as: {user['login']}")</code></pre>
+
+        <h2>A Simple HTTP Server for the Callback</h2>
+        <p>Here's a complete working example with a local HTTP server to handle the OAuth callback:</p>
+
+        <pre><code>import http.server
+import json
+import urllib.parse
+import threading
+import webbrowser
+import requests
+
+CLIENT_ID = "your_client_id"
+CLIENT_SECRET = "your_client_secret"
+REDIRECT_URI = "http://localhost:8000/callback"
+STATE = None
+
+class OAuthHandler(http.server.BaseHTTPRequestHandler):
+    def do_GET(self):
+        parsed = urllib.parse.urlparse(self.path)
+        
+        if parsed.path == "/":
+            self.show_login_page()
+        elif parsed.path == "/callback":
+            self.handle_callback(parsed)
+        else:
+            self.send_error(404)
+    
+    def show_login_page(self):
+        auth_url = get_authorization_url()
+        html = f"""
+        <html>
+        <body style="font-family: sans-serif; text-align: center; padding: 100px;">
+            <h1>Login with GitHub</h1>
+            <p><a href="{auth_url}"><button style="padding: 12px 24px; font-size: 16px; cursor: pointer;">Sign in with GitHub</button></a></p>
+        </body>
+        </html>
+        """
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html")
+        self.end_headers()
+        self.wfile.write(html.encode())
+    
+    def handle_callback(self, parsed):
+        params = urllib.parse.parse_qs(parsed.query)
+        code = params.get("code", [None])[0]
+        state = params.get("state", [None])[0]
+        error = params.get("error", [None])[0]
+        
+        if error:
+            self.send_error_response(f"OAuth error: {error}")
+            return
+        
+        if state != STATE:
+            self.send_error_response("State mismatch - possible CSRF attack!")
+            return
+        
+        try:
+            token = exchange_code_for_token(code, state)
+            user = get_user_info(token)
+            
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html")
+            self.end_headers()
+            self.wfile.write(f"""
+            <html>
+            <body style="font-family: sans-serif; text-align: center; padding: 100px;">
+                <h1>✅ Welcome, {user['login']}!</h1>
+                <p>Email: {user.get('email', 'Not public')}</p>
+                <p>Access Token: {token[:15]}...</p>
+                <p>Token Type: {user.get('type', 'User')}</p>
+            </body>
+            </html>
+            """.encode())
+        except Exception as e:
+            self.send_error_response(f"Error: {str(e)}")
+    
+    def send_error_response(self, message):
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html")
+        self.end_headers()
+        self.wfile.write(f"<h1>Error</h1><p>{message}</p>".encode())
+    
+    def log_message(self, format, *args):
+        pass  # Suppress default logging
+
+def get_authorization_url():
+    global STATE
+    STATE = secrets.token_urlsafe(16)
+    params = {
+        "client_id": CLIENT_ID,
+        "redirect_uri": REDIRECT_URI,
+        "scope": "user:email",
+        "state": STATE,
+    }
+    return f"https://github.com/login/oauth/authorize?{urllib.parse.urlencode(params)}"
+
+def exchange_code_for_token(code, state):
+    resp = requests.post(
+        "https://github.com/login/oauth/access_token",
+        data={"client_id": CLIENT_ID, "client_secret": CLIENT_SECRET, "code": code, "state": state},
+        headers={"Accept": "application/json"},
+    )
+    return resp.json()["access_token"]
+
+def get_user_info(access_token):
+    resp = requests.get("https://api.github.com/user", headers={"Authorization": f"Bearer {access_token}"})
+    return resp.json()
+
+# Start server and open browser
+server = http.server.HTTPServer(("localhost", 8000), OAuthHandler)
+print("Starting OAuth demo server on http://localhost:8000")
+webbrowser.open("http://localhost:8000")
+server.serve_forever()</code></pre>
+
+        <h2>Understanding OAuth 2.0 Tokens</h2>
+        <p>OAuth 2.0 uses two types of tokens:</p>
+
+        <h3>Access Tokens</h3>
+        <p>Short-lived tokens used to access APIs. They expire after a set time (typically 1 hour for most providers). Sent in the <code>Authorization</code> header:</p>
+
+        <pre><code>GET /api/user HTTP/1.1
+Host: api.github.com
+Authorization: Bearer gho_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</code></pre>
+
+        <h3>Refresh Tokens</h3>
+        <p>Long-lived tokens used to get new access tokens without requiring the user to log in again. Critical for keeping sessions alive:</p>
+
+        <pre><code>import requests
+
+def refresh_access_token(refresh_token):
+    """Get a new access token using a refresh token."""
+    response = requests.post(
+        "https://github.com/login/oauth/access_token",
+        data={
+            "client_id": CLIENT_ID,
+            "client_secret": CLIENT_SECRET,
+            "grant_type": "refresh_token",
+            "refresh_token": refresh_token,
+        },
+        headers={"Accept": "application/json"},
+    )
+    data = response.json()
+    return {
+        "access_token": data["access_token"],
+        "token_type": data["token_type"],
+        "scope": data["scope"],
+    }</code></pre>
+
+        <h2>OpenID Connect: Adding Identity on Top of OAuth 2.0</h2>
+        <p>OIDC is essentially OAuth 2.0 with an extra token called the <strong>ID token</strong> (a JWT). While OAuth 2.0 gives you an access token to call APIs, OIDC gives you an ID token that proves the user's identity.</p>
+
+        <p>The ID token is a JSON Web Token containing claims about the user:</p>
+
+        <pre><code>{
+  "iss": "https://accounts.google.com",
+  "sub": "1234567890",          # Unique user ID
+  "aud": "your_client_id",      # Your app
+  "exp": 1721500000,            # Expiration timestamp
+  "iat": 1721496400,            # Issued at timestamp
+  "email": "user@example.com",  # Optional claim
+  "name": "John Doe"            # Optional claim
+}</code></pre>
+
+        <h2>PKCE: Securing Public Clients</h2>
+        <p>For mobile apps, SPAs, or any client that can't securely store a client secret, use <strong>PKCE</strong> (Proof Key for Code Exchange). It prevents authorization code interception attacks:</p>
+
+        <pre><code>import hashlib
+import base64
+import secrets
+
+def generate_pkce_pair():
+    """Generate PKCE code_verifier and code_challenge."""
+    # Generate a random code_verifier
+    code_verifier = secrets.token_urlsafe(64)
+    
+    # Create code_challenge from code_verifier (S256 method)
+    code_challenge_bytes = hashlib.sha256(code_verifier.encode()).digest()
+    code_challenge = base64.urlsafe_b64encode(code_challenge_bytes).rstrip(b'=').decode()
+    
+    return code_verifier, code_challenge
+
+# Usage in authorization request
+code_verifier, code_challenge = generate_pkce_pair()
+
+auth_params = {
+    "client_id": CLIENT_ID,
+    "redirect_uri": REDIRECT_URI,
+    "response_type": "code",
+    "scope": "openid profile email",
+    "code_challenge": code_challenge,
+    "code_challenge_method": "S256",  # SHA-256
+    "state": secrets.token_urlsafe(16),
+}
+
+# When exchanging the code, send the code_verifier
+token_params = {
+    "client_id": CLIENT_ID,
+    "grant_type": "authorization_code",
+    "code": authorization_code,
+    "redirect_uri": REDIRECT_URI,
+    "code_verifier": code_verifier,  # This proves you initiated the flow
+}</code></pre>
+
+        <h2>Scopes: Requesting Only What You Need</h2>
+        <p>Scopes define what access you're requesting. Always request the minimum scopes needed:</p>
+
+        <pre><code># GitHub scopes
+"user:email"      # Read email addresses
+"repo"            # Full repo access
+"read:org"        # Read org info only
+
+# Google scopes  
+"openid"          # Required for OIDC
+"profile"         # Basic profile (name, picture)
+"email"           # Email address
+"https://www.googleapis.com/auth/drive.readonly"  # Read Drive files
+
+# OAuth best practice: least privilege
+# Don't request "repo" if you only need "public_repo"
+# Don't request "drive" if you only need "drive.readonly"</code></pre>
+
+        <h2>Common Security Pitfalls</h2>
+        <ul style="margin: 12px 0 12px 24px; color: var(--text-secondary);">
+            <li><strong>Never store client secrets in frontend code</strong> — they will be extracted. Use PKCE for SPAs and mobile apps.</li>
+            <li><strong>Always validate the <code>state</code> parameter</strong> — prevents CSRF attacks by ensuring the callback matches the original request.</li>
+            <li><strong>Always verify the <code>iss</code> and <code>aud</code> claims</strong> in ID tokens — ensures the token came from the expected provider and is meant for your app.</li>
+            <li><strong>Store refresh tokens securely</strong> — use HTTP-only cookies or encrypted storage, never in localStorage.</li>
+            <li><strong>Handle token expiration</strong> — implement automatic refresh before access tokens expire.</li>
+            <li><strong>Use HTTPS everywhere</strong> — tokens in transit must be encrypted.</li>
+        </ul>
+
+        <h2>OAuth 2.0 vs OpenID Connect at a Glance</h2>
+        <p>Here's a quick comparison:</p>
+
+        <table style="width: 100%; margin: 16px 0; border-collapse: collapse; color: var(--text-secondary);">
+            <tr style="border-bottom: 1px solid var(--border-solid);">
+                <th style="text-align: left; padding: 8px;">Feature</th>
+                <th style="text-align: left; padding: 8px;">OAuth 2.0</th>
+                <th style="text-align: left; padding: 8px;">OpenID Connect</th>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-solid);">
+                <td style="padding: 8px;">Purpose</td>
+                <td style="padding: 8px;">Authorization</td>
+                <td style="padding: 8px;">Authentication + Authorization</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-solid);">
+                <td style="padding: 8px;">Tokens</td>
+                <td style="padding: 8px;">Access Token, Refresh Token</td>
+                <td style="padding: 8px;">+ ID Token (JWT)</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-solid);">
+                <td style="padding: 8px;">Use Case</td>
+                <td style="padding: 8px;">API access ("read my calendar")</td>
+                <td style="padding: 8px;">Login ("Sign in with Google")</td>
+            </tr>
+            <tr>
+                <td style="padding: 8px;">User Identity</td>
+                <td style="padding: 8px;">No built-in identity</td>
+                <td style="padding: 8px;">Standardized identity via ID token</td>
+            </tr>
+        </table>
+
+        <h2>Production Checklist</h2>
+        <ul style="margin: 12px 0 12px 24px; color: var(--text-secondary);">
+            <li>✅ Use the Authorization Code flow with PKCE</li>
+            <li>✅ Validate <code>state</code> on every callback</li>
+            <li>✅ Verify ID token signature, <code>iss</code>, <code>aud</code>, and <code>exp</code></li>
+            <li>✅ Request minimum required scopes</li>
+            <li>✅ Store tokens securely (HTTP-only cookies for web)</li>
+            <li>✅ Implement token refresh logic</li>
+            <li>✅ Use HTTPS for all OAuth endpoints</li>
+            <li>✅ Log auth events (login success, failure, token refresh)</li>
+        </ul>
+
+        <h2>Next Steps</h2>
+        <p>Now that you understand OAuth 2.0 and OpenID Connect, explore our guide on <a href="api-security-jwt-rate-limiting.html">JWT Authentication and Rate Limiting</a> to learn how to implement your own authorization server, or check out <a href="https-tls-explained.html">HTTPS/TLS Explained</a> to understand the encryption that protects all these tokens in transit.</p>
+    </article>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes. Built with care.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Reading progress bar
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + '%';
+        });
+        // Theme toggle
+        const toggle = document.getElementById('themeToggle');
+        if (toggle) {
+            toggle.addEventListener('click', () => {
+                document.body.classList.toggle('light');
+            });
+        }
+    </script>
+</body>
+</html>

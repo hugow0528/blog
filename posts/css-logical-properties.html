@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS Logical Properties: Modern Layout Without Direction-Specific Code — Hugo's Dev Notes</title>
+    <meta name="description" content="Learn CSS logical properties — the modern way to handle padding, margins, borders, and sizing that works with any writing direction. Bidirectional layout made simple.">
+    <meta name="keywords" content="css logical properties, css padding-inline, css margin-block, bidirectional css, modern css layout">
+    <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/css-logical-properties.html">
+    <link rel="stylesheet" href="../style.css">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "headline": "CSS Logical Properties: Modern Layout Without Direction-Specific Code",
+      "author": {"@type": "Person", "name": "Hugo Wong"},
+      "datePublished": "2026-07-10",
+      "publisher": {"@type": "Organization", "name": "Hugo's Dev Notes"}
+    }
+    </script>
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../../index.html" class="nav-btn">Home</a>
+                <a href="../../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../../python.html" class="nav-btn">Python</a>
+                <a href="../../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../../devops.html" class="nav-btn">DevOps</a>
+                <a href="../../security.html" class="nav-btn">Security</a>
+                <a href="../../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <article class="post-content container">
+        <span class="tag web">Web Dev</span>
+        <h1>CSS Logical Properties: Modern Layout Without Direction-Specific Code — Complete Guide</h1>
+        <p class="post-excerpt">Stop writing separate padding-left and padding-right rules for RTL support. Learn CSS logical properties — padding-inline, margin-block, start/end sizing — that automatically adapt to any writing direction. Modern, clean, bidirectional-ready layouts.</p>
+        <div class="post-meta">
+            <span class="post-date">July 10, 2026</span>
+            <span class="post-read-time">10 min read</span>
+        </div>
+
+        <hr>
+
+        <h2>The Problem with Physical Properties</h2>
+        <p>Traditional CSS uses <strong>physical properties</strong> that refer to specific sides of an element: <code>margin-left</code>, <code>padding-top</code>, <code>border-right</code>. This works perfectly for left-to-right languages like English. But when your site needs to support right-to-left languages (Arabic, Hebrew) or top-to-bottom writing (classical Chinese, Mongolian), every directional property needs a manual override:</p>
+        <pre><code>/* Physical properties — breaks with RTL */
+.card {
+    margin-left: 20px;    /* Has to become margin-right in RTL */
+    padding-right: 16px;  /* Has to become padding-left in RTL */
+    text-align: left;     /* Has to become text-align: right in RTL */
+}
+
+/* The old way to fix it: separate RTL styles */
+[dir="rtl"] .card {
+    margin-left: 0;
+    margin-right: 20px;
+    padding-right: 0;
+    padding-left: 16px;
+    text-align: right;
+}</code></pre>
+        <p>This duplication is error-prone, verbose, and easy to forget. CSS logical properties solve this by referencing <strong>logical sides</strong> (inline/block, start/end) instead of physical directions.</p>
+
+        <h2>Inline vs Block: The Logical Axes</h2>
+        <p>CSS logical properties define two axes based on the <strong>writing direction</strong>:</p>
+        <ul>
+            <li><strong>Inline axis</strong>: The direction text flows. In LTR languages, this is left-to-right. In RTL languages, this is right-to-left. Think of it as the "reading direction."</li>
+            <li><strong>Block axis</strong>: The perpendicular direction. In horizontal writing, this is top-to-bottom. In vertical writing, this becomes left-to-right.</li>
+        </ul>
+        <p>Here's how physical properties map to their logical equivalents:</p>
+        <pre><code>/* Physical        →  Logical (shorthand)   */
+padding-left       →  padding-inline-start
+padding-right      →  padding-inline-end
+padding-top        →  padding-block-start
+padding-bottom     →  padding-block-end
+
+margin-left        →  margin-inline-start
+margin-right       →  margin-inline-end
+margin-top         →  margin-block-start
+margin-bottom      →  margin-block-end
+
+/* Shorthand versions for both sides */
+padding-left/right →  padding-inline
+padding-top/bottom →  padding-block
+margin-left/right  →  margin-inline
+margin-top/bottom  →  margin-block</code></pre>
+
+        <h2>Using padding-inline and padding-block</h2>
+        <p>The most common use case is replacing directional padding. Instead of specifying left and right separately:</p>
+        <pre><code>/* Before: physical properties */
+.card {
+    padding: 16px 24px;        /* top/bottom = 16px, left/right = 24px */
+    margin-bottom: 24px;
+    margin-left: 12px;
+}
+
+/* After: logical properties */
+.card {
+    padding-block: 16px;       /* top AND bottom */
+    padding-inline: 24px;      /* left AND right in LTR, right AND left in RTL */
+    margin-block-end: 24px;    /* bottom in horizontal writing */
+    margin-inline-start: 12px; /* left in LTR, right in RTL */
+}</code></pre>
+        <p>With logical properties, the same CSS works for both LTR and RTL languages. The browser automatically maps "inline-start" to the correct physical side based on the writing direction. Zero RTL-specific code needed.</p>
+
+        <h2>Border and Background Logical Properties</h2>
+        <p>Logical properties extend to borders and backgrounds too. This is especially useful for cards, dividers, and content separation:</p>
+        <pre><code>.card {
+    /* Logical borders */
+    border-inline-start: 4px solid #5e6ad2;  /* left border in LTR */
+    border-block-end: 1px solid #eee;         /* bottom border */
+    
+    /* Logical background positioning */
+    background-position: left center;    /* physical — won't adapt */
+    background-position: start center;   /* logical — adapts to direction */
+    
+    /* Logical border-radius */
+    border-start-start-radius: 12px;   /* top-left in LTR */
+    border-start-end-radius: 12px;     /* top-right in LTR */
+    border-end-start-radius: 0;        /* bottom-left in LTR */
+    border-end-end-radius: 0;          /* bottom-right in LTR */
+}</code></pre>
+        <p>The border-radius logical properties are verbose but incredibly powerful for complex designs. The naming follows the pattern <code>border-{block-side}-{inline-side}-radius</code>, where each side is either <code>start</code> or <code>end</code>.</p>
+
+        <h2>Intrinsic Sizing: min() and max() Functions</h2>
+        <p>CSS also introduces logical keywords for sizing elements based on their content's natural dimensions, rather than fixed pixel values:</p>
+        <pre><code>.responsive-container {
+    /* Use minimum of viewport width and 800px */
+    width: min(100vw, 800px);
+    
+    /* Minimum size based on content, maximum based on viewport */
+    min-width: min(50ch, 100%);   /* 50 characters or full width */
+    max-width: min(80ch, 100%);   /* 80 characters or full width */
+    
+    /* Clamp for fluid typography */
+    font-size: clamp(1rem, 2.5vw, 1.5rem);
+    
+    /* Intrinsic sizing keywords */
+    min-width: min-content;  /* Shrink to smallest content */
+    min-width: max-content;  /* Expand to largest content */
+    min-width: fit-content;  /* Best fit between min and max */
+}</code></pre>
+        <p>The <code>ch</code> unit (width of the character "0") is perfect for text containers. A max-width of <code>80ch</code> ensures lines stay around 80 characters — the optimal reading length for most languages. Combined with <code>min()</code>, it creates fluid containers that never overflow their parent.</p>
+
+        <h2>start and end Keywords for Positioning</h2>
+        <p>Logical <code>start</code> and <code>end</code> keywords work across many CSS properties beyond padding and margin:</p>
+        <pre><code>.icon-button {
+    /* Position icon on the "start" side (left in LTR, right in RTL) */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    
+    /* Logical float */
+    float: inline-start;  /* float: left in LTR */
+    
+    /* Logical text alignment */
+    text-align: start;    /* text-align: left in LTR */
+    
+    /* Logical absolute positioning */
+    position: absolute;
+    inset-inline-start: 16px;   /* left: 16px in LTR */
+    inset-block-end: 16px;      /* bottom: 16px */
+    
+    /* Logical overflow */
+    overflow-x: clip;
+    overflow-y: auto;
+    
+    /* Logical scroll behavior */
+    scroll-margin-inline-start: 24px;
+}
+
+/* Logical inset shorthand */
+.modal {
+    inset: 2rem;           /* top/right/bottom/left = 2rem */
+    inset-inline: 4rem;    /* left AND right = 4rem */
+    inset-block: 2rem;     /* top AND bottom = 2rem */
+}</code></pre>
+        <p>The <code>inset-inline</code> and <code>inset-block</code> shorthands are particularly powerful for modal dialogs, overlays, and sticky elements. They replace the need for separate <code>top</code>/<code>bottom</code>/<code>left</code>/<code>right</code> declarations.</p>
+
+        <h2>Complete Real-World Example: Blog Card Component</h2>
+        <p>Here's a complete card component built entirely with logical properties. It works flawlessly in both LTR and RTL:</p>
+        <pre><code>.blog-card {
+    /* Layout */
+    display: flex;
+    flex-direction: column;
+    
+    /* Spacing with logical properties */
+    padding-block: 24px;          /* top + bottom padding */
+    padding-inline: 24px;         /* left + right padding */
+    margin-block-end: 16px;       /* bottom margin */
+    
+    /* Borders */
+    border-radius: 12px;
+    border: 1px solid #222;
+    border-inline-start: 4px solid #5e6ad2;
+    
+    /* Typography */
+    text-align: start;            /* left in LTR, right in RTL */
+    
+    /* Content spacing */
+    .card-title {
+        margin-block-end: 8px;
+    }
+    
+    .card-excerpt {
+        margin-block-end: 16px;
+        color: #888;
+        font-size: 0.95rem;
+    }
+    
+    /* Button alignment */
+    .card-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-block-start: 16px;
+        border-block-start: 1px solid #333;
+    }
+    
+    /* Arrow icon direction */
+    .read-more {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+    
+    .read-more::after {
+        content: '→';
+        transition: transform 0.2s;
+    }
+    
+    /* Arrow flips in RTL */
+    [dir="rtl"] .read-more::after {
+        transform: scaleX(-1);
+    }
+    
+    .read-more:hover::after {
+        transform: translateX(4px);
+    }
+    
+    [dir="rtl"] .read-more:hover::after {
+        transform: scaleX(-1) translateX(4px);
+    }
+}</code></pre>
+        <p>Notice how only the icon arrow needs an explicit RTL override. Every padding, margin, border, and alignment property automatically adapts through logical properties. That's a 90% reduction in RTL-specific CSS.</p>
+
+        <h2>Browser Support</h2>
+        <p>CSS logical properties have excellent browser support in 2026. All major browsers (Chrome, Firefox, Safari, Edge) fully support the core logical properties:</p>
+        <ul>
+            <li><code>margin-inline</code>, <code>margin-block</code> — 100% support</li>
+            <li><code>padding-inline</code>, <code>padding-block</code> — 100% support</li>
+            <li><code>border-inline</code>, <code>border-block</code> — 100% support</li>
+            <li><code>inset-inline</code>, <code>inset-block</code> — 100% support</li>
+            <li><code>text-align: start/end</code> — 100% support</li>
+            <li><code>min()</code>, <code>max()</code>, <code>clamp()</code> — 100% support</li>
+        </ul>
+        <p>There's no reason not to use logical properties in new projects. For legacy code, gradually replace physical properties one component at a time — they can coexist without conflicts.</p>
+
+        <h2>Migration Strategy</h2>
+        <p>Converting existing projects to logical properties is straightforward:</p>
+        <ol>
+            <li><strong>Audit:</strong> Search your CSS for <code>margin-left</code>, <code>margin-right</code>, <code>padding-left</code>, <code>padding-right</code> — these are the most common targets.</li>
+            <li><strong>Pair replacements:</strong> When both left and right have the same value, combine them: <code>padding-left: 16px; padding-right: 16px</code> → <code>padding-inline: 16px</code>.</li>
+            <li><strong>Asymmetric pairs:</strong> When left and right differ, use start/end: <code>margin-left: 20px; margin-right: 8px</code> → <code>margin-inline: 20px 8px</code> (start end).</li>
+            <li><strong>Test both directions:</strong> Add <code>dir="rtl"</code> to your <code>&lt;html&gt;</code> tag temporarily and verify the layout flips correctly.</li>
+        </ol>
+
+        <h2>Summary</h2>
+        <p>CSS logical properties eliminate the need for direction-specific stylesheets and reduce code duplication by 50-90%. They future-proof your layouts for any writing direction, from Arabic and Hebrew to vertical Japanese text. Start using <code>padding-inline</code>, <code>margin-block</code>, <code>text-align: start</code>, and <code>inset-inline</code> in every new project. Your CSS will be cleaner, more maintainable, and automatically internationalized.</p>
+    </article>
+
+    <footer class="container" style="text-align:center; padding:48px 0 32px; border-top:1px solid var(--border-subtle); margin-top:48px; color:var(--text-quaternary); font-size:13px;">
+        <p>Hugo's Dev Notes &copy; 2026 &middot; Built with plain HTML &middot; Deployed on Cloudflare</p>
+    </footer>
+
+    <script>
+        // Reading progress bar
+        window.onscroll = function() {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            const bar = document.getElementById('progressBar');
+            if (bar) bar.style.width = scrolled + '%';
+        };
+
+        // Theme toggle
+        const toggle = document.getElementById('themeToggle');
+        if (toggle) {
+            toggle.addEventListener('click', () => {
+                document.body.classList.toggle('light-theme');
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nginx Reverse Proxy &amp; Load Balancing: Route, Cache &amp; Protect Your Services — Complete Beginner's Guide</title>
+    <meta name="description" content="Learn Nginx as reverse proxy and load balancer — upstream blocks, proxy_pass, SSL termination, caching, rate limiting, and health checks. Working configs for every concept.">
+    <meta name="keywords" content="nginx reverse proxy, load balancing, SSL termination, nginx config, rate limiting, proxy cache">
+    <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/nginx-reverse-proxy.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn active">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-full">
+            <header class="post-header">
+                <div class="post-tags">
+                    <span class="tag devops">DevOps</span>
+                </div>
+                <h1>Nginx Reverse Proxy &amp; Load Balancing: Route, Cache &amp; Protect Your Services</h1>
+                <div class="post-meta">
+                    <span class="post-date">July 19, 2026</span>
+                    <span class="read-time">11 min read</span>
+                </div>
+            </header>
+
+            <div class="post-content">
+                <p>Nginx is the most popular reverse proxy and load balancer on the internet. It sits between your users and your application servers, handling SSL termination, caching, rate limiting, and traffic routing — often serving millions of requests per second. Whether you're running a single Flask app or orchestrating a fleet of microservices, Nginx is the glue that makes everything work together.</p>
+
+                <p>In this guide, you'll learn Nginx from scratch — from a basic reverse proxy that forwards requests to your Python app, to a production-ready configuration with load balancing, SSL termination, gzip compression, caching, and rate limiting. Every concept comes with a working <code>nginx.conf</code> snippet you can copy and test immediately.</p>
+
+                <h2 id="what-is-nginx">What Is a Reverse Proxy?</h2>
+                <p>A <strong>reverse proxy</strong> receives requests from clients and forwards them to backend servers. The client never knows the real server exists — it only sees the proxy. This gives you several superpowers:</p>
+                <ul>
+                    <li><strong>SSL termination</strong> — decrypt HTTPS at the proxy, send plain HTTP to backends</li>
+                    <li><strong>Load balancing</strong> — distribute traffic across multiple app instances</li>
+                    <li><strong>Caching</strong> — serve repeated requests from memory without hitting your app</li>
+                    <li><strong>Rate limiting</strong> — block abusive clients before they reach your servers</li>
+                    <li><strong>Security</strong> — hide internal IPs, block bad headers, filter traffic</li>
+                </ul>
+
+                <p>A <strong>forward proxy</strong> (like a VPN) does the opposite — it sits behind clients and forwards their requests outward. Nginx is almost always used as a reverse proxy.</p>
+
+                <h2 id="basic-proxy">Basic Reverse Proxy: Forward to Your Python App</h2>
+                <p>Let's start simple. You have a Python web app running on <code>localhost:8000</code>. You want Nginx on port 80 to forward all requests to it.</p>
+
+                <pre><code class="language-nginx"># /etc/nginx/sites-available/myapp
+server {
+    listen 80;
+    server_name example.com;
+
+    location / {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}</code></pre>
+
+                <p>Breaking it down:</p>
+                <ul>
+                    <li><code>listen 80</code> — Nginx accepts connections on port 80 (HTTP)</li>
+                    <li><code>server_name</code> — only handle requests for this domain</li>
+                    <li><code>proxy_pass</code> — forward requests to your backend</li>
+                    <li><code>proxy_set_header</code> — pass the original client info to your app (critical! without <code>X-Real-IP</code>, your app sees Nginx's IP, not the user's)</li>
+                </ul>
+
+                <p>Enable and test:</p>
+                <pre><code class="language-bash"># Enable the site
+sudo ln -s /etc/nginx/sites-available/myapp /etc/nginx/sites-enabled/
+
+# Test config syntax (always do this!)
+sudo nginx -t
+
+# Reload without dropping connections
+sudo systemctl reload nginx</code></pre>
+
+                <p><strong>Pro tip:</strong> Always run <code>nginx -t</code> before reloading. A syntax error in <code>nginx.conf</code> will crash the entire proxy.</p>
+
+                <h2 id="load-balancing">Load Balancing: Distribute Across Multiple Servers</h2>
+                <p>When your app scales beyond one instance, use Nginx's <code>upstream</code> block to distribute traffic:</p>
+
+                <pre><code class="language-nginx"># Define your backend servers
+upstream backend {
+    # Round-robin (default) — simplest, good enough for most
+    server 10.0.0.1:8000;
+    server 10.0.0.2:8000;
+    server 10.0.0.3:8000;
+
+    # Mark a server as backup (only used when others are down)
+    server 10.0.0.4:8000 backup;
+}
+
+server {
+    listen 80;
+    server_name example.com;
+
+    location / {
+        proxy_pass http://backend;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}</code></pre>
+
+                <p>Nginx supports several load balancing strategies:</p>
+                <pre><code class="language-nginx"># Weighted — send more traffic to stronger servers
+upstream backend {
+    server 10.0.0.1:8000 weight=5;  # Gets 5x the traffic
+    server 10.0.0.2:8000 weight=1;  # Gets 1x the traffic
+}
+
+# Least connections — send to least busy server
+upstream backend {
+    least_conn;
+    server 10.0.0.1:8000;
+    server 10.0.0.2:8000;
+}
+
+# IP hash — same client always hits same server (session affinity)
+upstream backend {
+    ip_hash;
+    server 10.0.0.1:8000;
+    server 10.0.0.2:8000;
+}</code></pre>
+
+                <h3 id="health-checks">Passive Health Checks</h3>
+                <p>Nginx Open Source automatically detects and removes failed backends:</p>
+
+                <pre><code class="language-nginx">upstream backend {
+    server 10.0.0.1:8000 max_fails=3 fail_timeout=30s;
+    server 10.0.0.2:8000 max_fails=3 fail_timeout=30s;
+}
+# After 3 failed requests in 30s, mark server as down
+# After fail_timeout seconds, try again</code></pre>
+
+                <p>Active health checks require Nginx Plus (paid), but you can simulate them with a script:</p>
+
+                <pre><code class="language-python">#!/usr/bin/env python3
+"""Health check script for Nginx backends."""
+import urllib.request
+import json
+
+backends = ["http://10.0.0.1:8000/health",
+            "http://10.0.0.2:8000/health"]
+
+def check_backend(url):
+    try:
+        resp = urllib.request.urlopen(url, timeout=3)
+        return resp.status == 200
+    except Exception:
+        return False
+
+results = {url: check_backend(url) for url in backends}
+print(json.dumps(results, indent=2))
+
+# Exit with error if any backend is down
+if not all(results.values()):
+    exit(1)</code></pre>
+
+                <h2 id="ssl-termination">SSL Termination: HTTPS at the Proxy</h2>
+                <p>Terminate HTTPS at Nginx and let your backend run plain HTTP internally:</p>
+
+                <pre><code class="language-nginx"># Redirect HTTP → HTTPS
+server {
+    listen 80;
+    server_name example.com;
+    return 301 https://$host$request_uri;
+}
+
+# HTTPS server
+server {
+    listen 443 ssl;
+    server_name example.com;
+
+    # Certificates (from Let's Encrypt or your CA)
+    ssl_certificate /etc/letsencrypt/live/example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/example.com/privkey.pem;
+
+    # Modern SSL settings
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256';
+    ssl_prefer_server_ciphers on;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 1d;
+
+    # HSTS — force browsers to always use HTTPS
+    add_header Strict-Transport-Security "max-age=63072000" always;
+
+    location / {
+        proxy_pass http://backend;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+}</code></pre>
+
+                <p>Get free SSL with Certbot (Let's Encrypt):</p>
+                <pre><code class="language-bash">sudo certbot --nginx -d example.com
+# Certbot auto-configures the SSL block and sets up auto-renewal</code></pre>
+
+                <h2 id="caching">Proxy Caching: Serve from Memory</h2>
+                <p>Cache backend responses to dramatically reduce load:</p>
+
+                <pre><code class="language-nginx"># Define a cache zone (in http {} block)
+proxy_cache_path /var/cache/nginx levels=1:2
+    keys_zone=my_cache:10m
+    max_size=1g
+    inactive=60m;
+
+server {
+    listen 80;
+    server_name example.com;
+
+    location / {
+        proxy_pass http://backend;
+
+        # Enable caching
+        proxy_cache my_cache;
+        proxy_cache_valid 200 10m;       # Cache 200s for 10 min
+        proxy_cache_valid 404 1m;         # Cache 404s for 1 min
+        proxy_cache_use_stale error timeout updating;
+        # Serve stale cache if backend is down
+
+        # Cache key — vary by URL
+        proxy_cache_key $scheme$request_method$host$request_uri;
+
+        # Add cache status header for debugging
+        add_header X-Cache-Status $upstream_cache_status;
+    }
+
+    # Purge cache endpoint (optional, needs nginx-cache-purge module)
+    location ~ /purge/(.*) {
+        proxy_cache_purge my_cache $scheme$1;
+    }
+}</code></pre>
+
+                <p>Check your cache status in browser dev tools — <code>X-Cache-Status: HIT</code> means served from cache, <code>MISS</code> means proxied to backend.</p>
+
+                <h2 id="rate-limiting">Rate Limiting: Protect Against Abuse</h2>
+                <p>Limit request rates per IP to prevent DDoS and brute force:</p>
+
+                <pre><code class="language-nginx"># Define rate limit zones (in http {} block)
+limit_req_zone $binary_remote_addr zone=api:10m rate=10r/s;
+limit_req_zone $binary_remote_addr zone=login:10m rate=1r/s;
+
+server {
+    listen 80;
+    server_name example.com;
+
+    # API endpoint — 10 requests/second per IP
+    location /api/ {
+        limit_req zone=api burst=20 nodelay;
+        # burst=20: allow short bursts of up to 20 excess requests
+        # nodelay: serve burst requests immediately instead of queuing
+        proxy_pass http://backend;
+    }
+
+    # Login endpoint — 1 request/second (prevent brute force)
+    location /login {
+        limit_req zone=login burst=5;
+        proxy_pass http://backend;
+    }
+
+    # Return 429 (Too Many Requests) with a custom page
+    limit_req_status 429;
+    error_page 429 /429.html;
+}</code></pre>
+
+                <h2 id="multiple-services">Multiple Services: Route Different Paths</h2>
+                <p>Proxy different URL paths to different backends:</p>
+
+                <pre><code class="language-nginx">upstream web_app {
+    server 127.0.0.1:3000;  # React frontend
+}
+
+upstream api_app {
+    server 127.0.0.1:8000;  # Python API
+}
+
+upstream admin_app {
+    server 127.0.0.1:9000;  # Admin dashboard
+}
+
+server {
+    listen 80;
+    server_name example.com;
+
+    # Static frontend
+    location / {
+        proxy_pass http://web_app;
+        proxy_set_header Host $host;
+    }
+
+    # API — add CORS, rate limiting
+    location /api/ {
+        proxy_pass http://api_app;
+        proxy_set_header Host $host;
+        limit_req zone=api burst=20 nodelay;
+    }
+
+    # Admin — restrict by IP
+    location /admin/ {
+        allow 203.0.113.0/24;   # Your office network
+        deny all;
+        proxy_pass http://admin_app;
+        proxy_set_header Host $host;
+    }
+
+    # WebSocket support
+    location /ws/ {
+        proxy_pass http://api_app;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+    }
+}</code></pre>
+
+                <h2 id="compression">Gzip Compression</h2>
+                <p>Compress responses to reduce bandwidth:</p>
+
+                <pre><code class="language-nginx"># In http {} block:
+gzip on;
+gzip_vary on;
+gzip_proxied any;
+gzip_comp_level 6;
+gzip_types text/plain text/css application/json application/javascript
+    text/xml application/xml application/xml+rss
+    text/javascript image/svg+xml;
+gzip_min_length 256;  # Don't compress tiny responses</code></pre>
+
+                <h2 id="full-config">Complete Production Configuration</h2>
+                <p>Here's a full <code>nginx.conf</code> combining everything:</p>
+
+                <pre><code class="language-nginx"># /etc/nginx/nginx.conf
+user nginx;
+worker_processes auto;
+error_log /var/log/nginx/error.log warn;
+pid /var/run/nginx.pid;
+
+events {
+    worker_connections 4096;
+    multi_accept on;
+}
+
+http {
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
+
+    # Logging
+    log_format main '$remote_addr - $remote_user [$time_local] "$request" '
+                    '$status $body_bytes_sent "$http_referer" '
+                    '"$http_user_agent" "$http_x_forwarded_for" '
+                    'rt=$request_time';
+    access_log /var/log/nginx/access.log main;
+
+    # Performance
+    sendfile on;
+    tcp_nopush on;
+    tcp_nodelay on;
+    keepalive_timeout 65;
+
+    # Gzip
+    gzip on;
+    gzip_vary on;
+    gzip_proxied any;
+    gzip_comp_level 6;
+    gzip_types text/plain text/css application/json application/javascript;
+    gzip_min_length 256;
+
+    # Rate limiting zones
+    limit_req_zone $binary_remote_addr zone=api:10m rate=10r/s;
+    limit_req_zone $binary_remote_addr zone=login:10m rate=1r/s;
+
+    # Proxy cache
+    proxy_cache_path /var/cache/nginx levels=1:2
+        keys_zone=my_cache:10m max_size=1g inactive=60m;
+
+    # Upstream backends
+    upstream web_app {
+        server 127.0.0.1:3000 weight=3 max_fails=3 fail_timeout=30s;
+        server 127.0.0.1:3001 weight=1 max_fails=3 fail_timeout=30s;
+    }
+
+    upstream api_app {
+        server 127.0.0.1:8000;
+        server 127.0.0.1:8001;
+    }
+
+    # Include site configs
+    include /etc/nginx/conf.d/*.conf;
+    include /etc/nginx/sites-enabled/*;
+}</code></pre>
+
+                <h2 id="python-config-generator">Python Nginx Config Generator</h2>
+                <p>Generate Nginx configs from a Python dictionary — perfect for infrastructure-as-code:</p>
+
+                <pre><code class="language-python">#!/usr/bin/env python3
+"""Generate Nginx reverse proxy configs from Python."""
+
+def generate_server_block(service):
+    """Generate an nginx server block from a config dict."""
+    lines = [
+        f"server {{",
+        f"    listen {service.get('port', 80)};",
+        f"    server_name {service['server_name']};",
+    ]
+
+    if service.get("ssl"):
+        lines.append("    listen 443 ssl;")
+        lines.append(f"    ssl_certificate {service['ssl_cert']};")
+        lines.append(f"    ssl_certificate_key {service['ssl_key']};")
+        lines.append("    ssl_protocols TLSv1.2 TLSv1.3;")
+
+    # Proxy location blocks
+    for path, backend in service.get("locations", {}).items():
+        lines.append(f"")
+        lines.append(f"    location {path} {{")
+        lines.append(f"        proxy_pass {backend['url']};")
+        lines.append(f"        proxy_set_header Host $host;")
+        lines.append(f"        proxy_set_header X-Real-IP $remote_addr;")
+        lines.append(f"        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;")
+
+        if "rate_limit" in backend:
+            lines.append(f"        limit_req zone={backend['rate_limit']} burst=10 nodelay;")
+
+        if "cache" in backend:
+            lines.append(f"        proxy_cache {backend['cache']};")
+            lines.append(f"        proxy_cache_valid 200 10m;")
+
+        lines.append(f"    }}")
+
+    lines.append("}")
+    return "\n".join(lines)
+
+
+# Define services in Python
+services = [
+    {
+        "server_name": "app.example.com",
+        "port": "443",
+        "ssl": True,
+        "ssl_cert": "/etc/letsencrypt/live/app.example.com/fullchain.pem",
+        "ssl_key": "/etc/letsencrypt/live/app.example.com/privkey.pem",
+        "locations": {
+            "/": {"url": "http://127.0.0.1:3000"},
+            "/api/": {"url": "http://127.0.0.1:8000", "rate_limit": "api", "cache": "my_cache"},
+            "/ws/": {"url": "http://127.0.0.1:8000"},
+        },
+    },
+    {
+        "server_name": "admin.example.com",
+        "port": "443",
+        "ssl": True,
+        "ssl_cert": "/etc/letsencrypt/live/admin.example.com/fullchain.pem",
+        "ssl_key": "/etc/letsencrypt/live/admin.example.com/privkey.pem",
+        "locations": {
+            "/": {"url": "http://127.0.0.1:9000", "rate_limit": "login"},
+        },
+    },
+]
+
+# Generate config
+config = "\n\n".join(generate_server_block(s) for s in services)
+print(config)
+
+# Write to file
+with open("/etc/nginx/sites-available/generated.conf", "w") as f:
+    f.write(config)
+print("\n✅ Config written to /etc/nginx/sites-available/generated.conf")</code></pre>
+
+                <h2 id="troubleshooting">Troubleshooting</h2>
+                <p>Common Nginx issues and how to fix them:</p>
+                <pre><code class="language-bash"># Test config syntax before reload
+sudo nginx -t
+
+# View error log in real-time
+sudo tail -f /var/log/nginx/error.log
+
+# View access log
+sudo tail -f /var/log/nginx/access.log
+
+# Check which port 80/443 is listening on
+ss -tlnp | grep -E ':80|:443'
+
+# Check Nginx status
+sudo systemctl status nginx
+
+# Common: 502 Bad Gateway → backend is down or wrong port
+# Common: 504 Gateway Timeout → backend too slow (increase proxy_read_timeout)
+# Common: 413 Request Entity Too Large → increase client_max_body_size
+# Common: 499 Client Closed Request → client gave up (slow backend)</code></pre>
+
+                <h2 id="summary">Summary</h2>
+                <p>Nginx as a reverse proxy gives you a powerful layer between users and your applications. You've learned to:</p>
+                <ul>
+                    <li>Forward requests with <code>proxy_pass</code> and proper headers</li>
+                    <li>Load balance across multiple backends with <code>upstream</code></li>
+                    <li>Terminate SSL with Let's Encrypt certificates</li>
+                    <li>Cache responses with <code>proxy_cache</code></li>
+                    <li>Rate limit abusive clients with <code>limit_req</code></li>
+                    <li>Route different paths to different services</li>
+                    <li>Generate configs from Python for reproducibility</li>
+                </ul>
+                <p>Start with the basic proxy_pass config, then add features as you need them. Always test with <code>nginx -t</code> and reload with <code>systemctl reload nginx</code> — your users won't even notice the reload.</p>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Hugo's Dev Notes. Built with ☕ and curiosity.</p>
+        </div>
+    </footer>
+</body>
+</html>

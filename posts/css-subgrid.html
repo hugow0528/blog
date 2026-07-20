@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS Subgrid: Perfectly Aligned Nested Layouts — Complete Beginner's Guide | Hugo's Dev Notes</title>
+    
+    <meta name="description" content="Learn CSS Subgrid — nested grid alignment, shared track sizes, complex layouts without wrapper divs, and progressive enhancement. Working examples for every concept.">
+    <meta name="keywords" content="css subgrid, css grid alignment, nested grid, responsive layout, css tutorial">
+    <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/css-subgrid.html">
+    
+    <meta property="og:title" content="CSS Subgrid: Perfectly Aligned Nested Layouts — Complete Beginner's Guide">
+    <meta property="og:description" content="Master CSS subgrid for perfectly aligned nested grid layouts with working examples.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.hugow.dev/posts/css-subgrid.html">
+    
+    <link rel="stylesheet" href="../style.css">
+    <link rel="sitemap" type="application/xml" href="/sitemap.xml">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn active">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <article class="post-content container">
+        <span class="tag web">Web Dev</span>
+        <h1>CSS Subgrid: Perfectly Aligned Nested Layouts — Complete Beginner's Guide</h1>
+        <div class="post-meta">
+            <span class="post-date">July 15, 2026</span>
+            <span class="read-time">10 min read</span>
+        </div>
+
+        <p>One of the most frustrating parts of CSS Grid is what happens when you need a <strong>nested grid</strong>. You create a grid of cards, and each card has its own internal layout — but the card titles don't line up, the buttons sit at different heights, and the spacing feels inconsistent. That's because nested grids create their own independent track system, completely unaware of the parent grid's sizing.</p>
+
+        <p>Enter <strong>CSS Subgrid</strong> — the feature that lets a grid item become a grid itself <em>and</em> inherit its track sizes from the parent. No more wrapper divs, no more guessing at widths. This guide walks you through everything from the basics to real-world card layouts.</p>
+
+        <h2 id="what-is-subgrid">What Is CSS Subgrid?</h2>
+
+        <p>Normally, when you set <code>display: grid</code> on a child element, it creates a <strong>brand new grid</strong> with its own tracks. Subgrid lets that child grid <strong>borrow the track sizes</strong> from its parent instead.</p>
+
+        <p>Instead of defining <code>grid-template-columns: 1fr 2fr 1fr</code> on a child grid, you simply write <code>grid-template-columns: subgrid</code>. The child inherits the parent's column sizes perfectly.</p>
+
+        <h3 id="basic-example">The Basic Subgrid Pattern</h3>
+
+        <p>Here's the simplest example — a card layout where every card shares the same column structure:</p>
+
+        <pre><code class="language-css">.card-grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    gap: 1rem;
+}
+
+.card {
+    display: grid;
+    grid-template-columns: subgrid; /* inherits 1fr 2fr 1fr */
+    grid-column: 1 / -1;           /* span full width of parent */
+}</code></pre>
+
+        <p>Each <code>.card</code> creates a nested grid that uses <strong>the exact same column sizes</strong> as <code>.card-grid</code>. The image column, title column, and button column will align perfectly across all cards — even if some cards have shorter or longer content.</p>
+
+        <h2 id="card-layout">Building a Perfectly Aligned Card Layout</h2>
+
+        <p>This is where subgrid shines. Consider a card component with an image, title, description, and a button at the bottom. Without subgrid, you'd either accept misaligned buttons or fight with <code>min-height</code> and <code>flex</code> hacks.</p>
+
+        <h3>The HTML Structure</h3>
+
+        <pre><code class="language-html">&lt;div class="card-grid"&gt;
+    &lt;div class="card"&gt;
+        &lt;img src="photo1.jpg" alt="Project screenshot" class="card-img"&gt;
+        &lt;div class="card-body"&gt;
+            &lt;h3&gt;Short Title&lt;/h3&gt;
+            &lt;p&gt;A brief description.&lt;/p&gt;
+        &lt;/div&gt;
+        &lt;a href="#" class="card-btn"&gt;View&lt;/a&gt;
+    &lt;/div&gt;
+    &lt;!-- More cards... --&gt;
+&lt;/div&gt;</code></pre>
+
+        <h3>The CSS</h3>
+
+        <pre><code class="language-css">.card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.card {
+    display: grid;
+    /* Three rows: image, content, button */
+    grid-template-rows: auto 1fr auto;
+    gap: 0.75rem;
+    border: 1px solid var(--border-solid);
+    border-radius: 12px;
+    padding: 1rem;
+    background: var(--bg-surface);
+}
+
+.card-img {
+    grid-row: 1;
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.card-body {
+    grid-row: 2;
+}
+
+.card-body h3 {
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+}
+
+.card-body p {
+    color: var(--text-tertiary);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.card-btn {
+    grid-row: 3;
+    justify-self: start;
+    padding: 0.5rem 1.25rem;
+    background: var(--brand);
+    color: white;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+
+.card-btn:hover {
+    background: var(--brand-hover);
+}</code></pre>
+
+        <p>The <code>grid-template-rows: auto 1fr auto</code> is the key here:</p>
+
+        <ul>
+            <li><strong>Row 1 (<code>auto</code>)</strong>: The image sizes to its natural height</li>
+            <li><strong>Row 2 (<code>1fr</code>)</strong>: The body takes all available space — this pushes the button to the bottom</li>
+            <li><strong>Row 3 (<code>auto</code>)</strong>: The button sizes to its content</li>
+        </ul>
+
+        <p>Because the <code>1fr</code> row expands, <strong>every button aligns at the same vertical position</strong> regardless of how much text is in each card's description.</p>
+
+        <h2 id="subgrid-columns">Column Subgrid for Data Cards</h2>
+
+        <p>Subgrid works with columns too. Imagine an analytics dashboard where each metric card needs a label, a big number, and a sparkline chart:</p>
+
+        <pre><code class="language-css">.dashboard {
+    display: grid;
+    grid-template-columns: 2fr 1fr 100px;
+    grid-auto-rows: minmax(120px, auto);
+    gap: 1rem;
+}
+
+.metric {
+    display: grid;
+    grid-template-columns: subgrid; /* inherits 2fr 1fr 100px */
+    grid-column: 1 / -1;
+    align-items: center;
+    padding: 1rem;
+    border: 1px solid var(--border-solid);
+    border-radius: 8px;
+}
+
+.metric-label {
+    grid-column: 1;
+    font-size: 0.85rem;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.metric-value {
+    grid-column: 2;
+    font-size: 1.8rem;
+    font-weight: 600;
+    text-align: center;
+}
+
+.metric-chart {
+    grid-column: 3;
+    height: 50px;
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+}</code></pre>
+
+        <p>Every metric card's label, value, and chart are <strong>perfectly aligned</strong> because they share the parent's <code>2fr 1fr 100px</code> columns. Without subgrid, you'd need to hardcode pixel widths on every child.</p>
+
+        <h2 id="two-dimensional">Two-Dimensional Subgrid</h2>
+
+        <p>You can inherit <strong>both</strong> rows and columns from the parent:</p>
+
+        <pre><code class="language-css">.parent-grid {
+    display: grid;
+    grid-template-columns: 200px 1fr 1fr;
+    grid-template-rows: auto auto auto;
+}
+
+.child {
+    display: grid;
+    grid-template-columns: subgrid;
+    grid-template-rows: subgrid;
+    /* Now the child's grid items align on the parent's 3x3 tracks */
+}</code></pre>
+
+        <p>This is useful for complex layouts like a table of forms where every input, label, and button needs to align both horizontally and vertically across multiple rows.</p>
+
+        <h3>Example: Aligned Form Table</h3>
+
+        <pre><code class="language-html">&lt;div class="form-grid"&gt;
+    &lt;div class="form-row"&gt;
+        &lt;label&gt;Name&lt;/label&gt;
+        &lt;input type="text" placeholder="John Doe"&gt;
+        &lt;button&gt;Save&lt;/button&gt;
+    &lt;/div&gt;
+    &lt;div class="form-row"&gt;
+        &lt;label&gt;Email&lt;/label&gt;
+        &lt;input type="email" placeholder="john@example.com"&gt;
+        &lt;button&gt;Save&lt;/button&gt;
+    &lt;/div&gt;
+&lt;/div&gt;</code></pre>
+
+        <pre><code class="language-css">.form-grid {
+    display: grid;
+    grid-template-columns: 120px 1fr auto;
+    grid-template-rows: auto auto;
+    gap: 0.5rem 1rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: subgrid;
+    grid-template-rows: subgrid;
+    grid-column: 1 / -1;
+    grid-row: span 1;
+    align-items: center;
+}</code></pre>
+
+        <p>All labels, inputs, and buttons align perfectly because every row inherits the same three-column structure.</p>
+
+        <h2 id="browser-support">Browser Support</h2>
+
+        <p>Subgrid is supported in all major browsers as of 2024-2026:</p>
+
+        <table class="info-table">
+            <thead>
+                <tr>
+                    <th>Browser</th>
+                    <th>Version</th>
+                    <th>Support</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Chrome</td>
+                    <td>117+</td>
+                    <td>✅ Full</td>
+                </tr>
+                <tr>
+                    <td>Firefox</td>
+                    <td>72+</td>
+                    <td>✅ Full</td>
+                </tr>
+                <tr>
+                    <td>Safari</td>
+                    <td>15.4+</td>
+                    <td>✅ Full</td>
+                </tr>
+                <tr>
+                    <td>Edge</td>
+                    <td>117+</td>
+                    <td>✅ Full</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2 id="progressive-enhancement">Progressive Enhancement Strategy</h2>
+
+        <p>If you need to support older browsers, use the <code>@supports</code> rule to provide a fallback:</p>
+
+        <pre><code class="language-css">/* Fallback: each card has its own sizing */
+.card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+/* Upgrade: use subgrid when supported */
+@supports (grid-template-columns: subgrid) {
+    .card {
+        display: grid;
+        grid-template-columns: subgrid;
+        grid-template-rows: subgrid;
+    }
+}</code></pre>
+
+        <p>The fallback uses flexbox — buttons won't be perfectly aligned, but the layout still works. Users with modern browsers get the improved alignment automatically.</p>
+
+        <h2 id="common-patterns">Common Subgrid Patterns</h2>
+
+        <h3>1. Nav with Aligned Dropdowns</h3>
+
+        <p>Navigation menus where dropdown items need to align with menu labels:</p>
+
+        <pre><code class="language-css">.nav-dropdown {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    grid-template-rows: repeat(4, auto);
+}
+
+.dropdown-item {
+    display: grid;
+    grid-template-columns: subgrid;
+    grid-template-rows: subgrid;
+}</code></pre>
+
+        <h3>2. Pricing Table</h3>
+
+        <p>Pricing cards where feature checkboxes align across plans:</p>
+
+        <pre><code class="language-css">.pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+.pricing-card {
+    display: grid;
+    grid-template-rows: subgrid;
+    grid-template-columns: subgrid;
+    /* Features align across all three cards */
+}</code></pre>
+
+        <h3>3. Dashboard Widgets</h3>
+
+        <p>Widgets with headers, charts, and footers that maintain consistent spacing:</p>
+
+        <pre><code class="language-css">.widget {
+    display: grid;
+    grid-template-rows: subgrid;
+    /* Every widget header is at the same height,
+       every widget footer sits at the same position */
+}</code></pre>
+
+        <h2 id="gotchas">Common Gotchas</h2>
+
+        <h3>Gotcha 1: Subgrid Only Works on Grid Items</h3>
+
+        <p>A subgrid must be a <strong>direct child</strong> of a grid container. You cannot use subgrid on an element that is a grandchild or deeper:</p>
+
+        <pre><code class="language-html">&lt;div class="parent-grid"&gt;          /* grid container */
+    &lt;div class="child"&gt;             /* ✅ grid item — can use subgrid */
+        &lt;div class="grandchild"&gt;    /* ❌ not a direct grid item */
+        &lt;/div&gt;
+    &lt;/div&gt;
+&lt;/div&gt;</code></pre>
+
+        <h3>Gotcha 2: You Still Need <code>grid-column</code> or <code>grid-row</code></h3>
+
+        <p>When using subgrid, child grid items must be positioned using <code>grid-column</code> or <code>grid-row</code> — they don't automatically flow into tracks:</p>
+
+        <pre><code class="language-css">.child {
+    display: grid;
+    grid-template-columns: subgrid;
+}
+
+/* ✅ Explicit positioning */
+.child > .title { grid-column: 1; }
+.child > .desc  { grid-column: 2; }
+
+/* ❌ Implicit placement won't work */
+/* Items without explicit placement may not position correctly */</code></pre>
+
+        <h3>Gotcha 3: Gap Inheritance</h3>
+
+        <p>Subgrid does <strong>not</strong> inherit the parent's <code>gap</code>. You need to set it explicitly on the subgrid container:</p>
+
+        <pre><code class="language-css">.parent {
+    display: grid;
+    gap: 1rem; /* This gap does NOT transfer to the subgrid */
+}
+
+.child {
+    display: grid;
+    grid-template-columns: subgrid;
+    gap: 0.5rem; /* Set your own gap here */
+}</code></pre>
+
+        <h2 id="comparison">Subgrid vs Alternatives</h2>
+
+        <table class="info-table">
+            <thead>
+                <tr>
+                    <th>Approach</th>
+                    <th>Aligned Tracks</th>
+                    <th>Complexity</th>
+                    <th>Recommendation</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Subgrid</td>
+                    <td>✅ Perfect</td>
+                    <td>Low</td>
+                    <td>Best choice for nested alignment</td>
+                </tr>
+                <tr>
+                    <td>Flexbox</td>
+                    <td>⚠️ With min-height hacks</td>
+                    <td>Medium</td>
+                    <td>Fallback for older browsers</td>
+                </tr>
+                <tr>
+                    <td>Flat Grid</td>
+                    <td>✅ Perfect</td>
+                    <td>High</td>
+                    <td>Only when DOM can be flattened</td>
+                </tr>
+                <tr>
+                    <td>Fixed Widths</td>
+                    <td>✅ Manual alignment</td>
+                    <td>High</td>
+                    <td>Avoid — breaks on responsive</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2 id="summary">Summary</h2>
+
+        <p>CSS Subgrid solves the most common pain point of nested grid layouts: keeping elements aligned across independent grid containers. By writing <code>grid-template-columns: subgrid</code> or <code>grid-template-rows: subgrid</code>, you create nested grids that share their parent's track sizes.</p>
+
+        <p>Key takeaways:</p>
+
+        <ul>
+            <li>Use <code>subgrid</code> when child grids need to align with the parent's tracks</li>
+            <li>Subgrid works on columns, rows, or both simultaneously</li>
+            <li>Child grid items still need explicit <code>grid-column</code>/<code>grid-row</code> placement</li>
+            <li>Gaps are not inherited — set them explicitly on the subgrid</li>
+            <li>Use <code>@supports (grid-template-columns: subgrid)</code> for progressive enhancement</li>
+            <li>Best patterns: card layouts, dashboards, form tables, pricing tables, and nav dropdowns</li>
+        </ul>
+
+        <p>With full browser support across Chrome, Firefox, Safari, and Edge, there's no reason not to use subgrid today. It makes layouts that were previously tedious or impossible feel natural.</p>
+
+        <div class="back-link">
+            <a href="../webdev.html">← Back to Web Dev tutorials</a>
+        </div>
+    </article>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes · Built with HTML, CSS &amp; Cloudflare Pages</p>
+        </div>
+    </footer>
+
+    <script>
+        // Progress bar
+        window.addEventListener('scroll', () => {
+            const winScroll = document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + '%';
+        });
+        // Theme toggle
+        const toggle = document.getElementById('themeToggle');
+        toggle.addEventListener('click', () => document.body.classList.toggle('light-theme'));
+    </script>
+</body>
+</html>

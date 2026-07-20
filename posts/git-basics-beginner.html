@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Git Basics for Beginners: Version Control, Commits, Branches &amp; GitHub — Complete Guide</title>
+    <meta name="description" content="Learn Git version control from scratch — setup, commits, branching, merging, stashing, GitHub workflows, and real-world collaboration patterns. Step-by-step commands with working examples for every concept.">
+    <meta name="keywords" content="git basics, git tutorial, version control, github, git commit, git branch, git merge, git stash, git workflow, beginner git">
+    <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/git-basics-beginner.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+            </nav>
+        </div>
+    </header>
+
+    <article class="post-content container">
+        <span class="tag devops">DevOps</span>
+        <h1>Git Basics for Beginners: Version Control, Commits, Branches &amp; GitHub — Complete Guide</h1>
+        <div class="post-meta">
+            <span class="post-date">July 20, 2026</span>
+            <span class="read-time">12 min read</span>
+        </div>
+
+        <p><strong>Git</strong> is the version control system used by virtually every software project on the planet. It tracks changes to your code, lets you experiment safely with branches, collaborate with teammates, and never lose work. If you're just starting with Git, this guide will take you from zero to confident — with every command explained and demonstrated.</p>
+
+        <h2>What Does Git Actually Do?</h2>
+        <p>Think of Git as a "save system" for your code:</p>
+        <ul>
+            <li><strong>Track changes</strong> — See who changed what and when</li>
+            <li><strong>Branch and experiment</strong> — Create parallel timelines without breaking anything</li>
+            <li><strong>Collaborate</strong> — Multiple people working on the same project without stepping on each other</li>
+            <li><strong>Never lose work</strong> — Every change is saved and can be recovered</li>
+        </ul>
+
+        <p>Git works with three main areas:</p>
+        <ul>
+            <li><strong>Working Directory</strong> — Your actual files on disk (what you see and edit)</li>
+            <li><strong>Staging Area (Index)</strong> — A preparation zone before committing</li>
+            <li><strong>Repository (.git)</strong> — The permanent history of all your commits</li>
+        </ul>
+
+        <h2>Step 1: Install and Configure Git</h2>
+        <p>Install Git for your platform:</p>
+
+<pre><code># macOS (with Homebrew)
+brew install git
+
+# Ubuntu/Debian
+sudo apt update && sudo apt install git
+
+# Windows: download from https://git-scm.com/
+
+# Verify installation
+git --version  # Should show git version 2.x.x</code></pre>
+
+        <p>Configure your identity (required before first commit):</p>
+
+<pre><code>git config --global user.name "Your Name"
+git config --global user.email "you@example.com"
+
+# Use a default editor for commit messages
+git config --global core.editor "nano"
+
+# Show your config
+git config --list</code></pre>
+
+        <h2>Step 2: Create Your First Repository</h2>
+        <p>A repository is a project directory that Git tracks:</p>
+
+<pre><code># Create a project folder
+mkdir my-first-project
+cd my-first-project
+
+# Initialize Git
+git init
+# Creates a hidden .git folder — this is where all history lives
+
+# Check status
+git status
+# Shows: "On branch main" and "No commits yet"</code></pre>
+
+        <h2>Step 3: Your First Commit</h2>
+        <p>A commit is a <strong>saved snapshot</strong> of your project at a point in time:</p>
+
+<pre><code># Create a file
+echo "Hello, Git!" > README.md
+
+# Check what changed
+git status
+# Shows: "Untracked files: README.md"
+
+# Stage the file (add to staging area)
+git add README.md
+
+# Check again — now it's staged
+git status
+# Shows: "Changes to be committed: new file: README.md"
+
+# Commit (save to history)
+git commit -m "Add README with project description"
+# Output: "[main (root-commit) abc1234] Add README..."
+
+# View history
+git log
+# Shows your commit with hash, author, date, and message</code></pre>
+
+        <p>The workflow is always: <code>edit → add → commit</code></p>
+
+        <h2>Understanding the Three Stages</h2>
+        <p>Git tracks files in three states:</p>
+
+<pre><code># 1. Untracked — Git doesn't know about the file
+touch new-feature.py
+git status  # "Untracked files: new-feature.py"
+
+# 2. Staged — Ready to commit
+git add new-feature.py
+git status  # "Changes to be committed: new-feature.py"
+
+# 3. Committed — Saved in history
+git commit -m "Add new feature module"
+git status  # "nothing to commit, working tree clean"</code></pre>
+
+        <h2>The git add Command: Staging Files</h2>
+        <p>You have flexibility in how you stage changes:</p>
+
+<pre><code># Add a specific file
+git add filename.py
+
+# Add all files in a directory
+git add src/
+
+# Add ALL changes (new, modified, deleted)
+git add -A
+
+# Interactive mode — choose what to stage
+git add -p
+
+# Add only modified files (not new files)
+git add -u</code></pre>
+
+        <h2>Viewing Changes: diff and status</h2>
+        <p>Before committing, always review your changes:</p>
+
+<pre><code># What has changed but not staged?
+git diff
+
+# What is staged but not committed?
+git diff --staged
+
+# What's the overall status?
+git status
+
+# Short, colored status
+git status -sb
+
+# Detailed file-by-file status
+git status -v</code></pre>
+
+        <h2>Undoing Things (Don't Panic!)</h2>
+        <p>Git has undo for every situation:</p>
+
+<pre><code># Unstage a file (remove from staging area)
+git reset HEAD filename.py
+
+# Unstage ALL files
+git reset
+
+# Undo changes to a file (discard edits, restore last committed version)
+git checkout -- filename.py
+
+# Undo ALL uncommitted changes
+git checkout -- .
+
+# Amend the last commit (change message or add files)
+git commit --amend -m "Better commit message"
+
+# WARNING: Only use on commits NOT yet pushed to shared branches!</code></pre>
+
+        <h2>The .gitignore File</h2>
+        <p>Some files should never be tracked — virtual environments, compiled files, secrets:</p>
+
+<pre><code># Create .gitignore
+cat > .gitignore << 'EOF'
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+venv/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Secrets
+*.pem
+*.key
+secrets.json
+EOF
+
+# Verify it works
+echo "my-secret-key" > secrets.json
+git add -A
+git status  # secrets.json should NOT appear as staged!</code></pre>
+
+        <h2>Branching: Safe Experimentation</h2>
+        <p>Branches let you work on features without affecting the main code:</p>
+
+<pre><code># List branches (* = current branch)
+git branch
+# * main
+
+# Create a new branch
+git branch feature/login
+
+# Switch to it
+git checkout feature/login
+# Or in one step:
+git checkout -b feature/login
+
+# (Modern Git 2.23+)
+git switch feature/login
+git switch -c feature/login
+
+# Work and commit normally
+echo "Login feature code" > login.py
+git add login.py
+git commit -m "Add login functionality"
+
+# Verify the branch
+git log --oneline
+# Shows your commits, separate from main</code></pre>
+
+        <h2>Merging: Combining Branches</h2>
+        <p>When your feature is ready, merge it back:</p>
+
+<pre><code># Switch to main
+git checkout main
+
+# Merge the feature branch
+git merge feature/login
+# "Fast-forward" — if main hasn't changed, Git just moves the pointer
+
+# Delete the feature branch (merged, no longer needed)
+git branch -d feature/login
+
+# Force delete if not merged (use carefully!)
+git branch -D feature/login</code></pre>
+
+        <h3>Merge Conflicts</h3>
+        <p>Conflicts happen when two branches edit the same lines:</p>
+
+<pre><code># Git will tell you:
+# "CONFLICT (content): Merge conflict in app.py"
+# "Automatic merge failed; fix conflicts and then commit."
+
+# Open the conflicted file — you'll see markers:
+# &lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD (your main branch changes)
+# =======
+# (feature branch changes)
+# &gt;&gt;&gt;&gt;&gt;&gt;&gt; feature/login
+
+# Fix the conflict by editing the file, keeping what you want
+# Then:
+git add app.py
+git commit -m "Resolve merge conflict in app.py"</code></pre>
+
+        <h2>Stashing: Temporary Pause</h2>
+        <p>Need to switch branches but don't want to commit half-finished work?</p>
+
+<pre><code># Save (stash) current changes
+git stash
+
+# List stashes
+git stash list
+# stash@{0}: WIP on main: abc1234
+
+# Restore stashed changes
+git stash pop
+
+# Restore but keep the stash
+git stash apply
+
+# Apply a specific stash
+git stash apply stash@{0}
+
+# Drop (delete) a stash
+git stash drop stash@{0}
+
+# Delete all stashes
+git stash clear</code></pre>
+
+        <h2>Working with GitHub</h2>
+        <p>GitHub hosts Git repositories online. Here's the remote workflow:</p>
+
+        <h3>Clone an Existing Repository</h3>
+
+<pre><code># Clone from GitHub
+git clone https://github.com/username/repo.git
+cd repo
+
+# Clone into a specific directory
+git clone https://github.com/username/repo.git my-folder</code></pre>
+
+        <h3>Set Up a Remote</h3>
+
+<pre><code># Add a remote repository
+git remote add origin https://github.com/username/my-repo.git
+
+# Verify
+git remote -v
+# origin  https://github.com/username/my-repo.git (fetch)
+# origin  https://github.com/username/my-repo.git (push)
+
+# Change remote URL
+git remote set-url origin https://github.com/username/new-url.git</code></pre>
+
+        <h3>Push to GitHub</h3>
+
+<pre><code># Push for the first time
+git push -u origin main
+# -u sets upstream — future pushes just need `git push`
+
+# Push after that
+git push
+
+# Push a specific branch
+git push origin feature/login</code></pre>
+
+        <h3>Pull Updates from GitHub</h3>
+
+<pre><code># Get latest changes from remote
+git pull
+
+# Equivalent to:
+git fetch origin
+git merge origin/main
+
+# Pull and rebase instead (cleaner history)
+git pull --rebase</code></pre>
+
+        <h3>The Complete GitHub Workflow</h3>
+        <p>Here's the typical daily workflow:</p>
+
+<pre><code># 1. Start: update your local copy
+git checkout main
+git pull
+
+# 2. Create a feature branch
+git checkout -b feature/user-profile
+
+# 3. Work, stage, commit
+echo "# User Profile" > profile.py
+git add profile.py
+git commit -m "Add user profile module"
+
+# 4. Push the branch
+git push -u origin feature/user-profile
+
+# 5. Create Pull Request on GitHub (in browser)
+#    Go to github.com/username/repo → "Compare & pull request"
+
+# 6. After review and merge, clean up
+git checkout main
+git pull
+git branch -d feature/user-profile</code></pre>
+
+        <h2>Essential Shortcuts and Aliases</h2>
+        <p>Save typing with these aliases:</p>
+
+<pre><code># Add common aliases
+git config --global alias.st "status -sb"
+git config --global alias.co "checkout"
+git config --global alias.br "branch -vv"
+git config --global alias.ci "commit"
+git config --global alias.lg "log --oneline --graph --decorate"
+
+# Now use shortcuts:
+git st      # instead of git status -sb
+git co main # instead of git checkout main
+git lg      # beautiful graph view of history
+
+# View commit graph
+git lg
+# * abc1234 (HEAD -> main, origin/main) Add README
+# * def5678 (origin/feature/login) Add login functionality
+# * ghi9012 Initial commit</code></pre>
+
+        <h2>Interactive Git: The Visual Way</h2>
+        <p>For visual learners, Git can run interactively:</p>
+
+<pre><code># Interactive rebase (rewrite recent commit history)
+git rebase -i HEAD~3
+
+# You'll see a text editor with:
+# pick abc1234 Add feature A
+# pick def5678 Add feature B
+# pick ghi9012 Fix typo
+
+# Change 'pick' to:
+#   reword — change commit message
+#   squash — combine with previous commit
+#   drop   — remove commit entirely
+# Then save and exit
+
+# Interactive staging — choose hunks
+git add -p
+
+# You'll be prompted for each change block:
+# Stage this hunk [y,n,q,a,d,?]:
+# y = yes, n = no, a = all, d = dismiss all, s = split</code></pre>
+
+        <h2>Git Log: Understanding History</h2>
+        <p>Different ways to view your project's history:</p>
+
+<pre><code># Basic log
+git log
+
+# One line per commit
+git log --oneline
+
+# Show who changed what and when
+git log --oneline --author="Hugo" --since="2 weeks ago"
+
+# Show a file's history
+git log --oneline -- app.py
+
+# Show the actual changes in each commit
+git log -p -- app.py
+
+# Compare two commits
+git diff abc1234 def5678
+
+# What changed between branch and main?
+git diff main..feature/login
+
+# Visual graph of branches
+git log --oneline --graph --all --decorate
+
+# Blame: who wrote each line?
+git blame app.py</code></pre>
+
+        <h2>The git tag Command: Marking Releases</h2>
+        <p>Tags mark important points in history — like version releases:</p>
+
+<pre><code># Create a lightweight tag
+git tag v1.0.0
+
+# Create an annotated tag (with message)
+git tag -a v1.0.0 -m "First stable release"
+
+# List all tags
+git tag
+
+# Push tags to GitHub
+git push origin --tags
+
+# Check out a specific tag
+git checkout v1.0.0
+# Note: this puts you in "detached HEAD" state</code></pre>
+
+        <h2>Summary: The Git Command Cheat Sheet</h2>
+
+<pre><code># Setup
+git init                        # Create new repository
+git clone &lt;url&gt;                 # Copy remote repository
+
+# Daily workflow
+git status                      # Check file states
+git add &lt;file&gt;                  # Stage changes
+git commit -m "message"         # Save snapshot
+git diff                        # View unstaged changes
+git diff --staged               # View staged changes
+
+# Branching
+git branch                      # List branches
+git branch &lt;name&gt;               # Create branch
+git checkout &lt;name&gt;             # Switch branch
+git checkout -b &lt;name&gt;          # Create + switch
+git merge &lt;name&gt;                # Merge branch
+git branch -d &lt;name&gt;            # Delete branch
+
+# Remote
+git remote add origin &lt;url&gt;     # Set remote
+git push -u origin main         # Push to remote
+git pull                        # Fetch + merge
+
+# Undo
+git reset HEAD &lt;file&gt;           # Unstage file
+git checkout -- &lt;file&gt;          # Discard changes
+git commit --amend              # Fix last commit
+
+# History
+git log --oneline               # Compact history
+git blame &lt;file&gt;                # Who wrote each line
+git diff &lt;hash1&gt;..&lt;hash2&gt;      # Compare commits</code></pre>
+
+        <h2>Next Steps</h2>
+        <p>Once you're comfortable with these basics, explore:</p>
+        <ul>
+            <li><strong>Git rebasing</strong> — Create a cleaner, linear history</li>
+            <li><strong>Git cherry-pick</strong> — Apply specific commits from one branch to another</li>
+            <li><strong>Git bisect</strong> — Binary search for the commit that introduced a bug</li>
+            <li><strong>Git hooks</strong> — Automate checks on every commit or push</li>
+            <li><strong>GitHub Actions</strong> — Automate testing and deployment</li>
+            <li><strong>SSH authentication</strong> — Push without passwords using SSH keys</li>
+        </ul>
+
+        <p>The key to mastering Git is practice. Every time you feel nervous about running a command, remember: <strong>you can almost always undo it</strong>. Start using Git on every project, no matter how small, and it will become second nature.</p>
+
+        <footer class="post-footer">
+            <a href="../index.html" class="back-home">← Back to Home</a>
+            <a href="../devops.html" class="category-link">More DevOps Tutorials →</a>
+        </footer>
+    </article>
+
+    <script>
+        // Progress bar
+        window.onscroll = function() {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById("progressBar").style.width = scrolled + "%";
+        };
+        // Theme toggle
+        const toggle = document.getElementById("themeToggle");
+        if (toggle) {
+            toggle.addEventListener("click", () => {
+                document.body.classList.toggle("dark");
+            });
+        }
+    </script>
+</body>
+</html>

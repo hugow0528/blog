@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Threading and Multiprocessing: Speed Up Your Code with Concurrency — Complete Beginner's Guide</title>
+    
+    <meta name="description" content="Learn Python threading and multiprocessing from scratch — threading.Thread, ThreadPoolExecutor, multiprocessing.Pool, Process, Queue, and real-world concurrency patterns. Working code examples for every concept.">
+    <meta name="keywords" content="python threading, multiprocessing, concurrency, parallel, executor, queue, lock, GIL, beginner tutorial">
+    <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-threading-multiprocessing.html">
+    
+    <meta property="og:title" content="Python Threading and Multiprocessing: Speed Up Your Code with Concurrency">
+    <meta property="og:description" content="Master threading.Thread, multiprocessing.Pool, executors, queues, and locks. Real code examples for IO-bound and CPU-bound tasks.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.hugow.dev/posts/python-threading-multiprocessing.html">
+    
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Python Threading and Multiprocessing: Concurrency for Beginners">
+    
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "headline": "Python Threading and Multiprocessing: Speed Up Your Code with Concurrency — Complete Beginner's Guide",
+      "author": {"@type": "Person", "name": "Hugo Wong"},
+      "datePublished": "2026-07-18",
+      "dateModified": "2026-07-18"
+    }
+    </script>
+    
+    <link rel="stylesheet" href="../style.css">
+    <link rel="sitemap" type="application/xml" href="/sitemap.xml">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn active">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-full">
+            <div class="post-tags">
+                <span class="tag python">Python</span>
+            </div>
+            <header class="post-header">
+                <h1>Python Threading and Multiprocessing: Speed Up Your Code with Concurrency — Complete Beginner's Guide</h1>
+                <div class="post-meta">
+                    <span class="post-date">July 18, 2026</span>
+                    <span class="read-time">12 min read</span>
+                </div>
+            </header>
+
+            <div class="post-content">
+                <p>Your Python scripts run great for one task at a time. But what happens when you need to download 100 files, process 1000 images, or serve 1000 concurrent API requests? Running things one after another (sequentially) just won't cut it. This is where <strong>concurrency</strong> and <strong>parallelism</strong> come in — and Python gives you two powerful tools: <code>threading</code> and <code>multiprocessing</code>.</p>
+
+                <p>In this guide, you'll learn when to use each approach, how to share data safely between threads and processes, and how to build real concurrent programs. Every concept comes with working code you can copy and run.</p>
+
+                <h2>Why Concurrency Matters</h2>
+
+                <p>Imagine you're downloading 10 web pages. Doing it sequentially means waiting for page 1 to finish, then page 2, and so on. If each download takes 2 seconds, that's 20 seconds total. With concurrency, you can download all 10 simultaneously — finishing in about 2 seconds instead.</p>
+
+                <p>But Python has a twist: the <strong>Global Interpreter Lock (GIL)</strong>. The GIL prevents multiple threads from executing Python bytecode simultaneously in the same process. This means:</p>
+                <ul>
+                    <li><strong>Threading</strong> is great for <em>I/O-bound</em> tasks (network calls, file reads, database queries) because threads release the GIL while waiting.</li>
+                    <li><strong>Multiprocessing</strong> is needed for <em>CPU-bound</em> tasks (math, image processing, data analysis) because each process has its own Python interpreter and its own GIL.</li>
+                </ul>
+
+                <h2>Quick Demo: Sequential vs Concurrent</h2>
+
+                <p>Let's see the difference in action. Here's a sequential version that "downloads" 5 URLs:</p>
+
+                <pre><code>import time
+
+def download_url(url):
+    """Simulate downloading a URL (takes 2 seconds)"""
+    print(f"Downloading {url}...")
+    time.sleep(2)
+    print(f"Done: {url}")
+    return f"Content of {url}"
+
+urls = [f"https://example.com/page{i}" for i in range(1, 6)]
+
+start = time.time()
+for url in urls:
+    download_url(url)
+print(f"Sequential: {time.time() - start:.1f} seconds")
+# Output: ~10.0 seconds</code></pre>
+
+                <p>Now the same logic with <code>ThreadPoolExecutor</code>:</p>
+
+                <pre><code>import time
+from concurrent.futures import ThreadPoolExecutor
+
+def download_url(url):
+    print(f"Downloading {url}...")
+    time.sleep(2)
+    print(f"Done: {url}")
+    return f"Content of {url}"
+
+urls = [f"https://example.com/page{i}" for i in range(1, 6)]
+
+start = time.time()
+with ThreadPoolExecutor(max_workers=5) as executor:
+    results = list(executor.map(download_url, urls))
+print(f"Concurrent: {time.time() - start:.1f} seconds")
+# Output: ~2.0 seconds!</code></pre>
+
+                <p>Five times faster with three lines of changed code. Let's learn how this works under the hood.</p>
+
+                <h2>Threading: The Basics</h2>
+
+                <p>The <code>threading</code> module lets you create lightweight threads within the same process. Threads share the same memory space, which makes communication easy — but also introduces the risk of data races.</p>
+
+                <h3>Creating and Starting a Thread</h3>
+
+                <pre><code>import threading
+import time
+
+def worker(name, duration):
+    """A thread worker that prints its name periodically"""
+    print(f"Thread {name} starting")
+    for i in range(3):
+        print(f"  {name}: working on task {i+1}")
+        time.sleep(duration)
+    print(f"Thread {name} finished")
+
+# Create threads
+t1 = threading.Thread(target=worker, args=("A", 0.5))
+t2 = threading.Thread(target=worker, args=("B", 0.7))
+
+# Start them
+t1.start()
+t2.start()
+
+# Wait for both to finish
+t1.join()
+t2.join()
+
+print("All threads done!")</code></pre>
+
+                <p>Key concepts here:</p>
+                <ul>
+                    <li><code>threading.Thread(target=func, args=(...))</code> creates a thread</li>
+                    <li><code>.start()</code> begins execution in a new thread</li>
+                    <li><code>.join()</code> blocks the calling thread until the target thread finishes</li>
+                </ul>
+
+                <h3>Thread Safety with Locks</h3>
+
+                <p>When multiple threads modify the same variable, you get a <strong>race condition</strong> — unpredictable results because operations interleave. Here's the problem:</p>
+
+                <pre><code>import threading
+
+counter = 0
+
+def unsafe_increment():
+    global counter
+    for _ in range(100000):
+        counter += 1  # NOT atomic! read -> add -> write
+
+threads = [threading.Thread(target=unsafe_increment) for _ in range(4)]
+for t in threads: t.start()
+for t in threads: t.join()
+
+print(f"Counter = {counter}")  # Expected: 400000, actual: ?</code></pre>
+
+                <p>The output is <em>not</em> 400000. It might be 310482, or 287651 — it varies each run. The fix is a <code>Lock</code>:</p>
+
+                <pre><code>import threading
+
+counter = 0
+lock = threading.Lock()
+
+def safe_increment():
+    global counter
+    for _ in range(100000):
+        with lock:  # Only one thread enters at a time
+            counter += 1
+
+threads = [threading.Thread(target=safe_increment) for _ in range(4)]
+for t in threads: t.start()
+for t in threads: t.join()
+
+print(f"Counter = {counter}")  # Always 400000 ✓</code></pre>
+
+                <p>The <code>with lock:</code> context manager acquires the lock before entering and releases it after exiting, even if an exception occurs.</p>
+
+                <h3>Thread Pools with ThreadPoolExecutor</h3>
+
+                <p>Manually creating and managing threads is error-prone. The <code>concurrent.futures</code> module provides a cleaner API:</p>
+
+                <pre><code>from concurrent.futures import ThreadPoolExecutor, as_completed
+import urllib.request
+import time
+
+def fetch_page(url):
+    """Download a URL and return its content length"""
+    try:
+        with urllib.request.urlopen(url, timeout=5) as response:
+            data = response.read()
+            return url, len(data)
+    except Exception as e:
+        return url, str(e)
+
+urls = [
+    "https://www.python.org",
+    "https://www.google.com",
+    "https://github.com",
+    "https://stackoverflow.com",
+    "https://news.ycombinator.com",
+]
+
+start = time.time()
+with ThreadPoolExecutor(max_workers=4) as executor:
+    # Submit all tasks
+    future_to_url = {executor.submit(fetch_page, url): url for url in urls}
+    
+    # Process results as they complete
+    for future in as_completed(future_to_url):
+        url, result = future.result()
+        print(f"{url}: {result} bytes")
+
+print(f"Total time: {time.time() - start:.2f}s")</code></pre>
+
+                <p>This pattern — submit all tasks, collect results as they complete — is the most common concurrent pattern in Python web scraping, API calling, and batch processing.</p>
+
+                <h3>Real-World: Concurrent API Fetcher</h3>
+
+                <p>Here's a practical example that fetches data from multiple GitHub API endpoints simultaneously:</p>
+
+                <pre><code>import requests
+from concurrent.futures import ThreadPoolExecutor
+
+def get_user_info(username):
+    """Fetch GitHub user info"""
+    resp = requests.get(f"https://api.github.com/users/{username}")
+    if resp.status_code == 200:
+        data = resp.json()
+        return {
+            "name": username,
+            "repos": data.get("public_repos", 0),
+            "followers": data.get("followers", 0),
+        }
+    return {"name": username, "error": resp.status_code}
+
+users = ["torvalds", "guido", "sarah-dravis", "gvanrossum", "hugow0528"]
+
+with ThreadPoolExecutor(max_workers=5) as executor:
+    results = list(executor.map(get_user_info, users))
+
+for info in results:
+    if "error" in info:
+        print(f"{info['name']}: Error {info['error']}")
+    else:
+        print(f"{info['name']}: {info['repos']} repos, {info['followers']} followers")</code></pre>
+
+                <p>Without threading, this would take ~3-5 seconds (each API call takes 500ms-1s). With 5 threads, it finishes in ~1 second.</p>
+
+                <h2>Multiprocessing: True Parallelism</h2>
+
+                <p>When your task is CPU-intensive, threading won't help (thanks to the GIL). <code>multiprocessing</code> spawns separate Python processes, each with its own memory and GIL — enabling true parallel computation.</p>
+
+                <h3>Basic Process Pool</h3>
+
+                <pre><code>import multiprocessing
+import math
+
+def compute_primes(limit):
+    """Find all prime numbers up to limit"""
+    primes = []
+    for num in range(2, limit):
+        is_prime = True
+        for i in range(2, int(math.sqrt(num)) + 1):
+            if num % i == 0:
+                is_prime = False
+                break
+        if is_prime:
+            primes.append(num)
+    return len(primes), limit  # return count and upper bound
+
+# Split work across 4 processes
+limits = [50000, 60000, 70000, 80000]
+
+if __name__ == "__main__":
+    with multiprocessing.Pool(processes=4) as pool:
+        results = pool.map(compute_primes, limits)
+    
+    for count, limit in results:
+        print(f"Primes up to {limit}: {count}")
+    print(f"Total primes found: {sum(r[0] for r in results)}")</code></pre>
+
+                <p>Important: on Windows, you <strong>must</strong> wrap multiprocessing code in <code>if __name__ == "__main__":</code> because new processes import the module, and they shouldn't start new processes recursively.</p>
+
+                <h3>ProcessPoolExecutor (Modern API)</h3>
+
+                <p>Just like <code>ThreadPoolExecutor</code>, there's a <code>ProcessPoolExecutor</code> for parallelism:</p>
+
+                <pre><code>from concurrent.futures import ProcessPoolExecutor
+import time
+
+def heavy_computation(n):
+    """CPU-intensive task: compute sum of squares"""
+    total = sum(i * i for i in range(n))
+    time.sleep(0.1)  # simulate additional work
+    return n, total
+
+numbers = [10_000_000, 20_000_000, 30_000_000, 40_000_000]
+
+if __name__ == "__main__":
+    # Sequential
+    start = time.time()
+    for n in numbers:
+        heavy_computation(n)
+    print(f"Sequential: {time.time() - start:.2f}s")
+    
+    # Parallel
+    start = time.time()
+    with ProcessPoolExecutor(max_workers=4) as executor:
+        results = list(executor.map(heavy_computation, numbers))
+    print(f"Parallel: {time.time() - start:.2f}s")
+    print(f"Results: {results}")</code></pre>
+
+                <h3>Sharing Data: Queue vs Pipe</h3>
+
+                <p>Unlike threads, processes don't share memory. To communicate, use <code>Queue</code> or <code>Pipe</code>:</p>
+
+                <pre><code>import multiprocessing
+
+def producer(queue):
+    """Send numbers to the queue"""
+    for i in range(10):
+        queue.put(i * i)
+    queue.put(None)  # sentinel: tell consumer we're done
+
+def consumer(queue):
+    """Receive and print numbers"""
+    total = 0
+    while True:
+        item = queue.get()
+        if item is None:
+            break
+        total += item
+        print(f"Received: {item}, running total: {total}")
+    print(f"Final total: {total}")
+
+if __name__ == "__main__":
+    q = multiprocessing.Queue()
+    p1 = multiprocessing.Process(target=producer, args=(q,))
+    p2 = multiprocessing.Process(target=consumer, args=(q,))
+    
+    p1.start()
+    p2.start()
+    p1.join()
+    p2.join()</code></pre>
+
+                <h2>When to Use What: Decision Guide</h2>
+
+                <p>Here's a simple decision tree for choosing the right tool:</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Task Type</th>
+                            <th>Example</th>
+                            <th>Use</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>I/O-bound</td>
+                            <td>Web scraping, API calls, file I/O, database queries</td>
+                            <td><code>ThreadPoolExecutor</code></td>
+                        </tr>
+                        <tr>
+                            <td>CPU-bound</td>
+                            <td>Math computations, image processing, data analysis</td>
+                            <td><code>ProcessPoolExecutor</code></td>
+                        </tr>
+                        <tr>
+                            <td>Mixed</td>
+                            <td>Download files then process them</td>
+                            <td>Thread pool + process pool</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h2>Complete Real-World Project: Concurrent Web Scraper</h2>
+
+                <p>Let's combine everything into a practical project — a concurrent web scraper that fetches pages and extracts data in parallel:</p>
+
+                <pre><code>import requests
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from bs4 import BeautifulSoup
+import time
+import logging
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
+logger = logging.getLogger(__name__)
+
+class WebScraper:
+    def __init__(self, max_workers=5, timeout=10):
+        self.session = requests.Session()
+        self.session.headers["User-Agent"] = "ScraperBot/1.0"
+        self.max_workers = max_workers
+        self.timeout = timeout
+    
+    def fetch_page(self, url):
+        """Fetch a single page and return its HTML"""
+        try:
+            resp = self.session.get(url, timeout=self.timeout)
+            resp.raise_for_status()
+            return {"url": url, "status": 200, "html": resp.text}
+        except Exception as e:
+            logger.error(f"Failed: {url} — {e}")
+            return {"url": url, "status": 0, "error": str(e)}
+    
+    def extract_title(self, html):
+        """Extract page title from HTML"""
+        soup = BeautifulSoup(html, "html.parser")
+        return soup.title.string.strip() if soup.title else "No title"
+    
+    def scrape(self, urls):
+        """Scrape multiple URLs concurrently"""
+        start = time.time()
+        results = []
+        
+        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            futures = {executor.submit(self.fetch_page, url): url for url in urls}
+            
+            for future in as_completed(futures):
+                page = future.result()
+                if page["status"] == 200:
+                    title = self.extract_title(page["html"])
+                    results.append({"url": page["url"], "title": title})
+                    logger.info(f"{page['url']}: {title}")
+                else:
+                    results.append({"url": page["url"], "title": "ERROR"})
+        
+        elapsed = time.time() - start
+        logger.info(f"Scraped {len(results)} pages in {elapsed:.2f}s")
+        return results
+
+if __name__ == "__main__":
+    urls = [
+        "https://www.python.org",
+        "https://github.com",
+        "https://stackoverflow.com",
+        "https://news.ycombinator.com",
+        "https://www.reddit.com",
+    ]
+    
+    scraper = WebScraper(max_workers=3)
+    results = scraper.scrape(urls)
+    
+    for r in results:
+        print(f"  {r['url']} → {r['title']}")</code></pre>
+
+                <h2>Common Pitfalls</h2>
+
+                <ul>
+                    <li><strong>Don't use multiprocessing for I/O tasks.</strong> Processes have heavy startup overhead (~100ms each). Use threads instead.</li>
+                    <li><strong>Don't share mutable state between threads without a lock.</strong> Race conditions are hard to reproduce and debug.</li>
+                    <li><strong>Don't create more threads than you need.</strong> A pool of 4-8 workers handles most real-world cases. More threads can slow things down due to context switching.</li>
+                    <li><strong>Don't forget <code>if __name__ == "__main__"</code> on Windows.</strong> Multiprocessing imports the module in new processes, which can cause infinite recursion.</li>
+                    <li><strong>Don't use threads with C extensions that hold the GIL.</strong> Some libraries (like NumPy) hold the GIL, blocking other threads. Use multiprocessing instead.</li>
+                </ul>
+
+                <h2>Summary</h2>
+
+                <p>Here's what we covered:</p>
+                <ul>
+                    <li><strong>Threading</strong> — lightweight, shared memory, best for I/O-bound tasks</li>
+                    <li><strong>Multiprocessing</strong> — separate processes, true parallelism, best for CPU-bound tasks</li>
+                    <li><strong>Executor APIs</strong> — <code>ThreadPoolExecutor</code> and <code>ProcessPoolExecutor</code> for clean concurrent code</li>
+                    <li><strong>Locks and Queues</strong> — safe communication and shared state management</li>
+                    <li><strong>Real-world scraper</strong> — combining threads with HTTP requests and HTML parsing</li>
+                </ul>
+
+                <p>Start with <code>ThreadPoolExecutor</code> for almost everything. Only switch to <code>ProcessPoolExecutor</code> when you've profiled and confirmed your bottleneck is CPU-bound. The <code>concurrent.futures</code> module gives you a unified API that works the same way for both — making it easy to switch when needed.</p>
+
+                <div class="post-nav">
+                    <a href="python-context-managers.html" class="post-prev">← Python Context Managers</a>
+                    <a href="python-dataclasses-enums.html" class="post-next">Python Dataclasses →</a>
+                </div>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes. Built with ☕ and curiosity.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Reading progress bar
+        window.addEventListener("scroll", () => {
+            const winScroll = document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            document.getElementById("progressBar").style.width = (winScroll / height) * 100 + "%";
+        });
+        // Theme toggle
+        const toggle = document.getElementById("themeToggle");
+        if (toggle) {
+            toggle.addEventListener("click", () => {
+                document.body.classList.toggle("light-mode");
+                localStorage.setItem("theme", document.body.classList.contains("light-mode") ? "light" : "dark");
+            });
+            if (localStorage.getItem("theme") === "light") document.body.classList.add("light-mode");
+        }
+    </script>
+</body>
+</html>

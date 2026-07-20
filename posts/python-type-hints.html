@@ -3,11 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Python Type Hints and Type Checking: Write Cleaner, Safer Code</title>
-    <meta name="description" content="Learn Python type hints and type checking with mypy. Catch bugs before runtime, improve code readability, and write professional Python code. Beginner-friendly with examples.">
-    <meta name="keywords" content="python type hints, mypy, type checking, typing module, python types, static analysis, python best practices">
-    <meta name="author" content="Hugo Wong">
-        <link rel="canonical" href="https://blog.hugow.dev/posts/python-type-hints.html">
+    <title>Python Type Hints for Beginners — Complete Guide | Hugo's Dev Notes</title>
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-type-hints.html">
     <link rel="stylesheet" href="../style.css">
 
     <!-- SEO Structured Data -->
@@ -15,382 +12,480 @@
     {
       "@context": "https://schema.org",
       "@type": "BlogPosting",
-      "headline": "Python Type Hints and Type Checking: Write Cleaner, Safer Code",
-      "description": "Learn Python type hints and type checking with mypy. Catch bugs before runtime, improve code readability, and write professional Python code. Beginner-friendly with examples.",
-      "datePublished": "2026-07-08",
-      "dateModified": "2026-07-08",
+      "headline": "Python Type Hints for Beginners — Complete Guide",
+      "description": "Learn Python type hints from scratch — function annotations, variable types, typing module (Optional, Union, List, Dict), type checking with mypy, and real-world patterns for cleaner, safer Python code.",
+      "datePublished": "2026-07-11",
+      "dateModified": "2026-07-11",
       "author": {"@type": "Person", "name": "Hugo Wong"},
       "publisher": {"@type": "Organization", "name": "Hugo's Dev Notes", "url": "https://blog.hugow.dev"},
-      "mainEntityOfPage": "{"@id": "https://blog.hugow.dev/posts/python-type-hints.html")}",
-      "keywords": "Python"
+      "mainEntityOfPage": "https://blog.hugow.dev/posts/python-type-hints.html",
+      "keywords": "python, type hints, typing, mypy, python beginner"
     }
     </script>
 
     <!-- Social Meta -->
-    <!-- Open Graph -->
-    <meta property="og:title" content="Python Type Hints and Type Checking: Write Cleaner, Safer Code">
-    <meta property="og:description" content="Learn Python type hints and type checking with mypy. Catch bugs before runtime, improve code readability, and write professional Python code. Beginner-friendly ">
+    <meta property="og:title" content="Python Type Hints for Beginners — Complete Guide">
+    <meta property="og:description" content="Learn Python type hints from scratch — function annotations, variable types, typing module, type checking with mypy, and real-world patterns for cleaner, safer code.">
     <meta property="og:type" content="article">
     <meta property="og:url" content="https://blog.hugow.dev/posts/python-type-hints.html">
     <meta property="og:site_name" content="Hugo's Dev Notes">
-    <meta property="article:published_time" content="2026-07-08">
-    <meta property="article:modified_time" content="2026-07-08">
+    <meta property="article:published_time" content="2026-07-11">
+    <meta property="article:modified_time" content="2026-07-11">
     <meta property="article:section" content="python">
-    <meta property="article:tag" content="Python">
-    
-    <!-- Twitter Card -->
+    <meta property="article:tag" content="Python, Type Hints">
+
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Python Type Hints and Type Checking: Write Cleaner, Safer Code">
-    <meta name="twitter:description" content="Learn Python type hints and type checking with mypy. Catch bugs before runtime, improve code readability, and write professional Python code. Beginner-friendly ">
-    
+    <meta name="twitter:title" content="Python Type Hints for Beginners — Complete Guide">
+    <meta name="twitter:description" content="Learn Python type hints — function annotations, typing module, mypy, and real-world patterns for cleaner, safer code.">
 </head>
 <body>
     <div class="progress-bar" id="progressBar"></div>
-    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
 
     <header>
         <div class="container">
             <div class="logo">
-                <h1><a href="../index.html">🚀 Hugo's Dev Notes</a></h1>
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
                 <p class="subtitle">Cloudflare · Python · AI Coding</p>
             </div>
             <nav>
-                <a href="../index.html" class="nav-btn">🏠 Home</a>
-                <a href="../cloudflare.html" class="nav-btn">☁️ Cloudflare</a>
-                <a href="../python.html" class="nav-btn">🐍 Python</a>
-                <a href="../vibe-coding.html" class="nav-btn">🤖 AI Coding</a>
-                <a href="../devops.html" class="nav-btn">🐳 DevOps</a>
-                <a href="../security.html" class="nav-btn">🔐 Security</a>
-                <a href="../webdev.html" class="nav-btn">💻 Web Dev</a>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
             </nav>
         </div>
     </header>
 
     <main class="container">
-        <article class="post">
-            <div class="post-header">
-                <span class="tag python">Python</span>
-                <h1>Python Type Hints and Type Checking: Write Cleaner, Safer Code</h1>
-            </div>
-            <div class="post-meta">
-                <time>2026-06-24</time>
-                <span class="read-time">10 min read</span>
-                <span class="post-status">New</span>
-            </div>
+        <a href="../index.html" class="back-link">← Back to posts</a>
 
-            <div class="post-content">
-                <p>Python is dynamically typed — variables don't declare their types, and type errors only appear at runtime when the bad code actually executes. Type hints change that. They let you specify expected types for function parameters and return values, enabling static analysis tools to catch bugs <em>before</em> your code runs.</p>
+        <article class="post-content">
+            <span class="tag python">Python</span>
+            <h1>Python Type Hints for Beginners — Complete Guide</h1>
+            <time>July 11, 2026 · 10 min read</time>
 
-                <p>Type hints don't slow down your code — Python ignores them at runtime. They're purely for developers and tooling. Think of them as documentation that your editor and linter can actually <em>use</em>.</p>
+            <p>Python is dynamically typed — you don't need to declare variable types. But that flexibility can lead to subtle bugs, especially in larger projects. <strong>Type hints</strong> let you add type annotations to your code without changing how Python runs. They're a safety net that helps you catch mistakes before runtime.</p>
 
-                <h2>Why Use Type Hints?</h2>
+            <p>Type hints were introduced in Python 3.5 (PEP 484) and have become a standard part of the Python ecosystem. They improve code readability, enable better IDE autocomplete, and let tools like <code>mypy</code> catch type errors before you ever run the code.</p>
 
-                <ul>
-                    <li><strong>Catch bugs early:</strong> Find type mismatches during development instead of in production</li>
-                    <li><strong>Better IDE support:</strong> Auto-completion, inline documentation, and real-time error highlighting</li>
-                    <li><strong>Self-documenting code:</strong> Read a function signature and instantly know what it expects and returns</li>
-                    <li><strong>Refactoring confidence:</strong> Change a function's return type and get warnings everywhere it's used</li>
-                </ul>
+            <h2>Why Use Type Hints?</h2>
 
-                <h2>Basic Type Hints</h2>
+            <p>Here's a simple example showing how type hints make code self-documenting:</p>
 
-                <h3>Function Parameters and Returns</h3>
+            <pre><code># Without type hints — what does this return?
+def get_user(id):
+    return database.find(id)
 
-                <p>Without type hints, this function's behavior isn't obvious:</p>
+# With type hints — clear and explicit
+def get_user(id: int) -> dict:
+    return database.find(id)</code></pre>
 
-                <pre><code>def greet(name):
-    return f"Hello, {name}!"</code></pre>
+            <p>With type hints, anyone reading the code (including your future self) immediately knows: <code>id</code> should be an <code>int</code>, and the function returns a <code>dict</code>. Your IDE will also warn you if you accidentally pass a string.</p>
 
-                <p>With type hints, it's crystal clear:</p>
+            <h2>Basic Type Annotations</h2>
 
-                <pre><code>def greet(name: str) -&gt; str:
-    return f"Hello, {name}!"
+            <h3>Function Parameters and Return Types</h3>
 
-# Works fine
-print(greet("Hugo"))  # Hello, Hugo!
+            <p>The most common use of type hints is annotating function signatures:</p>
 
-# A type checker will warn you about this:
-print(greet(42))  # mypy error: Argument 1 to "greet" has incompatible type "int"</code></pre>
+            <pre><code>def greet(name: str, times: int = 1) -> str:
+    return f"Hello, {name}! " * times
 
-                <p>The <code>: str</code> after <code>name</code> means "this parameter must be a string." The <code>-&gt; str</code> means "this function returns a string."</p>
+# IDE will suggest correct types:
+result = greet("Hugo", 3)  # OK — "Hello, Hugo! Hello, Hugo! Hello, Hugo! "
+greet(42, 3)  # ⚠️ Warning: expected str, got int</code></pre>
 
-                <h3>Common Built-in Types</h3>
+            <p>The <code>: str</code> after <code>name</code> is a parameter annotation. The <code>-> str</code> after the closing parenthesis is a return type annotation. Python ignores these at runtime — they exist solely for static analysis tools and IDEs.</p>
 
-                <pre><code>def calculate_area(length: float, width: float) -&gt; float:
-    return length * width
+            <h3>Variable Annotations</h3>
 
-def is_even(number: int) -&gt; bool:
-    return number % 2 == 0
+            <p>You can also annotate variables directly:</p>
 
-def get_greeting() -&gt; str:
-    return "Hello!"
+            <pre><code>user_id: int = 42
+username: str = "hugo"
+is_active: bool = True
+price: float = 9.99
+tags: list[str] = ["dev", "python"]
 
-def print_message(message: str) -&gt; None:
-    print(message)</code></pre>
+# Annotating without assignment (for clarity in longer functions)
+total: int
+items = [1, 2, 3, 4, 5]
+total = sum(items)</code></pre>
 
-                <p>Key built-in types you'll use most:</p>
+            <h2>The typing Module</h2>
 
-                <ul>
-                    <li><code>str</code> — text / strings</li>
-                    <li><code>int</code> — whole numbers</li>
-                    <li><code>float</code> — decimal numbers</li>
-                    <li><code>bool</code> — True or False</li>
-                    <li><code>None</code> — no value / void (use for functions that don't return anything)</li>
-                </ul>
+            <p>Python's built-in types cover the basics, but the <code>typing</code> module gives you powerful tools for complex type expressions.</p>
 
-                <h2>Collection Types</h2>
+            <h3>Optional and Noneable Types</h3>
 
-                <p>Python has rich types for collections. Import them from the <code>typing</code> module:</p>
+            <p>When a function might return <code>None</code>, use <code>Optional</code> or the pipe union syntax:</p>
 
-                <pre><code>from typing import List, Dict, Tuple, Set, Optional, Union
+            <pre><code>from typing import Optional
 
-def get_names() -&gt; list[str]:
-    return ["Alice", "Bob", "Charlie"]
+# Old syntax (typing module)
+def find_user(user_id: int) -> Optional[dict]:
+    user = database.find(user_id)
+    return user  # Could be None if not found
 
-def student_scores(scores: dict[str, int]) -&gt; float:
-    return sum(scores.values()) / len(scores)
+# Modern syntax (Python 3.10+)
+def find_user(user_id: int) -> dict | None:
+    user = database.find(user_id)
+    return user  # Could be None if not found
 
-# Optional means the value can be None or the specified type
-def find_user(user_id: int) -&gt; str | None:
-    users = {1: "Alice", 2: "Bob"}
-    return users.get(user_id)
+# Using the result safely
+user = find_user(42)
+if user is not None:
+    print(user["name"])  # Type checker knows user is dict here</code></pre>
 
-# Union means the value can be one of several types
-def process_id(value: int | str) -&gt; str:
-    return str(value)
+            <h3>Union Types</h3>
 
-# Tuples with fixed size and specific types
-def get_coordinates() -&gt; tuple[float, float]:
-    return (40.7128, -74.0060)</code></pre>
+            <p>When a parameter accepts multiple types:</p>
 
-                <p>Note: In Python 3.9+, you can use <code>list[str]</code> and <code>dict[str, int]</code> directly. In older versions, you need <code>List[str]</code> and <code>Dict[str, int]</code> from the typing module.</p>
+            <pre><code>from typing import Union
 
-                <h2>Using mypy for Static Type Checking</h2>
+# Old syntax
+def process(data: Union[str, bytes]) -> bytes:
+    if isinstance(data, str):
+        return data.encode("utf-8")
+    return data
 
-                <p><code>mypy</code> is the most popular Python type checker. Install it with pip:</p>
+# Modern syntax (Python 3.10+)
+def process(data: str | bytes) -> bytes:
+    if isinstance(data, str):
+        return data.encode("utf-8")
+    return data</code></pre>
 
-                <pre><code>pip install mypy</code></pre>
+            <h3>Collection Types</h3>
 
-                <p>Create a file called <code>example.py</code>:</p>
+            <p>Type hint collections with specific element types:</p>
 
-                <pre><code># example.py
-def add(a: int, b: int) -&gt; int:
+            <pre><code># Python 3.9+ — use built-in generics directly
+def get_scores() -> list[int]:
+    return [95, 87, 92, 78, 100]
+
+def build_index() -> dict[str, int]:
+    return {"python": 0, "rust": 1, "go": 2}
+
+def get_unique_tags() -> set[str]:
+    return {"dev", "python", "web"}
+
+def first_three(items: list[str]) -> tuple[str, str, str]:
+    return (items[0], items[1], items[2])
+
+# For older Python versions, import from typing module:
+# from typing import List, Dict, Set, Tuple</code></pre>
+
+            <h3>Any Type</h3>
+
+            <p>When you don't know or care about the type (use sparingly):</p>
+
+            <pre><code>from typing import Any
+
+def log(message: Any) -> None:
+    """Log anything — strings, dicts, objects, whatever."""
+    print(f"[LOG] {message}")
+
+log("hello")
+log({"key": "value"})
+log(42)</code></pre>
+
+            <blockquote>
+                <strong>Tip:</strong> Avoid <code>Any</code> when possible. It disables type checking for that value. If you need flexibility, prefer <code>Union</code> types or <code>Generic</code> types instead.
+            </blockquote>
+
+            <h2>Type Checking with mypy</h2>
+
+            <p>Type hints only matter if someone reads your code — unless you use a <strong>type checker</strong>. <code>mypy</code> is the most popular static type checker for Python.</p>
+
+            <h3>Install and Run</h3>
+
+            <pre><code># Install mypy
+pip install mypy
+
+# Check a single file
+mypy my_script.py
+
+# Check an entire project
+mypy my_project/
+
+# Enable strict mode (catches everything)
+mypy --strict my_project/</code></pre>
+
+            <h3>Example: Catching a Bug</h3>
+
+            <pre><code># buggy.py
+def add(a: int, b: int) -> int:
     return a + b
 
-# This is fine
-result = add(2, 3)
-print(result)
+# Oops — passing a string!
+result = add(10, "20")  # Works at runtime, but mypy catches this!
 
-# mypy will catch this error:
-result2 = add("hello", "world")</code></pre>
+$ mypy buggy.py
+buggy.py:5: error: Argument 2 to "add" has incompatible type "str"; expected "int"  [arg-type]</code></pre>
 
-                <p>Run mypy:</p>
+            <p>Without type hints and mypy, <code>add(10, "20")</code> would produce <code>"1020"</code> at runtime — a string concatenation that looks correct but is almost certainly wrong.</p>
 
-                <pre><code>mypy example.py
-# Output:
-# example.py:7: error: Argument 1 to "add" has incompatible type "str"; expected "int"
-# example.py:7: error: Argument 2 to "add" has incompatible type "str"; expected "int"</code></pre>
+            <h3>mypy Configuration</h3>
 
-                <p>mypy caught the error without running the code. That's the power of static type checking.</p>
+            <p>Configure mypy in your <code>pyproject.toml</code>:</p>
 
-                <h2>Type Hints in Classes</h2>
+            <pre><code>[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true</code></pre>
 
-                <p>Type hints work great with object-oriented Python:</p>
+            <h2>Advanced Type Hints</h2>
 
-                <pre><code>class User:
-    def __init__(self, name: str, email: str, age: int | None = None) -&gt; None:
-        self.name = name
-        self.email = email
-        self.age = age
+            <h3>Type Aliases</h3>
 
-    def greet(self) -&gt; str:
-        return f"Hi, I'm {self.name}"
+            <p>Create readable names for complex types:</p>
 
-    def is_adult(self) -&gt; bool:
-        if self.age is None:
-            return False
-        return self.age >= 18
+            <pre><code># Define type aliases
+UserId = int
+UserName = str
+UserProfile = dict[str, str | int | bool]
 
-# Usage
-user = User("Hugo", "hugo@example.com", 28)
-print(user.greet())      # Hi, I'm Hugo
-print(user.is_adult())   # True
+# Use them like built-in types
+def update_profile(user_id: UserId, data: UserProfile) -> None:
+    database.update(user_id, data)
 
-user2 = User("Alice", "alice@example.com")
-print(user2.is_adult())  # False (age is None)</code></pre>
+def get_profile(user_id: UserId) -> UserProfile:
+    return database.find(user_id)</code></pre>
 
-                <h2>The typing Module: Advanced Types</h2>
+            <h3>TypedDict</h3>
 
-                <h3>Any — When You Can't Specify a Type</h3>
+            <p>When you need a dict with specific keys and value types:</p>
 
-                <pre><code>from typing import Any
+            <pre><code>from typing import TypedDict
 
-def debug(value: Any) -&gt; None:
-    """Print anything, no type restrictions"""
-    print(f"Value: {value}, Type: {type(value)}")
+class UserDict(TypedDict):
+    id: int
+    name: str
+    email: str
+    age: int | None  # Optional field
 
-debug("hello")
-debug(42)
-debug([1, 2, 3])</code></pre>
+def process_user(user: UserDict) -> None:
+    print(user["name"])  # ✓ mypy knows "name" is str
+    print(user["email"]) # ✓ mypy knows "email" is str
+    print(user["password"])  # ✗ mypy error: "password" not in UserDict
 
-                <h3>Generic Types with TypeVar</h3>
+user = {
+    "id": 1,
+    "name": "Hugo",
+    "email": "hugo@example.com",
+    "age": 30
+}
+process_user(user)</code></pre>
 
-                <p><code>TypeVar</code> lets you write functions that work with any type while keeping type safety:</p>
+            <h3>Generic Functions and Classes</h3>
 
-                <pre><code>from typing import TypeVar, List
+            <p>Write functions that work with any type while keeping type safety:</p>
+
+            <pre><code>from typing import TypeVar
 
 T = TypeVar("T")
 
-def first(items: list[T]) -&gt; T | None:
-    """Return the first item, or None if empty"""
-    return items[0] if items else None
+def first_item(items: list[T]) -> T:
+    """Returns the first item, preserving its type."""
+    return items[0]
 
-# mypy knows the return type matches the input type
-name = first(["Alice", "Bob"])    # name is str | None
-count = first([1, 2, 3])          # count is int | None
-</code></pre>
+# Type checker infers correct return types:
+name: str = first_item(["Alice", "Bob"])   # T is str
+score: int = first_item([10, 20, 30])      # T is int
 
-                <h3>TypedDict for Structured Data</h3>
+class Stack:
+    """A simple type-safe stack."""
+    def __init__(self) -> None:
+        self._items: list[T] = []
 
-                <pre><code>from typing import TypedDict
+    def push(self, item: T) -> None:
+        self._items.append(item)
 
-class Movie(TypedDict):
-    title: str
-    year: int
-    rating: float
+    def pop(self) -> T:
+        return self._items.pop()
 
-def rate_movie(movie: Movie) -&gt; str:
-    if movie["rating"] >= 8.0:
-        return f"Excellent: {movie['title']} ({movie['year']})"
-    return f"Okay: {movie['title']}"
+    def peek(self) -> T:
+        return self._items[-1]
 
-movie = {"title": "Inception", "year": 2010, "rating": 8.8}
-print(rate_movie(movie))  # Excellent: Inception (2010)</code></pre>
+    def is_empty(self) -> bool:
+        return len(self._items) == 0
 
-                <h2>Setting Up a mypy Configuration</h2>
+# Usage
+name_stack = Stack[str]()
+name_stack.push("Alice")
+name_stack.push("Bob")
+name: str = name_stack.pop()  # Type-safe! "Bob"</code></pre>
 
-                <p>Create a <code>mypy.ini</code> in your project root for consistent checking:</p>
+            <h3>Callable Types</h3>
 
-                <pre><code>[mypy]
-python_version = 3.12
-warn_return_any = True
-warn_unused_configs = True
-disallow_untyped_defs = True
-disallow_incomplete_defs = True
-check_untyped_defs = True
-disallow_untyped_decorators = True
-no_implicit_optional = True
-strict_optional = True</code></pre>
+            <p>Type hint functions as parameters:</p>
 
-                <p>The <code>disallow_untyped_defs</code> option enforces that <em>every</em> function has type hints — strict but excellent for team projects.</p>
+            <pre><code>from collections.abc import Callable
 
-                <h2>Integrating with Your Workflow</h2>
+def apply(func: Callable[[int, int], int], a: int, b: int) -> int:
+    """Apply a function to two numbers."""
+    return func(a, b)
 
-                <h3>VS Code</h3>
+def add(a: int, b: int) -> int:
+    return a + b
 
-                <p>Install the Python extension — mypy runs automatically as you type. No configuration needed if you have <code>mypy.ini</code>.</p>
+def multiply(a: int, b: int) -> int:
+    return a * b
 
-                <h3>GitHub Actions CI Check</h3>
+print(apply(add, 3, 4))       # 7
+print(apply(multiply, 3, 4))  # 12</code></pre>
 
-                <pre><code># .github/workflows/mypy.yml
-name: Type Check
-on: [push, pull_request]
+            <h2>Real-World Project: Type-Safe User Manager</h2>
 
-jobs:
-  mypy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - run: pip install mypy
-      - run: mypy .</code></pre>
+            <p>Let's put everything together in a practical example:</p>
 
-                <h3>Pre-commit Hook</h3>
+            <pre><code>from typing import Optional
+from typing import TypedDict
+from typing import TypeVar
+from typing import Protocol
 
-                <pre><code># .pre-commit-config.yaml
-repos:
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.11.0
-    hooks:
-      - id: mypy
-        additional_dependencies: []</code></pre>
+class UserDict(TypedDict):
+    id: int
+    name: str
+    email: str
+    active: bool
 
-                <h2>When NOT to Use Type Hints</h2>
+class UserRepository(Protocol):
+    def find_by_id(self, user_id: int) -> Optional[UserDict]: ...
+    def find_by_email(self, email: str) -> Optional[UserDict]: ...
+    def save(self, user: UserDict) -> UserDict: ...
+    def delete(self, user_id: int) -> bool: ...
 
-                <p>Type hints aren't always the right call:</p>
+class InMemoryRepository:
+    """Simple in-memory user repository."""
 
-                <ul>
-                    <li><strong>Quick one-off scripts:</strong> A 20-line data processing script doesn't need types</li>
-                    <li><strong>Prototyping:</strong> Get working code first, add types when you stabilize the API</li>
-                    <li><strong>Dynamic data structures:</strong> When dealing with JSON or APIs that return unpredictable shapes, use <code>Any</code> or <code>TypedDict</code> selectively</li>
-                </ul>
+    def __init__(self) -> None:
+        self._users: dict[int, UserDict] = {}
+        self._next_id: int = 1
 
-                <h2>Summary</h2>
+    def find_by_id(self, user_id: int) -> Optional[UserDict]:
+        return self._users.get(user_id)
 
-                <p>Type hints make Python code more readable, maintainable, and reliable. They catch bugs at development time, improve IDE experience, and serve as living documentation. Start small — add types to your function signatures first, then grow your coverage. Tools like mypy make it easy to enforce consistency across a project.</p>
+    def find_by_email(self, email: str) -> Optional[UserDict]:
+        for user in self._users.values():
+            if user["email"] == email:
+                return user
+        return None
 
-                <p>For small personal scripts, they're optional. For anything shared, maintained, or production-critical, they're a must.</p>
+    def save(self, user: UserDict) -> UserDict:
+        self._users[user["id"]] = user
+        return user
 
-                <div class="post-nav">
-                    <a href="../posts/python-oop-classes.html" class="prev">← Python OOP: Classes and Objects</a>
-                    <a href="../posts/python-decorators-generators.html" class="next">Python Decorators &amp; Generators →</a>
-                </div>
-            </div>
+    def delete(self, user_id: int) -> bool:
+        if user_id in self._users:
+            del self._users[user_id]
+            return True
+        return False
+
+class UserNotFoundError(Exception):
+    """Raised when a user is not found."""
+    pass
+
+class UserManager:
+    """Business logic layer with full type safety."""
+
+    def __init__(self, repository: UserRepository) -> None:
+        self._repo = repository
+
+    def get_user(self, user_id: int) -> UserDict:
+        user = self._repo.find_by_id(user_id)
+        if user is None:
+            raise UserNotFoundError(f"User {user_id} not found")
+        return user
+
+    def deactivate_user(self, user_id: int) -> UserDict:
+        user = self.get_user(user_id)
+        user["active"] = False
+        return self._repo.save(user)
+
+    def find_or_create(self, name: str, email: str) -> UserDict:
+        existing = self._repo.find_by_email(email)
+        if existing is not None:
+            return existing
+
+        user: UserDict = {
+            "id": 1,  # In production, use auto-increment
+            "name": name,
+            "email": email,
+            "active": True,
+        }
+        return self._repo.save(user)</code></pre>
+
+            <p>Run <code>mypy</code> on this file and it should report zero errors. Every type is checked, every <code>None</code> is handled, and your IDE provides full autocomplete everywhere.</p>
+
+            <h2>When NOT to Use Type Hints</h2>
+
+            <p>Type hints aren't always necessary:</p>
+
+            <ul>
+                <li><strong>Quick scripts and one-off automation</strong> — If the script runs once and is deleted, type hints add overhead.</li>
+                <li><strong>Exploratory code / data analysis notebooks</strong> — Jupyter notebooks are about iteration, not maintainability.</li>
+                <li><strong>Prototypes</strong> — Add type hints when you're ready to polish the code.</li>
+            </ul>
+
+            <p>But for any library, API, or application you plan to maintain? Type hints are worth every minute of investment.</p>
+
+            <h2>Best Practices Summary</h2>
+
+            <ol>
+                <li><strong>Always annotate function signatures</strong> — parameters and return types.</li>
+                <li><strong>Use <code>Optional</code> (or <code>| None</code>)</strong> for values that can be <code>None</code>.</li>
+                <li><strong>Prefer specific types over <code>Any</code></strong> — use <code>list[str]</code> instead of <code>list</code>.</li>
+                <li><strong>Use <code>TypedDict</code> for structured dictionaries</strong> — catch typos in keys.</li>
+                <li><strong>Run <code>mypy</code> in CI/CD</strong> — make type checking part of your pipeline.</li>
+                <li><strong>Start gradual</strong> — add type hints to new code first, then refactor existing code.</li>
+            </ol>
+
+            <h2>Next Steps</h2>
+
+            <p>Now that you understand type hints, try adding them to your existing Python projects. Run <code>mypy</code> and see what it finds. Start with your most important functions and work outward. Before long, type hints will feel as natural as writing code itself.</p>
+
+            <p>For deeper learning, check out the <a href="https://peps.python.org/pep-0484/" target="_blank">PEP 484 specification</a> and the <a href="https://mypy.readthedocs.io/" target="_blank">mypy documentation</a>.</p>
+
         </article>
     </main>
 
     <footer>
         <div class="container">
-            <p>© 2026 Hugo's Dev Notes. Built with ☁️ Cloudflare.</p>
+            <p>© 2026 Hugo Wong · Built with curiosity and Coffee</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528">GitHub</a>
+                <a href="https://hugow.dev">hugow.dev</a>
+                <a href="/sitemap.xml">Sitemap</a>
+            </div>
         </div>
     </footer>
 
     <script>
-        // Reading progress bar
+        const themeToggle = document.getElementById('themeToggle');
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-mode');
+            themeToggle.textContent = '☀';
+        }
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            themeToggle.textContent = isLight ? '☀' : '◐';
+        });
         window.addEventListener('scroll', () => {
             const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
             const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
             const scrolled = (winScroll / height) * 100;
-            document.getElementById('progressBar').style.width = scrolled + '%';
+            document.getElementById('progressBar').style.width = scrolled + "%";
         });
-
-        // Dark mode toggle
-        const toggle = document.getElementById('themeToggle');
-        const saved = localStorage.getItem('dark-mode');
-        if (saved === 'true') { document.body.classList.add('dark-mode'); toggle.textContent = '☀️'; }
-        toggle.addEventListener('click', () => {
-            document.body.classList.toggle('dark-mode');
-            localStorage.setItem('dark-mode', document.body.classList.contains('dark-mode'));
-            toggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
-        });
-    </script>
-    <script>
-        // Theme toggle
-        const themeToggle = document.getElementById('themeToggle');
-        if (themeToggle) {{
-            const savedTheme = localStorage.getItem('theme') || 'dark';
-            if (savedTheme === 'light') {{
-                document.body.classList.add('light-mode');
-                themeToggle.textContent = '☀';
-            }}
-            themeToggle.addEventListener('click', () => {{
-                document.body.classList.toggle('light-mode');
-                const isLight = document.body.classList.contains('light-mode');
-                localStorage.setItem('theme', isLight ? 'light' : 'dark');
-                themeToggle.textContent = isLight ? '☀' : '◐';
-            }});
-        }}
-        // Progress bar
-        window.addEventListener('scroll', () => {{
-            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
-            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-            const scrolled = (winScroll / height) * 100;
-            const bar = document.getElementById('progressBar');
-            if (bar) bar.style.width = scrolled + "%";
-        }});
     </script>
 </body>
 </html>

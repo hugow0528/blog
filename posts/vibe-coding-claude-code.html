@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude Code: Terminal-Based AI Agent for Real Development Work — Complete Guide</title>
+    <meta name="description" content="Learn Claude Code — Anthropic's terminal-based AI coding agent. Setup, commands, multi-file edits, testing, debugging workflows, and production patterns.">
+    <meta name="keywords" content="claude code, AI coding agent, terminal AI, vibe coding, claude terminal, coding workflow">
+    <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/vibe-coding-claude-code.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn active">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="post-full">
+            <header class="post-header">
+                <div class="post-tags">
+                    <span class="tag vibe">AI Coding</span>
+                </div>
+                <h1>Claude Code: Terminal-Based AI Agent for Real Development Work</h1>
+                <div class="post-meta">
+                    <span class="post-date">July 19, 2026</span>
+                    <span class="read-time">10 min read</span>
+                </div>
+            </header>
+
+            <div class="post-content">
+                <p>Claude Code is Anthropic's terminal-based AI coding agent that runs directly in your shell. Unlike IDE extensions that suggest one line at a time, Claude Code can read your entire codebase, understand context across files, run commands, edit multiple files in a single turn, and execute a complete task from start to finish. It's designed to feel like having a senior developer at your terminal.</p>
+
+                <p>This guide covers everything from installing Claude Code to advanced workflows including custom instructions, project-specific memory, multi-file refactoring, and automated testing. Every example includes real terminal commands and prompt patterns you can use immediately.</p>
+
+                <h2 id="install">Install Claude Code</h2>
+                <p>Claude Code runs as a CLI tool. Install it with npm (requires Node.js 18+):</p>
+
+                <pre><code class="language-bash"># Install globally with npm
+npm install -g @anthropic-ai/claude-code
+
+# Verify installation
+claude --version
+
+# First run — it will prompt for your API key
+claude</code></pre>
+
+                <p>You need an Anthropic API key. Set it as an environment variable or configure it on first launch:</p>
+
+                <pre><code class="language-bash"># Set API key (add to ~/.bashrc or ~/.zshrc)
+export ANTHROPIC_API_KEY="sk-ant-your-key-here"
+
+# Or use AWS Bedrock as the backend
+export AWS_PROFILE="your-profile"
+claude --backend-bedrock</code></pre>
+
+                <h2 id="basic-commands">Basic Commands and Interactions</h2>
+                <p>Claude Code has a conversational interface but also supports direct commands:</p>
+
+                <pre><code class="language-bash"># Start interactive mode in current directory
+claude
+
+# Quick one-shot task (non-interactive)
+claude "Add type hints to all functions in utils.py"
+
+# Ask a question without making changes
+claude --print "Explain the architecture of this project"
+
+# Edit a specific file with a prompt
+claude "Refactor database.py to use async connections" database.py
+
+# Run with a specific project context
+claude "Fix the failing tests" --continue</code></pre>
+
+                <p>In interactive mode, Claude shows you proposed changes before applying them. Type <code>/help</code> to see all slash commands:</p>
+
+                <pre><code class="language-bash">/help          — Show available commands
+/compact       — Compact conversation history to save tokens
+/clear         — Clear the conversation
+/files         — List watched files
+/agents        — Show active sub-agents
+/permissions   — Manage tool permissions
+/cut          — Remove last exchange from history
+</code></pre>
+
+                <h2 id="project-instructions">Project Instructions (.clinerules)</h2>
+                <p>One of the most powerful features is project-specific instructions. Create a <code>.clinerules</code> file in your project root to define how Claude should behave:</p>
+
+                <pre><code class="language-text"># .clinerules — Project-specific instructions for Claude Code
+
+# Code style
+- Use Python type hints on all function signatures
+- Follow PEP 8 naming conventions
+- Write docstrings using Google style
+- Prefer f-strings over format() or % formatting
+
+# Testing
+- Always write tests before implementing features
+- Use pytest with fixtures for shared setup
+- Target 80%+ line coverage
+- Include edge case tests for error conditions
+
+# Architecture
+- Use dependency injection, not global state
+- Separate I/O from business logic
+- Keep functions under 50 lines
+- Use context managers for resource management
+
+# Git workflow
+- Write descriptive commit messages
+- Create feature branches, not direct main commits
+- Include related issue numbers in commits</code></pre>
+
+                <p>Claude reads this file on every session and applies the rules automatically. You can also create a global rules file at <code>~/.claude/CLAUDE.md</code> that applies to all projects.</p>
+
+                <h2 id="multi-file">Multi-File Editing Workflows</h2>
+                <p>Claude Code excels at tasks that span multiple files. Here are common workflows:</p>
+
+                <p><strong>Add a new API endpoint across your project:</strong></p>
+
+                <pre><code class="language-bash">claude "Add a DELETE /api/items/{id} endpoint. Update the router in routes.py, add the handler in handlers.py, create a Pydantic response model in schemas.py, and write a test in test_routes.py"</code></pre>
+
+                <p>Claude will:</p>
+                <ul>
+                    <li>Read all four files to understand existing patterns</li>
+                    <li>Generate consistent code matching your project style</li>
+                    <li>Show a diff of all changes before applying</li>
+                    <li>Apply all edits atomically</li>
+                </ul>
+
+                <p><strong>Refactor a module with imports:</strong></p>
+
+                <pre><code class="language-bash">claude "Extract the email validation logic from forms.py into its own validators.py module. Update all imports and references."</code></pre>
+
+                <p><strong>Fix a bug across the codebase:</strong></p>
+
+                <pre><code class="language-bash">claude "The date parsing fails when users submit ISO 8601 strings. Find all date parsing code and fix it to handle both 'YYYY-MM-DD' and ISO 8601 formats. Update tests too."</code></pre>
+
+                <h2 id="testing">Automated Testing Workflow</h2>
+                <p>Claude Code can run and debug tests directly from the terminal. Here's a complete workflow:</p>
+
+                <pre><code class="language-bash"># Ask Claude to run tests and fix failures
+claude "Run the test suite with pytest. If any tests fail, analyze the output and fix the underlying issues. Run tests again after each fix until everything passes."</code></pre>
+
+                <p>Claude will:</p>
+                <ol>
+                    <li>Execute <code>pytest</code> and capture the output</li>
+                    <li>Analyze failure messages and stack traces</li>
+                    <li>Locate the source files causing failures</li>
+                    <li>Edit the code to fix the bugs</li>
+                    <li>Re-run tests to verify the fix</li>
+                    <li>Repeat until green</li>
+                </ol>
+
+                <p><strong>Write tests from scratch:</strong></p>
+
+                <pre><code class="language-bash">claude "Write comprehensive tests for services/auth.py. Cover successful login, expired tokens, invalid credentials, rate limiting, and token refresh. Use pytest fixtures for the test database setup."</code></pre>
+
+                <h2 id="debugging">Debugging with Claude Code</h2>
+                <p>When you have a running error, paste it directly to Claude Code:</p>
+
+                <pre><code class="language-bash">claude "Here's the error I'm getting:
+
+Traceback (most recent call last):
+  File 'app.py', line 42, in fetch_user
+    user = db.query(User).filter(User.id == request.json['id']).one()
+sqlalchemy.orm.exc.NoResultFound
+
+Fix the error and add proper error handling so we return 404 instead of crashing."</code></pre>
+
+                <p>Claude will analyze the traceback, identify the root cause (<code>.one()</code> raises when no result is found), and fix it with <code>.one_or_none()</code> plus proper HTTP 404 response handling.</p>
+
+                <p><strong>Debug a slow query:</strong></p>
+
+                <pre><code class="language-bash">claude "The /api/reports endpoint takes 3 seconds to respond. Profile the code path from the route handler through database queries. Identify the N+1 query problem and fix it with eager loading."</code></pre>
+
+                <h2 id="agent-mode">Agent Mode and Sub-Agents</h2>
+                <p>For complex tasks, Claude Code can spawn sub-agents that work in parallel. This is particularly useful for large refactoring:</p>
+
+                <pre><code class="language-bash">claude "I need to upgrade this project from Python 3.9 to 3.12. 
+
+Task 1: Update pyproject.toml and requirements files for Python 3.12 compatibility
+Task 2: Find and fix all uses of removed 3.9-only features
+Task 3: Update the Dockerfile to use python:3.12-slim
+Task 4: Run all tests and fix any failures
+
+Use sub-agents to work on these tasks in parallel."</code></pre>
+
+                <p>Use <code>/agents</code> to monitor progress. Each sub-agent works independently and reports back when complete.</p>
+
+                <h2 id="production">Production-Ready Patterns</h2>
+
+                <p><strong>1. Set permissions for CI/CD:</strong></p>
+
+                <pre><code class="language-bash"># In a GitHub Actions workflow, Claude runs unattended
+# Set auto-approve for specific actions
+claude --permissions approve-edits --no-prompt "Fix the build by resolving all lint errors"</code></pre>
+
+                <p><strong>2. Use a MCP server for database access:</strong></p>
+
+                <pre><code class="language-bash"># Configure MCP (Model Context Protocol) server in .mcp.json
+# Claude can then query your database directly during debugging
+
+{
+  "mcpServers": {
+    "postgres": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-postgres", "postgresql://localhost/mydb"]
+    }
+  }
+}</code></pre>
+
+                <p><strong>3. Review before merging:</strong></p>
+
+                <pre><code class="language-bash">claude "Review all uncommitted changes as if you're doing a code review. Check for:
+- Security issues (hardcoded secrets, SQL injection)
+- Performance problems (N+1 queries, missing indexes)
+- Edge cases that aren't handled
+- Test coverage gaps
+- Documentation that needs updating
+
+Report issues as a numbered list with file:line references."</code></pre>
+
+                <h2 id="tips">Pro Tips</h2>
+                <ul>
+                    <li><strong>Use <code>/compact</code></strong> when a conversation gets long — it summarizes history to save tokens without losing context</li>
+                    <li><strong>Add a <code>.gitignore</code></strong> entry for large generated files you don't want Claude to index</li>
+                    <li><strong>Use <code>--print</code></strong> mode in scripts for non-interactive usage (great for CI)</li>
+                    <li><strong>Create a <code>scripts/claude/</code></strong> directory with reusable prompt files for common tasks</li>
+                    <li><strong>Set <code>ANTHROPIC_MODEL=claude-sonnet-4-20250514</code></strong> for a cheaper model on routine tasks</li>
+                    <li><strong>Use <code>/cut</code></strong> to remove accidental or incorrect exchanges from conversation history</li>
+                </ul>
+
+                <h2 id="comparison">Claude Code vs Other AI Coding Tools</h2>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Feature</th>
+                            <th>Claude Code</th>
+                            <th>GitHub Copilot</th>
+                            <th>Cursor</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Interface</td>
+                            <td>Terminal CLI</td>
+                            <td>IDE Extension</td>
+                            <td>Forked VS Code</td>
+                        </tr>
+                        <tr>
+                            <td>Multi-file edits</td>
+                            <td>✅ Native</td>
+                            <td>✅ Agent mode</td>
+                            <td>✅ Composer</td>
+                        </tr>
+                        <tr>
+                            <td>Run commands</td>
+                            <td>✅ Native</td>
+                            <td>✅ Terminal</td>
+                            <td>✅ Terminal</td>
+                        </tr>
+                        <tr>
+                            <td>Works without IDE</td>
+                            <td>✅ Yes</td>
+                            <td>❌ No</td>
+                            <td>❌ No</td>
+                        </tr>
+                        <tr>
+                            <td>CI/CD integration</td>
+                            <td>✅ Easy</td>
+                            <td>⚠️ Limited</td>
+                            <td>❌ No</td>
+                        </tr>
+                        <tr>
+                            <td>Sub-agents</td>
+                            <td>✅ Parallel</td>
+                            <td>❌ No</td>
+                            <td>❌ No</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <p>Claude Code shines when you're comfortable in the terminal and need an agent that can work across files, run tests, and execute tasks without an IDE. It's the best tool for SSH sessions, server debugging, CI/CD automation, and quick scripting.</p>
+
+                <h2 id="next">Next Steps</h2>
+                <p>Start with a simple refactoring task in a non-critical project. Give Claude Code a clear prompt, review its changes, and iterate on your <code>.clinerules</code> file to match your preferences. Over time, you'll develop a set of prompt patterns that make Claude Code an incredibly productive pair programmer.</p>
+
+                <p>For more on AI-assisted development, check out our guides on <a href="github-copilot-complete-guide.html">GitHub Copilot</a>, <a href="vibe-coding-cursor-workflow.html">Cursor workflows</a>, and <a href="prompt-engineering-coding.html">prompt engineering for coding</a>.</p>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Hugo's Dev Notes. Built with curiosity.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Theme toggle
+        const toggle = document.getElementById('themeToggle');
+        if (toggle) {
+            toggle.addEventListener('click', () => {
+                document.body.classList.toggle('light-mode');
+                localStorage.setItem('theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
+            });
+            if (localStorage.getItem('theme') === 'light') document.body.classList.add('light-mode');
+        }
+        // Progress bar
+        window.addEventListener('scroll', () => {
+            const bar = document.getElementById('progressBar');
+            if (bar) {
+                const h = document.documentElement;
+                const pct = ((h.scrollTop) / (h.scrollHeight - h.clientHeight)) * 100;
+                bar.style.width = pct + '%';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS Variables (Custom Properties): Dynamic Theming Without Preprocessors | Hugo's Dev Notes</title>
+    <link rel="canonical" href="https://blog.hugow.dev/posts/css-variables-custom-properties.html">
+    <link rel="stylesheet" href="../style.css">
+
+    <!-- SEO Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "headline": "CSS Variables (Custom Properties): Dynamic Theming Without Preprocessors",
+      "description": "Learn CSS custom properties — declare variables with --, use var(), cascade them across components, build dark/light themes, and create dynamic design systems. Working examples for every concept.",
+      "datePublished": "2026-07-12",
+      "dateModified": "2026-07-12",
+      "author": {"@type": "Person", "name": "Hugo Wong"},
+      "publisher": {"@type": "Organization", "name": "Hugo's Dev Notes", "url": "https://blog.hugow.dev"},
+      "mainEntityOfPage": "https://blog.hugow.dev/posts/css-variables-custom-properties.html",
+      "keywords": "css, custom properties, variables, theming, design system, web"
+    }
+    </script>
+
+    <!-- Social Meta -->
+    <meta property="og:title" content="CSS Variables (Custom Properties): Dynamic Theming Without Preprocessors">
+    <meta property="og:description" content="Learn CSS custom properties — declare variables, use var(), build dark/light themes, and create dynamic design systems.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.hugow.dev/posts/css-variables-custom-properties.html">
+    <meta property="og:site_name" content="Hugo's Dev Notes">
+    <meta property="article:published_time" content="2026-07-12">
+    <meta property="article:modified_time" content="2026-07-12">
+    <meta property="article:section" content="web">
+    <meta property="article:tag" content="Web Dev, CSS">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="CSS Variables (Custom Properties): Dynamic Theming Without Preprocessors">
+    <meta name="twitter:description" content="Learn CSS custom properties — declare variables, use var(), build dark/light themes, and create dynamic design systems.">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+
+        <article class="post-content">
+            <span class="tag web">Web Dev</span>
+            <h1>CSS Variables (Custom Properties): Dynamic Theming Without Preprocessors</h1>
+            <time>July 12, 2026 · 10 min read</time>
+
+            <p>Before CSS custom properties, developers relied on preprocessors like Sass or Less to create variables. Today, <strong>CSS variables</strong> (officially called "custom properties") are built into every modern browser. They enable dynamic theming, runtime changes via JavaScript, and a cascade that actually respects CSS inheritance rules.</p>
+
+            <p>This guide takes you from declaring your first <code>--color-primary</code> to building a complete dark/light theme system with smooth transitions. No build tools, no preprocessors, just pure CSS.</p>
+
+            <h2>Declaring CSS Variables</h2>
+
+            <p>CSS variables are declared with <strong>double dashes</strong> (<code>--</code>) as property names. They live on any selector, just like normal CSS properties:</p>
+
+            <pre><code>&lt;style&gt;
+    /* Global variables on :root */
+    :root {
+        --color-primary: #5e6ad2;
+        --color-secondary: #60a5fa;
+        --color-text: #1a1a2e;
+        --color-bg: #ffffff;
+        --font-size-base: 16px;
+        --spacing-sm: 8px;
+        --spacing-md: 16px;
+        --spacing-lg: 32px;
+        --radius: 8px;
+    }
+
+    /* Use with var() */
+    body {
+        color: var(--color-text);
+        background-color: var(--color-bg);
+        font-size: var(--font-size-base);
+    }
+
+    .card {
+        border-radius: var(--radius);
+        padding: var(--spacing-md);
+        border: 1px solid var(--color-primary);
+    }
+&lt;/style&gt;</code></pre>
+
+            <p>The <code>:root</code> pseudo-class targets <code>&lt;html&gt;</code>, making variables available everywhere. You can also scope variables to specific components:</p>
+
+            <pre><code>.button {
+    --btn-bg: #5e6ad2;
+    --btn-text: #ffffff;
+    --btn-hover-bg: #4a56b5;
+
+    background-color: var(--btn-bg);
+    color: var(--btn-text);
+    border-radius: var(--radius);
+    padding: var(--spacing-sm) var(--spacing-md);
+}
+
+.button:hover {
+    background-color: var(--btn-hover-bg);
+}</code></pre>
+
+            <h2>Using var() with Fallback Values</h2>
+
+            <p>The <code>var()</code> function accepts a second argument as a fallback — used when the variable is undefined:</p>
+
+            <pre><code>.element {
+    /* Basic fallback */
+    color: var(--color-text, #333);
+
+    /* Fallback can be another var() */
+    background: var(--bg-gradient, linear-gradient(135deg, #667eea, #764ba2));
+
+    /* Nested fallbacks */
+    margin: var(--margin-custom, var(--margin-default, 16px));
+
+    /* Fallback with calc() */
+    font-size: var(--font-size, calc(var(--font-size-base) * 1.25));
+}</code></pre>
+
+            <p>Fallbacks are essential when building component libraries where consumers might not have defined all your variables.</p>
+
+            <h2>CSS Variables and the Cascade</h2>
+
+            <p>This is what makes CSS variables special — they <strong>participate in the cascade</strong>. Unlike Sass variables (which are resolved at build time), CSS variables can be overridden at any level:</p>
+
+            <pre><code>:root {
+    --card-bg: #ffffff;
+    --card-text: #1a1a2e;
+}
+
+.card {
+    background: var(--card-bg);
+    color: var(--card-text);
+}
+
+/* Override for dark sections */
+.dark-section .card {
+    --card-bg: #1a1a2e;
+    --card-text: #e0e0e0;
+}
+
+/* Individual card override */
+.card.featured {
+    --card-bg: linear-gradient(135deg, #667eea, #764ba2);
+    --card-text: #ffffff;
+}</code></pre>
+
+            <p>Each <code>.card</code> inherits its variable values from the nearest ancestor that defines them. This creates a natural hierarchy for theming without duplicating selectors.</p>
+
+            <h2>Building a Dark/Light Theme System</h2>
+
+            <p>The most practical use case for CSS variables is theming. Here's a complete dark/light theme:</p>
+
+            <pre><code>&lt;style&gt;
+    /* Light theme (default) */
+    :root {
+        --bg-primary: #ffffff;
+        --bg-surface: #f8f9fa;
+        --bg-elevated: #ffffff;
+        --text-primary: #1a1a2e;
+        --text-secondary: #4a5568;
+        --text-muted: #a0aec0;
+        --border-color: #e2e8f0;
+        --accent: #5e6ad2;
+        --accent-hover: #4a56b5;
+        --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Dark theme override */
+    [data-theme="dark"] {
+        --bg-primary: #0a0a0f;
+        --bg-surface: #14141f;
+        --bg-elevated: #1e1e2e;
+        --text-primary: #e2e8f0;
+        --text-secondary: #a0aec0;
+        --text-muted: #718096;
+        --border-color: #2d3748;
+        --accent: #7c86ff;
+        --accent-hover: #5e6ad2;
+        --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Apply variables globally */
+    body {
+        background-color: var(--bg-primary);
+        color: var(--text-primary);
+        transition: background-color 0.3s, color 0.3s;
+    }
+
+    .card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        box-shadow: var(--shadow);
+    }
+
+    .btn {
+        background: var(--accent);
+        color: #fff;
+    }
+    .btn:hover {
+        background: var(--accent-hover);
+    }
+&lt;/style&gt;
+
+&lt;body&gt;
+    &lt;button id="themeToggle"&gt;Toggle Theme&lt;/button&gt;
+
+    &lt;script&gt;
+        const toggle = document.getElementById('themeToggle');
+        toggle.addEventListener('click', () => {
+            const current = document.documentElement.getAttribute('data-theme');
+            const next = current === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+        });
+
+        // Restore saved theme
+        const saved = localStorage.getItem('theme');
+        if (saved) {
+            document.documentElement.setAttribute('data-theme', saved);
+        }
+    &lt;/script&gt;
+&lt;/body&gt;</code></pre>
+
+            <h2>Respecting User Preferences with prefers-color-scheme</h2>
+
+            <p>Automatically match the user's OS theme preference:</p>
+
+            <pre><code>/* Default to light theme */
+:root {
+    --bg: #ffffff;
+    --text: #1a1a2e;
+}
+
+/* Auto-dark if OS prefers dark */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #0a0a0f;
+        --text: #e2e8f0;
+    }
+}
+
+/* User override via data attribute takes precedence */
+[data-theme="dark"] {
+    --bg: #0a0a0f;
+    --text: #e2e8f0;
+}
+
+[data-theme="light"] {
+    --bg: #ffffff;
+    --text: #1a1a2e;
+}</code></pre>
+
+            <h2>CSS Variables with calc()</h2>
+
+            <p>CSS variables work seamlessly with the <code>calc()</code> function for dynamic spacing and sizing:</p>
+
+            <pre><code>:root {
+    --spacing-unit: 8px;
+    --font-size-base: 16px;
+}
+
+.card {
+    /* Spacing scale: 1x, 2x, 4x, 8x */
+    padding: calc(var(--spacing-unit) * 2);
+    margin: calc(var(--spacing-unit) * 4);
+    gap: var(--spacing-unit);
+}
+
+h1 {
+    /* Fluid typography based on base size */
+    font-size: calc(var(--font-size-base) * 2);
+}
+
+h2 {
+    font-size: calc(var(--font-size-base) * 1.5);
+}
+
+.container {
+    /* Responsive max-width */
+    max-width: calc(720px + var(--spacing-unit) * 20);
+    padding: calc(var(--spacing-unit) * 3);
+}</code></pre>
+
+            <p><strong>Note:</strong> You can multiply variables by numbers, but you cannot concatenate them with strings. For dynamic colors or units, use multiple variables:</p>
+
+            <pre><code>:root {
+    --red-500: #ef4444;
+    --red-600: #dc2626;
+    --red-700: #b91c1c;
+    --color-hue: 500;  /* Use JS to change this */
+}
+
+/* ❌ This won't work — can't use var() as part of a property name */
+.element { color: var(--red-var(--color-hue)); }
+
+/* ✅ Use multiple specific variables or CSS @if with preprocessors */
+.element { color: var(--red-500); }</code></pre>
+
+            <h2>Using CSS Variables with JavaScript</h2>
+
+            <p>CSS variables can be read and modified at runtime through JavaScript:</p>
+
+            <pre><code>// Read a CSS variable
+const root = document.documentElement;
+const primaryColor = getComputedStyle(root)
+    .getPropertyValue('--color-primary').trim();
+console.log(primaryColor);  // "#5e6ad2"
+
+// Set a CSS variable
+root.style.setProperty('--color-primary', '#ff6b6b');
+
+// Set a variable on a specific element
+const card = document.querySelector('.card');
+card.style.setProperty('--card-bg', '#f0f0f0');
+
+// Remove a CSS variable
+root.style.removeProperty('--color-primary');
+
+// Dynamic spacing based on user preference
+function setFontSize(base) {
+    root.style.setProperty('--font-size-base', `${base}px`);
+}
+
+// Respond to resize
+window.addEventListener('resize', () => {
+    if (window.innerWidth < 768) {
+        setFontSize(14);
+    } else {
+        setFontSize(16);
+    }
+});</code></pre>
+
+            <h2>Complete Design Token System</h2>
+
+            <p>Professional design systems organize variables into logical groups. Here's a comprehensive token setup:</p>
+
+            <pre><code>:root {
+    /* ===== COLORS ===== */
+    --color-white: #ffffff;
+    --color-black: #0a0a0f;
+
+    /* Brand */
+    --color-brand-50: #eef0ff;
+    --color-brand-100: #dde1ff;
+    --color-brand-200: #bac3ff;
+    --color-brand-300: #95a4ff;
+    --color-brand-400: #7c86ff;
+    --color-brand-500: #5e6ad2;
+    --color-brand-600: #4a56b5;
+    --color-brand-700: #3a4495;
+    --color-brand-800: #2e3878;
+    --color-brand-900: #242d5c;
+
+    /* Semantic */
+    --color-success: #10b981;
+    --color-warning: #f59e0b;
+    --color-error: #ef4444;
+    --color-info: #3b82f6;
+
+    /* ===== SPACING ===== */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+    --space-7: 48px;
+    --space-8: 64px;
+
+    /* ===== TYPOGRAPHY ===== */
+    --font-sans: 'Inter', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+    --text-xs: 12px;
+    --text-sm: 14px;
+    --text-base: 16px;
+    --text-lg: 18px;
+    --text-xl: 24px;
+    --text-2xl: 32px;
+    --text-3xl: 40px;
+
+    --leading-tight: 1.2;
+    --leading-normal: 1.5;
+    --leading-relaxed: 1.8;
+
+    --weight-normal: 400;
+    --weight-medium: 500;
+    --weight-semibold: 600;
+
+    /* ===== BORDERS & SHADOWS ===== */
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-full: 9999px;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+
+    /* ===== TRANSITIONS ===== */
+    --duration-fast: 150ms;
+    --duration-normal: 250ms;
+    --ease-out: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ===== DARK THEME OVERRIDES ===== */
+[data-theme="dark"] {
+    --color-white: #0a0a0f;
+    --color-black: #f7f8f8;
+    --color-brand-500: #7c86ff;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+}
+
+/* ===== USAGE ===== */
+body {
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    line-height: var(--leading-normal);
+    font-weight: var(--weight-normal);
+    color: var(--color-black);
+    background: var(--color-white);
+}
+
+.card {
+    padding: var(--space-5);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+.btn {
+    background: var(--color-brand-500);
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-full);
+    transition: all var(--duration-fast) var(--ease-out);
+}
+
+.code {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+}</code></pre>
+
+            <h2>When CSS Variables Shine (and When They Don't)</h2>
+
+            <p><strong>Perfect for:</strong></p>
+
+            <ul>
+                <li>Dark/light theme toggling (instant, no JS rebuild)</li>
+                <li>Component-scoped overrides (pass down tokens without prop drilling)</li>
+                <li>Responsive adjustments (change variables in media queries once)</li>
+                <li>Runtime customization (user picks accent color, saved to localStorage)</li>
+                <li>Consistent design systems (single source of truth for colors, spacing)</li>
+            </ul>
+
+            <p><strong>Not ideal for:</strong></p>
+
+            <ul>
+                <li>CSS properties that aren't valid on every element (use fallbacks)</li>
+                <li>Animation keyframes — <code>var()</code> can't be used inside <code>@keyframes</code></li>
+                <li>Media query values — can't use variables in <code>@media</code> conditions</li>
+                <li>Selector names or property names — only values are dynamic</li>
+                <li>Build-time optimization (unlike Sass, variables aren't compiled away)</li>
+            </ul>
+
+            <h2>Best Practices</h2>
+
+            <ul>
+                <li><strong>Name with semantic meaning</strong> — use <code>--color-heading</code>, not <code>--color-blue-500</code></li>
+                <li><strong>Layer abstraction</strong> — define primitive tokens first, then semantic tokens that reference them</li>
+                <li><strong>Always provide fallbacks</strong> for component libraries targeting unknown environments</li>
+                <li><strong>Use camelCase for JavaScript access</strong> — <code>--my-var</code> becomes <code>my-var</code> in CSS but <code>myVar</code> in JS</li>
+                <li><strong>Keep variables close to their consumers</strong> — don't put everything on <code>:root</code></li>
+                <li><strong>Document your design tokens</strong> — export a reference page showing all variable values</li>
+            </ul>
+
+            <h2>Next Steps</h2>
+
+            <ul>
+                <li><a href="css-grid-flexbox.html">CSS Grid and Flexbox</a> — use variables for dynamic grid templates</li>
+                <li><a href="css-custom-properties.html">CSS Custom Properties</a> — advanced patterns with calc() and clamp()</li>
+                <li><a href="css-animations-transitions.html">CSS Animations and Transitions</a> — transition between variable values for smooth theme switching</li>
+            </ul>
+
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes · Built with Cloudflare</p>
+        </div>
+    </footer>
+
+    <script>
+    // Progress bar
+    window.addEventListener('scroll', () => {
+        const bar = document.getElementById('progressBar');
+        if (bar) {
+            const scrollTop = window.scrollY;
+            const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+            bar.style.width = (scrollTop / docHeight * 100) + '%';
+        }
+    });
+
+    // Theme toggle
+    const toggle = document.getElementById('themeToggle');
+    if (toggle) {
+        const saved = localStorage.getItem('theme');
+        if (saved === 'light') document.body.classList.add('light-mode');
+        toggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            localStorage.setItem('theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
+        });
+    }
+    </script>
+</body>
+</html>

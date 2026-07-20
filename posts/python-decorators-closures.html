@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Decorators and Closures: Extend Function Behavior — Complete Guide | Hugo's Dev Notes</title>
+    <link rel="canonical" href="https://blog.hugow.dev/posts/python-decorators-closures.html">
+    <link rel="stylesheet" href="../style.css">
+
+    <!-- SEO Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "headline": "Python Decorators and Closures: Extend Function Behavior — Complete Guide",
+      "description": "Master Python decorators and closures — nested functions, the @syntax, functools.wraps, argument decorators, and real-world patterns for logging, timing, caching, and authentication.",
+      "datePublished": "2026-07-12",
+      "dateModified": "2026-07-12",
+      "author": {"@type": "Person", "name": "Hugo Wong"},
+      "publisher": {"@type": "Organization", "name": "Hugo's Dev Notes", "url": "https://blog.hugow.dev"},
+      "mainEntityOfPage": "https://blog.hugow.dev/posts/python-decorators-closures.html",
+      "keywords": "python, decorators, closures, functools, python intermediate"
+    }
+    </script>
+
+    <!-- Social Meta -->
+    <meta property="og:title" content="Python Decorators and Closures: Extend Function Behavior — Complete Guide">
+    <meta property="og:description" content="Master Python decorators and closures — nested functions, @syntax, functools.wraps, argument decorators, and real-world patterns.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.hugow.dev/posts/python-decorators-closures.html">
+    <meta property="og:site_name" content="Hugo's Dev Notes">
+    <meta property="article:published_time" content="2026-07-12">
+    <meta property="article:modified_time" content="2026-07-12">
+    <meta property="article:section" content="python">
+    <meta property="article:tag" content="Python, Decorators, Closures">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Python Decorators and Closures: Extend Function Behavior — Complete Guide">
+    <meta name="twitter:description" content="Master Python decorators and closures — nested functions, @syntax, functools.wraps, and real-world patterns.">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="back-link">← Back to posts</a>
+
+        <article class="post-content">
+            <span class="tag python">Python</span>
+            <h1>Python Decorators and Closures: Extend Function Behavior — Complete Guide</h1>
+            <time>July 12, 2026 · 11 min read</time>
+
+            <p>You've been using decorators since the moment you wrote <code>@app.route</code> in Flask or <code>@pytest.fixture</code> in your tests. But have you ever stopped to understand <em>how</em> they work under the hood? Decorators are one of Python's most elegant features — they let you wrap a function with extra behavior without modifying its code.</p>
+
+            <p>At the heart of every decorator are two concepts: <strong>closures</strong> and <strong>first-class functions</strong>. Mastering these will transform how you write Python. This guide takes you from understanding closures to building production-ready decorators for logging, timing, caching, and authentication.</p>
+
+            <h2>Python Functions Are First-Class Objects</h2>
+
+            <p>In Python, functions are objects. You can assign them to variables, pass them as arguments, and return them from other functions. This is the foundation that makes decorators possible:</p>
+
+            <pre><code># Assign a function to a variable
+def greet(name):
+    return f"Hello, {name}!"
+
+handler = greet  # Just a reference, not a call
+print(handler("Hugo"))  # "Hello, Hugo!"
+
+# Pass a function as an argument
+def shout(func, name):
+    result = func(name)
+    return result.upper()
+
+print(shout(greet, "Hugo"))  # "HELLO, HUGO!"</code></pre>
+
+            <p>Notice that <code>greet</code> without parentheses is a reference to the function itself. With <code>()</code>, it's a <em>call</em>. This distinction is crucial for understanding decorators.</p>
+
+            <h2>Understanding Closures</h2>
+
+            <p>A <strong>closure</strong> is a function that remembers variables from the scope in which it was created. Python functions carry their enclosing scope with them:</p>
+
+            <pre><code>def make_multiplier(factor):
+    """Return a function that multiplies by factor"""
+    def multiply(x):
+        return x * factor  # remembers 'factor'
+    return multiply
+
+double = make_multiplier(2)
+triple = make_multiplier(3)
+
+print(double(10))  # 20
+print(triple(10))  # 30</code></pre>
+
+            <p>The <code>multiply</code> function inside <code>make_multiplier</code> captures the <code>factor</code> variable. Even after <code>make_multiplier</code> finishes executing, <code>double</code> still remembers that <code>factor = 2</code>. This is a closure.</p>
+
+            <p>Closures are incredibly useful for creating factories — functions that produce other functions with specific behavior configured at creation time.</p>
+
+            <h3>Closures with Mutable State</h3>
+
+            <p>Closures can also maintain mutable state across calls:</p>
+
+            <pre><code>def counter():
+    count = [0]  # Use a list (mutable) instead of int
+    def increment():
+        count[0] += 1
+        return count[0]
+    return increment
+
+c = counter()
+print(c())  # 1
+print(c())  # 2
+print(c())  # 3</code></pre>
+
+            <p>We use a list <code>[0]</code> because integers are immutable in Python. Alternatively, Python 3 offers <code>nonlocal</code> for this exact purpose:</p>
+
+            <pre><code>def counter_v2():
+    count = 0
+    def increment():
+        nonlocal count  # Access the variable from enclosing scope
+        count += 1
+        return count
+    return increment
+
+c = counter_v2()
+print(c())  # 1
+print(c())  # 2</code></pre>
+
+            <h2>Your First Decorator</h2>
+
+            <p>Now, let's build a decorator. A decorator is simply a function that takes another function, adds behavior, and returns a new function:</p>
+
+            <pre><code>def my_decorator(func):
+    def wrapper():
+        print(f"📢 Before calling {func.__name__}")
+        func()  # Call the original function
+        print(f"✅ After calling {func.__name__}")
+    return wrapper
+
+@my_decorator
+def say_hello():
+    print("Hello, World!")
+
+say_hello()
+# Output:
+# 📢 Before calling say_hello
+# Hello, World!
+# ✅ After calling say_hello</code></pre>
+
+            <p>The <code>@my_decorator</code> syntax is shorthand for <code>say_hello = my_decorator(say_hello)</code>. The decorator replaces the original function with the <code>wrapper</code> function, which adds extra behavior before and after the original call.</p>
+
+            <h3>What Happens Under the Hood</h3>
+
+            <pre><code># These two are EXACTLY the same:
+
+# Version A: Decorator syntax
+@my_decorator
+def say_hello():
+    print("Hello, World!")
+
+# Version B: Manual assignment
+def say_hello():
+    print("Hello, World!")
+say_hello = my_decorator(say_hello)</code></pre>
+
+            <p>The decorator receives the function object, wraps it, and returns a new function. Python then rebinds the name to the wrapped version.</p>
+
+            <h2>Preserving Metadata with functools.wraps</h2>
+
+            <p>There's a problem with our basic decorator. The wrapper function replaces the original, so metadata like <code>__name__</code> and <code>__doc__</code> is lost:</p>
+
+            <pre><code>@my_decorator
+def say_hello():
+    """Say hello to the world."""
+    print("Hello, World!")
+
+print(say_hello.__name__)  # "wrapper" — oops!
+print(say_hello.__doc__)   # None — the docstring is gone!</code></pre>
+
+            <p>Use <code>functools.wraps</code> to copy the original function's metadata to the wrapper:</p>
+
+            <pre><code>from functools import wraps
+
+def my_decorator(func):
+    @wraps(func)  # Copies __name__, __doc__, etc. from func to wrapper
+    def wrapper(*args, **kwargs):
+        print(f"📢 Before calling {func.__name__}")
+        result = func(*args, **kwargs)  # Forward all arguments
+        print(f"✅ After calling {func.__name__}")
+        return result  # Preserve return value
+    return wrapper
+
+@my_decorator
+def say_hello():
+    """Say hello to the world."""
+    print("Hello, World!")
+
+print(say_hello.__name__)  # "say_hello" ✓
+print(say_hello.__doc__)   # "Say hello to the world." ✓</code></pre>
+
+            <p><strong>Always use <code>@wraps</code> in your decorators.</strong> It preserves introspection, helps debugging, and works correctly with tools that inspect function signatures.</p>
+
+            <h2>Decorators with Arguments and Return Values</h2>
+
+            <p>Our decorator needs to handle functions that accept arguments and return values:</p>
+
+            <pre><code>from functools import wraps
+
+def log_calls(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        args_repr = [repr(a) for a in args]
+        kwargs_repr = [f"{k}={v!r}" for k, v in kwargs.items()]
+        signature = ", ".join(args_repr + kwargs_repr)
+        print(f"📞 Calling {func.__name__}({signature})")
+        result = func(*args, **kwargs)
+        print(f"↩️ {func.__name__} returned {result!r}")
+        return result
+    return wrapper
+
+@log_calls
+def add(a, b):
+    """Add two numbers."""
+    return a + b
+
+add(3, 5)
+# Output:
+# 📞 Calling add(3, 5)
+# ↩️ add returned 8</code></pre>
+
+            <p>The <code>*args, **kwargs</code> pattern captures <em>all</em> positional and keyword arguments, forwarding them to the original function. This makes the decorator work with any function signature.</p>
+
+            <h2>Parameterized Decorators</h2>
+
+            <p>Sometimes you want to configure your decorator with arguments. This requires <strong>three</strong> nested functions:</p>
+
+            <pre><code>from functools import wraps
+
+def repeat(times):
+    """Decorator that repeats a function call N times"""
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            for i in range(times):
+                print(f"  Attempt {i + 1}/{times}")
+                result = func(*args, **kwargs)
+            return result
+        return wrapper
+    return decorator
+
+@repeat(times=3)  # Note: called with parentheses!
+def greet(name):
+    print(f"  Hello, {name}!")
+
+greet("Hugo")
+# Output:
+#   Attempt 1/3
+#   Hello, Hugo!
+#   Attempt 2/3
+#   Hello, Hugo!
+#   Attempt 3/3
+#   Hello, Hugo!</code></pre>
+
+            <p>The structure is: <code>repeat(times)</code> → returns <code>decorator</code> → receives <code>func</code> → returns <code>wrapper</code>.</p>
+
+            <h2>Real-World Decorator: Timing</h2>
+
+            <p>A timing decorator is one of the most practical tools in your toolkit:</p>
+
+            <pre><code>import time
+from functools import wraps
+
+def timer(func):
+    """Measure execution time of a function"""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        start = time.perf_counter()
+        result = func(*args, **kwargs)
+        elapsed = time.perf_counter() - start
+        name = func.__name__
+        print(f"⏱️ {name}: {elapsed:.4f}s")
+        return result
+    return wrapper
+
+@timer
+def slow_function():
+    time.sleep(0.5)
+    return "done"
+
+slow_function()
+# Output: ⏱️ slow_function: 0.5003s</code></pre>
+
+            <p>Use this during development to identify slow functions without adding timing code everywhere.</p>
+
+            <h2>Real-World Decorator: Caching (Memoization)</h2>
+
+            <p>Caching expensive function results is a classic decorator use case:</p>
+
+            <pre><code>from functools import wraps
+
+def cache(func):
+    """Simple memoization decorator"""
+    memo = {}
+    @wraps(func)
+    def wrapper(*args):
+        if args not in memo:
+            memo[args] = func(*args)
+            print(f"  🆕 Computed {func.__name__}{args}")
+        else:
+            print(f"  💾 Cache hit for {func.__name__}{args}")
+        return memo[args]
+    return wrapper
+
+@cache
+def fibonacci(n):
+    if n < 2:
+        return n
+    return fibonacci(n - 1) + fibonacci(n - 2)
+
+fibonacci(10)
+# Shows cache hits for repeated sub-problems!
+# 💾 Cache hit for fibonacci(1)
+# 💾 Cache hit for fibonacci(0)
+# ...</code></pre>
+
+            <p>Python actually includes <code>@functools.lru_cache</code> for this exact purpose, but building it yourself teaches you the pattern:</p>
+
+            <pre><code>from functools import lru_cache
+
+@lru_cache(maxsize=128)
+def fibonacci(n):
+    if n < 2:
+        return n
+    return fibonacci(n - 1) + fibonacci(n - 2)
+
+# Check cache stats
+print(fibonacci.cache_info())
+# CacheInfo(hits=18, misses=11, maxsize=128, currsize=11)</code></pre>
+
+            <h2>Real-World Decorator: Retry with Exponential Backoff</h2>
+
+            <p>For network calls or flaky operations, a retry decorator is invaluable:</p>
+
+            <pre><code>import time
+from functools import wraps
+
+def retry(max_attempts=3, delay=1, backoff=2):
+    """Retry decorator with exponential backoff"""
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            current_delay = delay
+            for attempt in range(1, max_attempts + 1):
+                try:
+                    return func(*args, **kwargs)
+                except Exception as e:
+                    if attempt == max_attempts:
+                        raise
+                    print(f"  ⚠️ {func.__name__} failed (attempt {attempt}/{max_attempts}): {e}")
+                    time.sleep(current_delay)
+                    current_delay *= backoff
+        return wrapper
+    return decorator
+
+@retry(max_attempts=3, delay=0.5, backoff=2)
+def unstable_api_call():
+    """Simulates a flaky API call"""
+    import random
+    if random.random() < 0.6:
+        raise ConnectionError("Connection refused")
+    return "API response"
+
+# Run multiple times to see retries in action
+for _ in range(5):
+    result = unstable_api_call()
+    print(f"  ✅ Got: {result}")</code></pre>
+
+            <p>This pattern is essential for production code that interacts with external services. It handles transient failures gracefully without crashing.</p>
+
+            <h2>Real-World Decorator: Rate Limiter</h2>
+
+            <p>Control how often a function can be called:</p>
+
+            <pre><code>import time
+from functools import wraps
+
+def rate_limit(max_calls=5, period=60):
+    """Limit function calls to max_calls per period seconds"""
+    def decorator(func):
+        calls = []  # Track timestamps of recent calls
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            now = time.time()
+            # Remove old timestamps outside the window
+            calls[:] = [t for t in calls if now - t < period]
+            if len(calls) >= max_calls:
+                wait_time = period - (now - calls[0])
+                raise RuntimeError(
+                    f"Rate limit exceeded! Wait {wait_time:.1f}s"
+                )
+            calls.append(now)
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
+
+@rate_limit(max_calls=3, period=10)
+def send_email(to, subject, body):
+    print(f"  📧 Email sent to {to}")
+
+# First 3 calls succeed
+for i in range(3):
+    send_email(f"user{i}@example.com", "Hello", "Hi!")
+
+# Fourth call fails
+send_email("user3@example.com", "Hello", "Hi!")
+# RuntimeError: Rate limit exceeded! Wait 9.0s</code></pre>
+
+            <h2>Class-Based Decorators</h2>
+
+            <p>Decorators can also be classes using the <code>__call__</code> method:</p>
+
+            <pre><code>from functools import wraps
+
+class CountCalls:
+    """Decorator that counts how many times a function is called"""
+    def __init__(self, func):
+        wraps(func)(self)  # Preserve metadata
+        self.func = func
+        self.call_count = 0
+
+    def __call__(self, *args, **kwargs):
+        self.call_count += 1
+        print(f"  Call #{self.call_count} to {self.func.__name__}")
+        return self.func(*args, **kwargs)
+
+@CountCalls
+def greet(name):
+    return f"Hello, {name}!"
+
+greet("Hugo")   # Call #1 to greet
+greet("Alice")  # Call #2 to greet
+greet("Bob")    # Call #3 to greet</code></pre>
+
+            <p>Class decorators shine when the decorator needs to maintain state across calls, like our call counter above.</p>
+
+            <h2>Decorators on Classes and Methods</h2>
+
+            <p>Decorators work on classes too — the most common example is <code>@staticmethod</code> and <code>@classmethod</code>:</p>
+
+            <pre><code>class Pizza:
+    def __init__(self, size):
+        self.size = size
+
+    @classmethod
+    def from_diameter(cls, diameter):
+        """Create a Pizza from diameter"""
+        return cls(size=diameter / 2)
+
+    @staticmethod
+    def is_valid_size(size):
+        """Check if size is reasonable"""
+        return 6 <= size <= 24
+
+    def __repr__(self):
+        return f"Pizza(size={self.size})"
+
+# Class method receives the class, not an instance
+large = Pizza.from_diameter(16)  # Pizza(size=8)
+print(Pizza.is_valid_size(8))    # True</code></pre>
+
+            <h2>Stacking Decorators</h2>
+
+            <p>Apply multiple decorators to a single function. They execute bottom-to-top on decoration, and top-to-bottom on execution:</p>
+
+            <pre><code>@timer
+@retry(max_attempts=2)
+@log_calls
+def fetch_data(url):
+    """Fetch data with logging, retry, and timing"""
+    import random
+    if random.random() < 0.5:
+        raise ConnectionError("Network error")
+    return f"Data from {url}"
+
+fetch_data("https://api.example.com")
+# Execution order:
+# 1. log_calls: prints arguments
+# 2. retry: attempts the call (up to 2 times)
+# 3. timer: measures total execution time</code></pre>
+
+            <h2>When NOT to Use Decorators</h2>
+
+            <p>Decorators are powerful, but overusing them makes code harder to read and debug. Avoid them when:</p>
+
+            <ul>
+                <li>The logic can be expressed clearly in a few lines inside the function</li>
+                <li>Debugging becomes difficult (stack traces show <code>wrapper</code> instead of the real function)</li>
+                <li>The decorator has side effects that aren't obvious from the decorator's name</li>
+                <li>You're nesting more than 3 decorators on a single function</li>
+            </ul>
+
+            <h2>Summary</h2>
+
+            <p>Decorators and closures are fundamental Python patterns:</p>
+
+            <ul>
+                <li><strong>Closures</strong> let functions remember variables from their enclosing scope</li>
+                <li><strong>Decorators</strong> wrap functions with extra behavior using the <code>@</code> syntax</li>
+                <li><strong><code>@wraps</code></strong> preserves function metadata — always use it</li>
+                <li><strong><code>*args, **kwargs</code></strong> forward any arguments to the original function</li>
+                <li><strong>Parameterized decorators</strong> use three levels of nesting</li>
+                <li>Real-world patterns: timing, caching, retry, rate limiting</li>
+            </ul>
+
+            <p>Once you internalize how decorators work, you'll start seeing opportunities everywhere — adding logging, enforcing permissions, memoizing results, and more — all without cluttering your core business logic.</p>
+
+            <div class="post-footer">
+                <p>📚 <strong>Related posts:</strong></p>
+                <ul class="related-links">
+                    <li><a href="python-closures.html">← Python Closures Deep Dive</a></li>
+                    <li><a href="python-functions.html">← Python Functions and Lambda Expressions</a></li>
+                    <li><a href="python-context-managers.html">→ Python Context Managers and the with Statement</a></li>
+                </ul>
+            </div>
+        </article>
+    </main>
+
+    <footer class="site-footer">
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes. Built with Python and deployed on Cloudflare Pages.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Reading progress bar
+        window.addEventListener('scroll', () => {
+            const bar = document.getElementById('progressBar');
+            if (bar) {
+                const scrollTop = window.scrollY;
+                const docHeight = document.body.scrollHeight - window.innerHeight;
+                bar.style.width = `${(scrollTop / docHeight) * 100}%`;
+            }
+        });
+        // Theme toggle
+        const toggle = document.getElementById('themeToggle');
+        if (toggle) {
+            toggle.addEventListener('click', () => {
+                document.body.classList.toggle('light-theme');
+                localStorage.setItem('theme', document.body.classList.contains('light-theme') ? 'light' : 'dark');
+            });
+            if (localStorage.getItem('theme') === 'light') {
+                document.body.classList.add('light-theme');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terraform Modules: Reusable Infrastructure Code — Complete Beginner's Guide | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn Terraform modules to write reusable infrastructure — defining inputs/outputs, calling modules, local modules, registry modules, and building a modular infrastructure library.">
+    <meta name="keywords" content="terraform modules, terraform reusable, infrastructure as code, terraform best practices, terraform beginners">
+    <meta name="author" content="Hugo Wong">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/terraform-modules.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <article class="post-content">
+        <a href="../index.html" class="back-link">← All Posts</a>
+        <span class="tag devops">DevOps</span>
+        <h1>Terraform Modules: Reusable Infrastructure Code — Complete Beginner's Guide</h1>
+        <time datetime="2026-07-17">July 17, 2026 · 11 min read</time>
+
+        <p>You've written your first Terraform configuration and deployed a few servers. It works, but your <code>main.tf</code> file is growing. You're copying the same VPC and subnet configuration across dev, staging, and production. Every environment update means changing three files. Sound familiar?</p>
+
+        <p><strong>Terraform modules</strong> are the solution. A module is a self-contained package of Terraform configurations that you can reuse across projects — like functions in Python, but for infrastructure. This guide takes you from your first <code>module { }</code> block to building a complete modular infrastructure library.</p>
+
+        <h2>Why Use Modules?</h2>
+
+        <p>Without modules, your infrastructure code looks like this:</p>
+
+        <pre><code class="language-hcl"># ❌ main.tf — 400 lines, repeated 3 times per environment
+resource "aws_vpc" "main" {
+  cidr_block = "10.0.0.0/16"
+  tags = {
+    Name        = "dev-vpc"
+    Environment = "dev"
+  }
+}
+
+resource "aws_subnet" "public_a" {
+  vpc_id     = aws_vpc.main.id
+  cidr_block = "10.0.1.0/24"
+  # ... 30 more resources, all duplicated per environment
+}</code></pre>
+
+        <p>With modules, you write the VPC once and call it everywhere:</p>
+
+        <pre><code class="language-hcl"># ✅ main.tf — 10 lines, clean and readable
+module "vpc" {
+  source = "./modules/vpc"
+
+  environment = "dev"
+  cidr        = "10.0.0.0/16"
+}</code></pre>
+
+        <h2>Anatomy of a Module</h2>
+
+        <p>A Terraform module is just a directory containing <code>.tf</code> files. Three key concepts make a directory a proper module:</p>
+
+        <ul>
+          <li><strong>Variables (inputs):</strong> Configurable parameters that customize the module</li>
+          <li><strong>Resources (body):</strong> The infrastructure the module creates</li>
+          <li><strong>Outputs (returns):</strong> Values the module exposes to callers</li>
+        </ul>
+
+        <p>Let's build a complete VPC module from scratch.</p>
+
+        <h2>Building Your First Module: VPC</h2>
+
+        <p>Start with the directory structure:</p>
+
+        <pre><code class="language-bash">infrastructure/
+├── main.tf              # Root — calls modules
+├── variables.tf         # Root variables
+├── outputs.tf           # Root outputs
+└── modules/
+    └── vpc/
+        ├── main.tf      # Module resources
+        ├── variables.tf # Module inputs
+        └── outputs.tf   # Module outputs</code></pre>
+
+        <h3>Step 1: Module Variables (Inputs)</h3>
+
+        <pre><code class="language-hcl"># modules/vpc/variables.tf
+
+variable "environment" {
+  description = "Environment name (dev, staging, prod)"
+  type        = string
+
+  validation {
+    condition     = contains(["dev", "staging", "prod"], var.environment)
+    error_message = "Environment must be dev, staging, or prod."
+  }
+}
+
+variable "cidr" {
+  description = "CIDR block for the VPC"
+  type        = string
+  default     = "10.0.0.0/16"
+}
+
+variable "public_subnet_count" {
+  description = "Number of public subnets to create"
+  type        = number
+  default     = 2
+}
+
+variable "tags" {
+  description = "Additional tags to apply to all resources"
+  type        = map(string)
+  default     = {}
+}</code></pre>
+
+        <p>Notice the <code>validation</code> block — this catches invalid inputs before Terraform tries to create anything. Always validate early.</p>
+
+        <h3>Step 2: Module Resources (Body)</h3>
+
+        <pre><code class="language-hcl"># modules/vpc/main.tf
+
+locals {
+  common_tags = merge(var.tags, {
+    Environment = var.environment
+    ManagedBy   = "terraform"
+    Module      = "vpc"
+  })
+}
+
+resource "aws_vpc" "this" {
+  cidr_block           = var.cidr
+  enable_dns_hostnames = true
+  enable_dns_support   = true
+
+  tags = merge(local.common_tags, {
+    Name = "${var.environment}-vpc"
+  })
+}
+
+resource "aws_subnet" "public" {
+  count = var.public_subnet_count
+
+  vpc_id            = aws_vpc.this.id
+  cidr_block        = cidrsubnet(var.cidr, 8, count.index)
+  availability_zone = data.aws_availability_zones.available.names[count.index % length(data.aws_availability_zones.available.names)]
+
+  map_public_ip_on_launch = true
+
+  tags = merge(local.common_tags, {
+    Name = "${var.environment}-public-${count.index + 1}"
+    Tier = "public"
+  })
+}
+
+data "aws_availability_zones" "available" {
+  state = "available"
+}</code></pre>
+
+        <p>The <code>locals</code> block merges default tags with user-provided tags, so every resource gets consistent labeling. The <code>count</code> met-argument creates multiple subnets without duplicating code.</p>
+
+        <h3>Step 3: Module Outputs (Returns)</h3>
+
+        <pre><code class="language-hcl"># modules/vpc/outputs.tf
+
+output "vpc_id" {
+  description = "ID of the VPC"
+  value       = aws_vpc.this.id
+}
+
+output "vpc_cidr" {
+  description = "CIDR block of the VPC"
+  value       = aws_vpc.this.cidr_block
+}
+
+output "public_subnet_ids" {
+  description = "List of public subnet IDs"
+  value       = aws_subnet.public[*].id
+}
+
+output "public_subnet_cidrs" {
+  description = "List of public subnet CIDR blocks"
+  value       = aws_subnet.public[*].cidr_block
+}</code></pre>
+
+        <h2>Calling the Module</h2>
+
+        <p>Now use the module from your root configuration:</p>
+
+        <pre><code class="language-hcl"># main.tf
+
+terraform {
+  required_version = ">= 1.5.0"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+
+provider "aws" {
+  region = var.aws_region
+}
+
+variable "aws_region" {
+  default = "us-east-1"
+}
+
+variable "environment" {
+  default = "dev"
+}
+
+module "vpc" {
+  source = "./modules/vpc"
+
+  environment           = var.environment
+  cidr                  = "10.0.0.0/16"
+  public_subnet_count   = 3
+
+  tags = {
+    Project = "myapp"
+    Team    = "platform"
+  }
+}
+
+# Use the module outputs
+output "vpc_id" {
+  value = module.vpc.vpc_id
+}
+
+output "public_subnets" {
+  value = module.vpc.public_subnet_ids
+}</code></pre>
+
+        <h2>Building a Second Module: EC2 Instance</h2>
+
+        <p>Modules become powerful when you chain them. Create an EC2 module that depends on your VPC module's outputs:</p>
+
+        <pre><code class="language-hcl"># modules/ec2/variables.tf
+
+variable "instance_name" {
+  type        = string
+  description = "Name of the EC2 instance"
+}
+
+variable "instance_type" {
+  type    = string
+  default = "t3.micro"
+}
+
+variable "subnet_id" {
+  type        = string
+  description = "Subnet ID to launch the instance in"
+}
+
+variable "vpc_id" {
+  type        = string
+  description = "VPC ID (for security group creation)"
+}
+
+variable "environment" {
+  type = string
+}</code></pre>
+
+        <pre><code class="language-hcl"># modules/ec2/main.tf
+
+resource "aws_security_group" "this" {
+  name_prefix = "${var.instance_name}-sg"
+  vpc_id      = var.vpc_id
+
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name        = "${var.instance_name}-sg"
+    Environment = var.environment
+  }
+}
+
+resource "aws_instance" "this" {
+  ami           = data.aws_ami.amazon_linux.id
+  instance_type = var.instance_type
+  subnet_id     = var.subnet_id
+
+  vpc_security_group_ids = [aws_security_group.this.id]
+
+  tags = {
+    Name        = var.instance_name
+    Environment = var.environment
+  }
+}
+
+data "aws_ami" "amazon_linux" {
+  most_recent = true
+  owners      = ["amazon"]
+
+  filter {
+    name   = "name"
+    values = ["amzn2-ami-hvm-*-x86_64-gp2"]
+  }
+}</code></pre>
+
+        <pre><code class="language-hcl"># modules/ec2/outputs.tf
+
+output "instance_id" {
+  description = "ID of the EC2 instance"
+  value       = aws_instance.this.id
+}
+
+output "public_ip" {
+  description = "Public IP of the EC2 instance"
+  value       = aws_instance.this.public_ip
+}</code></pre>
+
+        <p>Call it from the root alongside the VPC module:</p>
+
+        <pre><code class="language-hcl"># main.tf (continued)
+
+module "web_server" {
+  source = "./modules/ec2"
+
+  instance_name = "${var.environment}-web-01"
+  instance_type = var.environment == "prod" ? "t3.medium" : "t3.micro"
+  subnet_id     = module.vpc.public_subnet_ids[0]
+  vpc_id        = module.vpc.vpc_id
+  environment   = var.environment
+}</code></pre>
+
+        <p>Notice how <code>module.vpc.public_subnet_ids[0]</code> chains the output from one module as input to another. This is the core pattern of modular infrastructure.</p>
+
+        <h2>Using Remote Modules (Terraform Registry)</h2>
+
+        <p>You don't always need to build your own modules. The <a href="https://registry.terraform.io" target="_blank">Terraform Registry</a> hosts thousands of community modules:</p>
+
+        <pre><code class="language-hcl"># Use a module from the registry
+module "vpc" {
+  source  = "terraform-aws-modules/vpc/aws"
+  version = "~> 5.0"
+
+  name = "my-app-vpc"
+  cidr = "10.0.0.0/16"
+
+  azs             = ["us-east-1a", "us-east-1b", "us-east-1c"]
+  public_subnets  = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+  private_subnets = ["10.0.10.0/24", "10.0.20.0/24", "10.0.30.0/24"]
+
+  enable_nat_gateway = true
+  single_nat_gateway = true
+}
+
+# Or use a GitHub URL
+module "custom_vpc" {
+  source = "git::https://github.com/myorg/terraform-modules.git//vpc?ref=v1.0.0"
+  # ...
+}</code></pre>
+
+        <h2>Python Helper: Validate Module Outputs</h2>
+
+        <p>Write a quick Python script to validate that your Terraform outputs match expected types:</p>
+
+        <pre><code class="language-python">#!/usr/bin/env python3
+"""validate-tf-outputs.py — Validate Terraform state against expected schema."""
+
+import json
+import subprocess
+import sys
+
+EXPECTED_OUTPUTS = {
+    "vpc_id": str,
+    "vpc_cidr": str,
+    "public_subnet_ids": list,
+    "public_subnet_cidrs": list,
+    "instance_id": str,
+    "public_ip": str,
+}
+
+def get_terraform_outputs():
+    """Pull outputs from Terraform state."""
+    result = subprocess.run(
+        ["terraform", "output", "-json"],
+        capture_output=True, text=True, check=True
+    )
+    return json.loads(result.stdout)
+
+def validate_outputs():
+    """Check outputs exist and have correct types."""
+    try:
+        outputs = get_terraform_outputs()
+    except subprocess.CalledProcessError:
+        print("❌ No Terraform state found. Run 'terraform apply' first.")
+        return False
+
+    errors = []
+    for name, expected_type in EXPECTED_OUTPUTS.items():
+        if name not in outputs:
+            errors.append(f"  ❌ Missing: {name}")
+            continue
+
+        value = outputs[name]["value"]
+        if not isinstance(value, expected_type):
+            errors.append(
+                f"  ❌ Wrong type: {name} "
+                f"expected {expected_type.__name__}, "
+                f"got {type(value).__name__}"
+            )
+        else:
+            print(f"  ✅ {name}: {str(value)[:60]}")
+
+    if errors:
+        print("\nValidation failed:")
+        for error in errors:
+            print(error)
+        return False
+
+    print(f"\n✅ All {len(EXPECTED_OUTPUTS)} outputs validated!")
+    return True
+
+if __name__ == "__main__":
+    if not validate_outputs():
+        sys.exit(1)</code></pre>
+
+        <h2>Best Practices for Module Design</h2>
+
+        <ul>
+          <li><strong>Single responsibility:</strong> Each module should do one thing well. A VPC module creates a VPC, not a VPC + RDS + Lambda.</li>
+          <li><strong>Sensible defaults:</strong> Provide reasonable defaults so calling a module requires minimal configuration for common cases.</li>
+          <li><strong>Version your modules:</strong> Use Git tags for local modules and version constraints for registry modules.</li>
+          <li><strong>Document inputs:</strong> Every variable should have a <code>description</code>. Future you will thank present you.</li>
+          <li><strong>Use <code>locals</code> for shared values:</strong> Compute derived values once and reuse them. Don't repeat <code>var.environment</code> in every tag block.</li>
+          <li><strong>Avoid exposing everything:</strong> Only output values that callers actually need. Internal IDs should stay internal.</li>
+          <li><strong>Test modules independently:</strong> Use <code>terraform validate</code> and tools like <a href="https://terratest.gruntwork.io/" target="_blank">Terratest</a> to test modules before using them in production.</li>
+        </ul>
+
+        <blockquote>
+          <p><strong>Rule of thumb:</strong> If you copy-paste a Terraform resource block more than twice, extract it into a module. If a module grows beyond 100 lines of resources, consider splitting it into smaller modules.</p>
+        </blockquote>
+
+        <h2>Quick Reference</h2>
+
+        <pre><code class="language-bash"># Initialize (downloads modules)
+terraform init
+
+# Validate syntax
+terraform validate
+
+# Plan changes
+terraform plan
+
+# Apply changes
+terraform apply
+
+# Show module outputs
+terraform output
+
+# List all modules in config
+terraform providers
+
+# Initialize a specific directory
+terraform -chdir=modules/vpc init
+
+# Force re-download modules
+terraform init -upgrade</code></pre>
+
+        <h2>Summary</h2>
+
+        <p>Terraform modules turn repetitive infrastructure code into reusable, testable, versioned packages. The key concepts:</p>
+
+        <ol>
+          <li>Define <code>variable</code>s for inputs, <code>resource</code>s for infrastructure, <code>output</code>s for returns</li>
+          <li>Call modules with <code>module "name" { source = "..." }</code></li>
+          <li>Chain modules: one module's output becomes another's input</li>
+          <li>Use the Terraform Registry for battle-tested modules</li>
+          <li>Keep modules small, focused, and well-documented</li>
+        </ol>
+
+        <p>Start by modularizing your most repeated resource — usually a VPC or subnet. Once you see how clean your root configuration becomes, you'll want to module-ize everything.</p>
+    </article>
+
+    <footer>
+        <div class="container">
+            <p>Hugo's Dev Notes © 2026</p>
+            <div class="footer-links">
+                <a href="https://github.com/hugow0528">GitHub</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Progress bar
+        window.addEventListener('scroll', () => {
+            const bar = document.getElementById('progressBar');
+            if (bar) {
+                const scrolled = window.scrollY / (document.documentElement.scrollHeight - window.innerHeight) * 100;
+                bar.style.width = scrolled + '%';
+            }
+        });
+
+        // Theme toggle
+        document.getElementById('themeToggle')?.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            localStorage.setItem('theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
+        });
+        if (localStorage.getItem('theme') === 'light') {
+            document.body.classList.add('light-mode');
+        }
+    </script>
+</body>
+</html>

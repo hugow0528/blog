@@ -3,53 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Docker Multi-Stage Builds: Smaller, Faster, Safer Containers - Hugo's Dev Notes</title>
-    <meta name="description" content="Learn Docker multi-stage builds to create smaller, faster, and more secure container images. Step-by-step examples from bloated 1.2GB images to lean 40MB production images.">
-    <meta name="keywords" content="docker, multi-stage builds, dockerfile, container images, optimization, tutorial, devops, beginner">
+    <title>Docker Multi-Stage Builds: Smaller, Safer Images — Complete Beginner's Guide | Hugo's Dev Notes</title>
+    <meta name="description" content="Learn Docker multi-stage builds to create tiny, secure container images. Separate build and runtime stages, copy only what you need, and shrink images by 90%. Working Dockerfile examples for every concept.">
     <meta name="author" content="Hugo Wong">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://blog.hugow.dev/posts/docker-multi-stage-builds.html">
-    
-    <meta property="og:title" content="Docker Multi-Stage Builds: Smaller, Faster, Safer Containers">
-    <meta property="og:description" content="Go from 1.2GB bloated images to 40MB production-ready containers with Docker multi-stage builds.">
-    <meta property="og:type" content="article">
-    <meta property="og:url" content="https://blog.hugow.dev/posts/docker-multi-stage-builds.html">
-    
     <link rel="stylesheet" href="../style.css">
-
-    <!-- SEO Structured Data -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "BlogPosting",
-      "headline": "Docker Multi-Stage Builds: Smaller, Faster, Safer Containers",
-      "description": "Learn Docker multi-stage builds to create smaller, faster, and more secure container images. Step-by-step examples from bloated 1.2GB images to lean 40MB production images.",
-      "datePublished": "2026-07-08",
-      "dateModified": "2026-07-08",
-      "author": {"@type": "Person", "name": "Hugo Wong"},
-      "publisher": {"@type": "Organization", "name": "Hugo's Dev Notes", "url": "https://blog.hugow.dev"},
-      "mainEntityOfPage": "{"@id": "https://blog.hugow.dev/posts/docker-multi-stage-builds.html")}",
-      "keywords": "DevOps"
-    }
-    </script>
-
-    <!-- Social Meta -->
-    <!-- Open Graph -->
-    <meta property="og:title" content="Docker Multi-Stage Builds: Smaller, Faster, Safer Containers">
-    <meta property="og:description" content="Learn Docker multi-stage builds to create smaller, faster, and more secure container images. Step-by-step examples from bloated 1.2GB images to lean 40MB produc">
-    <meta property="og:type" content="article">
-    <meta property="og:url" content="https://blog.hugow.dev/posts/docker-multi-stage-builds.html">
-    <meta property="og:site_name" content="Hugo's Dev Notes">
-    <meta property="article:published_time" content="2026-07-08">
-    <meta property="article:modified_time" content="2026-07-08">
-    <meta property="article:section" content="devops">
-    <meta property="article:tag" content="DevOps">
-    
-    <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Docker Multi-Stage Builds: Smaller, Faster, Safer Containers">
-    <meta name="twitter:description" content="Learn Docker multi-stage builds to create smaller, faster, and more secure container images. Step-by-step examples from bloated 1.2GB images to lean 40MB produc">
-    
 </head>
 <body>
     <div class="progress-bar" id="progressBar"></div>
@@ -66,7 +25,7 @@
                 <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
                 <a href="../python.html" class="nav-btn">Python</a>
                 <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
-                <a href="../devops.html" class="nav-btn">DevOps</a>
+                <a href="../devops.html" class="nav-btn active">DevOps</a>
                 <a href="../security.html" class="nav-btn">Security</a>
                 <a href="../webdev.html" class="nav-btn">Web Dev</a>
             </nav>
@@ -75,385 +34,289 @@
 
     <article class="post-content">
         <span class="tag devops">DevOps</span>
-        <h1>Docker Multi-Stage Builds: Smaller, Faster, Safer Containers</h1>
+        <h1>Docker Multi-Stage Builds: Smaller, Safer Images — Complete Beginner's Guide</h1>
         <div class="post-meta">
-            <span class="post-date">July 1, 2026</span>
-            <span class="read-time">11 min read</span>
-            <span class="post-badge">New</span>
+            <span class="post-date">July 20, 2026</span>
+            <span class="read-time">10 min read</span>
         </div>
 
-        <p>You build a Node.js app, Dockerize it, and check the image size: <strong>1.2 GB</strong>. Your actual app is maybe 500 KB. Where did the rest go? Build tools, compilers, source code, npm packages — all sitting in your production container, unused and potentially dangerous.</p>
+        <p>Most beginners create Docker images that are way too large. A Python app running in a full Ubuntu image? That's 700+ MB of OS, compilers, and build tools that your app doesn't need at runtime. Multi-stage builds let you use a fat image for building and a tiny image for running — keeping only what matters. You'll shrink images by 80-90% while improving security and startup time.</p>
 
-        <p>Docker multi-stage builds solve this elegantly. They let you use a full-featured image for building, then copy only the result into a minimal runtime image. The final image contains <em>only</em> what your app needs to run.</p>
+        <h2>The Problem: Bloated Docker Images</h2>
+        <p>Consider this common "first Dockerfile" for a Python web app:</p>
 
-        <p>In this tutorial, we'll transform bloated containers into lean, fast, and secure images using real-world examples with Node.js, Python, and Go.</p>
+        <pre><code># BEFORE: Single-stage, bloated image
+FROM python:3.12
 
-        <h2>The Problem: Everything in One Image</h2>
-
-        <p>Before multi-stage builds, Dockerfiles looked like this:</p>
-
-<pre><code># BEFORE: Single-stage, bloated Dockerfile
-FROM node:18
 WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Install everything — build tools AND runtime
-COPY package*.json ./
-RUN npm install
-
-# Copy source code
 COPY . .
 
-# Build the app
-RUN npm run build
+CMD ["python", "app.py"]</code></pre>
 
-# Everything stays in the image
-EXPOSE 3000
-CMD ["node", "dist/server.js"]
-</code></pre>
-
-        <p>This image contains:</p>
-
-        <ul>
-            <li>The full Node.js runtime (~300 MB base image)</li>
-            <li>npm and all package management tools</li>
-            <li>Your source code (including local secrets if you weren't careful)</li>
-            <li>All <code>devDependencies</code> — testing frameworks, linters, bundlers</li>
-            <li>Any build tools installed via <code>apt-get</code></li>
-        </ul>
-
-        <p>Total? Often 800 MB to 1.5 GB. That means slower pushes to registries, slower pulls to production, higher storage costs, and a larger attack surface.</p>
+        <p>This creates an image around <strong>950 MB</strong>. Why so big? The <code>python:3.12</code> base image is built on Debian and includes the entire Python package ecosystem. When you run <code>pip install</code>, you pull in build dependencies (compilers, headers, tools) that are never needed at runtime.</p>
 
         <h2>The Solution: Multi-Stage Builds</h2>
+        <p>Multi-stage builds let you use multiple <code>FROM</code> statements in one Dockerfile. Each <code>FROM</code> starts a new "stage." You can copy files between stages with <code>COPY --from=stage_name</code>. The final image only contains the last stage — all intermediate stages are discarded.</p>
 
-        <p>Multi-stage builds use multiple <code>FROM</code> statements in a single Dockerfile. Each <code>FROM</code> starts a new build stage. You copy artifacts between stages using the <code>FROM</code> name or stage number.</p>
+        <pre><code># AFTER: Multi-stage, lean image
+# Stage 1: Build dependencies
+FROM python:3.12-slim AS builder
 
-        <p>Here's the same app, multi-stage:</p>
-
-<pre><code># AFTER: Multi-stage build
-# Stage 1: Build
-FROM node:18 AS builder
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
-RUN npm ci
-COPY . .
-RUN npm run build
-
-# Stage 2: Production (only what's needed)
-FROM node:18-slim AS production
-WORKDIR /app
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package*.json ./
-EXPOSE 3000
-USER node
-CMD ["node", "dist/server.js"]
-</code></pre>
-
-        <p>Result? A production image around <strong>150 MB</strong> instead of 1.2 GB. That's an 87% reduction.</p>
-
-        <h2>How It Works: The Anatomy of a Multi-Stage Dockerfile</h2>
-
-        <p>Let's break down each piece:</p>
-
-        <h3>Naming Stages</h3>
-
-<pre><code>FROM node:18 AS builder
-</code></pre>
-
-        <p>The <code>AS builder</code> part gives the stage a name. Without <code>AS</code>, stages are numbered (0, 1, 2...). Named stages make your Dockerfile self-documenting and easier to reference.</p>
-
-        <h3>Copying Between Stages</h3>
-
-<pre><code>COPY --from=builder /app/dist ./dist
-</code></pre>
-
-        <p>The <code>--from=builder</code> flag tells Docker to copy from the <code>builder</code> stage, not from your build context on disk. Only the specified files are copied — everything else in the builder stage is discarded.</p>
-
-        <h3>Using Slim/Runtime Bases</h3>
-
-<pre><code>FROM node:18-slim AS production
-</code></pre>
-
-        <p>Most official images offer multiple variants:</p>
-
-        <ul>
-            <li><code>node:18</code> — Full image with all tools (~300 MB)</li>
-            <li><code>node:18-slim</code> — Minimal Debian-based image (~180 MB)</li>
-            <li><code>node:18-alpine</code> — Alpine Linux, even smaller (~140 MB)</li>
-            <li><code>node:18-distless</code> — Just Node.js, no shell (~40 MB)</li>
-        </ul>
-
-        <p>For production, <code>-slim</code> is usually the best balance of small size and compatibility. Use <code>distless</code> when you want absolute minimal size and don't need a shell for debugging.</p>
-
-        <h2>Real Example 1: Python Web App with Flask</h2>
-
-        <p>Python apps benefit enormously from multi-stage builds because compilation and virtual environments are heavy:</p>
-
-<pre><code># Stage 1: Build dependencies
-FROM python:3.12 AS builder
 WORKDIR /build
 COPY requirements.txt .
-RUN pip install --user --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
-# Stage 2: Production
-FROM python:3.12-slim AS production
+# Stage 2: Runtime
+FROM python:3.12-slim AS runtime
+
 WORKDIR /app
+COPY --from=builder /install /usr/local
+COPY app.py .
 
-# Copy installed packages from builder
-COPY --from=builder /root/.local /root/.local
-
-# Copy application code
-COPY . .
-
-# Add pip-installed binaries to PATH
-ENV PATH=/root/.local/bin:$PATH
-
-# Run as non-root user
 RUN useradd --create-home appuser
 USER appuser
 
-EXPOSE 5000
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
-</code></pre>
+CMD ["python", "app.py"]</code></pre>
 
-        <p>Key technique: We install packages into <code>--user</code> directory in the builder, then copy just <code>/root/.local</code> into the slim production image. This avoids needing <code>pip</code> in production at all.</p>
+        <p>The runtime image is now around <strong>180 MB</strong> — an 80% reduction. The build tools and temporary files from Stage 1 never make it into the final image.</p>
 
-        <h2>Real Example 2: Go Application (Maximum Optimization)</h2>
+        <h2>Understanding Stage Names and References</h2>
+        <p>Each stage gets a name with <code>AS &lt;name&gt;</code>. If you don't name a stage, Docker numbers them <code>0</code>, <code>1</code>, <code>2</code>, etc. Named stages are much more readable:</p>
 
-        <p>Go is the poster child for multi-stage builds because it compiles to a single static binary:</p>
-
-<pre><code># Stage 1: Build
-FROM golang:1.22 AS builder
-WORKDIR /build
-COPY go.mod go.sum ./
-RUN go mod download
-COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o server .
-
-# Stage 2: Production — scratch image!
-FROM scratch
-COPY --from=builder /build/server /server
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-
-EXPOSE 8080
-CMD ["/server"]
-</code></pre>
-
-        <p>The production stage uses <code>FROM scratch</code> — a completely empty image with zero layers. It contains <em>only</em> the compiled binary and SSL certificates (needed for HTTPS calls). Total size: <strong>about 15 MB</strong>.</p>
-
-        <p>The <code>-ldflags="-s -w"</code> strips debug symbols from the binary, saving another few megabytes. <code>CGO_ENABLED=0</code> ensures a fully static binary with no C library dependencies.</p>
-
-        <h2>Real Example 3: Frontend App with a Reverse Proxy</h2>
-
-        <p>For React/Vue/Angular apps, the pattern combines build + serve stages:</p>
-
-<pre><code># Stage 1: Build the frontend
-FROM node:18 AS builder
-WORKDIR /app
-COPY package*.json ./
+        <pre><code>FROM node:20 AS frontend-builder
+# Build React/Vue/Angular frontend
+WORKDIR /web
+COPY package.json package-lock.json ./
 RUN npm ci
-COPY . .
+COPY src/ ./src/
 RUN npm run build
 
-# Stage 2: Serve with Nginx
-FROM nginx:alpine AS production
-COPY --from=builder /app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+FROM python:3.12-slim AS backend-builder
+# Install Python dependencies
+WORKDIR /api
+COPY requirements.txt .
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
-</code></pre>
+FROM python:3.12-slim AS runtime
+# Assemble final image
+WORKDIR /app
+COPY --from=backend-builder /install /usr/local
+COPY --from=frontend-builder /web/dist ./static
+COPY app.py .
 
-        <p>Here we build the JavaScript bundle in Node, then serve it with Nginx in a completely separate stage. The Nginx image handles compression, caching headers, and static file serving — all in a 25 MB image.</p>
+CMD ["python", "app.py"]</code></pre>
 
-        <h2>Optimization Tips</h2>
+        <p>Here, the <code>runtime</code> stage copies the compiled frontend from <code>frontend-builder</code> and the Python packages from <code>backend-builder</code>. The Node.js image and build tools are completely gone from the final image.</p>
 
-        <h3>1. Order Matters: Cache Layers Wisely</h3>
+        <h2>Real-World Example: Go Application</h2>
+        <p>Go is a great example where multi-stage builds shine, because the Go compiler is 300+ MB but the final binary is just a few MB:</p>
 
-        <p>Docker caches each layer. Put files that change less frequently first:</p>
+        <pre><code># Stage 1: Build the Go binary
+FROM golang:1.22-alpine AS builder
 
-<pre><code># ✅ Good: package.json changes less than source code
-COPY package*.json ./
-RUN npm ci
+WORKDIR /src
+COPY go.mod go.sum ./
+RUN go mod download
+
 COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o server .
 
-# ❌ Bad: Invalidates cache on every code change
-COPY . .
-RUN npm ci
-</code></pre>
+# Stage 2: Tiny runtime
+FROM scratch
 
-        <h3>2. Use <code>npm ci</code> Instead of <code>npm install</code></h3>
+COPY --from=builder /src/server /server
+COPY --from=builder /src/config.yaml /config.yaml
 
-        <p><code>npm ci</code> is designed for CI/build environments. It:</p>
-        <ul>
-            <li>Reads <code>package-lock.json</code> for exact versions</li>
-            <li>Deletes <code>node_modules</code> before installing (no partial states)</li>
-            <li>Fails if <code>package-lock.json</code> is out of sync</li>
-            <li>Is faster because it skips version resolution</li>
-        </ul>
+EXPOSE 8080
+ENTRYPOINT ["/server"]</code></pre>
 
-        <h3>3. Add <code>.dockerignore</code> to Reduce Build Context</h3>
+        <p>The <code>scratch</code> base is literally an empty image. The final image is <strong>15 MB</strong> instead of <strong>500+ MB</strong>. The binary is fully static (compiled with <code>CGO_ENABLED=0</code>) so it doesn't need any libraries at runtime.</p>
 
-<pre><code># .dockerignore
-node_modules
-.git
-.env
-*.md
-tests/
-coverage/
-.DS_Store
-</code></pre>
+        <h2>Real-World Example: Node.js API</h2>
+        <p>Node.js apps benefit from separating development dependencies (TypeScript compiler, testing tools) from production dependencies:</p>
 
-        <p>Without <code>.dockerignore</code>, Docker sends your entire project directory to the build daemon. With it, you send only what's needed, making builds faster and avoiding accidental secret leaks.</p>
+        <pre><code># Stage 1: Full build environment
+FROM node:20 AS builder
 
-        <h3>4. Run as Non-Root in Production</h3>
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci  # Install ALL dependencies (dev + prod)
 
-<pre><code># Option A: Use a pre-existing non-root user (Node.js images have 'node')
-USER node
+COPY tsconfig.json ./
+COPY src/ ./src/
+RUN npm run build  # Compile TypeScript to JavaScript
 
-# Option B: Create your own user
-RUN adduser --disabled-password --gecos '' appuser
+# Stage 2: Production runtime
+FROM node:20-slim AS production
+
+WORKDIR /app
+
+# Copy only production dependencies
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev  # Production-only packages
+
+# Copy compiled code from builder
+COPY --from=builder /app/dist ./dist
+
+RUN addgroup --system appgroup && \
+    adduser --system --ingroup appgroup appuser
 USER appuser
-</code></pre>
 
-        <p>If your container is compromised, a non-root user limits what an attacker can do. It's one of the simplest and most impactful security hardening steps.</p>
+EXPOSE 3000
+CMD ["node", "dist/index.js"]</code></pre>
 
-        <h3>5. Use <code>--platform</code> for Cross-Platform Builds</h3>
+        <p>The <code>npm ci --omit=dev</code> command installs only production dependencies, skipping TypeScript, testing frameworks, and other dev tools. The <code>dist</code> folder contains the compiled JavaScript from the builder stage.</p>
 
-<pre><code>docker build --platform linux/amd64 -t myapp:latest .
-</code></pre>
+        <h2>Security Benefits</h2>
+        <p>Multi-stage builds aren't just about size — they're a security feature:</p>
 
-        <p>Build amd64 images on Apple Silicon Macs, or arm64 images on Linux servers. Essential for M1/M2/M3 Mac developers deploying to x86 servers.</p>
+        <ol>
+            <li><strong>Smaller attack surface</strong> — fewer packages means fewer vulnerabilities</li>
+            <li><strong>No build tools at runtime</strong> — attackers can't use compilers or package managers if they breach your container</li>
+            <li><strong>Non-root user</strong> — the runtime stage can add a dedicated user</li>
+            <li><strong>Read-only filesystem</strong> — without build tools, you can safely run with <code>--read-only</code></li>
+        </ol>
 
-        <h2>Measure the Impact</h2>
+        <pre><code># Security-focused multi-stage build
+FROM python:3.12-slim AS builder
 
-        <p>Compare your image sizes before and after:</p>
+WORKDIR /build
+COPY requirements.txt .
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+# Optional: run security scan during build
+RUN pip install safety && safety check -r requirements.txt
 
-<pre><code># Single-stage
-docker build -t myapp:single .
-docker images myapp:single
-# myapp:single    latest    a1b2c3d4e5f6   1.2GB
+FROM python:3.12-slim AS runtime
 
-# Multi-stage
-docker build -t myapp:multi .
-docker images myapp:multi
-# myapp:multi     latest    f6e5d4c3b2a1   150MB
+# Create non-root user
+RUN groupadd --gid 1000 appuser && \
+    useradd --uid 1000 --gid 1000 --create-home appuser
 
-# Compare layer by layer
-docker history myapp:single
-docker history myapp:multi
-</code></pre>
+WORKDIR /app
 
-        <h2>Common Patterns Cheat Sheet</h2>
+# Copy only the installed packages
+COPY --from=builder --chown=appuser:appuser /install /usr/local
 
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Language</th>
-                    <th>Build Stage</th>
-                    <th>Production Stage</th>
-                    <th>Typical Size</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Node.js</td>
-                    <td>node:18</td>
-                    <td>node:18-slim</td>
-                    <td>150 MB</td>
-                </tr>
-                <tr>
-                    <td>Python</td>
-                    <td>python:3.12</td>
-                    <td>python:3.12-slim</td>
-                    <td>130 MB</td>
-                </tr>
-                <tr>
-                    <td>Go</td>
-                    <td>golang:1.22</td>
-                    <td>scratch</td>
-                    <td>15 MB</td>
-                </tr>
-                <tr>
-                    <td>Rust</td>
-                    <td>rust:1.75</td>
-                    <td>scratch</td>
-                    <td>10 MB</td>
-                </tr>
-                <tr>
-                    <td>Java</td>
-                    <td>eclipse-temurin:17</td>
-                    <td>eclipse-temurin:17-jre-alpine</td>
-                    <td>200 MB</td>
-                </tr>
-            </tbody>
-        </table>
+# Copy application code
+COPY --chown=appuser:appuser . .
 
-        <h2>When NOT to Use Multi-Stage Builds</h2>
+# Drop root privileges
+USER appuser
 
-        <p>Multi-stage builds aren't always necessary:</p>
+# Health check
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
 
-        <ul>
-            <li><strong>Simple scripts</strong> — A single Python script with no dependencies needs no optimization</li>
-            <li><strong>Development environments</strong> — Your dev image <em>should</em> have all tools available</li>
-            <li><strong>Images under 100 MB</strong> — If you're already small, don't complicate things</li>
-            <li><strong>Debugging</strong> — During active debugging, a full-image gives you <code>ssh</code>, <code>curl</code>, <code>strace</code>, etc.</li>
-        </ul>
+CMD ["python", "app.py"]</code></pre>
 
-        <p>For dev images, keep a separate Dockerfile or use Docker Compose profiles:</p>
+        <p>Key security patterns here: the <code>--chown</code> flag on <code>COPY</code> ensures files are owned by the non-root user. The <code>HEALTHCHECK</code> lets Docker monitor if your app is actually running. The <code>safety</code> tool scans for known vulnerable packages during build.</p>
 
-<pre><code># docker-compose.yml
-services:
-  app:
-    build:
-      dockerfile: Dockerfile.prod
-      target: production
-    # For dev, override the target
-    # docker-compose -f docker-compose.dev.yml up
-</code></pre>
+        <h2>Layer Caching Strategy</h2>
+        <p>Multi-stage builds work with Docker's layer caching, but you need to order your commands carefully for maximum cache hits:</p>
+
+        <pre><code>FROM python:3.12-slim AS builder
+
+WORKDIR /build
+
+# 1. Copy only dependency files FIRST (changes rarely)
+COPY requirements.txt .
+
+# 2. Install dependencies (cached unless requirements.txt changes)
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+# 3. Copy application code LAST (changes frequently)
+COPY . .
+
+FROM python:3.12-slim AS runtime
+
+WORKDIR /app
+COPY --from=builder /install /usr/local
+COPY --from=builder /build .  # Copy the app code
+
+CMD ["python", "app.py"]</code></pre>
+
+        <p>When you change your Python code, Docker reuses the cached dependency installation layer. When you change <code>requirements.txt</code>, it rebuilds from that point. This makes development builds fast.</p>
+
+        <h2>Debugging Multi-Stage Builds</h2>
+        <p>Sometimes things go wrong. Here's how to debug:</p>
+
+        <pre><code># 1. Build a specific stage to inspect it
+docker build --target builder -t myapp-builder .
+
+# 2. Run the intermediate stage to check files
+docker run --rm myapp-builder ls -la /install/lib/python3.12/site-packages/
+
+# 3. Build with no cache to force a clean build
+docker build --no-cache -t myapp .
+
+# 4. Inspect image layers and size
+docker history myapp --no-trunc
+
+# 5. Check final image size
+docker images myapp</code></pre>
+
+        <p>The <code>--target</code> flag lets you build and run any intermediate stage. This is invaluable when debugging why a file isn't being copied correctly or a dependency isn't available.</p>
+
+        <h2>Common Patterns and Recipes</h2>
+
+        <h3>Pattern 1: Copy from Multiple Stages</h3>
+        <pre><code>FROM node:20 AS web-builder
+WORKDIR /web && COPY web/ ./ && npm ci && npm run build
+
+FROM python:3.12-slim AS api-builder
+WORKDIR /api && COPY api/requirements.txt . && \
+    pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+FROM python:3.12-slim
+COPY --from=api-builder /install /usr/local
+COPY --from=web-builder /web/dist ./static
+COPY api/ .
+CMD ["python", "server.py"]</code></pre>
+
+        <h3>Pattern 2: Build Tools Stage + Compile + Runtime</h3>
+        <pre><code># 3-stage: tools → compile → run
+FROM gcc:12 AS compiler
+WORKDIR /src
+COPY Makefile src/ ./
+RUN make all
+
+FROM python:3.12-slim AS deps
+COPY requirements.txt .
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+FROM python:3.12-slim
+COPY --from=deps /install /usr/local
+COPY --from=compiler /src/my_binary /usr/local/bin/
+COPY app.py .
+CMD ["python", "app.py"]</code></pre>
 
         <h2>Summary</h2>
-
-        <p>Docker multi-stage builds are one of the highest-ROI improvements you can make to your container workflow:</p>
-
-        <ul>
-            <li><strong>Smaller images</strong> — 80-95% size reduction is common</li>
-            <li><strong>Faster deployments</strong> — Less to push and pull from registries</li>
-            <li><strong>Improved security</strong> — No build tools, no source code, no dev dependencies in production</li>
-            <li><strong>Single Dockerfile</strong> — No need for separate build and production Dockerfiles</li>
-        </ul>
-
-        <p>The syntax is simple — multiple <code>FROM</code> statements and <code>COPY --from=stagename</code>. Start with the patterns in this guide, measure your before/after sizes, and iterate. Your container images (and your team) will thank you.</p>
+        <p>Multi-stage builds are one of the most impactful Docker techniques you can learn. By separating your build environment from your runtime environment, you get images that are <strong>smaller</strong> (80-90% reduction), <strong>safer</strong> (no compilers or build tools), and <strong>faster</strong> to start (less to extract and load). The pattern is simple: use <code>FROM ... AS &lt;name&gt;</code> to define stages, and <code>COPY --from=&lt;name&gt;</code> to move artifacts between them. Your final image only contains the last stage, so everything before it is free.</p>
 
     </article>
 
     <footer>
         <div class="container">
-            <p>&copy; 2026 Hugo's Dev Notes. Built with curiosity.</p>
+            <p>© 2026 Hugo's Dev Notes. Built with care.</p>
         </div>
     </footer>
 
     <script>
-        // Theme toggle
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + '%';
+        });
         const toggle = document.getElementById('themeToggle');
         if (toggle) {
             toggle.addEventListener('click', () => {
-                document.body.classList.toggle('light-mode');
-                localStorage.setItem('theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
+                document.body.classList.toggle('light');
             });
-            if (localStorage.getItem('theme') === 'light') document.body.classList.add('light-mode');
         }
-
-        // Progress bar
-        window.addEventListener('scroll', () => {
-            const bar = document.getElementById('progressBar');
-            if (bar) {
-                const scrollTop = window.scrollY;
-                const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-                bar.style.width = (scrollTop / docHeight) * 100 + '%';
-            }
-        });
     </script>
 </body>
 </html>

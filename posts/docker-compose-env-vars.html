@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docker Compose Environment Variables &amp; .env Files — Complete Beginner's Guide | Hugo's Dev Notes</title>
+    <meta name="description" content="Master Docker Compose environment variables — .env files, variable interpolation, ${VAR:-default} syntax, secrets vs env vars, and multi-environment setups with working examples.">
+    <meta name="author" content="Hugo Wong">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://blog.hugow.dev/posts/docker-compose-env-vars.html">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">◐</button>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1><a href="../index.html">Hugo's Dev Notes</a></h1>
+                <p class="subtitle">Cloudflare · Python · AI Coding</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-btn">Home</a>
+                <a href="../cloudflare.html" class="nav-btn">Cloudflare</a>
+                <a href="../python.html" class="nav-btn">Python</a>
+                <a href="../vibe-coding.html" class="nav-btn">AI Coding</a>
+                <a href="../devops.html" class="nav-btn active">DevOps</a>
+                <a href="../security.html" class="nav-btn">Security</a>
+                <a href="../webdev.html" class="nav-btn">Web Dev</a>
+            </nav>
+        </div>
+    </header>
+
+    <article class="post-content">
+        <span class="tag devops">DevOps</span>
+        <h1>Docker Compose Environment Variables &amp; .env Files — Complete Beginner's Guide</h1>
+        <div class="post-meta">
+            <span class="post-date">July 20, 2026</span>
+            <span class="read-time">11 min read</span>
+        </div>
+
+        <p>Environment variables are the backbone of configuration in Docker Compose. They control database passwords, API keys, feature flags, and everything that changes between development, staging, and production. This guide covers every pattern you'll need — from a simple <code>.env</code> file to advanced variable interpolation with defaults, environment files, and multi-environment setups.</p>
+
+        <h2>Why Environment Variables in Docker?</h2>
+        <p>The 12-factor app methodology says: <em>Store config in the environment</em>. Hardcoding passwords, database URLs, or API keys in your <code>docker-compose.yml</code> or Dockerfile is dangerous — those values leak into version control, get shared accidentally, and are nearly impossible to rotate. Environment variables keep secrets out of your code and let you configure the same container for any environment.</p>
+
+        <h2>The <code>.env</code> File: Docker Compose's Best Friend</h2>
+        <p>Docker Compose automatically loads a file called <code>.env</code> from the same directory as your <code>docker-compose.yml</code>. Every line in this file follows the format <code>KEY=VALUE</code>:</p>
+
+        <pre><code># .env
+DB_HOST=db
+DB_PORT=5432
+DB_NAME=myapp
+DB_USER=app_user
+DB_PASSWORD=super_secret_password
+DEBUG=true
+LOG_LEVEL=info</code></pre>
+
+        <p>Now reference these variables in your compose file using <code>${}</code> syntax:</p>
+
+        <pre><code># docker-compose.yml
+services:
+  web:
+    image: myapp:latest
+    environment:
+      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
+      - DEBUG=${DEBUG}
+      - LOG_LEVEL=${LOG_LEVEL}
+    depends_on:
+      - db
+
+  db:
+    image: postgres:16
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}</code></pre>
+
+        <p>When you run <code>docker compose up</code>, Compose reads the <code>.env</code> file and substitutes every <code>${VAR}</code> with its value. The resulting container sees the resolved strings, not the variable references.</p>
+
+        <h2>Variable Interpolation Syntax</h2>
+        <p>Docker Compose supports several interpolation formats. Understanding these prevents subtle bugs:</p>
+
+        <pre><code># Basic interpolation — errors if VAR is unset
+VAR=${UNSET_VAR}  # ❌ "required variable UNSET_VAR is missing a value"
+
+# Default value — uses "fallback" if VAR is unset
+VAR=${UNSET_VAR:-fallback}  # ✅ resolves to "fallback"
+
+# Default value only when empty — uses "fallback" if VAR is ""
+VAR=${EMPTY_VAR:-fallback}  # ✅ resolves to "fallback"
+VAR=${SET_VAR:-fallback}    # ✅ resolves to the actual value
+
+# Required variable with custom error message
+VAR=${REQUIRED_VAR?Error: REQUIRED_VAR must be set}</code></pre>
+
+        <p>The <code>:-</code> syntax is the most commonly used pattern. It lets you provide sensible defaults while still requiring critical secrets to be explicitly set:</p>
+
+        <pre><code>environment:
+  # Optional config with defaults
+  - LOG_LEVEL=${LOG_LEVEL:-info}
+  - WORKERS=${WORKERS:-4}
+  - DEBUG=${DEBUG:-"false"}
+  
+  # Required — will error if not set
+  - DATABASE_URL=${DATABASE_URL?DATABASE_URL is required}
+  - SECRET_KEY=${SECRET_KEY?SECRET_KEY is required}</code></pre>
+
+        <h2>Escaping Dollar Signs</h2>
+        <p>What if you need a literal <code>$</code> in your value? Docker Compose treats <code>$</code> as the start of variable interpolation. To escape it, use <code>$$</code>:</p>
+
+        <pre><code>environment:
+  # This sets the literal string: 100% discount
+  - PROMOTION=100$$ discount
+  
+  # This sets: $HOME/path
+  - APP_PATH=$$HOME/myapp</code></pre>
+
+        <p>Without escaping, <code>$HOME</code> would be interpreted as the host's <code>HOME</code> environment variable — which is rarely what you want.</p>
+
+        <h2>Multiple Environment Files for Different Stages</h2>
+        <p>In real projects, you need different configurations for development, testing, and production. Instead of editing one <code>.env</code> file, maintain separate files:</p>
+
+        <pre><code># Project structure:
+project/
+├── docker-compose.yml
+├── .env                # Development defaults
+├── .env.example        # Template with no real secrets
+├── .env.staging        # Staging configuration
+└── .env.production     # Production configuration</code></pre>
+
+        <p>The <code>.env.example</code> file is crucial — it shows what variables are needed without exposing actual values:</p>
+
+        <pre><code># .env.example
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=myapp
+DB_USER=change_me
+DB_PASSWORD=change_me
+SECRET_KEY=generate_a_random_string
+DEBUG=true</code></pre>
+
+        <p>Add <code>.env</code> to your <code>.gitignore</code> and commit only <code>.env.example</code>:</p>
+
+        <pre><code># .gitignore
+.env
+.env.staging
+.env.production</code></pre>
+
+        <p>To load a specific environment file, use the <code>--env-file</code> flag:</p>
+
+        <pre><code># Development (default)
+docker compose up
+
+# Staging
+docker compose --env-file .env.staging up
+
+# Production
+docker compose --env-file .env.production up</code></pre>
+
+        <p>You can specify multiple <code>--env-file</code> arguments — later files override earlier ones:</p>
+
+        <pre><code># Load defaults first, then override with staging values
+docker compose --env-file .env.defaults --env-file .env.staging up</code></pre>
+
+        <h2>Passing Host Environment Variables Directly</h2>
+        <p>Without a value after the <code>=</code>, Docker Compose passes through the host's environment variable:</p>
+
+        <pre><code>environment:
+  # If HOST_VAR is "hello", the container sees HOST_VAR=hello
+  - HOST_VAR
+  - HOME
+  
+  # Override a host var
+  - PATH=/custom/path
+  # Or use the host value with a fallback
+  - API_KEY=${API_KEY:-default_key}</code></pre>
+
+        <p>This pattern is useful for CI/CD pipelines where secrets are injected as environment variables at runtime:</p>
+
+        <pre><code># In GitHub Actions
+- name: Deploy
+  env:
+    DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    SECRET_KEY: ${{ secrets.SECRET_KEY }}
+  run: docker compose --env-file .env.production up -d</code></pre>
+
+        <h2>The <code>env_file</code> Directive vs <code>environment</code></h2>
+        <p>Docker Compose offers two ways to pass variables to containers:</p>
+
+        <pre><code>services:
+  web:
+    image: myapp:latest
+    
+    # Method 1: environment — inline key-value pairs
+    environment:
+      - KEY1=value1
+      - KEY2=${COMPOSE_VAR}
+    
+    # Method 2: env_file — load from a file
+    env_file:
+      - .env
+      - .env.secrets</code></pre>
+
+        <p>Key differences:</p>
+        <ul style="margin: 12px 0 12px 24px; color: var(--text-secondary);">
+            <li><code>environment</code> supports interpolation (<code>${VAR}</code>), <code>env_file</code> does not — values are passed literally</li>
+            <li><code>environment</code> lists are visible in <code>docker inspect</code> and <code>docker compose config</code></li>
+            <li><code>env_file</code> is simpler for large sets of variables (no quoting/escaping needed)</li>
+            <li>If the same key appears in both, <code>environment</code> wins (it's applied last)</li>
+        </ul>
+
+        <h2>Python Script: Auto-Generate .env from Template</h2>
+        <p>Here's a practical Python script that creates a <code>.env</code> file from <code>.env.example</code>, generating random passwords and API keys:</p>
+
+        <pre><code>import os
+import string
+import secrets
+
+def generate_password(length=24):
+    """Generate a secure random password."""
+    chars = string.ascii_letters + string.digits + "!@#$%^&*"
+    return ''.join(secrets.choice(chars) for _ in range(length))
+
+def generate_secret(length=48):
+    """Generate a longer random secret key."""
+    return secrets.token_urlsafe(length)
+
+def load_template(path='.env.example'):
+    """Read template and return dict of key=value pairs."""
+    vars = {}
+    with open(path) as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith('#'):
+                continue
+            key, _, default = line.partition('=')
+            vars[key] = default
+    return vars
+
+def fill_template(template_vars):
+    """Replace placeholder values with real secrets."""
+    filled = {}
+    for key, default in template_vars.items():
+        key_lower = key.lower()
+        if 'password' in key_lower or 'secret' in key_lower or 'key' in key_lower:
+            if default.startswith('change_me') or default == '':
+                filled[key] = generate_password()
+            else:
+                filled[key] = default
+        else:
+            filled[key] = default
+    return filled
+
+def write_env(env_vars, path='.env'):
+    """Write variables to .env file."""
+    if os.path.exists(path):
+        print(f"⚠️  {path} already exists, skipping")
+        return
+    with open(path, 'w') as f:
+        f.write("# Auto-generated from .env.example\n")
+        for key, value in env_vars.items():
+            f.write(f"{key}={value}\n")
+    print(f"✅ Created {path}")
+
+# Usage
+template = load_template('.env.example')
+env_vars = fill_template(template)
+write_env(env_vars)
+
+# Print summary (NOT the secrets!)
+print("\nEnvironment file created with:")
+for key in env_vars:
+    key_lower = key.lower()
+    if 'password' in key_lower or 'secret' in key_lower:
+        print(f"  {key}=**GENERATED**")
+    else:
+        print(f"  {key}={env_vars[key]}")</code></pre>
+
+        <p>Running this script gives you a ready-to-use <code>.env</code> file with real secrets, while <code>.env.example</code> stays safe to commit.</p>
+
+        <h2>Environment Variable Precedence</h2>
+        <p>When multiple sources provide the same variable, Docker Compose resolves conflicts in this order (highest to lowest priority):</p>
+        <ol style="margin: 12px 0 12px 24px; color: var(--text-secondary);">
+            <li><strong>Inline <code>environment</code></strong> — values defined directly in <code>docker-compose.yml</code></li>
+            <li><strong>Host environment variables</strong> — variables set in your shell/CI pipeline</li>
+            <li><strong><code>.env</code> file</strong> — auto-loaded from the compose file directory</li>
+            <li><strong><code>--env-file</code> flag</strong> — explicitly specified environment files</li>
+            <li><strong>Default values</strong> — <code>${VAR:-default}</code> fallbacks in interpolation</li>
+        </ol>
+
+        <h2>Best Practices Summary</h2>
+        <ul style="margin: 12px 0 12px 24px; color: var(--text-secondary);">
+            <li>Never commit <code>.env</code> files — always use <code>.gitignore</code></li>
+            <li>Commit <code>.env.example</code> as a template for new developers</li>
+            <li>Use <code>${VAR:-default}</code> for optional config, <code>${VAR?error}</code> for required secrets</li>
+            <li>Use <code>$$</code> to escape literal dollar signs</li>
+            <li>Keep secrets out of <code>environment</code> — use Docker secrets for production</li>
+            <li>Separate env files per environment (<code>.env.staging</code>, <code>.env.production</code>)</li>
+            <li>Use <code>--env-file</code> in CI/CD to inject secrets at runtime</li>
+        </ul>
+
+        <h2>Next Steps</h2>
+        <p>Now that you understand environment variable management, check out our guide on <a href="docker-secrets-config.html">Docker Secrets and Config Management</a> for production-grade secret handling, or learn how to <a href="docker-compose-dev-environment.html">set up a complete development environment</a> with Docker Compose.</p>
+    </article>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 Hugo's Dev Notes. Built with care.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Reading progress bar
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + '%';
+        });
+        // Theme toggle
+        const toggle = document.getElementById('themeToggle');
+        if (toggle) {
+            toggle.addEventListener('click', () => {
+                document.body.classList.toggle('light');
+            });
+        }
+    </script>
+</body>
+</html>

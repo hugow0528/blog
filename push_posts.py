@@ -2,7 +2,7 @@ import os
 import base64
 import requests
 
-with open("/home/admin/.gh_token", "r") as f:
+with open('/home/admin/.gh_token', 'r') as f:
     token = f.read().strip()
 
 headers = {"Authorization": f"token {token}", "Accept": "application/vnd.github+json"}
@@ -15,27 +15,18 @@ def push_file(path, content, message):
     sha = resp.json().get("sha") if resp.status_code == 200 else None
     payload = {"message": message, "content": base64.b64encode(content.encode()).decode(), "branch": branch}
     if sha: payload["sha"] = sha
-    result = requests.put(url, headers=headers, json=payload)
-    status = result.status_code in [200, 201]
-    if not status and result.status_code == 403:
-        print(f"  WARNING {path}: rate limited or forbidden ({result.status_code})")
-    elif not status:
-        print(f"  FAILED {path}: {result.status_code} - {result.text[:200]}")
-    else:
-        print(f"  OK {path}")
-    return status
+    r = requests.put(url, headers=headers, json=payload)
+    if r.status_code not in [200, 201]:
+        print(f"❌ {path}: HTTP {r.status_code} - {r.text[:200]}")
+    return r.status_code in [200, 201]
 
 files = []
 for root, dirs, filenames in os.walk(base_dir):
     for filename in filenames:
-        if filename.endswith((".html", ".css", ".xml", ".txt")):
+        if filename.endswith(('.html', '.css', '.xml', '.txt')):
             full_path = os.path.join(root, filename)
             rel_path = os.path.relpath(full_path, base_dir)
-            files.append((rel_path, open(full_path).read(), "Auto: New posts"))
+            files.append((rel_path, open(full_path).read(), f"Auto: New posts"))
 
-# Push only the new/changed files for speed
-target_files = [f for f in files if any(x in f[0] for x in ["cloudflare-workers-kv", "python-dataclasses", "index.html", "sitemap.xml"])]
-
-print(f"Pushing {len(target_files)} files...")
-success = sum(1 for p, c, m in target_files if push_file(p, c, m))
-print(f"Pushed {success}/{len(target_files)} files")
+success = sum(1 for p, c, m in files if push_file(p, c, m))
+print(f"✅ Pushed {success}/{len(files)} files")
